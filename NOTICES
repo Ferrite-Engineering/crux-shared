@@ -33,8 +33,8 @@ Notes:
 --------------------------------------------------------------------------
 
 Components and versions:
-  - _fe_analyzer_shared                        103.0.0
-  - analyzer                                   13.3.0
+  - _fe_analyzer_shared                        99.0.0
+  - analyzer                                   12.1.0
   - args                                       2.7.0
   - async                                      2.13.1
   - boolean_selector                           2.1.2
@@ -42,7 +42,7 @@ Components and versions:
   - charcode                                   1.4.0
   - checked_yaml                               2.0.4
   - cli_config                                 0.2.0
-  - cli_util                                   0.5.2
+  - cli_util                                   0.6.0
   - code_assets                                2.1.0
   - collection                                 1.19.1
   - convert                                    3.1.2
@@ -75,7 +75,7 @@ Components and versions:
   - objective_c                                9.6.0
   - package_config                             2.2.0
   - path                                       1.9.1
-  - platform                                   3.2.0
+  - platform                                   3.1.6
   - pool                                       1.5.3
   - process                                    5.0.6
   - pub_semver                                 2.2.1
@@ -269,7 +269,7 @@ Components and versions:
   - panes                                      1.3.0
   - petitparser                                7.1.0
   - prompts                                    2.0.0
-  - pub_updater                                0.5.0
+  - pub_updater                                0.6.0
   - riverpod                                   3.4.3
   - screen_retriever                           0.2.2
   - screen_retriever_linux                     0.2.2
@@ -316,7 +316,7 @@ Components and versions:
   - conventional_commit                        0.6.1+1
   - fake_async                                 1.3.3
   - material_color_utilities                   0.13.0
-  - melos                                      8.6.0
+  - melos                                      8.9.0
 
 License text (as distributed with these packages):
 

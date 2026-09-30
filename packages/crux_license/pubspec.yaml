@@ -79,7 +79,7 @@ dev_dependencies:
   # test/static/error_escape_guard_test.dart, which scans this package plus
   # crux_policy and crux_cxp. Same constraint crux_workspace already uses for
   # its scope-leak scanner, so the workspace lockfile does not move.
-  analyzer: ^13.3.0
+  analyzer: '>=12.1.0 <13.0.0'
   flutter_test:
     sdk: flutter
   very_good_analysis: ^11.0.0
