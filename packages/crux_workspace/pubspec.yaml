@@ -27,7 +27,7 @@ dev_dependencies:
   # test/static/per_tab_provider_scope_leak_test.dart. Pinned to the major
   # already resolved transitively suite-wide (12.1.0) so the lockfile does not
   # move.
-  analyzer: ">=12.1.0 <13.0.0"
+  analyzer: ^13.3.0
   crux_a11y:
     path: ../crux_a11y
   # Test-only, and deliberately not a runtime dependency: the peers section
