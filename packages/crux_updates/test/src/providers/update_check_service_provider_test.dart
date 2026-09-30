@@ -69,6 +69,25 @@ void main() {
       expect(c.read(updateCheckServiceProvider), isA<NoopUpdateCheckService>());
     });
 
+    test('yields Noop in a browser, whatever the platform or config', () async {
+      // A web tab runs the deployed build and the manifest describes desktop
+      // releases, so there is nothing to offer — and the manifest GET's
+      // `User-Agent` fails the updates Worker's CORS preflight on Safari and
+      // Firefox, so every page load logged a blocked fetch. `checkOnMobile`
+      // is a mobile opt-in and does not reach here: a phone browser is still
+      // a browser.
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      final c = container(
+        config: _config.copyWith(checkOnMobile: true),
+        extra: [
+          updateHostIsWebProvider.overrideWithValue(true),
+          updateBuildInfoProvider.overrideWith((_) async => _buildInfo),
+        ],
+      );
+      await c.read(updateBuildInfoProvider.future);
+      expect(c.read(updateCheckServiceProvider), isA<NoopUpdateCheckService>());
+    });
+
     test(
       'checkOnMobile opts a mobile build back into the live check',
       () async {

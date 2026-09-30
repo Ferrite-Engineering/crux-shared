@@ -42,6 +42,7 @@ void main() {
     Future<TelemetryEnvelope?> Function()? envelopeResolver,
     DateTime Function()? now,
     Duration initialRetryDelay = const Duration(minutes: 1),
+    bool isWeb = false,
   }) {
     final dir = directory ?? temp;
     return LiveTelemetryService(
@@ -51,6 +52,7 @@ void main() {
       directoryFactory: () async => dir,
       initialRetryDelay: initialRetryDelay,
       now: now,
+      isWeb: isWeb,
     );
   }
 
@@ -121,6 +123,84 @@ void main() {
         'application/json; charset=utf-8',
       );
     });
+
+    test('a browser build sends no User-Agent', () async {
+      // Safari and Firefox honour a page-set `User-Agent` and name it in the
+      // CORS preflight; Chrome drops it. So a browser POST carrying the header
+      // was a preflight the Worker refused on two of the three engines, a
+      // `failed` outcome the client retried forever, and zero web rows in
+      // production, ever. The envelope already says which product and version
+      // this is, so the header has nothing to add on web.
+      final requests = <http.BaseRequest>[];
+      final service = serviceWith(
+        client: MockClient((request) async {
+          requests.add(request);
+          return http.Response('{}', 202);
+        }),
+        isWeb: true,
+      );
+      addTearDown(service.dispose);
+
+      service.record(TelemetryEvent('tab.opened'));
+      await service.flush();
+
+      expect(requests.single.headers.keys.map((k) => k.toLowerCase()), [
+        'content-type',
+      ]);
+      expect(
+        requests.single.headers['Content-Type'],
+        'application/json; charset=utf-8',
+      );
+    });
+
+    test(
+      'every header the client sends is on the Worker CORS allow-list',
+      () async {
+        // `test/fixtures/cors-allowed-headers.json` carries the same list as the
+        // ingestion Worker's `contract/cors-allowed-headers.json`, and the
+        // Worker's own test asserts its preflight answers with exactly that
+        // list. Together they close the gap that hid the web editions: a header
+        // this client sends that the Worker does not allow is a preflight that
+        // fails, and a failed preflight is invisible to everything but the
+        // browser console.
+        final allowed =
+            (jsonDecode(
+                      File(
+                        'test/fixtures/cors-allowed-headers.json',
+                      ).readAsStringSync(),
+                    )
+                    as List<Object?>)
+                .cast<String>()
+                .map((h) => h.toLowerCase())
+                .toSet();
+
+        for (final isWeb in <bool>[false, true]) {
+          final requests = <http.BaseRequest>[];
+          final service = serviceWith(
+            client: MockClient((request) async {
+              requests.add(request);
+              return http.Response('{}', 202);
+            }),
+            directory: Directory.systemTemp.createTempSync('crux_cors_$isWeb'),
+            isWeb: isWeb,
+          );
+          addTearDown(service.dispose);
+
+          service.record(TelemetryEvent('tab.opened'));
+          await service.flush();
+
+          for (final name in requests.single.headers.keys) {
+            expect(
+              allowed,
+              contains(name.toLowerCase()),
+              reason:
+                  '`$name` is sent with isWeb=$isWeb but is not on the '
+                  'Worker allow-list — a browser preflight would refuse it',
+            );
+          }
+        }
+      },
+    );
 
     test('posts nothing when the queue is empty', () async {
       var calls = 0;

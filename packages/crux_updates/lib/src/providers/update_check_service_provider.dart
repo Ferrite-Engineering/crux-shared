@@ -25,6 +25,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///   SCCM-managed fleet is exactly the confusion this ordering prevents. The
 ///   *check* is suppressed, not the dialog — a managed install issues no
 ///   manifest fetch at all.
+/// * **A browser build.** A web tab is already running the deployed build,
+///   and the manifest describes desktop releases, so there is nothing to offer
+///   it. Worse than redundant: the manifest GET sends a `User-Agent`, which
+///   Safari and Firefox name in the CORS preflight the updates Worker refuses,
+///   so every page load logged a blocked fetch. `updateHostIsWebProvider` is
+///   the seam.
 /// * **iOS/Android**, unless `CruxUpdateConfig.checkOnMobile` is set. Mobile
 ///   builds update through their store, so the in-app check is redundant —
 ///   and skipping it keeps the mobile build free of any outbound request,
@@ -57,8 +63,11 @@ final Provider<UpdateCheckService> updateCheckServiceProvider =
         return const NoopUpdateCheckService();
       }
 
+      if (ref.watch(updateHostIsWebProvider)) {
+        return const NoopUpdateCheckService();
+      }
+
       if (!config.checkOnMobile &&
-          !kIsWeb &&
           (defaultTargetPlatform == TargetPlatform.iOS ||
               defaultTargetPlatform == TargetPlatform.android)) {
         return const NoopUpdateCheckService();

@@ -6,6 +6,7 @@ import 'package:crux_updates/src/crux_update_config.dart';
 import 'package:crux_updates/src/crux_update_strings.dart';
 import 'package:crux_updates/src/models/update_edition.dart';
 import 'package:crux_updates/src/models/update_policy.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
@@ -195,6 +196,16 @@ final Provider<UpdatePolicy> updatePolicyProvider = Provider<UpdatePolicy>(
 final Provider<UpdateEdition> updateEditionProvider = Provider<UpdateEdition>(
   (_) => UpdateEdition.unlocked,
   name: 'updateEditionProvider',
+);
+
+/// Whether the running build is a browser build.
+///
+/// `kIsWeb`, behind a provider purely as the test seam: a VM test cannot flip
+/// the constant, and `updateCheckServiceProvider`'s web branch has to be
+/// assertable from one. Nothing in the suite overrides it outside tests.
+final Provider<bool> updateHostIsWebProvider = Provider<bool>(
+  (_) => kIsWeb,
+  name: 'updateHostIsWebProvider',
 );
 
 /// The HTTP client used for update-manifest fetches.

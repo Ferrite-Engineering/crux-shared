@@ -77,43 +77,50 @@ void main() {
     // differ, because `unset` behaves differently under the dev flag and a
     // matrix with a hole in it is not a matrix.
     const expectations =
-        <(TelemetryPolicy, bool beta, bool dev, TelemetryConsentState), bool>{
+        <
+          (TelemetryPolicy, bool beta, bool dev, TelemetryConsentState),
+          _Resolves
+        >{
           // ══ No policy file. Every non-Enterprise installation, and the
           //    default. These twelve cells are the pre-policy behaviour and
           //    must stay untouched by everything below. ═════════════════════
           // ── Beta. Inert in every cell, consent notwithstanding. ──────────
           (TelemetryPolicy.absent, true, false, TelemetryConsentState.enabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.absent, true, false, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.absent, true, false, TelemetryConsentState.unset):
-              false,
+              _Resolves.noop,
           // ── Beta + the dev flag: the dark-launch verification path. ──────
           (TelemetryPolicy.absent, true, true, TelemetryConsentState.enabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.absent, true, true, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           // `unset` counts as consent under the dev flag only, so end-to-end
           // verification against the staging dataset needs no UI.
           (TelemetryPolicy.absent, true, true, TelemetryConsentState.unset):
-              true,
+              _Resolves.live,
           // ── Post-beta: consent decides. ──────────────────────────────────
           (TelemetryPolicy.absent, false, false, TelemetryConsentState.enabled):
-              true,
+              _Resolves.live,
           (
             TelemetryPolicy.absent,
             false,
             false,
             TelemetryConsentState.disabled,
-          ): false,
+          ): _Resolves.noop,
+          // Post-beta with no answer yet is the disclosure on screen: not a
+          // no, so not the no-op. The launch's events wait for the answer,
+          // and a `yes` ships them with no further event — see the consent
+          // window group below.
           (TelemetryPolicy.absent, false, false, TelemetryConsentState.unset):
-              false,
+              _Resolves.waits,
           (TelemetryPolicy.absent, false, true, TelemetryConsentState.enabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.absent, false, true, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.absent, false, true, TelemetryConsentState.unset):
-              true,
+              _Resolves.live,
 
           // ══ policy: deny. The org forbids collection. False in all twelve
           //    cells — there is no combination of beta, dev flag or stored
@@ -123,29 +130,29 @@ void main() {
           //    transmitting, because the machine and the licence are the
           //    organisation's. ══════════════════════════════════════════════
           (TelemetryPolicy.deny, true, false, TelemetryConsentState.enabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, true, false, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, true, false, TelemetryConsentState.unset):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, true, true, TelemetryConsentState.enabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, true, true, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, true, true, TelemetryConsentState.unset):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, false, false, TelemetryConsentState.enabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, false, false, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, false, false, TelemetryConsentState.unset):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, false, true, TelemetryConsentState.enabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, false, true, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.deny, false, true, TelemetryConsentState.unset):
-              false,
+              _Resolves.noop,
 
           // ══ policy: allow. The org mandates collection — and it still loses
           //    to the beta gate. ════════════════════════════════════════════
@@ -155,32 +162,32 @@ void main() {
           //    behalf, so a policy file can decide WHETHER we collect but not
           //    WHEN we start. ────────────────────────────────────────────────
           (TelemetryPolicy.allow, true, false, TelemetryConsentState.enabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.allow, true, false, TelemetryConsentState.disabled):
-              false,
+              _Resolves.noop,
           (TelemetryPolicy.allow, true, false, TelemetryConsentState.unset):
-              false,
+              _Resolves.noop,
           // ── Beta + dev flag: the gate is open, and the policy decides —
           //    including over a stored `disabled`. ───────────────────────────
           (TelemetryPolicy.allow, true, true, TelemetryConsentState.enabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.allow, true, true, TelemetryConsentState.disabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.allow, true, true, TelemetryConsentState.unset):
-              true,
+              _Resolves.live,
           // ── Post-beta: collect, whatever the individual had chosen. ──────
           (TelemetryPolicy.allow, false, false, TelemetryConsentState.enabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.allow, false, false, TelemetryConsentState.disabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.allow, false, false, TelemetryConsentState.unset):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.allow, false, true, TelemetryConsentState.enabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.allow, false, true, TelemetryConsentState.disabled):
-              true,
+              _Resolves.live,
           (TelemetryPolicy.allow, false, true, TelemetryConsentState.unset):
-              true,
+              _Resolves.live,
         };
 
     test('the matrix is complete — every policy × beta × dev × consent', () {
@@ -191,10 +198,10 @@ void main() {
 
     for (final entry in expectations.entries) {
       final (policy, beta, dev, consent) = entry.key;
-      final live = entry.value;
+      final resolves = entry.value;
       test(
         'policy=${policy.name} beta=$beta dev=$dev consent=${consent.name} → '
-        '${live ? 'LiveTelemetryService' : 'NoopTelemetryService'}',
+        '${resolves.serviceName}',
         () async {
           final container = containerFor(
             beta: beta,
@@ -210,9 +217,11 @@ void main() {
           // through `notifier.state` never opens that window at all.
           await container.read(telemetryConsentReadyProvider.future);
 
+          expect(container.read(telemetryServiceProvider), resolves.matcher);
           expect(
-            container.read(telemetryServiceProvider),
-            live ? isA<LiveTelemetryService>() : isA<NoopTelemetryService>(),
+            container.read(telemetryEnabledProvider),
+            resolves == _Resolves.live,
+            reason: 'only the live service transmits; waiting is not consent',
           );
         },
       );
@@ -473,6 +482,141 @@ void main() {
       );
     });
 
+    group('THE CONSENT WINDOW — settled on `unset`, disclosure on screen', () {
+      // The window after the one above. The store has read back `unset`, the
+      // gate is closed, and the disclosure is asking. Before this the closed
+      // gate discarded the buffer — so `workspace.restored`, recorded before
+      // the store had even started reading, was gone before the user could
+      // say yes — and a `yes` flipped a gate nobody re-read, so the live
+      // service was not built until the next event. A passive web tab
+      // records none. Measured on production: a Safari session with consent
+      // `enabled` in localStorage made no request at all.
+
+      test('the launch events wait for the answer instead of dying', () async {
+        final cold = coldStart(beta: false, dev: false);
+
+        cold.container
+            .read(telemetryServiceProvider)
+            .record(TelemetryEvent('workspace.restored'));
+
+        cold.release();
+        await cold.container.read(telemetryConsentReadyProvider.future);
+
+        expect(
+          cold.container.read(telemetryGateProvider),
+          TelemetryGate.closed,
+          reason: 'unanswered is not consent; nothing may transmit yet',
+        );
+        expect(
+          cold.container.read(telemetryServiceProvider),
+          isA<PendingTelemetryService>(),
+        );
+        expect(
+          cold.container
+              .read(telemetryPendingBufferProvider)
+              .map((e) => e.name),
+          contains('workspace.restored'),
+          reason: 'an open question is not a no; the buffer survives it',
+        );
+        expect(cold.requests, isEmpty);
+      });
+
+      test(
+        'a `yes` ships them with no further event and no further read',
+        () async {
+          final cold = coldStart(beta: false, dev: false);
+
+          cold.container
+              .read(telemetryServiceProvider)
+              .record(TelemetryEvent('workspace.restored'));
+
+          cold.release();
+          await cold.container.read(telemetryConsentReadyProvider.future);
+          // What the session does while the prompt is up waits with them.
+          cold.container
+              .read(telemetryServiceProvider)
+              .record(TelemetryEvent('tab.opened'));
+
+          // Exactly what the disclosure's "Yes" button does, and nothing
+          // else: no event afterwards, no read of the service by hand.
+          await cold.container
+              .read(telemetryConsentStoreProvider.notifier)
+              .set(TelemetryConsentState.enabled);
+          for (var turn = 0; turn < 200 && cold.requests.isEmpty; turn++) {
+            await Future<void>.delayed(const Duration(milliseconds: 5));
+          }
+
+          expect(
+            cold.requests,
+            isNotEmpty,
+            reason:
+                'consent flipped the gate; something has to read the '
+                'provider for the live service to exist, and on a passive '
+                'web session that something is this package',
+          );
+          final body = (cold.requests.first as http.Request).body;
+          expect(body, contains('workspace.restored'));
+          expect(body, contains('tab.opened'));
+          expect(
+            cold.container.read(telemetryPendingBufferProvider),
+            isEmpty,
+            reason: 'replayed once, not copied',
+          );
+        },
+      );
+
+      test('a `no` discards them and nothing was ever sent', () async {
+        final cold = coldStart(beta: false, dev: false);
+
+        cold.container
+            .read(telemetryServiceProvider)
+            .record(TelemetryEvent('workspace.restored'));
+
+        cold.release();
+        await cold.container.read(telemetryConsentReadyProvider.future);
+        await cold.container
+            .read(telemetryConsentStoreProvider.notifier)
+            .set(TelemetryConsentState.disabled);
+        for (var turn = 0; turn < 20; turn++) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+
+        expect(cold.requests, isEmpty);
+        expect(
+          cold.container.read(telemetryServiceProvider),
+          isA<NoopTelemetryService>(),
+        );
+        expect(cold.container.read(telemetryPendingBufferProvider), isEmpty);
+      });
+
+      test('the beta and a policy `deny` still discard, not wait', () async {
+        // The window is the DISCLOSURE'S window. A closed gate that no
+        // answer can open — the beta, an org that said no — holds nothing.
+        for (final (beta, policy) in <(bool, TelemetryPolicy)>[
+          (true, TelemetryPolicy.absent),
+          (false, TelemetryPolicy.deny),
+        ]) {
+          final cold = coldStart(beta: beta, dev: false, policy: policy);
+          cold.container
+              .read(telemetryServiceProvider)
+              .record(TelemetryEvent('workspace.restored'));
+          cold.release();
+          await cold.container.read(telemetryConsentReadyProvider.future);
+
+          expect(
+            cold.container.read(telemetryServiceProvider),
+            isA<NoopTelemetryService>(),
+            reason: 'beta=$beta policy=${policy.name}',
+          );
+          expect(
+            cold.container.read(telemetryPendingBufferProvider),
+            isEmpty,
+            reason: 'beta=$beta policy=${policy.name}: nothing waits',
+          );
+        }
+      });
+    });
+
     test('a stored `enabled` waits for its own load too, post-beta', () async {
       // With the dev flag off the gate tests `consent == enabled`, so the
       // placeholder already fails safe and no wait was ever needed for
@@ -657,12 +801,15 @@ void main() {
       }
 
       // Not answered is not consent: nothing is constructed that could send.
+      // The disclosure is on screen, so the launch's events wait for its
+      // answer rather than being discarded — a pending service, which
+      // transmits exactly as much as the no-op does.
       final unanswered = await shipping(TelemetryConsentState.unset);
       expect(unanswered.read(telemetryBetaPeriodProvider), isFalse);
       expect(unanswered.read(telemetryEnabledProvider), isFalse);
       expect(
         unanswered.read(telemetryServiceProvider),
-        isA<NoopTelemetryService>(),
+        isA<PendingTelemetryService>(),
       );
 
       // A user who opted in is counted, with no define and no dev flag.
@@ -1120,4 +1267,23 @@ class _RecordingTelemetryService implements TelemetryService {
 
   @override
   void record(TelemetryEvent event) => events.add(event);
+}
+
+/// What a matrix cell resolves to once the consent store has settled.
+enum _Resolves {
+  live(LiveTelemetryService),
+  noop(NoopTelemetryService),
+  waits(PendingTelemetryService);
+
+  const _Resolves(this.service);
+
+  final Type service;
+
+  String get serviceName => '$service';
+
+  Matcher get matcher => switch (this) {
+    live => isA<LiveTelemetryService>(),
+    noop => isA<NoopTelemetryService>(),
+    waits => isA<PendingTelemetryService>(),
+  };
 }

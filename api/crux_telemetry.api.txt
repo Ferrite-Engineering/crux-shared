@@ -72,12 +72,13 @@ class InMemoryTelemetryStorage extends TelemetryStorage
   remove(String key) -> Future<void>
   write(String key, String value) -> Future<void>
 class LiveTelemetryService implements TelemetryService
-  LiveTelemetryService({Client? client, DateTime Function()? now, Duration flushInterval, Duration initialRetryDelay, Duration maxEventAge, Duration maxRetryDelay, Duration postTimeout, Duration volatileFlushInterval, Future<Directory> Function()? directoryFactory, TelemetryEventQueue? queue, int maxQueuedEvents, required Future<TelemetryEnvelope?> Function() envelopeResolver, required Uri endpoint, void Function() Function(void Function())? lifecycleObserver})
+  LiveTelemetryService({Client? client, DateTime Function()? now, Duration flushInterval, Duration initialRetryDelay, Duration maxEventAge, Duration maxRetryDelay, Duration postTimeout, Duration volatileFlushInterval, Future<Directory> Function()? directoryFactory, TelemetryEventQueue? queue, bool isWeb, int maxQueuedEvents, required Future<TelemetryEnvelope?> Function() envelopeResolver, required Uri endpoint, void Function() Function(void Function())? lifecycleObserver})
   dispose() -> void
   final endpoint: Uri
   final envelopeResolver: Future<TelemetryEnvelope?> Function()
   final flushInterval: Duration
   final initialRetryDelay: Duration
+  final isWeb: bool
   final maxEventAge: Duration
   final maxQueuedEvents: int
   final maxRetryDelay: Duration

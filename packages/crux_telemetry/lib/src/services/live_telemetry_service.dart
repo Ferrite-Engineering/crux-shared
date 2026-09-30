@@ -10,6 +10,7 @@ import 'package:crux_telemetry/src/models/telemetry_event.dart';
 import 'package:crux_telemetry/src/services/telemetry_batch.dart';
 import 'package:crux_telemetry/src/services/telemetry_event_queue.dart';
 import 'package:crux_telemetry/src/telemetry_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart'
     show AppLifecycleListener, AppLifecycleState;
 import 'package:http/http.dart' as http;
@@ -132,6 +133,8 @@ class LiveTelemetryService implements TelemetryService {
   /// `MockClient` for the transport, a temp directory for the queue. Both
   /// default to the real thing. The timing parameters are injectable so the
   /// backoff can be exercised under `fake_async` rather than in wall time.
+  /// [isWeb] defaults to the real `kIsWeb` and exists so the browser request
+  /// shape can be asserted from a VM test.
   LiveTelemetryService({
     required this.endpoint,
     required this.envelopeResolver,
@@ -139,6 +142,7 @@ class LiveTelemetryService implements TelemetryService {
     Future<Directory> Function()? directoryFactory,
     TelemetryEventQueue? queue,
     TelemetryLifecycleObserver? lifecycleObserver,
+    this.isWeb = kIsWeb,
     this.flushInterval = kTelemetryFlushInterval,
     this.volatileFlushInterval = kTelemetryVolatileFlushInterval,
     this.initialRetryDelay = kTelemetryInitialRetryDelay,
@@ -194,6 +198,18 @@ class LiveTelemetryService implements TelemetryService {
   /// so a long-running session reports the tier and form factor it currently
   /// has rather than the ones it booted with.
   final TelemetryEnvelopeResolver envelopeResolver;
+
+  /// Whether this service runs in a browser, where the POST must stay inside
+  /// the ingestion Worker's CORS allow-list.
+  ///
+  /// A browser build sets no `User-Agent`. Safari and Firefox honour a
+  /// page-set `User-Agent` and therefore name it in the CORS preflight, and a
+  /// preflight the Worker refuses means the batch never leaves the tab — the
+  /// client only ever sees `failed` and retries forever. Chrome silently drops
+  /// the header, which is why only Chrome sessions ever reached the dataset.
+  /// The envelope already carries the product and version the header would
+  /// have said, so the browser loses nothing by omitting it.
+  final bool isWeb;
 
   final http.Client _client;
   final TelemetryEventQueue _queue;
@@ -422,7 +438,7 @@ class LiveTelemetryService implements TelemetryService {
             endpoint,
             headers: <String, String>{
               'Content-Type': 'application/json; charset=utf-8',
-              'User-Agent': envelope.userAgent,
+              if (!isWeb) 'User-Agent': envelope.userAgent,
             },
             body: body,
           )

@@ -254,13 +254,67 @@ final Provider<TelemetryEnvelopeResolver> telemetryEnvelopeResolverProvider =
       name: 'telemetryEnvelopeResolverProvider',
     );
 
+/// Whether the gate is closed only because the consent question is still
+/// open: the store has settled on [TelemetryConsentState.unset] and this build
+/// offers the disclosure that will answer it.
+///
+/// Every other closed gate is a real no — the beta, an Enterprise `deny`, a
+/// stored `disabled` — and none of those changes on its own. This one does,
+/// the moment the user answers, which is why [telemetryServiceProvider] treats
+/// it as a longer pending window rather than as a refusal. It reads through the
+/// same providers the gate does, so a build that would never show the
+/// disclosure can never hold events waiting for an answer that cannot come.
+bool _awaitingConsentAnswer(Ref ref) =>
+    ref.watch(telemetryConsentUiVisibleProvider) &&
+    ref.watch(telemetryConsentReadyProvider).hasValue &&
+    ref.watch(telemetryConsentStoreProvider) == TelemetryConsentState.unset;
+
+/// Re-reads [telemetryServiceProvider] the moment the gate opens, so the
+/// live service is built — and the launch's buffer replayed and flushed — by
+/// something other than the next recorded event.
+///
+/// A stale provider with no listener is never recomputed. The service provider
+/// watches the gate, so a gate that opens invalidates it, but nothing rebuilds
+/// it until something reads it, and the instrumentation call sites only read
+/// it to record. On a passive web session that is never: the launch counter
+/// was the one event, and it is sitting in the buffer waiting for a service
+/// that will not exist until the tab is closed.
+///
+/// One subscription per container, armed the first time the service provider
+/// resolves and held here rather than by the service provider itself, because
+/// a subscription registered on the service provider's own `ref` is torn down
+/// by `onDispose` at the moment its dependencies change — which is exactly the
+/// moment it would have fired. This provider depends on nothing, so it is never
+/// invalidated and its subscription outlives every rebuild of the one it reads.
+///
+/// Whichever way a closed gate opens — the disclosure's yes, the Settings
+/// toggle, an Enterprise policy that lands at runtime — the effect is the same
+/// read the pending branch already performs when the store settles.
+final Provider<void> _gateOpenedWatcherProvider = Provider<void>(
+  (ref) {
+    final container = ref.container;
+    final subscription = container.listen<TelemetryGate>(
+      telemetryGateProvider,
+      (previous, next) {
+        if (next == TelemetryGate.open && previous != TelemetryGate.open) {
+          container.read(telemetryServiceProvider);
+        }
+      },
+    );
+    ref.onDispose(subscription.close);
+  },
+  name: 'telemetryGateOpenedWatcherProvider',
+);
+
 /// The active [TelemetryService] — the single point at which the suite's
 /// anonymous usage statistics are switched on or off.
 ///
 /// Resolves [LiveTelemetryService] only when [telemetryGateProvider] is
 /// [TelemetryGate.open], [NoopTelemetryService] when it is
-/// [TelemetryGate.closed], and [PendingTelemetryService] for the one window
-/// where the answer is not knowable yet. Every implementation ships in
+/// [TelemetryGate.closed] for good, and [PendingTelemetryService] for the two
+/// windows where the answer is not knowable yet: while the consent store is
+/// still reading, and — once it has read back `unset` — while the disclosure
+/// is on screen waiting to be answered. Every implementation ships in
 /// open-core: the honesty backstop for collecting from free users is that the
 /// entire pipeline is readable — and strippable — in the Apache-2.0 source,
 /// which it cannot be if half of it lives in a closed overlay.
@@ -304,15 +358,42 @@ final Provider<TelemetryService> telemetryServiceProvider =
           return service;
         }
 
+        final config = ref.watch(cruxTelemetryConfigProvider);
+
         if (gate == TelemetryGate.closed) {
+          if (_awaitingConsentAnswer(ref)) {
+            // Closed because nobody has answered yet — the store settled on
+            // `unset`, and the disclosure is on screen asking. That is not a
+            // no. Discarding the buffer here is what made every first session
+            // silent: `workspace.restored` is recorded before the consent
+            // store has even started reading, the settle lands on `unset`,
+            // and the one event a passive web tab ever produces is gone
+            // before the user has said yes. So the launch's events keep
+            // waiting, exactly as they did while the store was still reading,
+            // and whatever the session records while the prompt is up waits
+            // with them under the same cap.
+            //
+            // And as in the pending branch, something has to READ this
+            // provider once the answer arrives, or a stale provider with no
+            // listener is never recomputed and the live service is never
+            // built. A `yes` from the disclosure writes the store, which
+            // flips the gate, which invalidates this provider — and then
+            // nothing happens until the next event, which on a passive web
+            // session is never. [_gateOpenedWatcherProvider] is that read.
+            ref.read(_gateOpenedWatcherProvider);
+            return attachErrorCounter(
+              PendingTelemetryService(
+                buffer,
+                maxEvents: config.maxQueuedEvents,
+              ),
+            );
+          }
           // Whatever the pending window collected was collected on the strength
           // of a placeholder, and the answer turned out to be no. It goes no
           // further than this line.
           buffer.clear();
           return attachErrorCounter(const NoopTelemetryService());
         }
-
-        final config = ref.watch(cruxTelemetryConfigProvider);
 
         if (gate == TelemetryGate.pending) {
           // Resolve this provider again the moment the store settles, from the

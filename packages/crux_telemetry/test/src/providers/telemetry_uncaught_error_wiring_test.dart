@@ -141,7 +141,10 @@ void main() {
 
   test('an unanswered disclosure is not consent', () async {
     // Post-beta, `unset` without the dev flag closes the gate — the EEA
-    // default before the disclosure is answered.
+    // default before the disclosure is answered. Closed, but not for good:
+    // the disclosure is on screen, so the error the launch produced waits in
+    // memory for its answer exactly as it did while the store was loading,
+    // and nothing is sent until that answer is yes.
     counter.recordPlatformError(StateError('x'));
     final app = boot(counter: counter);
     app.container.read(telemetryServiceProvider);
@@ -150,10 +153,15 @@ void main() {
 
     expect(
       app.container.read(telemetryServiceProvider),
-      isA<NoopTelemetryService>(),
+      isA<PendingTelemetryService>(),
     );
     expect(counter.unattached, isEmpty);
-    expect(app.container.read(telemetryPendingBufferProvider), isEmpty);
+    expect(
+      uncaught(app.container.read(telemetryPendingBufferProvider)),
+      hasLength(1),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(app.requests, isEmpty, reason: 'waiting is not collecting');
   });
 
   test('while consent is loading the errors wait in memory, then go', () async {

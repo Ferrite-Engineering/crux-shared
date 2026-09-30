@@ -190,6 +190,7 @@ runManualUpdateCheck(BuildContext context, WidgetRef ref) -> Future<void>
 get updateBuildInfoProvider -> FutureProvider<ApplicationBuildInfo?>
 get updateCheckServiceProvider -> Provider<UpdateCheckService>
 get updateEditionProvider -> Provider<UpdateEdition>
+get updateHostIsWebProvider -> Provider<bool>
 get updateHttpClientProvider -> Provider<Client>
 get updatePolicyProvider -> Provider<UpdatePolicy>
 get updateStatusProvider -> NotifierProvider<UpdateStatusNotifier, UpdateStatus>
