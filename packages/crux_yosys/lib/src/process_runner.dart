@@ -42,7 +42,6 @@ enum ProcessTermination {
 ///
 /// Nothing in this abstraction is specific to any one tool; it is the
 /// domain-neutral core of this package.
-// ignore: one_member_abstracts
 abstract class ProcessRunner {
   /// Runs [executable] with [arguments] and returns the captured result.
   ///

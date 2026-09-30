@@ -24,7 +24,7 @@ void main() {
   ) async {
     container.read(telemetryConsentStoreProvider); // build + async load
     await container.read(telemetryConsentStoreProvider.notifier).loaded;
-    return container.read(telemetryConsentStoreProvider);
+    return await container.read(telemetryConsentStoreProvider);
   }
 
   group('TelemetryConsentStore', () {

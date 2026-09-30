@@ -188,7 +188,7 @@ class InstallFingerprintFile {
     // Read back rather than returning the value just minted: two first runs
     // racing on one machine each mint, the last rename wins, and both then
     // use the one that stuck.
-    return read();
+    return await read();
   }
 
   /// Records [candidate] unless a fingerprint is already recorded, and
@@ -214,7 +214,7 @@ class InstallFingerprintFile {
     } on Object {
       return null;
     }
-    return read();
+    return await read();
   }
 
   /// Records [fingerprint], replacing whatever was recorded before.
@@ -248,7 +248,6 @@ class InstallFingerprintFile {
 /// [SharedInstallFingerprint], and a test passes
 /// [InMemoryInstallFingerprintSource]. One method, deliberately — the seam is
 /// the point, not the method count.
-// ignore: one_member_abstracts
 abstract class InstallFingerprintSource {
   /// The machine's fingerprint, created when there is none.
   ///
@@ -321,7 +320,7 @@ class SharedInstallFingerprint implements InstallFingerprintSource {
       // hold a real one; if the file is the problem, minting fails the same
       // way and the caller hears `null` from there.
     }
-    return _file.readOrCreate();
+    return await _file.readOrCreate();
   }
 }
 

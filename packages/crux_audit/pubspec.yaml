@@ -24,6 +24,6 @@ dependencies:
 
 dev_dependencies:
   test: ^1.25.0
-  very_good_analysis: ^10.2.0
+  very_good_analysis: ^11.0.0
   # Test-only: the purity guard walks the resolved dependency closure.
   yaml: ^3.1.0

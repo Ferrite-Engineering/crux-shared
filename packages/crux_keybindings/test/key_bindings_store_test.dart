@@ -25,7 +25,7 @@ void main() {
 
   Future<SharedPreferences> emptyPrefs() async {
     SharedPreferences.setMockInitialValues({});
-    return SharedPreferences.getInstance();
+    return await SharedPreferences.getInstance();
   }
 
   test('load returns empty when nothing persisted', () async {

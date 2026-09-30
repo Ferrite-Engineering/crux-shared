@@ -128,7 +128,7 @@ Future<void> writeJsonAtomic(
   Object? data, {
   WriteDurability durability = WriteDurability.durable,
   @visibleForTesting FutureOr<void> Function()? onBeforeRename,
-}) async => writeStringAtomic(
+}) async => await writeStringAtomic(
   file,
   _jsonEncoder.convert(data),
   durability: durability,

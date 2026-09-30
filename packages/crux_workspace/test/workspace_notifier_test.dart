@@ -78,7 +78,7 @@ void main() {
       await h.hydrate();
     });
 
-    tearDown(() async => h.dispose());
+    tearDown(() => h.dispose());
 
     test('build() yields an empty workspace on first read', () {
       expect(h.state.isEmpty, isTrue);

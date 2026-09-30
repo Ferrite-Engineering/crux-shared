@@ -32,6 +32,6 @@ dev_dependencies:
   # in lib/ and there must never be one.
   crypto: ^3.0.6
   test: ^1.25.0
-  very_good_analysis: ^10.2.0
+  very_good_analysis: ^11.0.0
   # Test-only: the purity guard walks the resolved dependency closure.
   yaml: ^3.1.0

@@ -415,7 +415,7 @@ final class CruxSqliteOpenPolicy {
       // one. A hand-rolled retry is how `onDowngrade` came to be dropped from a
       // reopened database, leaving it silently able to be stamped backwards.
       migrationAttempted = false;
-      return resolved.openDatabase(dbPath, options: options());
+      return await resolved.openDatabase(dbPath, options: options());
     }
   }
 }

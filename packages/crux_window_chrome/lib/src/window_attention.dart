@@ -38,7 +38,6 @@ enum WindowAttentionKind {
 ///
 /// A deliberate swappable seam (method-channel / no-op / test-fake
 /// implementations behind a settable global), not a one-shot callback.
-// ignore: one_member_abstracts
 abstract interface class WindowAttentionRequester {
   /// Requests user attention at the given [kind]. Implementations must never
   /// throw and never steal focus.

@@ -1252,7 +1252,7 @@ class _GatedTelemetryStorage extends TelemetryStorage {
   @override
   Future<String?> read(String key) async {
     await _gate;
-    return _inner.read(key);
+    return await _inner.read(key);
   }
 
   @override

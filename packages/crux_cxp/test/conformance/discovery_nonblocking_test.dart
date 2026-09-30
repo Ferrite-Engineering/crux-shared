@@ -400,7 +400,7 @@ final class _SlowDirectory implements Directory {
   @override
   Future<bool> exists() async {
     await _disk._wait();
-    return _real.exists();
+    return await _real.exists();
   }
 
   @override
@@ -450,7 +450,7 @@ final class _SlowDirectory implements Directory {
   @override
   Future<FileStat> stat() async {
     await _disk._wait();
-    return _real.stat();
+    return await _real.stat();
   }
 
   @override
@@ -486,7 +486,7 @@ final class _SlowFile implements File {
   @override
   Future<bool> exists() async {
     await _wait();
-    return _real.exists();
+    return await _real.exists();
   }
 
   @override
@@ -498,7 +498,7 @@ final class _SlowFile implements File {
   @override
   Future<FileStat> stat() async {
     await _wait();
-    return _real.stat();
+    return await _real.stat();
   }
 
   @override
@@ -510,7 +510,7 @@ final class _SlowFile implements File {
   @override
   Future<String> readAsString({Encoding encoding = utf8}) async {
     await _wait();
-    return _real.readAsString(encoding: encoding);
+    return await _real.readAsString(encoding: encoding);
   }
 
   @override
@@ -522,7 +522,7 @@ final class _SlowFile implements File {
   @override
   Future<DateTime> lastModified() async {
     await _wait();
-    return _real.lastModified();
+    return await _real.lastModified();
   }
 
   @override

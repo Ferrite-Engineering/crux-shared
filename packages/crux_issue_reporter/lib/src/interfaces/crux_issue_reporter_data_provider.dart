@@ -24,7 +24,6 @@ import 'package:crux_issue_reporter/src/models/crux_issue_session_context.dart';
 /// localize its category title resolves it from
 /// [CruxIssueSessionContext.localeTag], so this package never depends on the
 /// overlay's ARB.
-// ignore: one_member_abstracts
 abstract interface class CruxIssueReporterDataProvider {
   /// Returns the additional categories to append to the issue report given
   /// the current privacy-scrubbed [context]. Return `const []` to contribute

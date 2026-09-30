@@ -241,7 +241,7 @@ class CxpWorkspaceStore {
     final file = _fileFor(designId);
     if (file == null) return const <WorkspaceArtifact>[];
     final now = ts ?? DateTime.now().millisecondsSinceEpoch;
-    return _queuedFor(file, () async {
+    return await _queuedFor(file, () async {
       // Prune stale entries as we write, so ordinary producer activity
       // bounds the document without relying on a read-time rewrite, as
       // discovery does.
@@ -311,7 +311,7 @@ class CxpWorkspaceStore {
   Future<List<WorkspaceArtifact>> pruneDesign(String designId) async {
     final file = _fileFor(designId);
     if (file == null) return const <WorkspaceArtifact>[];
-    return _queuedFor(file, () async {
+    return await _queuedFor(file, () async {
       final raw = _readRaw(designId);
       final pruned = _prune(raw);
       if (pruned.length != raw.length) await _write(designId, pruned);

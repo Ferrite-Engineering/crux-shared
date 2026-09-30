@@ -86,7 +86,6 @@ class WorkspaceScopeSnapshot {
 // A named role implemented by several unrelated classes (the container
 // managers here, product-side caches and watchers downstream) — not a
 // callback type, so the single member is intentional.
-// ignore: one_member_abstracts
 abstract interface class WorkspaceScopeReconciler {
   /// Evicts every resource this reconciler holds whose owning tab or pane is
   /// absent from [live].

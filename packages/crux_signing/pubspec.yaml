@@ -28,7 +28,7 @@ dev_dependencies:
   # Test-only: the purity guard resolves package roots by path.
   path: ^1.9.0
   test: ^1.25.0
-  very_good_analysis: ^10.2.0
+  very_good_analysis: ^11.0.0
   # Test-only: the purity guard walks the resolved dependency closure's
   # pubspecs looking for a route to Flutter.
   yaml: ^3.1.0

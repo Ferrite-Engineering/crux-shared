@@ -154,7 +154,7 @@ void main() {
       ).open(dbPath());
       await old.insert('runs', <String, Object?>{'id': 1, 'note': 'history'});
       await old.close();
-      return _policy(now: _fixedNow).open(dbPath());
+      return await _policy(now: _fixedNow).open(dbPath());
     }
 
     test('created_at is NULL — not knowable, and not invented', () async {

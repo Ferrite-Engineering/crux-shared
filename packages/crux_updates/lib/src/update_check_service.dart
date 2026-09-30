@@ -23,7 +23,6 @@ import 'package:crux_updates/src/models/update_manifest.dart';
 /// `TimeoutException`, or any other leaked error. The sole caller
 /// (`updateStatusProvider`) wraps the call and maps that typed exception to a
 /// typed error *state*, so no error ever escapes into a feature flow.
-// ignore: one_member_abstracts
 abstract class UpdateCheckService {
   /// Checks the version manifest for a newer supported release.
   ///

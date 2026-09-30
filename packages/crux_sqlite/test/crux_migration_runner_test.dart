@@ -134,7 +134,7 @@ void main() {
       db = await databaseFactory.openDatabase(inMemoryDatabasePath);
     });
 
-    tearDown(() async => db.close());
+    tearDown(() => db.close());
 
     test('runs exactly the migrations in (old, new]', () async {
       final applied = <int>[];
@@ -205,7 +205,7 @@ void main() {
       db = await databaseFactory.openDatabase(inMemoryDatabasePath);
     });
 
-    tearDown(() async => db.close());
+    tearDown(() => db.close());
 
     test('upgrade() refuses when old > new', () async {
       final runner = _runner([_noop(1), _noop(2), _noop(3)]);
@@ -262,7 +262,7 @@ void main() {
       db = await databaseFactory.openDatabase(inMemoryDatabasePath);
     });
 
-    tearDown(() async => db.close());
+    tearDown(() => db.close());
 
     test(
       'it is wrapped, naming the version and description that failed',

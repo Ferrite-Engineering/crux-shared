@@ -16,7 +16,7 @@ void main() {
       overrides: [telemetryStorageProvider.overrideWithValue(storage)],
     );
     addTearDown(container.dispose);
-    return container.read(telemetryInstallationIdProvider.future);
+    return await container.read(telemetryInstallationIdProvider.future);
   }
 
   group('telemetryInstallationIdProvider', () {

@@ -277,7 +277,7 @@ void main() {
         CruxMigration(
           version: 2,
           description: 'Drop widgets',
-          apply: (db) async => db.execute('DROP TABLE widgets'),
+          apply: (db) => db.execute('DROP TABLE widgets'),
         ),
       ]);
       final report = cruxAuditAdditiveOnly(
@@ -294,7 +294,7 @@ void main() {
         CruxMigration(
           version: 2,
           description: 'Rename widgets.name to widgets.label',
-          apply: (db) async =>
+          apply: (db) =>
               db.execute('ALTER TABLE widgets RENAME COLUMN name TO label'),
         ),
       ]);

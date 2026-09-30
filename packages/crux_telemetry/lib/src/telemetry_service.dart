@@ -16,7 +16,6 @@ import 'package:crux_telemetry/src/models/telemetry_event.dart';
 ///
 /// Call sites should [record] events unconditionally — the no-op implementation
 /// is allocation-free and call sites stay tier- and consent-agnostic.
-// ignore: one_member_abstracts
 abstract class TelemetryService {
   /// Record an event. The implementation may queue, batch, transmit, or
   /// discard the event; callers must not assume the event has been persisted

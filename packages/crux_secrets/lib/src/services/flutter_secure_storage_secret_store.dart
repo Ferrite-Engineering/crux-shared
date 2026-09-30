@@ -78,7 +78,7 @@ class FlutterSecureStorageSecretStore implements CruxSecretStore {
     // blanks the field and saves leaves a stored empty string behind that
     // every `!= null` check downstream reads as "still configured".
     if (value == null || value.isEmpty) {
-      return delete(key);
+      return await delete(key);
     }
     try {
       await _storage.write(key: key.storageKey, value: value);

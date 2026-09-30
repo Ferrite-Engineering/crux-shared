@@ -40,7 +40,7 @@ class SettingsService<T> {
   /// per-field defaults.
   Future<T> load() async {
     final prefs = prefsOverride ?? await SharedPreferences.getInstance();
-    return codec.load(prefs);
+    return await codec.load(prefs);
   }
 
   /// Persists [settings].

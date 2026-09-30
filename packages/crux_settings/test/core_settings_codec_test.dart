@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<SharedPreferences> _prefs([Map<String, Object> seed = const {}]) async {
   SharedPreferences.setMockInitialValues(seed);
-  return SharedPreferences.getInstance();
+  return await SharedPreferences.getInstance();
 }
 
 void main() {
