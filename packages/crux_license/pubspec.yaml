@@ -1,0 +1,85 @@
+name: crux_license
+description: Cross-suite license tier, beta-gating, Riverpod tier provider, and tier-badge widgets for the EDACrux suite. One key unlocks the entire suite at the same tier.
+version: 0.13.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  # Set equality on LicenseGrant.products.
+  collection: ^1.19.0
+  # The audit envelope and JSONL sink. Pure Dart; the binding that turns a
+  # policy file's `audit` key into a sink lives here because this package
+  # already has Riverpod and crux_audit deliberately does not.
+  crux_audit:
+    path: ../crux_audit
+  # `ModalGuard`, which `CruxUpgradeDialog.show` holds so a gated shortcut on
+  # key auto-repeat cannot stack upgrade dialogs. Same direction, and the same
+  # reason, as crux_settings_ui below: the chrome package stays licence-free,
+  # and the licence package consumes chrome. Every product already depends on
+  # crux_ide_layout directly, so the edge adds nothing to any product's graph;
+  # the headless crux_license_core barrel does not import it, and
+  # test/crux_license_core_test.dart walks that barrel's closure.
+  crux_ide_layout:
+    path: ../crux_ide_layout
+  # `writeStringAtomic` / `writeJsonAtomic` for the shared machine fingerprint
+  # and the release marker in lib/src/install_fingerprint.dart and
+  # lib/src/machine_release_marker.dart — the one atomic-write helper in the
+  # suite; a hand-rolled temp-and-rename here would be the sixth copy the
+  # helper exists to prevent. Pure Dart, so the headless core barrel keeps
+  # its property.
+  crux_io:
+    path: ../crux_io
+  # `CruxSettingsSectionCard` for the licence panel's section bodies. The
+  # dependency goes this way round deliberately: crux_settings_ui is kept to
+  # The signed org-wide configuration file. Pure Dart, and deliberately
+  # unaware of licensing — crux_policy has NO dependency on this package,
+  # guarded, because three of its keys must resolve before a licence exists.
+  # The edge goes this way round so the Riverpod binding lives with the licence
+  # machinery that consumes it rather than being written four times over.
+  crux_policy:
+    path: ../crux_policy
+  # crux_settings + Flutter, and giving it a licence dependency would pull
+  # Ed25519 and Riverpod into every settings consumer in the suite.
+  crux_settings_ui:
+    path: ../crux_settings_ui
+  # SHA-512 for the Ed25519 verifier in lib/src/ed25519.dart. Hashing only:
+  # `package:crypto` implements no cipher, which is what the suite's
+  # export-control position requires of every crux-shared package. See the
+  # doc comment on that file for why the verifier is hand-written rather
+  # than `package:cryptography`.
+  # Ed25519 signature verification. Extracted from this package so that
+  # crux_policy and plugin governance verify with the SAME implementation
+  # rather than a second one — there is exactly one Ed25519 verifier in the
+  # suite. Verify only: it contains no signing, no key generation and no
+  # cipher, which is what keeps open core free of non-exempt encryption for
+  # export control.
+  crux_signing:
+    path: ../crux_signing
+  crypto: ^3.0.6
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  # The three Keygen calls a licensed app makes, in
+  # lib/src/keygen_client.dart. Same injectable http.Client pattern that
+  # crux_updates and crux_telemetry already use.
+  http: ^1.2.0
+  meta: ^1.15.0
+  # Joining the shared licence directory in the style of the OS being asked
+  # about, so the Windows `%LOCALAPPDATA%` path is testable on a macOS runner;
+  # also what the headless-barrel guard under test/ already used it for.
+  path: ^1.9.0
+
+dev_dependencies:
+  # Resolved-AST analysis for the escaping-Error guard in
+  # test/static/error_escape_guard_test.dart, which scans this package plus
+  # crux_policy and crux_cxp. Same constraint crux_workspace already uses for
+  # its scope-leak scanner, so the workspace lockfile does not move.
+  analyzer: ">=12.1.0 <13.0.0"
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

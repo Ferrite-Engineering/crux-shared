@@ -1,0 +1,5 @@
+# Tab walk: 4 stops, cycles
+1. Read it on edacrux.app button
+2. I have read and accept the End User License Agreement. check box not checked
+3. Decline and quit button
+4. Agreement text grouping

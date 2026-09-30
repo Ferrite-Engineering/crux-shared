@@ -1,0 +1,85 @@
+name: Toolchain canary (advisory)
+
+# ─── What a red run here means ─────────────────────────────────────────────────
+# NOT "main is broken". It means: the CURRENT Flutter stable would break the
+# suite if we bumped to it today. That is a scheduling signal, not an incident.
+#
+# Every other workflow in the suite pins `flutter-version: 3.47.3`, because an
+# unpinned `channel: stable` is what let 3.44.8 -> 3.44.9 turn two new analyzer
+# lints into red CI across five repos in a single morning — including repos
+# with no commits that day. Pinning fixed that, but pinning also means the
+# suite stops finding out that the next stable breaks it until someone bumps
+# the pin and eats the whole diff at once.
+#
+# This job is the other half of the trade: one cheap Linux run a week, on
+# whatever stable currently is, whose only job is to fail EARLY and in ONE
+# place. Fixing it is never urgent; ignoring it forever is how the eventual
+# bump becomes a bad afternoon.
+#
+# Deliberately Linux-only and analyze+test only — this is an early warning, not
+# a second CI. The real gate is `ci.yml`.
+on:
+  schedule:
+    # Sunday, after the products' weekly full-matrix runs have gone through.
+    - cron: '40 8 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    name: Does current Flutter stable still build the workspace?
+    runs-on: ubuntu-latest
+    # Cost guardrail: no job may run unbounded (max observed suite-wide is 29 min).
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Install Flutter (UNPINNED — this is the point of the job)
+        id: flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Report which version is under test
+        run: |
+          echo "### Toolchain canary" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          flutter --version >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "The rest of the suite is pinned to 3.47.3." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap workspace
+        run: melos bootstrap
+
+      # Analyze first and separately: the 3.44.9 breakage was entirely
+      # analyzer-level (sort_pub_dependencies, unused_element), so this step
+      # failing while `test` passes is the signature of a new lint rather than
+      # a behavioural change — worth distinguishing at a glance.
+      - name: Analyze against current stable
+        run: melos run analyze
+
+      - name: Test against current stable
+        run: melos run test
+
+      - name: What to do if this failed
+        if: failure()
+        run: |
+          {
+            echo "### This is advisory, not an outage"
+            echo
+            echo "\`main\` is fine — every gating workflow is pinned to 3.47.3."
+            echo "What failed is the suite against **current** Flutter stable."
+            echo
+            echo "Next step: schedule the pin bump, fix what this surfaced, then"
+            echo "raise \`flutter-version\` across the suite in one commit."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,137 @@
+# Public API surface of package:crux_keybindings/crux_keybindings.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class KeyBinding
+  const KeyBinding({Set<KeyModifier> modifiers, required LogicalKeyboardKey key})
+  factory KeyBinding.fromActivator(SingleActivator activator, {TargetPlatform? platform})
+  factory KeyBinding.fromCapture({TargetPlatform? platform, required LogicalKeyboardKey key, required bool alt, required bool control, required bool meta, required bool shift})
+  ==(Object other) -> bool
+  final key: LogicalKeyboardKey
+  final modifiers: Set<KeyModifier>
+  get hashCode -> int
+  materialize({TargetPlatform? platform}) -> SingleActivator
+  static fromJson(Object? json) -> KeyBinding?
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class KeyBindingEditorMetrics
+  const KeyBindingEditorMetrics({required double bodyFontSize, required double iconSize, required double labelFontSize, required double monoFontSize, required double touchTarget})
+  final bodyFontSize: double
+  final iconSize: double
+  final labelFontSize: double
+  final monoFontSize: double
+  final touchTarget: double
+final abstract class KeyBindingResolver
+  static activatorsEqual(ShortcutActivator? a, ShortcutActivator? b) -> bool
+  static diff<A>(Iterable<A> actions, Map<A, ShortcutActivator> current, Map<A, ShortcutActivator> defaults) -> Map<A, KeyBinding?>
+  static resolve<A>(Map<A, ShortcutActivator> defaults, Map<A, KeyBinding?> diffs) -> Map<A, ShortcutActivator>
+class KeyBindingRow extends StatelessWidget
+  const KeyBindingRow({FocusNode? focusNode, Key? key, String? notBoundSpokenLabel, Widget? captureField, bool conflictIsShadowed, required KeyBindingEditorMetrics metrics, required ShortcutActivator? activator, required String editTooltip, required String label, required String notBoundLabel, required String resetTooltip, required String unbindTooltip, required String? conflictMessage, required bool isCustomized, required void Function() onEdit, required void Function() onReset, required void Function() onUnbind})
+  build(BuildContext context) -> Widget
+  final activator: ShortcutActivator?
+  final captureField: Widget?
+  final conflictIsShadowed: bool
+  final conflictMessage: String?
+  final editTooltip: String
+  final focusNode: FocusNode?
+  final isCustomized: bool
+  final label: String
+  final metrics: KeyBindingEditorMetrics
+  final notBoundLabel: String
+  final notBoundSpokenLabel: String?
+  final onEdit: void Function()
+  final onReset: void Function()
+  final onUnbind: void Function()
+  final resetTooltip: String
+  final unbindTooltip: String
+interface abstract class KeyBindingsAccessibilityStrings
+  get keyboardHint -> String
+  get notBoundSpoken -> String
+typedef KeyBindingsCategoryCardBuilder = Widget Function(BuildContext, List<Widget>)
+interface abstract class KeyBindingsConflictMessages
+  shadowedBy(String winner) -> String
+  summary(int count) -> String
+  wins(String others) -> String
+class KeyBindingsEditor<A extends CruxAction> extends StatefulWidget
+  const KeyBindingsEditor({Key? key, KeyBindingsAccessibilityStrings? accessibilityStrings, KeyBindingsConflictMessages? conflictMessages, Map<A, ShortcutConflictEntry<A>>? conflictDetails, bool showPhoneNote, required ActionCategory Function(A) categoryOf, required KeyBindingEditorMetrics metrics, required KeyBindingsEditorStrings strings, required List<A> actions, required Map<A, List<A>> conflicts, required Map<A, ShortcutActivator> bindings, required Map<A, ShortcutActivator> defaults, required String Function(A) labelOf, required String Function(ActionCategory) categoryLabelOf, required Widget Function(BuildContext, List<Widget>) categoryCardBuilder, required void Function() onExport, required void Function() onImport, required void Function() onResetAll, required void Function(A) onReset, required void Function(A) onUnbind, required void Function(A, KeyBinding) onCapture})
+  createState() -> State<KeyBindingsEditor<A>>
+  final accessibilityStrings: KeyBindingsAccessibilityStrings?
+  final actions: List<A>
+  final bindings: Map<A, ShortcutActivator>
+  final categoryCardBuilder: Widget Function(BuildContext, List<Widget>)
+  final categoryLabelOf: String Function(ActionCategory)
+  final categoryOf: ActionCategory Function(A)
+  final conflictDetails: Map<A, ShortcutConflictEntry<A>>?
+  final conflictMessages: KeyBindingsConflictMessages?
+  final conflicts: Map<A, List<A>>
+  final defaults: Map<A, ShortcutActivator>
+  final labelOf: String Function(A)
+  final metrics: KeyBindingEditorMetrics
+  final onCapture: void Function(A, KeyBinding)
+  final onExport: void Function()
+  final onImport: void Function()
+  final onReset: void Function(A)
+  final onResetAll: void Function()
+  final onUnbind: void Function(A)
+  final showPhoneNote: bool
+  final strings: KeyBindingsEditorStrings
+interface abstract class KeyBindingsEditorStrings
+  conflict(String actions) -> String
+  get capturePrompt -> String
+  get description -> String
+  get editTooltip -> String
+  get exportLabel -> String
+  get importLabel -> String
+  get notBound -> String
+  get phoneNote -> String
+  get resetAllBody -> String
+  get resetAllCancel -> String
+  get resetAllLabel -> String
+  get resetAllTitle -> String
+  get resetTooltip -> String
+  get unbindTooltip -> String
+class KeyBindingsStore<A extends CruxAction>
+  KeyBindingsStore({SharedPreferences? prefsOverride, String preferenceKey, required KeymapCodec<A> codec})
+  final codec: KeymapCodec<A>
+  final preferenceKey: String
+  final prefsOverride: SharedPreferences?
+  load() -> Future<Map<A, KeyBinding?>>
+  save(Map<A, KeyBinding?> diffs) -> Future<void>
+enum KeyModifier
+  static const alt: KeyModifier
+  static const ctrl: KeyModifier
+  static const meta: KeyModifier
+  static const mod: KeyModifier
+  static const shift: KeyModifier
+  static fromName(String name) -> KeyModifier?
+class KeymapCodec<A extends CruxAction>
+  KeymapCodec({String schema, required Iterable<A> actions})
+  decode(Object? json) -> Map<A, KeyBinding?>
+  decodeString(String source) -> Map<A, KeyBinding?>
+  encode(Map<A, KeyBinding?> diffs) -> Map<String, Object?>
+  encodeToString(Map<A, KeyBinding?> diffs) -> String
+  final schema: String
+class KeymapSchemaVersionException extends FormatException
+  KeymapSchemaVersionException(int version)
+  final version: int
+class ShortcutConflictEntry<A>
+  const ShortcutConflictEntry({required A winner, required List<A> others})
+  final others: List<A>
+  final winner: A
+class ShortcutConflictResolution<A>
+  const ShortcutConflictResolution({required Map<A, ShortcutActivator> effectiveBindings, required Map<A, ShortcutConflictEntry<A>> conflicts})
+  final conflicts: Map<A, ShortcutConflictEntry<A>>
+  final effectiveBindings: Map<A, ShortcutActivator>
+  get conflictChordCount -> int
+activatorSignature(ShortcutActivator activator) -> String
+get defaultKeymapSchema -> String
+findShortcutConflicts<A>(Map<A, ShortcutActivator> bindings, {Set<Set<A>> intentionalShadows}) -> Map<A, List<A>>
+formatShortcutLabel(ShortcutActivator? activator, {String emptyLabel}) -> String
+formatShortcutSpokenLabel(ShortcutActivator? activator, {String emptyLabel}) -> String
+get kKeymapVersion -> int
+resolveShortcutConflicts<A>(Map<A, ShortcutActivator> bindings, Map<A, ShortcutActivator> defaults, {Iterable<A>? order, Set<Set<A>> intentionalShadows}) -> ShortcutConflictResolution<A>

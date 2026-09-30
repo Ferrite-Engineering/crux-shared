@@ -1,0 +1,101 @@
+# Public API surface of package:crux_stats_strip/crux_stats_strip.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxFrameStats
+  const CruxFrameStats({required List<double> recentFrameMillis, required double framesPerSecond, required int budgetOverruns, required int lastFrameMicros, required int sampledFrames})
+  final budgetOverruns: int
+  final framesPerSecond: double
+  final lastFrameMicros: int
+  final recentFrameMillis: List<double>
+  final sampledFrames: int
+  get overrunRatio -> double
+  static const empty: CruxFrameStats
+  toString() -> String
+class CruxFrameStatsNotifier extends Notifier<CruxFrameStats>
+  build() -> CruxFrameStats
+  debugRecordTimings(List<FrameTiming> timings) -> void
+  reset() -> void
+  var publishInterval: Duration
+class CruxMemoryPollRequestNotifier extends Notifier<Set<String>>
+  build() -> Set<String>
+  release(String tag) -> void
+  request(String tag) -> void
+class CruxMemoryStats
+  const CruxMemoryStats({required List<double> recentResidentBytes, required int residentBytes})
+  final recentResidentBytes: List<double>
+  final residentBytes: int
+  get hasSample -> bool
+  static const empty: CruxMemoryStats
+  toString() -> String
+class CruxMemoryStatsNotifier extends Notifier<CruxMemoryStats>
+  build() -> CruxMemoryStats
+  sampleNow() -> void
+class CruxPaintTimingProbe extends SingleChildRenderObjectWidget
+  const CruxPaintTimingProbe({Key? key, Widget? child, bool enabled, required void Function(Duration) onPaintTimed})
+  createRenderObject(BuildContext context) -> RenderObject
+  final enabled: bool
+  final onPaintTimed: void Function(Duration)
+  updateRenderObject(BuildContext context, RenderCruxPaintTimingProbe renderObject) -> void
+typedef CruxResidentBytesReader = int Function()
+class CruxSparkline extends StatelessWidget
+  const CruxSparkline({Color? lineColor, Key? key, String? semanticLabel, double height, double strokeWidth, double width, required List<double> values})
+  build(BuildContext context) -> Widget
+  final height: double
+  final lineColor: Color?
+  final semanticLabel: String?
+  final strokeWidth: double
+  final values: List<double>
+  final width: double
+enum CruxStatEmphasis
+  static const dimmed: CruxStatEmphasis
+  static const normal: CruxStatEmphasis
+  static const warning: CruxStatEmphasis
+class CruxStatSegment
+  const CruxStatSegment({CruxStatEmphasis emphasis, List<double> sparkline, String? tooltip, Widget? leading, required String label, required String value})
+  final emphasis: CruxStatEmphasis
+  final label: String
+  final leading: Widget?
+  final sparkline: List<double>
+  final tooltip: String?
+  final value: String
+class CruxStatsStrip extends ConsumerWidget
+  const CruxStatsStrip({Key? key, String? collapseTooltip, String? expandTooltip, String? semanticLabel, bool? expanded, required List<CruxStatSegment> segments, required String label, void Function()? onToggle})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final collapseTooltip: String?
+  final expandTooltip: String?
+  final expanded: bool?
+  final label: String
+  final onToggle: void Function()?
+  final segments: List<CruxStatSegment>
+  final semanticLabel: String?
+class CruxStatsStripVisibilityNotifier extends Notifier<bool>
+  build() -> bool
+  get expanded -> bool
+  set expanded(bool value)
+  toggle() -> void
+class RenderCruxPaintTimingProbe extends RenderProxyBox
+  RenderCruxPaintTimingProbe({required bool enabled, required void Function(Duration) onPaintTimed})
+  get enabled -> bool
+  paint(PaintingContext context, Offset offset) -> void
+  set enabled(bool value)
+  var onPaintTimed: void Function(Duration)
+cruxFormatBytes(int bytes) -> String
+get cruxFrameStatsProvider -> NotifierProvider<CruxFrameStatsNotifier, CruxFrameStats>
+get cruxMemoryPollRequestProvider -> NotifierProvider<CruxMemoryPollRequestNotifier, Set<String>>
+get cruxMemoryPollingActiveProvider -> Provider<bool>
+get cruxMemoryStatsProvider -> NotifierProvider<CruxMemoryStatsNotifier, CruxMemoryStats>
+get cruxResidentBytesReaderProvider -> Provider<int Function()>
+get cruxStatsStripExpandedProvider -> NotifierProvider<CruxStatsStripVisibilityNotifier, bool>
+get kCruxFrameBudget -> Duration
+get kCruxFrameStatsPublishInterval -> Duration
+get kCruxFrameStatsWindow -> int
+get kCruxMemorySampleInterval -> Duration
+get kCruxMemoryStatsWindow -> int
+get kCruxStatsStripCollapsedHeight -> double
+get kCruxStatsStripHeight -> double

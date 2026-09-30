@@ -1,0 +1,24 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  # Dart's strict language modes.
+  #
+  # very_good_analysis is a lint-rule package — it does not turn these on, so
+  # until now implicit dynamic downcasts typechecked throughout a codebase that
+  # parses a lot of untyped JSON and YAML: session documents, workspace files,
+  # pack manifests, CXP messages, update manifests, simcrux.yaml.
+  #
+  # Measured before enabling rather than assumed: all three modes across all
+  # nine targets produced ZERO findings. The audit flagged the gap as real and
+  # it was — but the discipline was already being kept by hand, so the cost of
+  # making it mechanical was nil. Verified non-vacuous with a throwaway probe
+  # (an implicit dynamic->int return and a bare `List`), both of which the
+  # analyzer rejected.
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  exclude:
+    - "**/.dart_tool/**"
+    - "**/build/**"
+    - "**/*.g.dart"

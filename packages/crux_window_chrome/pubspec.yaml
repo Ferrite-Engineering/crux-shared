@@ -1,0 +1,26 @@
+name: crux_window_chrome
+description: >-
+  Cross-suite VS Code-style frameless window chrome (custom title bar,
+  left-aligned mnemonic menu bar, and window caption buttons) for the EDACrux
+  suite. Drawn in Flutter over window_manager on Windows/Linux; macOS keeps its
+  native menu. Rendered by every desktop product via a small logo + menu-bar
+  adapter.
+version: 0.2.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+  window_manager: ^0.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

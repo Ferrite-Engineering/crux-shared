@@ -1,0 +1,115 @@
+# Public API surface of package:crux_toolbar/crux_toolbar.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxOverflowGroup<A extends Object>
+  const CruxOverflowGroup({required List<A> actions, required String label})
+  final actions: List<A>
+  final label: String
+enum CruxOverflowPresentation
+  static const menu: CruxOverflowPresentation
+  static const sheet: CruxOverflowPresentation
+enum CruxRunState
+  static const finished: CruxRunState
+  static const idle: CruxRunState
+  static const running: CruxRunState
+class CruxRunStopButton extends StatelessWidget
+  const CruxRunStopButton({Key? key, String? finishedTooltip, double? progress, required CruxRunState state, required CruxToolbarMetrics metrics, required String cancelTooltip, required String runTooltip, required void Function()? onCancel, required void Function()? onRun})
+  build(BuildContext context) -> Widget
+  final cancelTooltip: String
+  final finishedTooltip: String?
+  final metrics: CruxToolbarMetrics
+  final onCancel: void Function()?
+  final onRun: void Function()?
+  final progress: double?
+  final runTooltip: String
+  final state: CruxRunState
+class CruxToolbar<A extends Object> extends StatefulWidget
+  const CruxToolbar({A? Function(String)? splitVariantOf, CruxToolbarMetrics metrics, Key? key, List<Widget> trailing, Widget? overflow, required List<CruxToolbarItem<A>> common, required List<CruxToolbarItem<A>> specific, required ShortcutActivator? Function(A) shortcutOf, required String semanticsLabel, required bool Function(A) isEnabled, required void Function(A) onAction, void Function(String, A)? onSplitVariantChanged})
+  createState() -> State<CruxToolbar<A>>
+  final common: List<CruxToolbarItem<A>>
+  final isEnabled: bool Function(A)
+  final metrics: CruxToolbarMetrics
+  final onAction: void Function(A)
+  final onSplitVariantChanged: void Function(String, A)?
+  final overflow: Widget?
+  final semanticsLabel: String
+  final shortcutOf: ShortcutActivator? Function(A)
+  final specific: List<CruxToolbarItem<A>>
+  final splitVariantOf: A? Function(String)?
+  final trailing: List<Widget>
+class CruxToolbarButton extends StatelessWidget
+  const CruxToolbarButton({Key? key, bool isSelected, bool tintWhenSelected, bool tooltipOnHoverOnly, int badgeCount, required CruxToolbarMetrics metrics, required IconData icon, required String tooltip, required void Function()? onPressed})
+  build(BuildContext context) -> Widget
+  final badgeCount: int
+  final icon: IconData
+  final isSelected: bool
+  final metrics: CruxToolbarMetrics
+  final onPressed: void Function()?
+  final tintWhenSelected: bool
+  final tooltip: String
+  final tooltipOnHoverOnly: bool
+final class CruxToolbarButtonItem<A extends Object> extends CruxToolbarItem<A>
+  const CruxToolbarButtonItem({IconData? selectedIcon, bool isSelected, bool tintWhenSelected, int badgeCount, required A action, required IconData icon, required String tooltip})
+  final action: A
+  final badgeCount: int
+  final icon: IconData
+  final isSelected: bool
+  final selectedIcon: IconData?
+  final tintWhenSelected: bool
+  final tooltip: String
+class CruxToolbarDivider extends StatelessWidget
+  const CruxToolbarDivider({Key? key, required CruxToolbarMetrics metrics})
+  build(BuildContext context) -> Widget
+  final metrics: CruxToolbarMetrics
+sealed class CruxToolbarItem<A extends Object>
+  const CruxToolbarItem()
+class CruxToolbarMetrics
+  const CruxToolbarMetrics({required double buttonSize, required double dividerHeight, required double dividerWidth, required double height, required double horizontalPadding, required double iconSize})
+  final buttonSize: double
+  final dividerHeight: double
+  final dividerWidth: double
+  final height: double
+  final horizontalPadding: double
+  final iconSize: double
+  static const desktop: CruxToolbarMetrics
+  static const touch: CruxToolbarMetrics
+class CruxToolbarOverflowMenu<A extends Object> extends StatelessWidget
+  const CruxToolbarOverflowMenu({CruxOverflowPresentation presentation, CruxToolbarMetrics metrics, Key? key, Widget? Function(A)? trailingBuilder, required List<CruxOverflowGroup<A>> groups, required ShortcutActivator? Function(A) shortcutOf, required String Function(A) labelOf, required String tooltip, required bool Function(A) isEnabled, required void Function(A) onAction})
+  build(BuildContext context) -> Widget
+  final groups: List<CruxOverflowGroup<A>>
+  final isEnabled: bool Function(A)
+  final labelOf: String Function(A)
+  final metrics: CruxToolbarMetrics
+  final onAction: void Function(A)
+  final presentation: CruxOverflowPresentation
+  final shortcutOf: ShortcutActivator? Function(A)
+  final tooltip: String
+  final trailingBuilder: Widget? Function(A)?
+final class CruxToolbarSeparatorItem<A extends Object> extends CruxToolbarItem<A>
+  const CruxToolbarSeparatorItem()
+class CruxToolbarSplitButton<A extends Object> extends StatefulWidget
+  const CruxToolbarSplitButton({A? initialVariant, Key? key, required CruxToolbarMetrics metrics, required CruxToolbarSplitItem<A> item, required ShortcutActivator? Function(A) shortcutOf, required bool Function(A) isEnabled, required void Function(A) onAction, void Function(A)? onVariantChanged})
+  createState() -> State<CruxToolbarSplitButton<A>>
+  final initialVariant: A?
+  final isEnabled: bool Function(A)
+  final item: CruxToolbarSplitItem<A>
+  final metrics: CruxToolbarMetrics
+  final onAction: void Function(A)
+  final onVariantChanged: void Function(A)?
+  final shortcutOf: ShortcutActivator? Function(A)
+final class CruxToolbarSplitItem<A extends Object> extends CruxToolbarItem<A>
+  const CruxToolbarSplitItem({required List<CruxToolbarButtonItem<A>> variants, required String id, required String tooltip})
+  final id: String
+  final tooltip: String
+  final variants: List<CruxToolbarButtonItem<A>>
+final class CruxToolbarWidgetItem<A extends Object> extends CruxToolbarItem<A>
+  const CruxToolbarWidgetItem({String? id, required Widget child})
+  final child: Widget
+  final id: String?
+cruxToolbarTooltip(String label, ShortcutActivator? activator) -> String

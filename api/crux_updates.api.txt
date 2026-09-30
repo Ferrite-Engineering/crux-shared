@@ -1,0 +1,196 @@
+# Public API surface of package:crux_updates/crux_updates.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxUpdateBannerMetrics
+  const CruxUpdateBannerMetrics({double bodyFontSize, double iconSize, double touchTarget})
+  ==(Object other) -> bool
+  copyWith({double? bodyFontSize, double? iconSize, double? touchTarget}) -> CruxUpdateBannerMetrics
+  final bodyFontSize: double
+  final iconSize: double
+  final touchTarget: double
+  get hashCode -> int
+  toString() -> String
+class CruxUpdateConfig
+  CruxUpdateConfig({Duration checkInterval, Duration checkTimeout, String? appStoreUri, String? playStoreUri, bool checkOnMobile, required String downloadPageUri, required String manifestUri, required String productName})
+  const CruxUpdateConfig.fromUris({Duration checkInterval, Duration checkTimeout, Uri? appStoreUri, Uri? playStoreUri, bool checkOnMobile, required String productName, required Uri downloadPageUri, required Uri manifestUri})
+  ==(Object other) -> bool
+  copyWith({Duration? checkInterval, Duration? checkTimeout, String? productName, Uri? appStoreUri, Uri? downloadPageUri, Uri? manifestUri, Uri? playStoreUri, bool? checkOnMobile}) -> CruxUpdateConfig
+  final appStoreUri: Uri?
+  final checkInterval: Duration
+  final checkOnMobile: bool
+  final checkTimeout: Duration
+  final downloadPageUri: Uri
+  final manifestUri: Uri
+  final playStoreUri: Uri?
+  final productName: String
+  get hashCode -> int
+  toString() -> String
+  updateTargetFor(TargetPlatform platform, {bool isWeb}) -> Uri
+abstract class CruxUpdateStrings
+  const CruxUpdateStrings()
+  bannerMessage(String version) -> String
+  checkUpToDate(String version) -> String
+  get checkFailed -> String
+  get checkInProgress -> String
+  get dismissLabel -> String
+  get updateNowAction -> String
+  get viewChangesAction -> String
+class CruxUpdateStringsEn extends CruxUpdateStrings
+  const CruxUpdateStringsEn({String productName})
+  bannerMessage(String version) -> String
+  checkUpToDate(String version) -> String
+  final productName: String
+  get checkFailed -> String
+  get checkInProgress -> String
+  get dismissLabel -> String
+  get updateNowAction -> String
+  get viewChangesAction -> String
+typedef CruxUpdateUrlLauncher = Future<bool> Function(Uri)
+class HttpUpdateCheckService implements UpdateCheckService
+  HttpUpdateCheckService({Client? client, String osName, required CruxUpdateConfig config, required String currentVersion, void Function(DateTime)? onServerTimeObserved})
+  checkForUpdate() -> Future<UpdateInfo?>
+  final config: CruxUpdateConfig
+  final currentVersion: String
+  final onServerTimeObserved: void Function(DateTime)?
+  final osName: String
+final class ManagedInstall
+  const ManagedInstall({String? mechanism, required bool isManaged})
+  ==(Object other) -> bool
+  final isManaged: bool
+  final mechanism: String?
+  get hashCode -> int
+  static const unmanaged: ManagedInstall
+  toString() -> String
+class NoopUpdateCheckService implements UpdateCheckService
+  const NoopUpdateCheckService()
+  checkForUpdate() -> Future<UpdateInfo?>
+typedef ObservedServerTimeSink = void Function(DateTime)
+class PolicyConstrainedUpdateCheckService implements UpdateCheckService
+  const PolicyConstrainedUpdateCheckService({required UpdateCheckService inner, required UpdatePolicy policy})
+  checkForUpdate() -> Future<UpdateInfo?>
+  final inner: UpdateCheckService
+  final policy: UpdatePolicy
+class UpdateAvailableBanner extends StatelessWidget
+  const UpdateAvailableBanner({CruxUpdateBannerMetrics metrics, Key? key, required CruxUpdateStrings strings, required String version, required bool mandatory, required void Function() onUpdateNow, void Function()? onDismiss, void Function()? onViewChanges})
+  build(BuildContext context) -> Widget
+  final mandatory: bool
+  final metrics: CruxUpdateBannerMetrics
+  final onDismiss: void Function()?
+  final onUpdateNow: void Function()
+  final onViewChanges: void Function()?
+  final strings: CruxUpdateStrings
+  final version: String
+class UpdateBanner extends ConsumerStatefulWidget
+  const UpdateBanner({CruxUpdateBannerMetrics metrics, Key? key, bool isWeb, required Widget child})
+  createState() -> ConsumerState<UpdateBanner>
+  final child: Widget
+  final isWeb: bool
+  final metrics: CruxUpdateBannerMetrics
+enum UpdateChannelPolicy
+  static const beta: UpdateChannelPolicy
+  static const pinned: UpdateChannelPolicy
+  static const stable: UpdateChannelPolicy
+class UpdateCheckException implements Exception
+  const UpdateCheckException(String reason, [Object? cause])
+  final cause: Object?
+  final reason: String
+  toString() -> String
+abstract class UpdateCheckService
+  checkForUpdate() -> Future<UpdateInfo?>
+enum UpdateEdition
+  offers(UpdateInfo info, {required String currentVersion}) -> bool
+  static const openCore: UpdateEdition
+  static const unlocked: UpdateEdition
+  static of({required bool paidFeaturesUnlocked}) -> UpdateEdition
+final class UpdateInfo
+  const UpdateInfo({DateTime? releaseDate, DateTime? serverTime, Map<String, String> checksums, Map<String, String> downloads, String channel, String? changelogUrl, String? minSupportedVersion, String? openCoreVersion, bool mandatory, required String version})
+  ==(Object other) -> bool
+  changesOpenCoreSince(String current) -> bool
+  checksumFor(String platformId) -> String?
+  copyWith({DateTime? releaseDate, DateTime? serverTime, Map<String, String>? checksums, Map<String, String>? downloads, String? changelogUrl, String? channel, String? minSupportedVersion, String? openCoreVersion, String? version, bool? mandatory}) -> UpdateInfo
+  downloadUrlFor(String platformId) -> String?
+  final changelogUrl: String?
+  final channel: String
+  final checksums: Map<String, String>
+  final downloads: Map<String, String>
+  final mandatory: bool
+  final minSupportedVersion: String?
+  final openCoreVersion: String?
+  final releaseDate: DateTime?
+  final serverTime: DateTime?
+  final version: String
+  get hashCode -> int
+  isNewerThan(String current) -> bool
+  meetsMinSupported(String current) -> bool
+  static fromJson(Object? raw) -> UpdateInfo?
+  toString() -> String
+final class UpdateManifest
+  const UpdateManifest({required UpdateInfo latest})
+  ==(Object other) -> bool
+  final latest: UpdateInfo
+  get hashCode -> int
+  static fromJson(Object? raw) -> UpdateManifest?
+  static tryParse(String jsonText) -> UpdateManifest?
+  toString() -> String
+final class UpdatePolicy
+  const UpdatePolicy({String? pinnedVersion, UpdateChannelPolicy? channel, Uri? manifestUri})
+  factory UpdatePolicy.fromNames({String? channel, String? manifestUrl, String? pinnedVersion})
+  ==(Object other) -> bool
+  allows(UpdateInfo info) -> bool
+  final channel: UpdateChannelPolicy?
+  final manifestUri: Uri?
+  final pinnedVersion: String?
+  get hashCode -> int
+  get isAbsent -> bool
+  static const absent: UpdatePolicy
+  toString() -> String
+sealed class UpdateStatus
+  const UpdateStatus()
+final class UpdateStatusAvailable extends UpdateStatus
+  const UpdateStatusAvailable(UpdateInfo info)
+  ==(Object other) -> bool
+  final info: UpdateInfo
+  get hashCode -> int
+  toString() -> String
+final class UpdateStatusChecking extends UpdateStatus
+  const UpdateStatusChecking()
+  ==(Object other) -> bool
+  get hashCode -> int
+  toString() -> String
+final class UpdateStatusCurrent extends UpdateStatus
+  const UpdateStatusCurrent()
+  ==(Object other) -> bool
+  get hashCode -> int
+  toString() -> String
+final class UpdateStatusError extends UpdateStatus
+  const UpdateStatusError()
+  ==(Object other) -> bool
+  get hashCode -> int
+  toString() -> String
+class UpdateStatusNotifier extends Notifier<UpdateStatus>
+  build() -> UpdateStatus
+  checkNow() -> Future<void>
+  runScheduledCheck() -> Future<void>
+get autoUpdateCheckEnabledProvider -> FutureProvider<bool>
+get cruxUpdateConfigProvider -> Provider<CruxUpdateConfig>
+get cruxUpdateStringsProvider -> Provider<CruxUpdateStrings>
+get kUpdateCheckInterval -> Duration
+get kUpdateCheckTimeout -> Duration
+get managedInstallMarkerPathProvider -> Provider<String?>
+get managedInstallProvider -> Provider<ManagedInstall>
+get observedServerTimeSinkProvider -> Provider<void Function(DateTime)>
+probeManagedInstall({String? markerPath}) -> ManagedInstall
+runManualUpdateCheck(BuildContext context, WidgetRef ref) -> Future<void>
+get updateBuildInfoProvider -> FutureProvider<ApplicationBuildInfo?>
+get updateCheckServiceProvider -> Provider<UpdateCheckService>
+get updateEditionProvider -> Provider<UpdateEdition>
+get updateHttpClientProvider -> Provider<Client>
+get updatePolicyProvider -> Provider<UpdatePolicy>
+get updateStatusProvider -> NotifierProvider<UpdateStatusNotifier, UpdateStatus>
+get updateUrlLauncherProvider -> Provider<Future<bool> Function(Uri)>

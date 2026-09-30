@@ -1,0 +1,13 @@
+# The snapshot tool is a developer utility, not shipped library code. It keeps
+# the workspace's zero-warnings bar but relaxes the stylistic lints that fight
+# with generating long, human-readable report text.
+include: package:very_good_analysis/analysis_options.yaml
+
+linter:
+  rules:
+    lines_longer_than_80_chars: false
+    avoid_redundant_argument_values: false
+    prefer_foreach: false
+    no_adjacent_strings_in_list: false
+    prefer_const_declarations: false
+    public_member_api_docs: false

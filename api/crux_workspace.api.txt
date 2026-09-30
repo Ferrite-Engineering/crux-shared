@@ -1,0 +1,337 @@
+# Public API surface of package:crux_workspace/crux_workspace.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxGlowPalette
+  const CruxGlowPalette({required Color background, required Color inner, required Color innerCore, required Color middle, required Color outer})
+  factory CruxGlowPalette.fromSeed(Color seed)
+  final background: Color
+  final inner: Color
+  final innerCore: Color
+  final middle: Color
+  final outer: Color
+class CruxGlowingAppIcon extends StatefulWidget
+  const CruxGlowingAppIcon({Key? key, double size, required CruxGlowPalette palette, required Widget icon})
+  createState() -> State<CruxGlowingAppIcon>
+  final icon: Widget
+  final palette: CruxGlowPalette
+  final size: double
+  static var debugDisableAnimations: bool
+class CruxSuiteFooter extends StatelessWidget
+  const CruxSuiteFooter({Key? key, String linkText, required String label, required void Function() onTap})
+  build(BuildContext context) -> Widget
+  final label: String
+  final linkText: String
+  final onTap: void Function()
+  static const defaultLinkText: String
+  static const rowKey: Key
+class CruxSuitePeerEntry
+  const CruxSuitePeerEntry({required CruxSuiteProduct product, required String blurb})
+  final blurb: String
+  final product: CruxSuiteProduct
+class CruxSuitePeers extends StatelessWidget
+  const CruxSuitePeers({Key? key, required List<CruxSuitePeerEntry> entries, required String heading, required void Function(CruxSuiteProduct) onOpenPeer})
+  build(BuildContext context) -> Widget
+  final entries: List<CruxSuitePeerEntry>
+  final heading: String
+  final onOpenPeer: void Function(CruxSuiteProduct)
+  static rowKeyFor(CruxSuiteProduct product) -> Key
+enum CruxSuiteProduct
+  const CruxSuiteProduct(String displayName, String slug, Color brandColor)
+  final brandColor: Color
+  final displayName: String
+  final slug: String
+  get peers -> Iterable<CruxSuiteProduct>
+  static const lintCrux: CruxSuiteProduct
+  static const netCrux: CruxSuiteProduct
+  static const simCrux: CruxSuiteProduct
+  static const waveCrux: CruxSuiteProduct
+class EmptyCanvasState extends StatefulWidget
+  const EmptyCanvasState({Key? key, List<Widget> primaryActions, List<Widget>? children, String? semanticLabel, String? subtitle, String? title, String? versionLabel, Widget? footer, Widget? header, Widget? peers, Widget? recentFilesSection, Widget? recentWorkspacesSection, bool claimInitialFocus, bool useCard, double maxContentWidth})
+  createState() -> State<EmptyCanvasState>
+  final children: List<Widget>?
+  final claimInitialFocus: bool
+  final footer: Widget?
+  final header: Widget?
+  final maxContentWidth: double
+  final peers: Widget?
+  final primaryActions: List<Widget>
+  final recentFilesSection: Widget?
+  final recentWorkspacesSection: Widget?
+  final semanticLabel: String?
+  final subtitle: String?
+  final title: String?
+  final useCard: bool
+  final versionLabel: String?
+class NoopPanelPopOutDelegate implements PanelPopOutDelegate
+  const NoopPanelPopOutDelegate()
+  popOutPanel(String panelId, ProviderContainer container) -> void
+  reattachPanel(String panelId) -> void
+class NoopTabDetachingDelegate implements TabDetachingDelegate
+  const NoopTabDetachingDelegate()
+  detachTab(TabId id, ProviderContainer container) -> void
+  reattachTab(TabId id) -> void
+typedef PaneBorderBuilder = BoxBorder Function(BuildContext, {required bool isActive, required bool isSplit})
+class PaneContainerManager extends ScopedContainerManager<PaneId>
+  PaneContainerManager({List<Override> Function(PaneId)? overridesFactory, required ProviderContainer rootContainer})
+  disposePane(PaneId paneId) -> void
+  liveIdsIn(WorkspaceScopeSnapshot live) -> Set<PaneId>
+class PaneHost<P> extends ConsumerWidget
+  const PaneHost({BoxBorder Function(BuildContext, {required bool isActive, required bool isSplit})? paneBorderBuilder, Key? key, List<PopupMenuEntry<Object>> Function(BuildContext, WorkspaceTab<P>)? contextMenuBuilder, List<PopupMenuEntry<Object>> Function(WorkspaceTab<P>)? contextMenuItems, P Function()? defaultPayloadBuilder, PaneContainerManager? panes, ProviderContainer Function(PaneId)? paneContainerFor, ProviderContainer Function(TabId)? tabContainerFor, String Function(WorkspaceTab<P>)? tabTooltipBuilder, String? Function(WorkspaceTab<P>)? tabFilePath, TabContainerManager? tabs, ViewerTabBarSizing sizing, ViewerTabBarStrings strings, Widget Function(BuildContext, List<Widget>)? splitLayoutBuilder, Widget Function(BuildContext, PaneId)? paneTrailingActionsBuilder, Widget Function(int, List<Widget>)? stackBuilder, bool autoHideScrollChevrons, bool enableSplitPane, bool showTabBars, bool useDragHandle, double tabBarLeadingInset, required AsyncNotifierProvider<WorkspaceNotifier<P>, Workspace<P>> provider, required Widget Function(BuildContext, WorkspaceTab<P>) tabContentBuilder, required Widget emptyCanvasContent, void Function(String)? onRevealTab})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final autoHideScrollChevrons: bool
+  final contextMenuBuilder: List<PopupMenuEntry<Object>> Function(BuildContext, WorkspaceTab<P>)?
+  final contextMenuItems: List<PopupMenuEntry<Object>> Function(WorkspaceTab<P>)?
+  final defaultPayloadBuilder: P Function()?
+  final emptyCanvasContent: Widget
+  final enableSplitPane: bool
+  final onRevealTab: void Function(String)?
+  final paneBorderBuilder: BoxBorder Function(BuildContext, {required bool isActive, required bool isSplit})?
+  final paneContainerFor: ProviderContainer Function(PaneId)?
+  final paneTrailingActionsBuilder: Widget Function(BuildContext, PaneId)?
+  final panes: PaneContainerManager?
+  final provider: AsyncNotifierProvider<WorkspaceNotifier<P>, Workspace<P>>
+  final showTabBars: bool
+  final sizing: ViewerTabBarSizing
+  final splitLayoutBuilder: Widget Function(BuildContext, List<Widget>)?
+  final stackBuilder: Widget Function(int, List<Widget>)?
+  final strings: ViewerTabBarStrings
+  final tabBarLeadingInset: double
+  final tabContainerFor: ProviderContainer Function(TabId)?
+  final tabContentBuilder: Widget Function(BuildContext, WorkspaceTab<P>)
+  final tabFilePath: String? Function(WorkspaceTab<P>)?
+  final tabTooltipBuilder: String Function(WorkspaceTab<P>)?
+  final tabs: TabContainerManager?
+  final useDragHandle: bool
+class PaneId
+  factory PaneId.fromString(String value)
+  factory PaneId.generate()
+  ==(Object other) -> bool
+  get hashCode -> int
+  get value -> String
+  static const primary: PaneId
+  toString() -> String
+typedef PaneOverridesFactory = List<Override> Function(PaneId)
+typedef PaneSplitLayoutBuilder = Widget Function(BuildContext, List<Widget>)
+typedef PaneStackBuilder = Widget Function(int, List<Widget>)
+typedef PaneTrailingActionsBuilder = Widget Function(BuildContext, PaneId)
+abstract class PanelPopOutDelegate
+  popOutPanel(String panelId, ProviderContainer container) -> void
+  reattachPanel(String panelId) -> void
+typedef ScopeOverridesFactory<Id extends Object> = List<Override> Function(Id)
+abstract class ScopedContainerManager<Id extends Object> implements WorkspaceScopeReconciler
+  ScopedContainerManager({List<Override> Function(Id)? overridesFactory, required Provider<Id> idProvider, required ProviderContainer rootContainer})
+  containerFor(Id id) -> ProviderContainer
+  dispose() -> void
+  disposeScope(Id id) -> void
+  hasContainerFor(Id id) -> bool
+  liveIdsIn(WorkspaceScopeSnapshot live) -> Set<Id>
+  reconcile(Set<Id> liveIds) -> Set<Id>
+  reconcileScopes(WorkspaceScopeSnapshot live) -> void
+class TabContainerManager extends ScopedContainerManager<TabId>
+  TabContainerManager({List<Override> Function(TabId)? overridesFactory, required ProviderContainer rootContainer})
+  disposeTab(TabId tabId) -> void
+  liveIdsIn(WorkspaceScopeSnapshot live) -> Set<TabId>
+typedef TabContentBuilder<P> = Widget Function(BuildContext, WorkspaceTab<P>)
+enum TabContextAction
+  static const closeOtherTabs: TabContextAction
+  static const closeTab: TabContextAction
+  static const closeTabsToTheRight: TabContextAction
+  static const moveToNewWindow: TabContextAction
+typedef TabContextMenuBuilder<P> = List<PopupMenuEntry<Object>> Function(BuildContext, WorkspaceTab<P>)
+typedef TabContextMenuItemsBuilder<P> = List<PopupMenuEntry<Object>> Function(WorkspaceTab<P>)
+abstract class TabDetachingDelegate
+  detachTab(TabId id, ProviderContainer container) -> void
+  reattachTab(TabId id) -> void
+class TabId
+  factory TabId.fromString(String value)
+  factory TabId.generate()
+  ==(Object other) -> bool
+  get hashCode -> int
+  get value -> String
+  toString() -> String
+typedef TabOverridesFactory = List<Override> Function(TabId)
+typedef TabTooltipBuilder<P> = String Function(WorkspaceTab<P>)
+class ViewerTabBar<P> extends ConsumerWidget
+  const ViewerTabBar({Key? key, List<PopupMenuEntry<Object>> Function(BuildContext, WorkspaceTab<P>)? contextMenuBuilder, List<PopupMenuEntry<Object>> Function(WorkspaceTab<P>)? contextMenuItems, P Function()? defaultPayloadBuilder, String Function(WorkspaceTab<P>)? tabTooltipBuilder, String? Function(WorkspaceTab<P>)? tabFilePath, ViewerTabBarSizing sizing, ViewerTabBarStrings strings, Widget Function(BuildContext, PaneId)? trailingActionsBuilder, bool autoHideScrollChevrons, bool isActivePane, bool useDragHandle, double leadingInset, required AsyncNotifierProvider<WorkspaceNotifier<P>, Workspace<P>> provider, required PaneId paneId, void Function(String)? onRevealTab})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final autoHideScrollChevrons: bool
+  final contextMenuBuilder: List<PopupMenuEntry<Object>> Function(BuildContext, WorkspaceTab<P>)?
+  final contextMenuItems: List<PopupMenuEntry<Object>> Function(WorkspaceTab<P>)?
+  final defaultPayloadBuilder: P Function()?
+  final isActivePane: bool
+  final leadingInset: double
+  final onRevealTab: void Function(String)?
+  final paneId: PaneId
+  final provider: AsyncNotifierProvider<WorkspaceNotifier<P>, Workspace<P>>
+  final sizing: ViewerTabBarSizing
+  final strings: ViewerTabBarStrings
+  final tabFilePath: String? Function(WorkspaceTab<P>)?
+  final tabTooltipBuilder: String Function(WorkspaceTab<P>)?
+  final trailingActionsBuilder: Widget Function(BuildContext, PaneId)?
+  final useDragHandle: bool
+class ViewerTabBarSizing
+  const ViewerTabBarSizing({double? barHeight, double? iconSize})
+  final barHeight: double?
+  final iconSize: double?
+abstract class ViewerTabBarStrings
+  const ViewerTabBarStrings()
+  closeTabTooltipFor(String name) -> String
+  get activePaneAccessibilityLabel -> String
+  get closeOtherTabsMenuItem -> String
+  get closeTabMenuItem -> String
+  get closeTabTooltip -> String
+  get closeTabsToTheRightMenuItem -> String
+  get dragToPaneAccessibilityHint -> String
+  get moveToNewWindowMenuItem -> String
+  get multiWindowUnavailableTooltip -> String
+  get newTabDefaultDisplayName -> String
+  get newTabTooltip -> String
+  get reorderHandleTooltip -> String
+  get revealTabMenuItem -> String
+  get scrollTabsLeftTooltip -> String
+  get scrollTabsRightTooltip -> String
+  get unnamedTabFallback -> String
+class ViewerTabBarStringsEn extends ViewerTabBarStrings
+  const ViewerTabBarStringsEn()
+  get activePaneAccessibilityLabel -> String
+  get closeOtherTabsMenuItem -> String
+  get closeTabMenuItem -> String
+  get closeTabTooltip -> String
+  get closeTabsToTheRightMenuItem -> String
+  get dragToPaneAccessibilityHint -> String
+  get moveToNewWindowMenuItem -> String
+  get multiWindowUnavailableTooltip -> String
+  get newTabDefaultDisplayName -> String
+  get newTabTooltip -> String
+  get reorderHandleTooltip -> String
+  get unnamedTabFallback -> String
+class Workspace<P>
+  Workspace({Map<String, Object?> extras, int version, required List<WorkspacePane> panes, required List<WorkspaceTab<P>> tabs, required PaneId activePaneId})
+  factory Workspace.empty()
+  factory Workspace.fromJson(Map<String, Object?> json, WorkspaceCodec<P> codec)
+  ==(Object other) -> bool
+  copyWith({List<WorkspacePane>? panes, List<WorkspaceTab<P>>? tabs, Map<String, Object?>? extras, PaneId? activePaneId}) -> Workspace<P>
+  final activePaneId: PaneId
+  final extras: Map<String, Object?>
+  final panes: List<WorkspacePane>
+  final tabs: List<WorkspaceTab<P>>
+  final version: int
+  get activePane -> WorkspacePane
+  get activeTabId -> TabId?
+  get hashCode -> int
+  get isEmpty -> bool
+  tabsForPane(PaneId paneId) -> List<WorkspaceTab<P>>
+  toJson(WorkspaceCodec<P> codec) -> Map<String, Object?>
+  toString() -> String
+abstract class WorkspaceCodec<P>
+  const WorkspaceCodec()
+  displayNameFor(P payload) -> String
+  get schemaVersion -> int
+  identityOf(P payload) -> String?
+  payloadFromJson(Map<String, Object?> json) -> P
+  payloadToJson(P payload) -> Map<String, Object?>
+class WorkspaceInvariantException implements Exception
+  const WorkspaceInvariantException(String message)
+  final message: String
+  toString() -> String
+class WorkspaceLifecycleObserver<P> extends ConsumerStatefulWidget
+  const WorkspaceLifecycleObserver({Key? key, List<Future<void> Function()> additionalFlushes, required AsyncNotifierProvider<WorkspaceNotifier<P>, Workspace<P>> provider, required Widget child})
+  createState() -> ConsumerState<WorkspaceLifecycleObserver<P>>
+  final additionalFlushes: List<Future<void> Function()>
+  final child: Widget
+  final provider: AsyncNotifierProvider<WorkspaceNotifier<P>, Workspace<P>>
+class WorkspaceLoadException implements Exception
+  const WorkspaceLoadException({required String path, required String reason})
+  final path: String
+  final reason: String
+  toString() -> String
+class WorkspaceNotifier<P> extends AsyncNotifier<Workspace<P>>
+  WorkspaceNotifier({Duration autoSaveDebounce, Iterable<WorkspaceScopeReconciler> scopeReconcilers, required WorkspaceService<P> service})
+  addScopeReconciler(WorkspaceScopeReconciler reconciler) -> void
+  build() -> Future<Workspace<P>>
+  closePane(PaneId paneId) -> Future<void>
+  closeTab(TabId id) -> Future<void>
+  final autoSaveDebounce: Duration
+  final service: WorkspaceService<P>
+  flushPendingSave() -> Future<void>
+  focusOtherPane() -> Future<void>
+  loadFrom(String path) -> Future<Workspace<P>>
+  moveTabToPane(TabId tabId, PaneId targetPane) -> Future<void>
+  mutate(Workspace<P> Function(Workspace<P>) update) -> Future<void>
+  openTab({PaneId? paneId, bool dedupe, required P payload, required String displayName}) -> Future<TabId>
+  removeScopeReconciler(WorkspaceScopeReconciler reconciler) -> bool
+  reorderTab(TabId id, int newIndex) -> Future<void>
+  reorderTabInPane(TabId id, PaneId pane, int paneLocalIndex) -> Future<void>
+  replaceWith(Workspace<P> next) -> Future<void>
+  resetWorkspace() -> Future<void>
+  saveAs(String path) -> Future<void>
+  setActivePane(PaneId paneId) -> Future<void>
+  setActiveTab(TabId id) -> Future<void>
+  shouldRestoreOnLaunch() -> Future<bool>
+  splitPaneRight() -> Future<PaneId>
+  tabWithSameIdentityAs(P payload) -> TabId?
+  updateTabDisplayName(TabId tabId, String displayName) -> Future<void>
+  updateTabPayload(TabId tabId, P Function(P) update) -> Future<void>
+class WorkspacePane
+  const WorkspacePane({TabId? activeTabId, required PaneId id})
+  factory WorkspacePane.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  copyWith({PaneId? id, TabId? activeTabId}) -> WorkspacePane
+  final activeTabId: TabId?
+  final id: PaneId
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+  withoutActiveTab() -> WorkspacePane
+class WorkspaceRecovery
+  const WorkspaceRecovery({required String quarantinePath, required String reason})
+  final quarantinePath: String
+  final reason: String
+class WorkspaceSchemaVersionException implements Exception
+  const WorkspaceSchemaVersionException(int version)
+  final version: int
+  toString() -> String
+interface abstract class WorkspaceScopeReconciler
+  reconcileScopes(WorkspaceScopeSnapshot live) -> void
+class WorkspaceScopeSnapshot
+  const WorkspaceScopeSnapshot({required Set<PaneId> paneIds, required Set<TabId> tabIds})
+  const WorkspaceScopeSnapshot.empty()
+  final paneIds: Set<PaneId>
+  final tabIds: Set<TabId>
+  toString() -> String
+class WorkspaceService<P>
+  WorkspaceService({Future<Directory> Function()? directoryFactory, String fileName, required WorkspaceCodec<P> codec, void Function(String)? logger})
+  clear() -> Future<void>
+  clearAllSidecars() -> Future<void>
+  deleteSidecar(String tabId, {String extension}) -> Future<void>
+  final codec: WorkspaceCodec<P>
+  get fileName -> String
+  load() -> Future<Workspace<P>>
+  loadFromPath(String path) -> Future<Workspace<P>>
+  save(Workspace<P> workspace) -> Future<void>
+  saveToPath(String path, Workspace<P> workspace) -> Future<void>
+  sidecarPathFor(String tabId, {String extension}) -> Future<String?>
+  takeRecovery() -> WorkspaceRecovery?
+class WorkspaceTab<P>
+  const WorkspaceTab({required P payload, required PaneId paneId, required String displayName, required TabId id})
+  ==(Object other) -> bool
+  copyWith({P? payload, PaneId? paneId, String? displayName, TabId? id}) -> WorkspaceTab<P>
+  final displayName: String
+  final id: TabId
+  final paneId: PaneId
+  final payload: P
+  get hashCode -> int
+  toString() -> String
+get kMultiWindowAvailable -> bool
+get kWorkspaceAutoSaveDebounce -> Duration
+get kWorkspaceSchemaVersion -> int
+get paneIdProvider -> Provider<PaneId>
+get panelPopOutDelegateProvider -> Provider<PanelPopOutDelegate>
+get tabDetachingDelegateProvider -> Provider<TabDetachingDelegate>
+get tabIdProvider -> Provider<TabId>

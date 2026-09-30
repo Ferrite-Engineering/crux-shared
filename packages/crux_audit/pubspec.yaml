@@ -1,0 +1,29 @@
+name: crux_audit
+description: The shared audit-event envelope, the AuditSink seam, and an append-only JSONL sink. Event kinds are per-product; the envelope is not.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+# PURE DART, PERMANENTLY. No `flutter:` key here, ever, and no transitive route
+# to one — `no_flutter_dependency_test.dart` asserts it on every run. The
+# lintcrux and simcrux Pro CLIs write audit events and are built with
+# `dart build cli`; a Flutter import anywhere in this graph drags `dart:ui` into
+# the AOT kernel and kills that compile with an opaque FFI-transformer crash.
+# `crux_license` already paid for that lesson with a whole second barrel.
+#
+# Nothing in an audit envelope, a sink interface or a JSONL writer wants
+# Flutter. Reaching for it is the signal that the wrong thing is being built
+# here.
+dependencies:
+  meta: ^1.15.0
+  path: ^1.9.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^10.2.0
+  # Test-only: the purity guard walks the resolved dependency closure.
+  yaml: ^3.1.0

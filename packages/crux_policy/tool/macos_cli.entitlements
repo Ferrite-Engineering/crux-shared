@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements for the macOS `crux-policy` executable, a Dart AOT binary from
+  `dart build cli`, signed with the Hardened Runtime for notarization.
+
+  The Hardened Runtime alone KILLS this binary at launch (SIGKILL, exit 137):
+  the Dart runtime maps its AOT snapshot into executable memory that no code
+  signature covers. `allow-unsigned-executable-memory` is the one entitlement
+  that permits that; `allow-jit` does not. Measured on this binary, signed
+  ad-hoc: Hardened Runtime alone 137, plus allow-jit 137, plus
+  allow-unsigned-executable-memory 0.
+
+  test/macos_cli_entitlements_test.dart pins this file's exact contents.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+</dict>
+</plist>

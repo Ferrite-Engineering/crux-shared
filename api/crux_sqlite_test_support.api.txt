@@ -1,0 +1,33 @@
+# Public API surface of package:crux_sqlite/crux_sqlite_test_support.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+typedef CruxDbRecoveryListener = void Function(CruxDatabaseCorruptionException)
+typedef CruxFixtureAssert = Future<void> Function(Database, int, String)
+typedef CruxFixtureSeed = Future<void> Function(Database, int)
+final class CruxMigrationFixture
+  const CruxMigrationFixture({required Future<void> Function(Database, int) seed, required Future<void> Function(Database, int, String) assertAfterUpgrade})
+  final assertAfterUpgrade: Future<void> Function(Database, int, String)
+  final seed: Future<void> Function(Database, int)
+final class CruxMigrationFixtureCase
+  const CruxMigrationFixtureCase({required Future<void> Function() run, required String name})
+  final name: String
+  final run: Future<void> Function()
+final class CruxSqliteOpenPolicy
+  CruxSqliteOpenPolicy({CruxPreUpgradeBackup backup, required CruxDbRecovery recovery, required CruxMigrationRunner runner, void Function(CruxDatabaseCorruptionException)? onRecovery})
+  buildOptions({required String path, void Function()? onMigrationStart}) -> OpenDatabaseOptions
+  final backup: CruxPreUpgradeBackup
+  final onRecovery: void Function(CruxDatabaseCorruptionException)?
+  final recovery: CruxDbRecovery
+  final runner: CruxMigrationRunner
+  get backsUpBeforeUpgrade -> bool
+  open(String path, {DatabaseFactory? factory}) -> Future<Database>
+cruxColumnNamesOf(Database db, String table) -> Future<Set<String>>
+cruxIndexNamesOf(Database db, {String? table}) -> Future<Set<String>>
+cruxMigrationFixtureCases({required CruxDbRecovery recovery, required CruxMigrationRunner runner, required Map<int, CruxMigrationFixture> fixturesByVersion, void Function(CruxDatabaseCorruptionException)? onRecovery}) -> List<CruxMigrationFixtureCase>
+cruxOpenSecondConnectionVersion(String path, {int busyTimeoutMs}) -> Future<int>

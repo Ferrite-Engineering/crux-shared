@@ -1,0 +1,36 @@
+# Public API surface of package:crux_file_watcher/crux_file_watcher.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum FileWatchEvent
+  static const deleted: FileWatchEvent
+  static const modified: FileWatchEvent
+enum FileWatchStopReason
+  static const error: FileWatchStopReason
+  static const watchClosed: FileWatchStopReason
+class FileWatchStopped
+  const FileWatchStopped({Object? error, StackTrace? stackTrace, required FileWatchStopReason reason, required String path})
+  final error: Object?
+  final path: String
+  final reason: FileWatchStopReason
+  final stackTrace: StackTrace?
+  toString() -> String
+class FileWatcherService
+  FileWatcherService({Duration debounceDelay, Duration maxWait, Stream<FileSystemEvent> Function(String)? watchFactory})
+  dispose() -> void
+  final debounceDelay: Duration
+  final maxWait: Duration
+  get events -> Stream<FileWatchEvent>
+  get isWatching -> bool
+  get stopped -> Stream<FileWatchStopped>
+  get watchedPath -> String?
+  startWatching(String path) -> void
+  static const defaultDebounceDelay: Duration
+  static const defaultMaxWait: Duration
+  stopWatching() -> void
+typedef WatchFactory = Stream<FileSystemEvent> Function(String)

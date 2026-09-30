@@ -1,0 +1,25 @@
+name: crux_settings_ui
+description: >-
+  Cross-suite master-detail Settings panel shell (category rail + detail pane)
+  and grouped-row widgets for the EDACrux suite.
+version: 0.2.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_a11y:
+    path: ../crux_a11y
+  crux_settings:
+    path: ../crux_settings
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

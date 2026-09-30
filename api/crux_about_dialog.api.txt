@@ -1,0 +1,69 @@
+# Public API surface of package:crux_about_dialog/crux_about_dialog.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class AboutAction
+  const AboutAction({required IconData icon, required String label, void Function(BuildContext)? onTap})
+  final icon: IconData
+  final label: String
+  final onTap: void Function(BuildContext)?
+  get enabled -> bool
+class AboutAttributionSection extends StatefulWidget
+  const AboutAttributionSection({Key? key, required String description, required String licenseHeader, required String licenseText, required String title})
+  createState() -> State<AboutAttributionSection>
+  final description: String
+  final licenseHeader: String
+  final licenseText: String
+  final title: String
+class CruxAboutDialog extends StatelessWidget
+  const CruxAboutDialog({Key? key, List<AboutAttributionSection> attributions, bool? betaChipVisible, required ApplicationBranding branding, required AsyncValue<ApplicationBuildInfo> buildInfo, required CruxAboutStrings strings, required List<AboutAction> actions, required String companyTagline, required String editionLabel, required String tagline, required String title, required Widget appIcon})
+  build(BuildContext context) -> Widget
+  final actions: List<AboutAction>
+  final appIcon: Widget
+  final attributions: List<AboutAttributionSection>
+  final betaChipVisible: bool?
+  final branding: ApplicationBranding
+  final buildInfo: AsyncValue<ApplicationBuildInfo>
+  final companyTagline: String
+  final editionLabel: String
+  final strings: CruxAboutStrings
+  final tagline: String
+  final title: String
+  static show(BuildContext context, {List<AboutAttributionSection> attributions, bool? betaChipVisible, required ApplicationBranding branding, required AsyncValue<ApplicationBuildInfo> buildInfo, required CruxAboutStrings strings, required List<AboutAction> actions, required String companyTagline, required String editionLabel, required String tagline, required String title, required Widget appIcon}) -> Future<void>
+abstract class CruxAboutStrings
+  const CruxAboutStrings()
+  get architectureLabel -> String
+  get betaChip -> String
+  get buildNumberLabel -> String
+  get copiedConfirmation -> String
+  get dartVersionLabel -> String
+  get flutterVersionLabel -> String
+  get gitShaLabel -> String
+  get licenseBadgeStrings -> LicenseBadgeStrings
+  get operatingSystemLabel -> String
+  get sectionPlatform -> String
+  get sectionVersion -> String
+class CruxAboutStringsEn extends CruxAboutStrings
+  const CruxAboutStringsEn()
+  get architectureLabel -> String
+  get betaChip -> String
+  get buildNumberLabel -> String
+  get copiedConfirmation -> String
+  get dartVersionLabel -> String
+  get flutterVersionLabel -> String
+  get gitShaLabel -> String
+  get licenseBadgeStrings -> LicenseBadgeStrings
+  get operatingSystemLabel -> String
+  get sectionPlatform -> String
+  get sectionVersion -> String
+class CruxVendoredLicense
+  const CruxVendoredLicense({required String licenseAssetPath, required String packageName})
+  final licenseAssetPath: String
+  final packageName: String
+aboutVersionInfoText({required ApplicationBuildInfo info, required String appName, required String editionLabel}) -> String
+registerCruxVendoredLicenses(List<CruxVendoredLicense> licenses) -> void

@@ -1,0 +1,83 @@
+name: crux_shared_workspace
+description: Melos workspace root for the EDACrux suite's shared infrastructure packages.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+workspace:
+  - packages/crux_async
+  - packages/crux_io
+  - packages/crux_sqlite
+  - packages/crux_linux_integration
+  - packages/crux_license
+  - packages/crux_signing
+  - packages/crux_audit
+  - packages/crux_policy
+  - packages/crux_projects
+  - packages/crux_project
+  - packages/crux_heatmap
+  - packages/crux_netlist
+  - packages/crux_cxp
+  - packages/crux_cxp_ui
+  - packages/crux_app_info
+  - packages/crux_about_dialog
+  - packages/crux_ide_layout
+  - packages/crux_dock
+  - packages/crux_file_watcher
+  - packages/crux_settings
+  - packages/crux_settings_ui
+  - packages/crux_shortcut_action
+  - packages/crux_menu_bar
+  - packages/crux_toolbar
+  - packages/crux_command_palette
+  - packages/crux_keybindings
+  - packages/crux_yosys
+  - packages/crux_workspace
+  - packages/crux_theme
+  - packages/crux_updates
+  - packages/crux_telemetry
+  - packages/crux_eula
+  - packages/crux_issue_reporter
+  - packages/crux_window_chrome
+  - packages/crux_status_bar
+  - packages/crux_secrets
+  - packages/crux_projects_ui
+  - packages/crux_stats_strip
+  - packages/crux_a11y
+
+dev_dependencies:
+  melos: ^7.0.0
+
+melos:
+  name: crux_shared
+
+  command:
+    bootstrap:
+      runPubGetInParallel: true
+
+  scripts:
+    analyze:
+      description: Run "dart analyze --fatal-infos --fatal-warnings" in every package.
+      run: melos exec -- "dart analyze --fatal-infos --fatal-warnings"
+
+    # No `--dir-exists=test` filter. With it, a package that lost its test/
+    # directory was silently left out of this run, and tool/coverage.sh
+    # skipped it too, so nothing anywhere noticed. Without it, `dart test`
+    # and `flutter test` both exit non-zero naming the missing directory.
+    #
+    # Each package also writes a JSON report to its (ignored) build/, which
+    # CI reads to check the number of tests that ran; see ci.yml.
+    test:
+      description: Run tests in every package (dart test for pure-Dart, flutter test for Flutter packages).
+      steps:
+        - melos exec --no-flutter -- "dart test --file-reporter json:build/test-results.json"
+        - melos exec --flutter -- "flutter test --file-reporter json:build/test-results.json"
+
+    format-check:
+      description: Verify all packages are formatted (fails CI on mismatch).
+      run: melos exec -- "dart format --set-exit-if-changed ."
+
+    format-fix:
+      description: Apply "dart format" to every package.
+      run: melos exec -- "dart format ."

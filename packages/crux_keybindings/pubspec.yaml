@@ -1,0 +1,25 @@
+name: crux_keybindings
+description: Cross-suite customizable keyboard-binding infrastructure — platform-neutral binding model, keymap codec, conflict detection, and label formatting, generic over CruxAction.
+version: 0.3.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_shortcut_action:
+    path: ../crux_shortcut_action
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  crux_a11y:
+    path: ../crux_a11y
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

@@ -1,0 +1,128 @@
+# Public API surface of package:crux_netlist/crux_netlist.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+sealed class BitRef
+  factory BitRef.fromJson(Object? value)
+  toJson() -> Object
+class Cell
+  const Cell({bool hideName, required Map<String, List<BitRef>> connections, required Map<String, PortDirection> portDirections, required Map<String, String> attributes, required Map<String, String> parameters, required String name, required String type})
+  factory Cell.fromJson(String name, Map<String, Object?> json)
+  ==(Object other) -> bool
+  copyWith({Map<String, List<BitRef>>? connections, Map<String, PortDirection>? portDirections, Map<String, String>? attributes, Map<String, String>? parameters, String? name, String? type, bool? hideName}) -> Cell
+  final attributes: Map<String, String>
+  final connections: Map<String, List<BitRef>>
+  final hideName: bool
+  final name: String
+  final parameters: Map<String, String>
+  final portDirections: Map<String, PortDirection>
+  final type: String
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+final class ConstantBit extends BitRef
+  const ConstantBit(ConstantBitValue value)
+  ==(Object other) -> bool
+  final value: ConstantBitValue
+  get hashCode -> int
+  toJson() -> Object
+  toString() -> String
+enum ConstantBitValue
+  static const one: ConstantBitValue
+  static const x: ConstantBitValue
+  static const z: ConstantBitValue
+  static const zero: ConstantBitValue
+class HierarchyNode
+  const HierarchyNode({required List<String> path, required String moduleName})
+  ==(Object other) -> bool
+  canonicalPath(NetlistModel model) -> String
+  child(NetlistModel model, String instanceName) -> HierarchyNode?
+  childInstanceNames(NetlistModel model) -> List<String>
+  copyWith({List<String>? path, String? moduleName}) -> HierarchyNode
+  final moduleName: String
+  final path: List<String>
+  get depth -> int
+  get displayName -> String
+  get hashCode -> int
+  get isRoot -> bool
+  parent(NetlistModel model) -> HierarchyNode?
+  resolve(NetlistModel model) -> Module?
+  static rootOf(NetlistModel model) -> HierarchyNode?
+  toString() -> String
+class Module
+  const Module({required Map<String, Cell> cells, required Map<String, Net> nets, required Map<String, Port> ports, required Map<String, String> attributes, required String name})
+  factory Module.fromJson(String name, Map<String, Object?> json)
+  ==(Object other) -> bool
+  copyWith({Map<String, Cell>? cells, Map<String, Net>? nets, Map<String, Port>? ports, Map<String, String>? attributes, String? name}) -> Module
+  final attributes: Map<String, String>
+  final cells: Map<String, Cell>
+  final name: String
+  final nets: Map<String, Net>
+  final ports: Map<String, Port>
+  get hashCode -> int
+  get isBlackBox -> bool
+  get isTop -> bool
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class Net
+  const Net({bool hideName, required List<BitRef> bits, required Map<String, String> attributes, required String name})
+  factory Net.fromJson(String name, Map<String, Object?> json)
+  ==(Object other) -> bool
+  copyWith({List<BitRef>? bits, Map<String, String>? attributes, String? name, bool? hideName}) -> Net
+  final attributes: Map<String, String>
+  final bits: List<BitRef>
+  final hideName: bool
+  final name: String
+  get hashCode -> int
+  get width -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+final class NetBit extends BitRef
+  const NetBit(int netId)
+  ==(Object other) -> bool
+  final netId: int
+  get hashCode -> int
+  toJson() -> Object
+  toString() -> String
+class NetlistModel
+  const NetlistModel({required Map<String, Module> modules, required String creator})
+  factory NetlistModel.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  copyWith({Map<String, Module>? modules, String? creator}) -> NetlistModel
+  final creator: String
+  final modules: Map<String, Module>
+  get hashCode -> int
+  get topModule -> Module?
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class Port
+  const Port({required List<BitRef> bits, required PortDirection direction, required String name})
+  factory Port.fromJson(String name, Map<String, Object?> json)
+  ==(Object other) -> bool
+  copyWith({List<BitRef>? bits, PortDirection? direction, String? name}) -> Port
+  final bits: List<BitRef>
+  final direction: PortDirection
+  final name: String
+  get hashCode -> int
+  get width -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+enum PortDirection
+  static const inout: PortDirection
+  static const input: PortDirection
+  static const output: PortDirection
+  static fromJson(String value) -> PortDirection
+  toJsonString() -> String
+class YosysJsonParseException implements Exception
+  const YosysJsonParseException(String message, {Object? cause})
+  final cause: Object?
+  final message: String
+  toString() -> String
+class YosysJsonParser
+  const YosysJsonParser()
+  parse(String rawJson) -> NetlistModel

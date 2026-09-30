@@ -1,0 +1,29 @@
+name: crux_menu_bar
+description: >-
+  Cross-suite desktop menu bar for the EDACrux suite: one declarative menu
+  layout model rendered either as the native macOS PlatformMenuBar or as the
+  in-window VS Code-style Material menu bar on Windows/Linux, with shared
+  separator grouping, platform-idiomatic About/Settings/Quit placement, and a
+  guard that keeps typing-hostile key equivalents out of the native menu.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_shortcut_action:
+    path: ../crux_shortcut_action
+  crux_window_chrome:
+    path: ../crux_window_chrome
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

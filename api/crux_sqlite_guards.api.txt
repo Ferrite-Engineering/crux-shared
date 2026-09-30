@@ -1,0 +1,101 @@
+# Public API surface of package:crux_sqlite/crux_sqlite_guards.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum CruxDbRecovery
+  get isPrecious -> bool
+  static const recreate: CruxDbRecovery
+  static const refuse: CruxDbRecovery
+  static const renameAside: CruxDbRecovery
+final class CruxDeleteAllowlistEntry
+  const CruxDeleteAllowlistEntry({required CruxDbRecovery recovery, required String file, required String reason, required String storeName})
+  final file: String
+  final reason: String
+  final recovery: CruxDbRecovery
+  final storeName: String
+final class CruxGuardFinding
+  const CruxGuardFinding({required String detail, required String location})
+  final detail: String
+  final location: String
+  toString() -> String
+final class CruxGuardReport
+  const CruxGuardReport({List<CruxGuardFinding> observations, String guideSection, required List<CruxGuardFinding> findings, required String guard, required String subject, required String theWayToGreen, required String whatBroke, required String whyTheRuleExists})
+  describe() -> String
+  final findings: List<CruxGuardFinding>
+  final guard: String
+  final guideSection: String
+  final observations: List<CruxGuardFinding>
+  final subject: String
+  final theWayToGreen: String
+  final whatBroke: String
+  final whyTheRuleExists: String
+  get isClean -> bool
+  toString() -> String
+final class CruxMigration
+  const CruxMigration({required Future<void> Function(Database) apply, required String description, required int version})
+  final apply: Future<void> Function(Database)
+  final description: String
+  final version: int
+  toString() -> String
+final class CruxMigrationRunner
+  CruxMigrationRunner({DateTime Function()? now, required CruxAppIdentity identity, required List<CruxMigration> migrations, required String storeName})
+  final identity: CruxAppIdentity
+  final migrations: List<CruxMigration>
+  final storeName: String
+  get latestVersion -> int
+  migrationFor(int version) -> CruxMigration
+  upgrade(Database db, int oldVersion, int newVersion, {String? backupPath, String? reportPath}) -> Future<void>
+final class CruxOpenCatchAllowlistEntry
+  const CruxOpenCatchAllowlistEntry({required CruxDbRecovery recovery, required String file, required String reason, required String storeName})
+  final file: String
+  final reason: String
+  final recovery: CruxDbRecovery
+  final storeName: String
+final class CruxSchemaManifest
+  const CruxSchemaManifest({required Map<int, String> fingerprints, required String source, required String storeName})
+  factory CruxSchemaManifest.parse(String text, {required String source, required String storeName})
+  factory CruxSchemaManifest.readFile(String path, {required String storeName})
+  final fingerprints: Map<int, String>
+  final source: String
+  final storeName: String
+  get latestVersion -> int
+final class CruxSchemaSnapshot
+  const CruxSchemaSnapshot({required List<String> normalisedDdl, required Map<String, Set<String>> columnsByTable, required Set<String> indexes, required int version})
+  final columnsByTable: Map<String, Set<String>>
+  final indexes: Set<String>
+  final normalisedDdl: List<String>
+  final version: int
+  get fingerprint -> String
+  get tables -> Set<String>
+final class CruxSourceFile
+  const CruxSourceFile({required String path, required String source})
+  factory CruxSourceFile.inline(String name, String source)
+  factory CruxSourceFile.read(File file, {String? relativeTo})
+  final path: String
+  final source: String
+  lineAt(int offset) -> int
+  locate(int offset) -> String
+  toString() -> String
+cruxAuditAdditiveOnly({required CruxMigrationRunner runner, required List<CruxSchemaSnapshot> snapshots}) -> CruxGuardReport
+cruxAuditDatabaseDeletes({required Iterable<CruxDeleteAllowlistEntry> allowlist, required Iterable<CruxSourceFile> sources, required String subject}) -> CruxGuardReport
+cruxAuditDestructiveDdl({required Iterable<CruxSourceFile> sources, required String subject}) -> CruxGuardReport
+cruxAuditFixtureCoverage({required CruxMigrationRunner runner, required Set<int> fixtureVersions}) -> CruxGuardReport
+cruxAuditFixtureSuites({required Iterable<CruxSourceFile> testSources, required Map<String, List<String>> storeMarkers, required String subject}) -> CruxGuardReport
+cruxAuditMigrationListRegistry({required Iterable<CruxSourceFile> sources, required Set<String> registeredListNames, required String subject}) -> CruxGuardReport
+cruxAuditOpenCatchShapes({Iterable<CruxOpenCatchAllowlistEntry> allowlist, Set<String> extraOpenEntryPoints, required Iterable<CruxSourceFile> sources, required String subject}) -> CruxGuardReport
+cruxAuditOpenOptions({Set<String> expectedDirectOpenFiles, required Iterable<CruxSourceFile> sources, required String subject}) -> CruxGuardReport
+cruxAuditSchemaFingerprints({required CruxMigrationRunner runner, required CruxSchemaManifest manifest, required List<CruxSchemaSnapshot> snapshots}) -> CruxGuardReport
+cruxBalancedParens(String source, int open) -> String?
+cruxDartSourcesIn(Directory root, {Iterable<String> excludeSegments, String? relativeTo}) -> List<CruxSourceFile>
+cruxOpenReachingEntryPoints({Set<String> seeds, required Iterable<CruxSourceFile> sources}) -> Set<String>
+cruxRenderSchemaManifest(List<CruxSchemaSnapshot> snapshots, {required String storeName}) -> String
+cruxSchemaSnapshotsOf(CruxMigrationRunner runner, {DatabaseFactory? factory}) -> Future<List<CruxSchemaSnapshot>>
+get kCruxDestructiveWaiverMarker -> String
+get kCruxMigrationGuideRef -> String
+get kCruxOpenReachRounds -> int
+get kCruxWaiverProximityLines -> int

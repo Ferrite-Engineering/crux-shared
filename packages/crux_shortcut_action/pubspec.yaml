@@ -1,0 +1,13 @@
+name: crux_shortcut_action
+description: Cross-suite shared action infrastructure — CruxAction interface and ActionCategory enum.
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^10.2.0

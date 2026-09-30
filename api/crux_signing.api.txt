@@ -1,0 +1,10 @@
+# Public API surface of package:crux_signing/crux_signing.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+ed25519Verify({required List<int> message, required List<int> publicKey, required List<int> signature}) -> bool

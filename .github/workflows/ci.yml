@@ -1,0 +1,399 @@
+name: CI
+
+# ─── Trigger configuration ─────────────────────────────────────────────────────
+# This repo is the substrate under eight repos (four open-core products and
+# their four Pro overlays). A change here can break all of them, so CI runs
+# on every push to `main` and every pull request — not on a nightly cron alone.
+#
+# History: push/PR triggers were commented out "while we stabilize CI" and never
+# restored, leaving manual + nightly as the only paths. That is a defect class
+# the whole suite has been bitten by: a job that never runs and a job that
+# passes look identical from the outside — both are the absence of bad news
+# rather than the presence of good news. Do not disable these triggers again;
+# if a job is flaky, fix or quarantine the job, not the trigger.
+#
+# The downstream check — do the four products still analyze against this
+# commit? — is consumers.yml, not a job here. Here it was cancelled with
+# every superseded push and skipped whenever an unrelated step went red.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:        # Manual trigger via GitHub UI "Run workflow" button
+  schedule:
+    # Nightly at 01:20 UTC. Cron runs in UTC and does NOT follow DST:
+    # 01:20 UTC = 19:20 MDT (summer) / 18:20 MST (winter).
+    # The nightly run is kept as a canary: it catches breakage that comes from
+    # outside this repo (a Flutter stable bump, a transitive dependency
+    # release) on days when nobody pushed.
+    - cron: '20 1 * * *'
+
+# Cancel superseded push and PR runs — on `main` too — so what CI gates is the
+# tip. Scheduled and manual runs are never cancelled.
+concurrency:
+  # Keyed by event as well as ref: a nightly must never be cancelled by a
+  # push, and a push must never be cancelled by a nightly.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  # Superseded pushes are cancelled outright. `false` on main was the source
+  # of a whole class of phantom failures: a run still QUEUED when a third
+  # push arrives is cancelled by GitHub regardless, and a run whose jobs were
+  # cancelled reports conclusion=failure — not cancelled. So main never did
+  # verify every commit, it just misreported the ones it skipped. Cancelling
+  # is honest, cheaper, and gates the thing that matters: the tip.
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Nightly no-op gate.
+  #
+  # A scheduled run on a tree nobody touched re-proves yesterday's result and
+  # bills for it. Worse, it is how a repo goes red without a commit: lintcrux's
+  # nightly failed twice in a row for a Flutter stable bump on nights with zero
+  # changes, which is a signal about GitHub's runner image, not about this
+  # repository.
+  #
+  # So a scheduled run first asks whether HEAD has moved since the last green
+  # run of this same workflow. If it has not, everything downstream is skipped.
+  # Push, PR and manual runs always proceed — this gate only ever applies to
+  # `schedule`.
+  # ─────────────────────────────────────────────────────────────────────────────
+  changed:
+    name: Anything new since the last green run?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          last=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?status=success&branch=${{ github.ref_name }}&per_page=1" \
+            --jq '.workflow_runs[0].head_sha // ""' 2>/dev/null || echo "")
+          echo "last green: ${last:-<none>}"
+          echo "this run  : $GITHUB_SHA"
+          # Unknown (first run, API hiccup) means run — never skip on doubt.
+          if [ -n "$last" ] && [ "$last" = "$GITHUB_SHA" ]; then
+            echo "Unchanged since the last green run — skipping the nightly."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Workspace-internal gate: format, analyze, test, and the public-API goldens.
+  # ─────────────────────────────────────────────────────────────────────────────
+  ci:
+    name: Analyze & Test
+    needs: changed
+    if: needs.changed.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    # Cap runaway jobs — a hung 6 h macOS job once exhausted the Actions budget.
+    timeout-minutes: 45
+    permissions:
+      # The crux_cxp semver guard reads which commit last passed CI.
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Full history: the crux_cxp semver guard below diffs against the
+          # base ref.
+          fetch-depth: 0
+
+      # Pure Python, so a missing header fails in seconds rather than after a
+      # toolchain download. The four product repos call this same script
+      # through their crux-shared submodule.
+      - name: SPDX headers (Apache-2.0)
+        run: python3 tool/spdx-headers.py --check .
+
+      # Flutter (not just Dart): the workspace contains a Flutter package
+      # (crux_file_watcher uses package:flutter/foundation), so `melos bootstrap`
+      # runs `flutter pub get` and `melos run test` runs `flutter test` for it.
+      # A Dart-only SDK makes bootstrap fail with "flutter: command not found".
+      # Flutter bundles Dart, so `dart`/`melos` commands still work.
+      - name: Install Flutter (pinned)
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          # Flutter is PINNED, not tracked. `channel: stable` alone re-resolves on
+          # every run, so 3.44.8 -> 3.44.9 on 2026-08-06 turned new analyzer lints
+          # (sort_pub_dependencies, unused_element) into red CI across five repos at
+          # once, including repos with no commits that day. Bumping this is a
+          # deliberate, reviewable commit; keep every workflow in the suite on the
+          # same version, and bump the dev machines to match.
+          flutter-version: '3.47.3'
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap workspace
+        run: melos bootstrap
+
+      # Must run AFTER bootstrap: the classifier reads each package's LICENSE
+      # out of the pub cache, so before `melos bootstrap` the cache is empty
+      # and every package reports UNKNOWN.
+      - name: Third-party attributions match pubspec.lock
+        run: python3 tool/gen-notices.py --check
+
+      - name: Check formatting
+        run: melos run format-check
+
+      - name: Analyze
+        run: melos run analyze
+
+      - name: Test
+        run: melos run test
+
+      # A narrowed glob, a lost test directory or a mass skip leaves every
+      # remaining test green, so only the count notices. Read from the JSON
+      # report each package writes (see the melos `test` script), never from
+      # console text: Actions sets CI=true, which colours the console even
+      # into a pipe, and a grep for a summary line then matches nothing and
+      # fails a green suite.
+      #
+      # Three checks: every package in packages/ produced a report (a package
+      # that did not run at all), MIN_TESTS is the floor on tests that ran
+      # across the workspace, MAX_SKIPPED the ceiling on tests that skipped.
+      # Raise MIN_TESTS as tests land; lower it only in the commit that
+      # deletes tests on purpose, and say why there.
+      #
+      # Measured on this runner across the 38 packages: 3754 ran, none
+      # skipped. The floor is that less 0.5%; the ceiling allows two skips.
+      - name: Test count did not shrink
+        env:
+          MIN_TESTS: '3735'
+          MAX_SKIPPED: '2'
+        run: |
+          python3 - <<'PY'
+          import glob, json, os, sys
+          floor, ceiling = int(os.environ["MIN_TESTS"]), int(os.environ["MAX_SKIPPED"])
+          ran = 0
+          skipped, missing, unfinished = [], [], []
+          for pubspec in sorted(glob.glob("packages/*/pubspec.yaml")):
+              pkg = os.path.dirname(pubspec)
+              report = os.path.join(pkg, "build", "test-results.json")
+              if not os.path.exists(report):
+                  missing.append(pkg)
+                  continue
+              names, reasons, pkg_ran, done = {}, {}, 0, False
+              for line in open(report, encoding="utf-8").read().splitlines():
+                  if not line.startswith("{"):
+                      continue
+                  e = json.loads(line)
+                  kind = e.get("type")
+                  if kind == "testStart":
+                      t = e["test"]
+                      names[t["id"]] = t["name"]
+                      reasons[t["id"]] = t.get("metadata", {}).get("skipReason") or ""
+                  elif kind == "print" and e.get("messageType") == "skip":
+                      reasons[e["testID"]] = e["message"]
+                  elif kind == "testDone" and not e["hidden"]:
+                      if e["skipped"]:
+                          skipped.append(f"{pkg}: {names.get(e['testID'])} -- {reasons.get(e['testID'], '')}")
+                      else:
+                          pkg_ran += 1
+                  elif kind == "done":
+                      done = True
+              if not done:
+                  unfinished.append(pkg)
+              print(f"  {pkg_ran:6d}  {pkg}")
+              ran += pkg_ran
+          print(f"{ran} tests ran (floor {floor}), {len(skipped)} skipped (ceiling {ceiling})")
+          for s in skipped:
+              print(f"  skipped: {s}")
+          errors = []
+          if missing:
+              errors.append("no test report from " + ", ".join(missing) + "; those packages did not run")
+          if unfinished:
+              errors.append("the test run did not finish in " + ", ".join(unfinished))
+          if ran < floor:
+              errors.append(f"{ran} tests ran, below the floor of {floor}. A narrowed glob, a lost test directory or a mass skip does this. If tests were deleted on purpose, lower MIN_TESTS in the same commit.")
+          if len(skipped) > ceiling:
+              errors.append(f"{len(skipped)} tests skipped, above the ceiling of {ceiling}; the list above says why")
+          for err in errors:
+              print(f"::error::{err}")
+          sys.exit(1 if errors else 0)
+          PY
+
+      # The one binary this repository ships, compiled AOT and run, on every
+      # push. The tests above drive `crux-policy` through the Dart VM, which is
+      # not the executable a customer downloads; and the release workflow
+      # refuses to build without a green run of THIS workflow on the same
+      # commit, so this step is what makes that gate mean "it compiles and
+      # starts" rather than "its tests passed". Same script the release runs.
+      - name: crux-policy binary builds and runs
+        run: packages/crux_policy/tool/build_cli.sh build/cli
+
+      # The products ship web builds, and `melos run test` runs on the VM only,
+      # so a `dart:io` call on a web path passes every test above. These run
+      # the browser-only tests in headless Chrome, which the runner image ships.
+      #
+      # - crux_policy: the policy file is read before every product's first
+      #   frame, and must answer "absent" in a browser. The whole package runs
+      #   (its dart:io tests carry @TestOn('vm')), so its pure tests also
+      #   compile with dart2js on every run.
+      # - crux_cxp: every product resolves the shared manifest directory while
+      #   starting its CXP server; in a browser that must be the documented
+      #   StateError. Only test/web runs — the conformance suite opens sockets.
+      # - crux_io: web builds key tabs by location through path identity, which
+      #   must treat a browser location as already canonical. Only test/web
+      #   runs — the rest of the suite writes real files.
+      - name: Pure-Dart packages on the web (Chrome)
+        run: |
+          (cd packages/crux_policy && dart test -p chrome)
+          (cd packages/crux_cxp && dart test -p chrome test/web)
+          (cd packages/crux_io && dart test -p chrome test/web)
+
+      # The same gap for a Flutter package: the web build reads the IANA time
+      # zone through JS interop to decide the telemetry consent default, and
+      # the VM suite only ever sees the stub. `flutter test`, not `dart test`:
+      # crux_telemetry is a Flutter package and its tests use flutter_test.
+      - name: crux_telemetry on the web (Chrome)
+        working-directory: packages/crux_telemetry
+        run: flutter test --platform chrome test/src/telemetry_time_zone_web_test.dart
+
+      # The committed api/*.api.txt goldens are the reviewable record of the
+      # public surface eight repos consume. A diff here is not necessarily a
+      # failure — it is a change that has to be looked at deliberately. See
+      # api/README.md.
+      - name: Public API goldens up to date
+        run: tool/api-snapshot.sh --check
+
+      # crux_cxp is the one package with real semver obligations — it is
+      # published to pub.dev at the open-core flip, where its
+      # version stops being informational and starts being solved against.
+      # Every other package is pinned by submodule SHA; see CLAUDE.md
+      # § "Versioning contract".
+      #
+      # Skipped on schedule/workflow_dispatch, which have no meaningful base
+      # ref to diff against.
+      #
+      # A push is checked against the last commit whose push run passed, not
+      # against the push's own base: a superseded push run is cancelled, so a
+      # base-only diff never sees the commits whose runs were cancelled. Six
+      # crux_cxp library changes reached main unbumped that way. The script
+      # explains the rule and its fallbacks; its test runs first.
+      - name: crux_cxp semver guard tests
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: bash tool/check-cxp-version-test.sh
+
+      - name: crux_cxp semver discipline
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            tool/check-cxp-version.sh "origin/${{ github.base_ref }}"
+          else
+            tool/check-cxp-version.sh --since-last-green \
+              "${{ github.repository }}" "${{ github.event.before }}"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Supply chain — SBOM, licence gate, advisory sweep.
+  #
+  # crux-shared is the closure every product inherits, so a copyleft dependency
+  # landing here would reach all four open-core repos at once — which makes
+  # this the highest-leverage place in the suite to check, and the one where a
+  # violation is cheapest to catch.
+  #
+  # Gated at `open-core` tier because that is the strictest reading: this repo
+  # is consumed by repositories that will be published, so its closure has to
+  # satisfy the permissive requirement even though the repo is private today.
+  # ─────────────────────────────────────────────────────────────────────────────
+  supply-chain:
+    name: Supply chain
+    needs: changed
+    if: needs.changed.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    # Cap runaway jobs — see the `ci` job.
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Install Flutter (pinned)
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          # Same pin as every other job in the suite — see `ci`.
+          flutter-version: '3.47.3'
+          cache: true
+
+      - name: Resolve the workspace
+        # The root is a melos workspace, so `pub get` here resolves every
+        # package's dependencies into one lockfile — which is exactly the
+        # closure to audit.
+        run: flutter pub get
+
+      - name: Licence gate
+        run: python3 tool/supply-chain.py --check-licences --tier open-core
+
+      - name: SBOM (CycloneDX)
+        run: python3 tool/supply-chain.py --sbom build/sbom.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom-crux-shared
+          path: build/sbom.json
+          retention-days: 90
+
+      - name: Advisories (osv.dev)
+        run: python3 tool/supply-chain.py --check-advisories
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Coverage — per package, against per-package floors.
+  #
+  # Every other target in the suite gates one lib/ against one number. This
+  # workspace's packages span 45% to 100%, so an aggregate would be true and
+  # useless: one package could lose half its coverage and the rest would absorb
+  # it. tool/coverage.sh carries the floors and the reasoning, and fails when a
+  # package in packages/ has no floor.
+  #
+  # Not on the `changed` gate that fronts the other jobs: coverage is a
+  # property of the whole workspace, and a change in one package can move
+  # another's figure through a shared dependency.
+  # ─────────────────────────────────────────────────────────────────────────────
+  coverage:
+    name: Coverage (per package, floors)
+    runs-on: ubuntu-latest
+    # Cap runaway jobs — every package runs its own suite here.
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Install lcov
+        run: sudo apt-get update -y && sudo apt-get install -y lcov
+
+      - name: Install Flutter (pinned)
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          # Same pin as every other job in the suite — see `ci`.
+          flutter-version: '3.47.3'
+          cache: true
+
+      - name: Resolve the workspace
+        run: flutter pub get
+
+      - name: Per-package coverage floors
+        run: |
+          chmod +x tool/coverage.sh
+          bash tool/coverage.sh

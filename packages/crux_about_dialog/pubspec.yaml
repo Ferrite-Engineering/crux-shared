@@ -1,0 +1,30 @@
+name: crux_about_dialog
+description: >-
+  Cross-suite About dialog widget (app header, build/version info, license
+  attributions, action buttons, branding banner) for the EDACrux suite. One
+  implementation rendered by WaveCrux and future Crux products.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_app_info:
+    path: ../crux_app_info
+  crux_license:
+    path: ../crux_license
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_localizations:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

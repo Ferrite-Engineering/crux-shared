@@ -1,0 +1,37 @@
+name: crux_policy
+description: Reader, verifier and precedence resolver for the signed .crux-policy.json org-wide configuration file. The entire replacement for an admin console.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+# PURE DART, PERMANENTLY. No `flutter:` key here, ever, and no transitive route
+# to one — `no_flutter_dependency_test.dart` asserts it on every run. The
+# lintcrux CLI reads this file for its gate threshold and is a bare Dart process
+# built with `dart build cli`.
+#
+# NO DEPENDENCY ON crux_license, EVER, and this one is a design constraint
+# rather than a packaging preference. Three keys must resolve BEFORE a licence
+# exists, so a route from here to the licence machinery would let a
+# tier lookup creep into the one path that cannot have one.
+#
+# The Settings-side "show this value as locked" UI is NOT here. It lands per
+# product; if it turns out to want sharing it becomes crux_policy_ui, following
+# crux_settings / crux_settings_ui.
+dependencies:
+  crux_signing:
+    path: ../crux_signing
+  meta: ^1.15.0
+  path: ^1.9.0
+
+dev_dependencies:
+  # Test-only: the fixture signer mints signed policy files. There is no signer
+  # in lib/ and there must never be one.
+  crypto: ^3.0.6
+  test: ^1.25.0
+  very_good_analysis: ^10.2.0
+  # Test-only: the purity guard walks the resolved dependency closure.
+  yaml: ^3.1.0

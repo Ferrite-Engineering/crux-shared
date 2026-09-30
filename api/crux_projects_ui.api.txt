@@ -1,0 +1,55 @@
+# Public API surface of package:crux_projects_ui/crux_projects_ui.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+typedef CruxCrossProjectSearchOpener = void Function(BuildContext)
+class CruxProjectSwitcherDialog extends ConsumerStatefulWidget
+  const CruxProjectSwitcherDialog({Key? key})
+  createState() -> ConsumerState<CruxProjectSwitcherDialog>
+  static show(BuildContext context) -> Future<void>
+typedef CruxProjectsUiBadgeBuilder = Widget? Function(BuildContext)
+abstract class CruxProjectsUiStrings
+  get recentsPanelEmpty -> String
+  get recentsPanelForget -> String
+  get recentsPanelReopen -> String
+  get recentsPanelTitle -> String
+  get switcherActionClose -> String
+  get switcherActionForget -> String
+  get switcherActiveIndicator -> String
+  get switcherDismissTooltip -> String
+  get switcherEmptyOpen -> String
+  get switcherEmptyRecent -> String
+  get switcherEmptySearch -> String
+  get switcherFooterSearchAcrossProjects -> String
+  get switcherSearchHint -> String
+  get switcherSectionOpen -> String
+  get switcherSectionRecent -> String
+  get switcherTitle -> String
+typedef CruxRecentProjectUnavailableReporter = void Function(BuildContext, ProjectDescriptor, ProjectLoadException)
+class CruxRecentProjectsPanel extends ConsumerWidget
+  const CruxRecentProjectsPanel({Key? key})
+  build(BuildContext context, WidgetRef ref) -> Widget
+class ProjectActivation
+  const ProjectActivation({String? projectId, required ProjectActivationSource source, required String projectPath, required int openProjectCount})
+  final openProjectCount: int
+  final projectId: String?
+  final projectPath: String
+  final source: ProjectActivationSource
+typedef ProjectActivationObserver = void Function(ProjectActivation)
+enum ProjectActivationSource
+  static const recentsPanel: ProjectActivationSource
+  static const switcher: ProjectActivationSource
+  static const switcherRecents: ProjectActivationSource
+get crossProjectSearchOpenerProvider -> Provider<void Function(BuildContext)?>
+get cruxProjectsUiBadgeBuilderProvider -> Provider<Widget? Function(BuildContext)>
+get cruxProjectsUiStringsProvider -> Provider<CruxProjectsUiStrings>
+notifyProjectActivation(void Function(ProjectActivation) observer, {String? projectId, required ProjectActivationSource source, required String projectPath, required int openProjectCount}) -> void
+get projectActivationObserverProvider -> Provider<void Function(ProjectActivation)>
+get recentProjectUnavailableReporterProvider -> Provider<void Function(BuildContext, ProjectDescriptor, ProjectLoadException)?>
+reopenRecentProject({required BuildContext context, required ProjectDescriptor recent, required ProjectRegistry registry, void Function(BuildContext, ProjectDescriptor, ProjectLoadException)? report}) -> Future<bool>
+reportProjectActivation(WidgetRef ref, {String? projectId, required ProjectActivationSource source, required String projectPath, required int openProjectCount}) -> void

@@ -1,0 +1,30 @@
+name: crux_status_bar
+description: >-
+  Cross-suite bottom status bar for the EDACrux suite. A left-aligned,
+  fixed-height, theme-aware bar mounted at the window bottom by every product
+  (WaveCrux, NetCrux, LintCrux, SimCrux). Renders host-contributed segments —
+  a leading file/context region, divider-joined metric segments, an optional
+  centered slot, and a trailing extension slot — so the four apps share one
+  bottom-of-window chrome without the package hard-coding any per-app content.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_theme:
+    path: ../crux_theme
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  # Drives the token editor's own write path (`applyOverrides`) in the theme
+  # tests.
+  flutter_riverpod: ^3.3.1
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

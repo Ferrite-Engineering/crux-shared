@@ -1,0 +1,164 @@
+name: Consumers
+
+# ─── Why this is its own workflow ──────────────────────────────────────────────
+# Downstream gate: do the four open-core products still analyze against THIS
+# commit of crux-shared? It is the job that actually catches a breaking change.
+# Everything in ci.yml only proves crux-shared is internally consistent, which
+# says nothing about whether `wavecrux` still compiles.
+#
+# It used to be a job inside ci.yml, and there it was best-effort. Measured
+# over twelve consecutive pushes to `main`, it ran in three: it `needs:` the
+# format/analyze/test job, so an unrelated format slip skipped it (two runs),
+# and ci.yml cancels superseded pushes, which took it down with everything
+# else (seven runs). A burst of pushes therefore left a cross-repo break
+# unexamined on every commit but the last one to survive — and the one time
+# it did run that day, it caught a re-signatured `LicenseValidator.validate`
+# breaking two test doubles in a product whose own CI could not see it.
+#
+# So, here:
+#   - no `needs:` — nothing unrelated can skip it;
+#   - the concurrency group is the commit SHA with no cancellation, so a later
+#     push never cancels an earlier commit's check. Every commit gets an
+#     answer. Measured cost: ~1.9 min per product, ~7.4 Linux minutes per push
+#     (about 10 billed, since each job rounds up).
+#
+# No schedule. ci.yml's nightly exists to catch toolchain drift on a tree
+# nobody touched; this job only has something new to say when crux-shared
+# moves, and the products' own CI covers them moving.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # One group per commit, never cancelled: see the header.
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Mechanics: each product repo consumes crux-shared as a git submodule at
+  # `<product>/crux-shared` and declares `path:` deps into it. We check the
+  # product out, then check THIS ref out over the top of the submodule path, so
+  # the product resolves against the commit under test rather than its pinned
+  # SHA.
+  #
+  # Auth: every product repo is private (Ferrite-Engineering org). `SUBMODULE_PAT`
+  # is an ORG-level secret with `ALL` repository visibility, so it is readable
+  # from this workflow; it is the same fine-grained read-only Contents PAT the
+  # product workflows use to fetch this repo as a submodule. If its resource
+  # scope does not include the product repos, the "Checkout consumer" step below
+  # fails with a 404 — see api/README.md § "If the consumer job cannot
+  # authenticate" for the fix (widen the PAT's repository scope; do not delete
+  # the job).
+  #
+  # Fork PRs do not receive secrets. The job is skipped there rather than failing
+  # confusingly; ci.yml still gates the fork's own change.
+  consumers:
+    name: Consumer / ${{ matrix.product }}
+    runs-on: ubuntu-latest
+    # Cap runaway jobs — a hung 6 h macOS job once exhausted the Actions budget.
+    timeout-minutes: 45
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - product: wavecrux
+            # wavecrux analyzes its whole tree, including an integration test
+            # that imports a gitignored generated bundle, and reads nested
+            # analysis_options files that must resolve their `include:` URIs.
+            extra_prep: |
+              dart run tool/generate_web_fixture_bundle.dart
+              dart pub get --directory tool/wavecrux_ctl
+          - product: netcrux
+            extra_prep: ''
+          - product: lintcrux
+            extra_prep: ''
+          - product: simcrux
+            extra_prep: ''
+    steps:
+      - name: Verify SUBMODULE_PAT is present
+        env:
+          PAT: ${{ secrets.SUBMODULE_PAT }}
+        run: |
+          if [ -z "$PAT" ]; then
+            echo "::error::SUBMODULE_PAT is not visible to this workflow." \
+                 "It is an org-level secret; confirm its repository visibility" \
+                 "includes crux-shared and its resource scope includes" \
+                 "Ferrite-Engineering/${{ matrix.product }}."
+            exit 1
+          fi
+
+      # The product repo, WITHOUT submodules: we are about to supply the
+      # crux-shared submodule contents ourselves.
+      - name: Checkout consumer (${{ matrix.product }})
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: Ferrite-Engineering/${{ matrix.product }}
+          ref: main
+          token: ${{ secrets.SUBMODULE_PAT }}
+          path: consumer
+
+      # THIS commit of crux-shared, dropped in where the submodule would be.
+      - name: Checkout crux-shared under test into the consumer
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          path: consumer/crux-shared
+
+      - name: Install Flutter (pinned)
+        id: flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: '3.47.3'
+          cache: true
+
+      - name: Show what is being tested
+        working-directory: consumer
+        run: |
+          echo "consumer:    Ferrite-Engineering/${{ matrix.product }}@main"
+          echo "crux-shared: ${{ github.sha }} (${{ github.ref }})"
+
+      - name: Install dependencies
+        working-directory: consumer
+        run: flutter pub get
+
+      # Codegen is conditional on the consumer actually declaring build_runner:
+      # not every product uses Riverpod code generation (simcrux does not), and
+      # `dart run build_runner` in a package without the dev-dep fails hard
+      # ("Could not find package build_runner") rather than no-op'ing. Mirrors
+      # the guard in each product's own CI and release workflows.
+      - name: Riverpod codegen
+        working-directory: consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -qE '^[[:space:]]+build_runner:' pubspec.yaml; then
+            dart run build_runner build --delete-conflicting-outputs
+          else
+            echo "no build_runner dependency in ${{ matrix.product }}/pubspec.yaml — skipping codegen"
+          fi
+
+      - name: Generate l10n
+        working-directory: consumer
+        run: flutter gen-l10n
+
+      - name: Product-specific preparation
+        if: matrix.extra_prep != ''
+        working-directory: consumer
+        run: ${{ matrix.extra_prep }}
+
+      # Analyze, not test: analysis is what detects a removed or re-signatured
+      # symbol, which is the failure mode this job exists for, and it runs in a
+      # fraction of the time of each product's full suite. The products' own CI
+      # owns their test suites.
+      - name: Analyze consumer against crux-shared under test
+        working-directory: consumer
+        run: flutter analyze --fatal-infos --fatal-warnings

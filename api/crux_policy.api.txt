@@ -1,0 +1,126 @@
+# Public API surface of package:crux_policy/crux_policy.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class DayOnePolicy
+  const DayOnePolicy({PolicyLicense? license, PolicyTelemetryDecision telemetry, PolicyUpdateChannel? updateChannel, String? manifestUrl, String? pinnedVersion})
+  factory DayOnePolicy.of(PolicyDocument document)
+  final license: PolicyLicense?
+  final manifestUrl: String?
+  final pinnedVersion: String?
+  final telemetry: PolicyTelemetryDecision
+  final updateChannel: PolicyUpdateChannel?
+  static const absent: DayOnePolicy
+class PolicyDiagnostic
+  const PolicyDiagnostic({required String key, required String reason})
+  final key: String
+  final reason: String
+  toString() -> String
+enum PolicyDiscovery
+  static const environmentVariable: PolicyDiscovery
+  static const none: PolicyDiscovery
+  static const wellKnownPath: PolicyDiscovery
+class PolicyDocument
+  const PolicyDocument({List<PolicyDiagnostic> diagnostics, String? org, required Map<String, Map<String, Object?>> products, required Map<String, Object?> suite, required int schema})
+  factory PolicyDocument.parse(String source)
+  final diagnostics: List<PolicyDiagnostic>
+  final org: String?
+  final products: Map<String, Map<String, Object?>>
+  final schema: int
+  final suite: Map<String, Object?>
+  get isPresent -> bool
+  static const absent: PolicyDocument
+enum PolicyKeyStatus
+  static const configured: PolicyKeyStatus
+  static const insecure: PolicyKeyStatus
+  static const malformed: PolicyKeyStatus
+  static const none: PolicyKeyStatus
+  static const unreadable: PolicyKeyStatus
+class PolicyLicense
+  const PolicyLicense({required PolicyLicenseKind kind, required String value})
+  final kind: PolicyLicenseKind
+  final value: String
+enum PolicyLicenseKind
+  static const file: PolicyLicenseKind
+  static const inline: PolicyLicenseKind
+class PolicyLoadResult
+  const PolicyLoadResult({PolicyDiscovery discovery, PolicyKeyStatus keyStatus, PolicyRejection? rejection, String? detail, String? sourcePath, bool signed, required PolicyDocument document})
+  final detail: String?
+  final discovery: PolicyDiscovery
+  final document: PolicyDocument
+  final keyStatus: PolicyKeyStatus
+  final rejection: PolicyRejection?
+  final signed: bool
+  final sourcePath: String?
+  get wasLoaded -> bool
+  get wasRejected -> bool
+class PolicyLoader
+  const PolicyLoader({List<int>? trustedPublicKey, Map<String, String>? environment, String? publicKeyPath, String? wellKnownPath})
+  final environment: Map<String, String>?
+  final publicKeyPath: String?
+  final trustedPublicKey: List<int>?
+  final wellKnownPath: String?
+  get effectivePublicKeyPath -> String
+  load() -> PolicyLoadResult
+  static canonicalPayload(Map<String, Object?> document) -> String
+  static const policyFileName: String
+  static defaultPublicKeyPath({String? operatingSystem}) -> String
+  static defaultWellKnownDirectory({String? operatingSystem}) -> String
+  static defaultWellKnownPath({String? operatingSystem}) -> String
+  verify(String source, {PolicyDiscovery discovery, PolicyPublicKey? key, bool insecurePath, required String path, required bool trustedPath}) -> PolicyLoadResult
+class PolicyPublicKey
+  const PolicyPublicKey.insecure()
+  const PolicyPublicKey.malformed()
+  const PolicyPublicKey.none()
+  const PolicyPublicKey.unreadable()
+  factory PolicyPublicKey.of(List<int>? bytes)
+  factory PolicyPublicKey.parse(String text)
+  final bytes: List<int>?
+  final status: PolicyKeyStatus
+enum PolicyRejection
+  static const badSignature: PolicyRejection
+  static const insecurePath: PolicyRejection
+  static const malformedSignature: PolicyRejection
+  static const noPublicKey: PolicyRejection
+  static const untrustedUnsigned: PolicyRejection
+class PolicyResolver
+  PolicyResolver({List<PolicyDiagnostic>? diagnostics, required PolicyDocument document, required String productId})
+  final document: PolicyDocument
+  final productId: String
+  get diagnostics -> List<PolicyDiagnostic>
+  productValue<T extends Object>(String key, {T? userSetting, required T builtIn, required T? Function(Object?) parse}) -> ResolvedSetting<T>
+  suiteValue<T extends Object>(String key, {T? userSetting, required T builtIn, required T? Function(Object?) parse}) -> ResolvedSetting<T>
+enum PolicySource
+  static const builtIn: PolicySource
+  static const policyDefault: PolicySource
+  static const policyLocked: PolicySource
+  static const userSetting: PolicySource
+enum PolicyTelemetryDecision
+  static const absent: PolicyTelemetryDecision
+  static const allow: PolicyTelemetryDecision
+  static const deny: PolicyTelemetryDecision
+enum PolicyUpdateChannel
+  static const beta: PolicyUpdateChannel
+  static const pinned: PolicyUpdateChannel
+  static const stable: PolicyUpdateChannel
+class PolicyValue<T extends Object>
+  const PolicyValue(T value, {bool locked})
+  ==(Object other) -> bool
+  final locked: bool
+  final value: T
+  get hashCode -> int
+  toString() -> String
+class ResolvedSetting<T extends Object>
+  const ResolvedSetting({required PolicySource source, required T value})
+  final source: PolicySource
+  final value: T
+  get locked -> bool
+get kKnownProducts -> Set<String>
+get kPolicyPublicKeyFileName -> String
+get kProductKeys -> Map<String, Map<String, bool>>
+get kSuiteKeys -> Map<String, bool>

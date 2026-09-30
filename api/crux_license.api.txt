@@ -1,0 +1,705 @@
+# Public API surface of package:crux_license/crux_license.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum BetaExpiryStatus
+  static const active: BetaExpiryStatus
+  static const expired: BetaExpiryStatus
+  static const expiringSoon: BetaExpiryStatus
+  static const notApplicable: BetaExpiryStatus
+class CruxAuditRecorder
+  CruxAuditRecorder({String? peerId, required AuditSink sink, required String productId, void Function(String)? onDiagnostic})
+  final peerId: String?
+  final productId: String
+  final sink: AuditSink
+  record(String kind, {AuditSeverity severity, DateTime? at, Map<String, Object?> payload}) -> void
+  recordAndFlush(String kind, {AuditSeverity severity, DateTime? at, Map<String, Object?> payload}) -> Future<void>
+class CruxBetaExpiryBanner extends StatelessWidget
+  const CruxBetaExpiryBanner({CruxBetaExpirySizing sizing, CruxBetaExpiryStrings strings, Key? key, required int daysRemaining, required void Function() onDismiss, required void Function() onDownload})
+  build(BuildContext context) -> Widget
+  final daysRemaining: int
+  final onDismiss: void Function()
+  final onDownload: void Function()
+  final sizing: CruxBetaExpirySizing
+  final strings: CruxBetaExpiryStrings
+  static const dismissButtonKey: Key
+  static const downloadButtonKey: Key
+class CruxBetaExpirySizing
+  const CruxBetaExpirySizing({double iconSize, double touchTarget, double? bodyTextSize})
+  final bodyTextSize: double?
+  final iconSize: double
+  final touchTarget: double
+abstract class CruxBetaExpiryStrings
+  const CruxBetaExpiryStrings()
+  bannerMessage(int days) -> String
+  get bannerAction -> String
+  get dismissLabel -> String
+class CruxBetaExpiryStringsEn extends CruxBetaExpiryStrings
+  const CruxBetaExpiryStringsEn()
+  bannerMessage(int days) -> String
+  get bannerAction -> String
+  get dismissLabel -> String
+abstract class CruxEditionLineStrings
+  const CruxEditionLineStrings()
+  editionLicensedByOrganization(String edition) -> String
+  editionWithIdentity(String edition, String identity) -> String
+  get editionNameEdu -> String
+  get editionNameEnterprise -> String
+  get editionNamePro -> String
+class CruxEditionLineStringsEn extends CruxEditionLineStrings
+  const CruxEditionLineStringsEn()
+  editionLicensedByOrganization(String edition) -> String
+  editionWithIdentity(String edition, String identity) -> String
+  get editionNameEdu -> String
+  get editionNameEnterprise -> String
+  get editionNamePro -> String
+class CruxGatedSettingsBody extends ConsumerWidget
+  const CruxGatedSettingsBody({CruxUpgradeDialogStrings strings, Key? key, LicenseBadgeStrings badgeStrings, required LicenseTier requiredTier, required String featureName, required Widget child})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final badgeStrings: LicenseBadgeStrings
+  final child: Widget
+  final featureName: String
+  final requiredTier: LicenseTier
+  final strings: CruxUpgradeDialogStrings
+enum CruxLicenseActionFailure
+  static const alreadyRequested: CruxLicenseActionFailure
+  static const invalidEmail: CruxLicenseActionFailure
+  static const noSeatAvailable: CruxLicenseActionFailure
+  static const notSupported: CruxLicenseActionFailure
+  static const offline: CruxLicenseActionFailure
+  static const refusedByIssuer: CruxLicenseActionFailure
+  static const rejected: CruxLicenseActionFailure
+  static const unknown: CruxLicenseActionFailure
+sealed class CruxLicenseActionResult
+  const CruxLicenseActionResult()
+  get isOk -> bool
+abstract class CruxLicenseActions
+  activate(String credential) -> Future<CruxLicenseActionResult>
+  deactivateThisMachine() -> Future<CruxLicenseActionResult>
+  exportOfflineRequest() -> Future<CruxLicenseActionResult>
+  get supportsDeactivation -> bool
+  get supportsEducationalRequest -> bool
+  get supportsManageLink -> bool
+  get supportsOfflineActivation -> bool
+  get supportsPurchaseLinks -> bool
+  importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openManagePage() -> Future<CruxLicenseActionResult>
+  openPurchasePage() -> Future<CruxLicenseActionResult>
+  refresh() -> Future<CruxLicenseActionResult>
+  requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
+enum CruxLicenseActivation
+  static const active: CruxLicenseActivation
+  static const expired: CruxLicenseActivation
+  static const grace: CruxLicenseActivation
+  static const invalid: CruxLicenseActivation
+  static const noSeat: CruxLicenseActivation
+  static const notActivatedOnThisMachine: CruxLicenseActivation
+  static const openCore: CruxLicenseActivation
+class CruxLicenseController implements CruxLicenseActions
+  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
+  activate(String credential) -> Future<CruxLicenseActionResult>
+  deactivateThisMachine() -> Future<CruxLicenseActionResult>
+  dispose() -> Future<void>
+  exportOfflineRequest() -> Future<CruxLicenseActionResult>
+  final product: CruxProduct
+  get status -> CruxLicenseStatus
+  get statuses -> Stream<CruxLicenseStatus>
+  get supportsDeactivation -> bool
+  get supportsEducationalRequest -> bool
+  get supportsManageLink -> bool
+  get supportsOfflineActivation -> bool
+  get supportsPurchaseLinks -> bool
+  importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openManagePage() -> Future<CruxLicenseActionResult>
+  openPurchasePage() -> Future<CruxLicenseActionResult>
+  refresh() -> Future<CruxLicenseActionResult>
+  requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
+  start() -> Future<void>
+class CruxLicensePanel extends ConsumerStatefulWidget
+  const CruxLicensePanel({CruxLicensePanelStrings strings, Future<String?> Function(BuildContext)? onPickCredentialFile, Key? key, LicenseBadgeStrings badgeStrings, required CruxProduct product})
+  createState() -> ConsumerState<CruxLicensePanel>
+  final badgeStrings: LicenseBadgeStrings
+  final onPickCredentialFile: Future<String?> Function(BuildContext)?
+  final product: CruxProduct
+  final strings: CruxLicensePanelStrings
+abstract class CruxLicensePanelStrings
+  const CruxLicensePanelStrings()
+  get licenseActivateButton -> String
+  get licenseActivatedMessage -> String
+  get licenseBuyButton -> String
+  get licenseCancelAction -> String
+  get licenseCategoryLabel -> String
+  get licenseChooseFileButton -> String
+  get licenseCloseAction -> String
+  get licenseCopiedMessage -> String
+  get licenseCopyAction -> String
+  get licenseDeactivateButton -> String
+  get licenseDeactivateConfirmAction -> String
+  get licenseDeactivateConfirmBody -> String
+  get licenseDeactivateConfirmTitle -> String
+  get licenseDeactivatedMessage -> String
+  get licenseEduBody -> String
+  get licenseEduCheckYourEmail -> String
+  get licenseEduEmailLabel -> String
+  get licenseEduRequestButton -> String
+  get licenseEduSectionTitle -> String
+  get licenseEduUnderReview -> String
+  get licenseEmailLabel -> String
+  get licenseErrorAccount -> String
+  get licenseErrorAlreadyRequested -> String
+  get licenseErrorEncryptedFile -> String
+  get licenseErrorInvalidEmail -> String
+  get licenseErrorMalformed -> String
+  get licenseErrorNoSeat -> String
+  get licenseErrorNotSupported -> String
+  get licenseErrorOffline -> String
+  get licenseErrorProduct -> String
+  get licenseErrorRefused -> String
+  get licenseErrorSignature -> String
+  get licenseErrorUnknown -> String
+  get licenseErrorUnknownPolicy -> String
+  get licenseErrorWrongMachine -> String
+  get licenseExportRequestButton -> String
+  get licenseExportRequestTitle -> String
+  get licenseIdLabel -> String
+  get licenseImportTokenButton -> String
+  get licenseKeyFieldHelper -> String
+  get licenseKeyFieldHelperActive -> String
+  get licenseKeyFieldLabel -> String
+  get licenseKeySectionTitle -> String
+  get licenseMachineLabel -> String
+  get licenseMachineSectionTitle -> String
+  get licenseManageButton -> String
+  get licenseManagedByOrganization -> String
+  get licenseManagedExpired -> String
+  get licenseNeverChecked -> String
+  get licenseOfflineBody -> String
+  get licenseOfflineSectionTitle -> String
+  get licenseOfflineSteps -> String
+  get licensePolicyRefused -> String
+  get licensePolicyRefusedBadSignature -> String
+  get licensePolicyRefusedInsecurePath -> String
+  get licensePolicyRefusedMalformedSignature -> String
+  get licensePolicyRefusedNoPublicKey -> String
+  get licensePolicyRefusedUntrustedUnsigned -> String
+  get licenseRefreshButton -> String
+  get licenseSkuLabel -> String
+  get licenseStateExpired -> String
+  get licenseStateInvalid -> String
+  get licenseStateNotActivated -> String
+  get licenseStateOpenCoreBody -> String
+  get licenseStatePerpetual -> String
+  get licenseStatusSectionTitle -> String
+  get licenseTierEdu -> String
+  get licenseTierEnterprise -> String
+  get licenseTierOpenCore -> String
+  get licenseTierPro -> String
+  licenseLastChecked(String time) -> String
+  licenseSeatsInUse(int used, int total) -> String
+  licenseStateActive(String date) -> String
+  licenseStateGrace(int days) -> String
+class CruxLicensePanelStringsEn extends CruxLicensePanelStrings
+  const CruxLicensePanelStringsEn()
+  get licenseActivateButton -> String
+  get licenseActivatedMessage -> String
+  get licenseBuyButton -> String
+  get licenseCancelAction -> String
+  get licenseCategoryLabel -> String
+  get licenseChooseFileButton -> String
+  get licenseCloseAction -> String
+  get licenseCopiedMessage -> String
+  get licenseCopyAction -> String
+  get licenseDeactivateButton -> String
+  get licenseDeactivateConfirmAction -> String
+  get licenseDeactivateConfirmBody -> String
+  get licenseDeactivateConfirmTitle -> String
+  get licenseDeactivatedMessage -> String
+  get licenseEduBody -> String
+  get licenseEduCheckYourEmail -> String
+  get licenseEduEmailLabel -> String
+  get licenseEduRequestButton -> String
+  get licenseEduSectionTitle -> String
+  get licenseEmailLabel -> String
+  get licenseErrorAccount -> String
+  get licenseErrorAlreadyRequested -> String
+  get licenseErrorEncryptedFile -> String
+  get licenseErrorInvalidEmail -> String
+  get licenseErrorMalformed -> String
+  get licenseErrorNoSeat -> String
+  get licenseErrorNotSupported -> String
+  get licenseErrorOffline -> String
+  get licenseErrorProduct -> String
+  get licenseErrorRefused -> String
+  get licenseErrorSignature -> String
+  get licenseErrorUnknown -> String
+  get licenseErrorUnknownPolicy -> String
+  get licenseExportRequestButton -> String
+  get licenseExportRequestTitle -> String
+  get licenseIdLabel -> String
+  get licenseImportTokenButton -> String
+  get licenseKeyFieldHelper -> String
+  get licenseKeyFieldHelperActive -> String
+  get licenseKeyFieldLabel -> String
+  get licenseKeySectionTitle -> String
+  get licenseMachineLabel -> String
+  get licenseMachineSectionTitle -> String
+  get licenseManageButton -> String
+  get licenseManagedByOrganization -> String
+  get licenseManagedExpired -> String
+  get licenseNeverChecked -> String
+  get licenseOfflineBody -> String
+  get licenseOfflineSectionTitle -> String
+  get licenseOfflineSteps -> String
+  get licensePolicyRefused -> String
+  get licensePolicyRefusedBadSignature -> String
+  get licensePolicyRefusedInsecurePath -> String
+  get licensePolicyRefusedMalformedSignature -> String
+  get licensePolicyRefusedNoPublicKey -> String
+  get licensePolicyRefusedUntrustedUnsigned -> String
+  get licenseRefreshButton -> String
+  get licenseSkuLabel -> String
+  get licenseStateExpired -> String
+  get licenseStateInvalid -> String
+  get licenseStateNotActivated -> String
+  get licenseStateOpenCoreBody -> String
+  get licenseStatePerpetual -> String
+  get licenseStatusSectionTitle -> String
+  get licenseTierEdu -> String
+  get licenseTierEnterprise -> String
+  get licenseTierOpenCore -> String
+  get licenseTierPro -> String
+  licenseLastChecked(String time) -> String
+  licenseSeatsInUse(int used, int total) -> String
+  licenseStateActive(String date) -> String
+  licenseStateGrace(int days) -> String
+class CruxLicenseStatus
+  const CruxLicenseStatus({CruxLicenseActivation activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool busy, int? seatsTotal, int? seatsUsed})
+  ==(Object other) -> bool
+  copyWith({CruxLicenseActivation? activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool? busy, int? seatsTotal, int? seatsUsed}) -> CruxLicenseStatus
+  final activation: CruxLicenseActivation
+  final busy: bool
+  final graceEndsAt: DateTime?
+  final grant: LicenseGrant?
+  final lastCheckedAt: DateTime?
+  final machineLabel: String?
+  final rejection: LicenseRejection?
+  final seatsTotal: int?
+  final seatsUsed: int?
+  get hasCredential -> bool
+  get hashCode -> int
+  get tier -> LicenseTier
+  graceDaysRemainingAt(DateTime now) -> int?
+  static const openCore: CruxLicenseStatus
+  toString() -> String
+class CruxLicenseValidator implements LicenseValidator
+  CruxLicenseValidator({required CruxProduct product, required Iterable<LicenseIssuer> issuers})
+  factory CruxLicenseValidator.production({required CruxProduct product})
+  final issuers: List<LicenseIssuer>
+  final product: CruxProduct
+  get name -> String
+  validate(String? rawCredential, {DateTime? now, String? fingerprint}) -> Future<LicenseValidation>
+enum CruxProduct
+  const CruxProduct(String entitlementCode, String displayName)
+  final displayName: String
+  final entitlementCode: String
+  static const lintCrux: CruxProduct
+  static const netCrux: CruxProduct
+  static const simCrux: CruxProduct
+  static const waveCrux: CruxProduct
+  static fromEntitlementCode(String code) -> CruxProduct?
+class CruxUpgradeDialog extends StatelessWidget
+  const CruxUpgradeDialog({Future<void> Function()? onSeePricing, Key? key, String? supplementalMessage, required CruxUpgradeDialogStrings l10n, required LicenseBadgeStrings strings, required LicenseTier requiredTier, required String featureName})
+  build(BuildContext context) -> Widget
+  final featureName: String
+  final l10n: CruxUpgradeDialogStrings
+  final onSeePricing: Future<void> Function()?
+  final requiredTier: LicenseTier
+  final strings: LicenseBadgeStrings
+  final supplementalMessage: String?
+  static const modalGuardKey: String
+  static show(BuildContext context, {Future<void> Function()? onSeePricing, String? supplementalMessage, required CruxUpgradeDialogStrings l10n, required LicenseBadgeStrings strings, required LicenseTier requiredTier, required String featureName}) -> Future<void>
+abstract class CruxUpgradeDialogStrings
+  const CruxUpgradeDialogStrings()
+  body(String featureName, String tierName) -> String
+  get dismissLabel -> String
+  get seePricingLabel -> String
+  get tierNameEnterprise -> String
+  get tierNamePro -> String
+  get title -> String
+class CruxUpgradeDialogStringsEn extends CruxUpgradeDialogStrings
+  const CruxUpgradeDialogStringsEn()
+  body(String featureName, String tierName) -> String
+  get dismissLabel -> String
+  get seePricingLabel -> String
+  get tierNameEnterprise -> String
+  get tierNamePro -> String
+  get title -> String
+class EditionBadge extends ConsumerWidget
+  const EditionBadge({Key? key, LicenseBadgeStrings strings, LicenseTier? tier})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final strings: LicenseBadgeStrings
+  final tier: LicenseTier?
+class FeatureGate
+  static isAvailable(LicenseTier required, LicenseTier current) -> bool
+  static satisfiesTier(LicenseTier required, LicenseTier current) -> bool
+class FeatureTierBadge extends StatelessWidget
+  const FeatureTierBadge({Key? key, LicenseBadgeStrings strings, required LicenseTier requiredTier})
+  build(BuildContext context) -> Widget
+  final requiredTier: LicenseTier
+  final strings: LicenseBadgeStrings
+class FileMachineReleaseMarker implements MachineReleaseMarker
+  FileMachineReleaseMarker({DateTime Function() now, Map<String, String>? environment, String? operatingSystem})
+  clearReleased({required String licenseId}) -> Future<void>
+  markReleased({required String fingerprint, required String licenseId}) -> Future<void>
+  static const retention: Duration
+  wasReleased({required String fingerprint, required String licenseId}) -> Future<bool>
+class InMemoryInstallFingerprintSource implements InstallFingerprintSource
+  InMemoryInstallFingerprintSource({String? value, bool usable})
+  final usable: bool
+  readOrCreate({Iterable<Future<String?> Function()> legacy}) -> Future<String?>
+  var value: String?
+class InMemoryMachineReleaseMarker implements MachineReleaseMarker
+  InMemoryMachineReleaseMarker([Map<String, String>? released])
+  clearReleased({required String licenseId}) -> Future<void>
+  final released: Map<String, String>
+  markReleased({required String fingerprint, required String licenseId}) -> Future<void>
+  wasReleased({required String fingerprint, required String licenseId}) -> Future<bool>
+class InstallFingerprintFile
+  InstallFingerprintFile(String Function() resolvePath)
+  factory InstallFingerprintFile.legacy(String product, {Map<String, String>? environment, String? operatingSystem})
+  factory InstallFingerprintFile.shared({Map<String, String>? environment, String? operatingSystem})
+  adopt(String candidate) -> Future<String?>
+  publish(String fingerprint) -> Future<void>
+  read() -> Future<String?>
+  readOrCreate() -> Future<String?>
+abstract class InstallFingerprintSource
+  readOrCreate({Iterable<Future<String?> Function()> legacy}) -> Future<String?>
+class KeygenAttestation
+  const KeygenAttestation({required String body, required String date, required String host, required String requestTarget, required String signature})
+  final body: String
+  final date: String
+  final host: String
+  final requestTarget: String
+  final signature: String
+  get decodedBody -> Map<String, Object?>?
+  get digest -> String
+  get signingString -> String
+  static fromJson(Object? json) -> KeygenAttestation?
+  static fromResponse({required List<int> bodyBytes, required Map<String, String> headers, required String method, required Uri url}) -> KeygenAttestation?
+  toJson() -> Map<String, Object?>
+  verify(List<int> verifyKey) -> bool
+class KeygenLicenseClient
+  KeygenLicenseClient({Client? client, Duration? timeout, List<int>? verifyKey, String? accountId, Uri? baseUri})
+  activateMachine({required String fingerprint, required String key, required String licenseId, required String name, required String platform}) -> Future<KeygenMachineResult>
+  attestsValidation(KeygenAttestation attestation) -> bool
+  close() -> void
+  deactivateMachine({String? machine, String? machineId, required String key}) -> Future<KeygenMachineResult>
+  findMachine({required String fingerprint, required String key}) -> Future<String?>
+  requestEducationalLicense({required String email, required Uri endpoint}) -> Future<CruxLicenseActionResult>
+  validateKey(String key, {String? fingerprint}) -> Future<KeygenValidation>
+class KeygenLicenseIssuer implements LicenseIssuer
+  KeygenLicenseIssuer.production()
+  const KeygenLicenseIssuer({Map<String, KeygenPolicy> policies, required List<int> verifyKey, required String? accountId})
+  claimsFrom(LicenseEnvelope envelope) -> LicenseClaims?
+  final accountId: String?
+  final policies: Map<String, KeygenPolicy>
+  final verifyKey: List<int>
+  get id -> String
+  grantFrom(LicenseClaims claims) -> LicenseGrant?
+  static embeddedLicenseKey(LicenseEnvelope envelope) -> String?
+enum KeygenMachineOutcome
+  static const alreadyActivated: KeygenMachineOutcome
+  static const licenseInactive: KeygenMachineOutcome
+  static const noSeatAvailable: KeygenMachineOutcome
+  static const offline: KeygenMachineOutcome
+  static const ok: KeygenMachineOutcome
+  static const refused: KeygenMachineOutcome
+class KeygenMachineResult
+  const KeygenMachineResult(KeygenMachineOutcome outcome, {String detail, String? machineId})
+  final detail: String
+  final machineId: String?
+  final outcome: KeygenMachineOutcome
+  get isOk -> bool
+  toString() -> String
+class KeygenPolicy
+  const KeygenPolicy({String? stripeLookupKey, required Duration duration, required LicenseTier tier, required Set<CruxProduct> products, required String id, required String name})
+  final duration: Duration
+  final id: String
+  final name: String
+  final products: Set<CruxProduct>
+  final stripeLookupKey: String?
+  final tier: LicenseTier
+  toString() -> String
+class KeygenValidation
+  const KeygenValidation({DateTime? expiry, KeygenAttestation? attestation, String detail, String? licenseId, String? scopeFingerprint, int? machineCount, int? maxMachines, required KeygenValidationCode code, required bool valid})
+  factory KeygenValidation.fromBody(Map<String, Object?> body, {KeygenAttestation? attestation})
+  final attestation: KeygenAttestation?
+  final code: KeygenValidationCode
+  final detail: String
+  final expiry: DateTime?
+  final licenseId: String?
+  final machineCount: int?
+  final maxMachines: int?
+  final scopeFingerprint: String?
+  final valid: bool
+  get attested -> bool
+  static const unreached: KeygenValidation
+  toString() -> String
+enum KeygenValidationCode
+  static const expired: KeygenValidationCode
+  static const fingerprintScopeMismatch: KeygenValidationCode
+  static const noMachine: KeygenValidationCode
+  static const notFound: KeygenValidationCode
+  static const overage: KeygenValidationCode
+  static const suspended: KeygenValidationCode
+  static const unknown: KeygenValidationCode
+  static const valid: KeygenValidationCode
+final class LicenseAbsent extends LicenseValidation
+  const LicenseAbsent()
+  toString() -> String
+final class LicenseAccepted extends LicenseValidation
+  const LicenseAccepted(LicenseGrant grant)
+  final grant: LicenseGrant
+  get tier -> LicenseTier
+  toString() -> String
+final class LicenseActionFailed extends CruxLicenseActionResult
+  const LicenseActionFailed(CruxLicenseActionFailure failure, {LicenseRejection? rejection, String detail})
+  final detail: String
+  final failure: CruxLicenseActionFailure
+  final rejection: LicenseRejection?
+  toString() -> String
+final class LicenseActionSucceeded extends CruxLicenseActionResult
+  const LicenseActionSucceeded({String? payload, bool underReview})
+  final payload: String?
+  final underReview: bool
+  toString() -> String
+abstract class LicenseBadgeStrings
+  const LicenseBadgeStrings()
+  get editionBadgeEduSemantic -> String
+  get editionBadgeEnterpriseSemantic -> String
+  get editionBadgeProSemantic -> String
+  get tierBadgeEdu -> String
+  get tierBadgeEduSemantic -> String
+  get tierBadgeEnterprise -> String
+  get tierBadgeEnterpriseSemantic -> String
+  get tierBadgePro -> String
+  get tierBadgeProSemantic -> String
+class LicenseBadgeStringsEn extends LicenseBadgeStrings
+  const LicenseBadgeStringsEn()
+  get editionBadgeEduSemantic -> String
+  get editionBadgeEnterpriseSemantic -> String
+  get editionBadgeProSemantic -> String
+  get tierBadgeEdu -> String
+  get tierBadgeEduSemantic -> String
+  get tierBadgeEnterprise -> String
+  get tierBadgeEnterpriseSemantic -> String
+  get tierBadgePro -> String
+  get tierBadgeProSemantic -> String
+class LicenseClaims
+  const LicenseClaims({DateTime? created, DateTime? expiry, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, int? maxMachines, required String issuerId})
+  final accountId: String?
+  final created: DateTime?
+  final email: String?
+  final entitlementCodes: Set<String>
+  final expiry: DateTime?
+  final fingerprint: String?
+  final issuerId: String
+  final licenseId: String?
+  final maxMachines: int?
+  final policyDuration: Duration?
+  final policyId: String?
+  final productId: String?
+  final raw: Map<String, Object?>
+  toString() -> String
+enum LicenseCredentialKind
+  get signingPrefix -> String
+  static const licenseFile: LicenseCredentialKind
+  static const licenseKey: LicenseCredentialKind
+  static const machineFile: LicenseCredentialKind
+class LicenseEnvelope
+  const LicenseEnvelope({required LicenseCredentialKind kind, required List<int> signature, required List<int> signedMessage, required Map<String, Object?> payload})
+  final kind: LicenseCredentialKind
+  final payload: Map<String, Object?>
+  final signature: List<int>
+  final signedMessage: List<int>
+class LicenseEnvelopeParse
+  const LicenseEnvelopeParse.failed(LicenseRejection rejection, [String detail])
+  const LicenseEnvelopeParse.ok(LicenseEnvelope envelope)
+  final detail: String
+  final envelope: LicenseEnvelope?
+  final rejection: LicenseRejection?
+final class LicenseExpired extends LicenseValidation
+  const LicenseExpired(LicenseGrant grant)
+  final grant: LicenseGrant
+  toString() -> String
+class LicenseGracePolicy
+  const LicenseGracePolicy({Duration edu, Duration enterprise, Duration pro})
+  covers({required DateTime expiry, required DateTime now, required LicenseTier tier}) -> bool
+  endsAfter(DateTime expiry, LicenseTier tier) -> DateTime
+  final edu: Duration
+  final enterprise: Duration
+  final pro: Duration
+  forTier(LicenseTier tier) -> Duration
+  static const standard: LicenseGracePolicy
+class LicenseGrant
+  const LicenseGrant({DateTime? expiry, String? email, String? licenseId, String? policyId, String? skuLookupKey, bool resolvedFromEntitlements, int? maxMachines, required LicenseTier tier, required Set<CruxProduct> products, required String issuerId})
+  ==(Object other) -> bool
+  final email: String?
+  final expiry: DateTime?
+  final issuerId: String
+  final licenseId: String?
+  final maxMachines: int?
+  final policyId: String?
+  final products: Set<CruxProduct>
+  final resolvedFromEntitlements: bool
+  final skuLookupKey: String?
+  final tier: LicenseTier
+  get hashCode -> int
+  grants(CruxProduct product) -> bool
+  isExpiredAt(DateTime now) -> bool
+  remainingAt(DateTime now) -> Duration?
+  toString() -> String
+abstract class LicenseIssuer
+  claimsFrom(LicenseEnvelope envelope) -> LicenseClaims?
+  get accountId -> String?
+  get id -> String
+  get verifyKey -> List<int>
+  grantFrom(LicenseClaims claims) -> LicenseGrant?
+class LicenseMachineIdentity
+  const LicenseMachineIdentity({required String name, required String platform})
+  final name: String
+  final platform: String
+final class LicenseRejected extends LicenseValidation
+  const LicenseRejected(LicenseRejection reason, [String detail])
+  final detail: String
+  final reason: LicenseRejection
+  toString() -> String
+enum LicenseRejection
+  static const malformed: LicenseRejection
+  static const productNotEntitled: LicenseRejection
+  static const undecodablePayload: LicenseRejection
+  static const unknownPolicy: LicenseRejection
+  static const unsupportedAlgorithm: LicenseRejection
+  static const untrustedIssuer: LicenseRejection
+  static const wrongAccount: LicenseRejection
+  static const wrongMachine: LicenseRejection
+abstract class LicenseStore
+  clear() -> Future<void>
+  readCredential() -> Future<String?>
+  readIssuerSnapshot() -> Future<String?>
+  readLastCheck() -> Future<DateTime?>
+  readMachineId() -> Future<String?>
+  readOrCreateFingerprint() -> Future<String>
+  writeCredential(String credential) -> Future<void>
+  writeIssuerSnapshot(String? snapshot) -> Future<void>
+  writeLastCheck(DateTime at) -> Future<void>
+  writeMachineId(String? machineId) -> Future<void>
+enum LicenseTier
+  static const edu: LicenseTier
+  static const enterprise: LicenseTier
+  static const openCore: LicenseTier
+  static const pro: LicenseTier
+extension LicenseTierFeatures on LicenseTier
+  get featureEquivalent -> LicenseTier
+  get isEducational -> bool
+sealed class LicenseValidation
+  const LicenseValidation()
+  get grant -> LicenseGrant?
+  get tier -> LicenseTier
+abstract class LicenseValidator
+  get name -> String
+  validate(String? rawCredential, {DateTime? now, String? fingerprint}) -> Future<LicenseValidation>
+abstract class MachineReleaseMarker
+  clearReleased({required String licenseId}) -> Future<void>
+  markReleased({required String fingerprint, required String licenseId}) -> Future<void>
+  wasReleased({required String fingerprint, required String licenseId}) -> Future<bool>
+class NoMachineReleaseMarker implements MachineReleaseMarker
+  const NoMachineReleaseMarker()
+  clearReleased({required String licenseId}) -> Future<void>
+  markReleased({required String fingerprint, required String licenseId}) -> Future<void>
+  wasReleased({required String fingerprint, required String licenseId}) -> Future<bool>
+class NoopLicenseValidator implements LicenseValidator
+  const NoopLicenseValidator()
+  get name -> String
+  validate(String? rawCredential, {DateTime? now, String? fingerprint}) -> Future<LicenseValidation>
+class PolicyLoadReport
+  const PolicyLoadReport({required AuditSeverity severity, required Map<String, Object?> payload, required PolicyReportDestination destination, required String kind})
+  final destination: PolicyReportDestination
+  final kind: String
+  final payload: Map<String, Object?>
+  final severity: AuditSeverity
+  get line -> String
+  static of(PolicyLoadResult result) -> PolicyLoadReport?
+enum PolicyReportDestination
+  static const auditSink: PolicyReportDestination
+  static const processLog: PolicyReportDestination
+class SharedInstallFingerprint implements InstallFingerprintSource
+  SharedInstallFingerprint({InstallFingerprintFile? file, Map<String, String>? environment, String? operatingSystem})
+  readOrCreate({Iterable<Future<String?> Function()> legacy}) -> Future<String?>
+class UnsupportedLicenseActions implements CruxLicenseActions
+  const UnsupportedLicenseActions()
+  activate(String credential) -> Future<CruxLicenseActionResult>
+  deactivateThisMachine() -> Future<CruxLicenseActionResult>
+  exportOfflineRequest() -> Future<CruxLicenseActionResult>
+  get supportsDeactivation -> bool
+  get supportsEducationalRequest -> bool
+  get supportsManageLink -> bool
+  get supportsOfflineActivation -> bool
+  get supportsPurchaseLinks -> bool
+  importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openManagePage() -> Future<CruxLicenseActionResult>
+  openPurchasePage() -> Future<CruxLicenseActionResult>
+  refresh() -> Future<CruxLicenseActionResult>
+  requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
+get aiExperimentalBuildFlagProvider -> Provider<bool>
+get aiExperimentalEnabledProvider -> Provider<bool>
+get aiExperimentalUserToggleProvider -> Provider<bool>
+applyLicenseTierOverride(LicenseTier resolved) -> LicenseTier
+applyPolicyLicense({required CruxLicenseController controller, required DayOnePolicy policy, required Future<String?> Function(String) readFile}) -> Future<bool>
+get betaExpiryDaysRemainingProvider -> Provider<int?>
+betaExpiryStatusFor(DateTime now, {DateTime? expiry, int? warningDays}) -> BetaExpiryStatus
+get betaExpiryStatusProvider -> Provider<BetaExpiryStatus>
+get betaPeriodProvider -> Provider<bool>
+get cruxAuditPeerIdProvider -> Provider<String?>
+get cruxAuditProductIdProvider -> Provider<String>
+get cruxAuditRecorderProvider -> Provider<CruxAuditRecorder>
+get cruxAuditSinkProvider -> Provider<AuditSink>
+cruxGatedSettingsCategory({CruxUpgradeDialogStrings Function(BuildContext)? strings, LicenseBadgeStrings Function(BuildContext)? badgeStrings, required IconData icon, required LicenseTier requiredTier, required String Function(BuildContext) labelBuilder, required String id, required Widget Function(BuildContext) bodyBuilder}) -> CruxSettingsExtraCategory
+cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
+cruxLicenseEditionLine(CruxLicenseStatus status, CruxEditionLineStrings strings) -> String?
+cruxLicenseSettingsCategory({Future<String?> Function(BuildContext)? onPickCredentialFile, LicenseBadgeStrings Function(BuildContext)? badgeStrings, required CruxLicensePanelStrings Function(BuildContext) strings, required CruxProduct product}) -> CruxSettingsExtraCategory
+get cruxPolicyLoader -> PolicyLoader
+cruxPolicyOverrides() -> List<Override>
+get cruxPolicyProvider -> Provider<PolicyLoadResult>
+cruxSeePricingAction(CruxLicenseActions actions) -> Future<void> Function()?
+cruxSeePricingActionFor(BuildContext context) -> Future<void> Function()?
+get dayOnePolicyProvider -> Provider<DayOnePolicy>
+daysUntilBetaExpiry(DateTime now, {DateTime? expiry}) -> int?
+decodeHexKey(String hex) -> List<int>
+get kAiExperimental -> bool
+get kBetaExpiry -> DateTime?
+get kBetaExpiryWarningDays -> int
+get kBetaPeriod -> bool
+get kCruxLicenseCategoryIcon -> IconData
+get kCruxLicenseCategoryId -> String
+get kKeygenAccountId -> String
+get kKeygenPolicies -> Map<String, KeygenPolicy>
+get kKeygenVerifyKeyHex -> String
+get kLicenseTierOverrideName -> String
+legacyInstallFingerprintPath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
+get licenseActionsProvider -> Provider<CruxLicenseActions>
+get licenseManagedByOrganizationProvider -> Provider<bool>
+get licenseStatusProvider -> Provider<CruxLicenseStatus>
+get licenseTierOverride -> LicenseTier?
+get licenseTierProvider -> Provider<LicenseTier>
+mintInstallFingerprint([Random? random]) -> String
+get observedServerTimeProvider -> Provider<DateTime?>
+parseBetaExpiryDate(int yyyymmdd) -> DateTime?
+parseLicenseCredential(String raw) -> LicenseEnvelopeParse
+reportPolicyLoad({String? productId, required CruxAuditRecorder recorder, required PolicyLoadResult result, void Function(String)? onDiagnostic}) -> PolicyLoadReport?
+trustedBetaExpiryNow(DateTime deviceNow, {DateTime? observedServerTime}) -> DateTime

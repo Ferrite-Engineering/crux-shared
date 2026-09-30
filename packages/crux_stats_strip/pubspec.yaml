@@ -1,0 +1,27 @@
+name: crux_stats_strip
+description: >-
+  Cross-suite live statistics strip for the EDACrux suite — the collapsible
+  ambient performance monitor that docks above the status bar, its sparkline,
+  and the app-level frame-rate and process-memory collectors every product
+  shares. Product-specific segments are supplied by the host.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  meta: ^1.15.0
+
+dev_dependencies:
+  crux_a11y:
+    path: ../crux_a11y
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

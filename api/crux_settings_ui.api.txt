@@ -1,0 +1,107 @@
+# Public API surface of package:crux_settings_ui/crux_settings_ui.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxAutoReloadSettingTile extends StatelessWidget
+  const CruxAutoReloadSettingTile({Key? key, required AutoReloadMode value, required String autoLabel, required String description, required String label, required String offLabel, required String promptLabel, required void Function(AutoReloadMode) onChanged})
+  build(BuildContext context) -> Widget
+  final autoLabel: String
+  final description: String
+  final label: String
+  final offLabel: String
+  final onChanged: void Function(AutoReloadMode)
+  final promptLabel: String
+  final value: AutoReloadMode
+class CruxLocaleSettingTile extends StatelessWidget
+  const CruxLocaleSettingTile({Key? key, required String description, required String label, required String locale, required void Function(String) onChanged})
+  build(BuildContext context) -> Widget
+  final description: String
+  final label: String
+  final locale: String
+  final onChanged: void Function(String)
+class CruxPolicyLockNote extends StatelessWidget
+  const CruxPolicyLockNote({Key? key, String? source, required String message})
+  build(BuildContext context) -> Widget
+  final message: String
+  final source: String?
+class CruxSettingsCard extends StatelessWidget
+  const CruxSettingsCard({Key? key, required List<Widget> children})
+  build(BuildContext context) -> Widget
+  final children: List<Widget>
+class CruxSettingsCategory
+  const CruxSettingsCategory({required IconData icon, required String id, required String title, required Widget content})
+  final content: Widget
+  final icon: IconData
+  final id: String
+  final title: String
+final abstract class CruxSettingsCategoryId
+  static const ai: String
+  static const appearance: String
+  static const canonicalOrder: List<String>
+  static const cxp: String
+  static const detectors: String
+  static const editors: String
+  static const extensions: String
+  static const fileHandling: String
+  static const general: String
+  static const orientation: String
+  static const privacy: String
+  static const productDefaults: String
+  static const remoteControl: String
+  static const shortcuts: String
+class CruxSettingsControlTile extends StatelessWidget
+  const CruxSettingsControlTile({Key? key, String? description, required String title, required Widget control})
+  build(BuildContext context) -> Widget
+  final control: Widget
+  final description: String?
+  final title: String
+class CruxSettingsDialogShell extends StatelessWidget
+  const CruxSettingsDialogShell({Key? key, required String closeTooltip, required String title, required Widget body})
+  build(BuildContext context) -> Widget
+  final body: Widget
+  final closeTooltip: String
+  final title: String
+class CruxSettingsExtraCategory
+  const CruxSettingsExtraCategory({required IconData icon, required String Function(BuildContext) labelBuilder, required String id, required Widget Function(BuildContext) bodyBuilder})
+  final bodyBuilder: Widget Function(BuildContext)
+  final icon: IconData
+  final id: String
+  final labelBuilder: String Function(BuildContext)
+  toCategory(BuildContext context) -> CruxSettingsCategory
+class CruxSettingsMasterDetail extends StatefulWidget
+  const CruxSettingsMasterDetail({Key? key, bool scrollableDetail, bool showDetailTitle, double dualPaneBreakpoint, double railWidth, required List<CruxSettingsCategory> categories})
+  createState() -> State<CruxSettingsMasterDetail>
+  final categories: List<CruxSettingsCategory>
+  final dualPaneBreakpoint: double
+  final railWidth: double
+  final scrollableDetail: bool
+  final showDetailTitle: bool
+class CruxSettingsRouteShell extends StatelessWidget
+  const CruxSettingsRouteShell({Key? key, required String closeTooltip, required String title, required Widget body})
+  build(BuildContext context) -> Widget
+  final body: Widget
+  final closeTooltip: String
+  final title: String
+class CruxSettingsSectionCard extends StatelessWidget
+  const CruxSettingsSectionCard({Key? key, required List<Widget> children})
+  build(BuildContext context) -> Widget
+  final children: List<Widget>
+class CruxSettingsSliderTile extends StatelessWidget
+  const CruxSettingsSliderTile({Key? key, required String description, required String label, required String title, required String valueText, required double max, required double min, required double value, required int divisions, required void Function(double) onChanged})
+  build(BuildContext context) -> Widget
+  final description: String
+  final divisions: int
+  final label: String
+  final max: double
+  final min: double
+  final onChanged: void Function(double)
+  final title: String
+  final value: double
+  final valueText: String
+get kCruxSupportedLocales -> Map<String, String>
+openCruxSettings(BuildContext context, {Widget Function(BuildContext, Widget)? wrap, required String closeTooltip, required String title, required Widget Function(BuildContext) bodyBuilder, required bool asDialog}) -> Future<void>

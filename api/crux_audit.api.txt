@@ -1,0 +1,58 @@
+# Public API surface of package:crux_audit/crux_audit.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class AuditEvent
+  const AuditEvent({AuditSeverity severity, Map<String, Object?> payload, String? peerId, required DateTime timestamp, required String kind, required String product})
+  final kind: String
+  final payload: Map<String, Object?>
+  final peerId: String?
+  final product: String
+  final severity: AuditSeverity
+  final timestamp: DateTime
+  toJson() -> Map<String, Object?>
+  toJsonLine() -> String
+enum AuditSeverity
+  static const debug: AuditSeverity
+  static const error: AuditSeverity
+  static const info: AuditSeverity
+  static const warning: AuditSeverity
+abstract class AuditSink
+  close() -> Future<void>
+  get health -> AuditSinkHealth
+  record(AuditEvent event) -> Future<void>
+class AuditSinkHealth
+  const AuditSinkHealth({DateTime? since, String? detail, required bool writable})
+  const AuditSinkHealth.failed(String detail, DateTime since)
+  final detail: String?
+  final since: DateTime?
+  final writable: bool
+  static const healthy: AuditSinkHealth
+enum AuditVerbosity
+  records(AuditSeverity severity) -> bool
+  static const normal: AuditVerbosity
+  static const off: AuditVerbosity
+  static const verbose: AuditVerbosity
+final abstract class CruxSharedAuditKinds
+  static const all: Set<String>
+  static const pluginLoadRefused: String
+  static const policyLoaded: String
+  static const policyRejected: String
+class JsonlAuditSink implements AuditSink
+  JsonlAuditSink({AuditVerbosity verbosity, int? maxBytes, required String path, void Function(String)? onDiagnostic})
+  close() -> Future<void>
+  final maxBytes: int?
+  final path: String
+  final verbosity: AuditVerbosity
+  get health -> AuditSinkHealth
+  record(AuditEvent event) -> Future<void>
+class NoopAuditSink implements AuditSink
+  const NoopAuditSink()
+  close() -> Future<void>
+  get health -> AuditSinkHealth
+  record(AuditEvent event) -> Future<void>

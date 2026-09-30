@@ -1,0 +1,79 @@
+# Public API surface of package:crux_linux_integration/crux_linux_integration.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+typedef DesktopCacheRunner = Future<void> Function(String, List<String>)
+class DesktopIntegrationResult
+  factory DesktopIntegrationResult.failed(String error)
+  factory DesktopIntegrationResult.integrated({String? mimePackagePath, required String desktopFilePath, required int iconCount})
+  factory DesktopIntegrationResult.skipped(DesktopIntegrationSkipReason reason)
+  final desktopFilePath: String?
+  final error: String?
+  final iconCount: int
+  final mimePackagePath: String?
+  final skipReason: DesktopIntegrationSkipReason?
+  final status: DesktopIntegrationStatus
+enum DesktopIntegrationSkipReason
+  static const alreadyCurrent: DesktopIntegrationSkipReason
+  static const notAppImage: DesktopIntegrationSkipReason
+enum DesktopIntegrationStatus
+  static const failed: DesktopIntegrationStatus
+  static const integrated: DesktopIntegrationStatus
+  static const skipped: DesktopIntegrationStatus
+class DesktopIntegrator
+  DesktopIntegrator({Future<void> Function(String, List<String>)? cacheRunner, required Map<String, String> env, required String homeDir})
+  final cacheRunner: Future<void> Function(String, List<String>)
+  final env: Map<String, String>
+  final homeDir: String
+  integrate(LinuxDesktopApp app) -> Future<DesktopIntegrationResult>
+class LinuxDesktopApp
+  const LinuxDesktopApp({List<LinuxMimeType> fileTypes, List<String> categories, List<String> mimeTypes, required String appId, required String comment, required String execName, required String name})
+  final appId: String
+  final categories: List<String>
+  final comment: String
+  final execName: String
+  final fileTypes: List<LinuxMimeType>
+  final mimeTypes: List<String>
+  final name: String
+  get claimedTypeNames -> List<String>
+class LinuxMimeCoverage
+  const LinuxMimeCoverage({required List<String> problems, required Map<String, String> deliberatelyUnmapped})
+  final deliberatelyUnmapped: Map<String, String>
+  final problems: List<String>
+  get isComplete -> bool
+  toString() -> String
+class LinuxMimeMagic
+  factory LinuxMimeMagic({int priority, required List<LinuxMimeMagicMatch> matches})
+  final matches: List<LinuxMimeMagicMatch>
+  final priority: int
+class LinuxMimeMagicMatch
+  const LinuxMimeMagicMatch({int offset, int? offsetEnd, required String value})
+  final offset: int
+  final offsetEnd: int?
+  final value: String
+  get offsetAttribute -> String
+class LinuxMimeType
+  const LinuxMimeType.registered(String name)
+  factory LinuxMimeType.declared({LinuxMimeMagic? magic, String? subClassOf, int? globWeight, required List<String> extensions, required String comment, required String name})
+  factory LinuxMimeType.unmapped({required List<String> extensions, required String reason})
+  final comment: String?
+  final extensions: List<String>
+  final globWeight: int?
+  final magic: LinuxMimeMagic?
+  final name: String
+  final reason: String?
+  final subClassOf: String?
+  get globs -> Iterable<String>
+  get isDeclared -> bool
+  get isNamed -> bool
+buildDesktopEntry(LinuxDesktopApp app, {required String appImagePath}) -> String
+buildMimePackage(LinuxDesktopApp app) -> String?
+checkLinuxMimeCoverage(LinuxDesktopApp app, {Map<String, List<String>> registeredExtensionsOf, Set<String> additionalSystemTypes, required Set<String> registeredExtensions}) -> LinuxMimeCoverage
+get kLinuxDefaultGlobWeight -> int
+get kLinuxSystemMimeTypes -> Set<String>
+maybeIntegrateDesktopEntry(LinuxDesktopApp app) -> Future<void>

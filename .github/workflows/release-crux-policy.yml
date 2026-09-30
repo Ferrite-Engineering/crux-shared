@@ -1,0 +1,793 @@
+name: Release (crux-policy CLI)
+
+# ─── Trigger ───────────────────────────────────────────────────────────────
+# Manual only. This repository is a library workspace; the one thing in it a
+# CUSTOMER runs is the `crux-policy` binary, and producing one is a deliberate,
+# dated act. There is no push/PR/nightly trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the archives to R2 when the build succeeds. Turn OFF for a verification build you want to download from the Actions run and test before it becomes a real release.'
+        required: false
+        type: boolean
+        default: true
+      overwrite:
+        description: 'Allow publishing over a version that is already in the bucket. OFF by default: published objects are served with a long edge cache, so replacing one leaves two different binaries live under one URL.'
+        required: false
+        type: boolean
+        default: false
+      ignore_red_ci:
+        description: 'EMERGENCY ONLY: build even though CI is not green on this commit. Leave OFF.'
+        required: false
+        type: boolean
+        default: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY THIS EXISTS
+#
+# The Enterprise deployment procedure on edacrux.app tells an administrator to
+# run `crux-policy init / lint / sign` as step one, and the policy file
+# reference states that this CLI is the entire replacement for an admin
+# console. Until this workflow there was no way to obtain it: no release
+# pipeline existed in this repository at all, for anything. A customer was
+# being told to run a binary that was not published anywhere.
+#
+# WHAT IT SHIPS
+#
+# `dart build cli` on `packages/crux_policy/bin/crux_policy.dart` emits a
+# SINGLE self-contained executable — the bundle's `lib/` is empty, because the
+# package is pure Dart with no native assets and is guarded to stay that way.
+# So unlike a product CLI whose whole bundle directory has to travel, the
+# archive here holds one file plus the licence texts. Do not "simplify" the
+# packaging by publishing the raw executable: on macOS a bare downloaded
+# Mach-O is quarantined, and the notarization ticket can only be stapled to
+# the archive.
+#
+# The executable is renamed from `crux_policy` to `crux-policy` on the way
+# into the archive. The hyphen is what every page and every example types.
+#
+# PLATFORMS
+#
+#   macos-arm64   macos-latest     native
+#   macos-x64     macos-15-intel   native — `dart build cli` REFUSES
+#                                  `--target-os macos --target-arch x64`
+#                                  ("Unsupported target platform macos_x64"),
+#                                  so an Intel binary needs an Intel runner.
+#   linux-x64     ubuntu-22.04     native
+#   linux-arm64   ubuntu-22.04     cross-compiled, then executed under
+#                                  qemu-user (with an arm64 libc) for the same
+#                                  smoke test the native binaries get.
+#                                  Cross-compiling to linux_arm64 IS supported
+#                                  and costs nothing extra; a hosted arm64
+#                                  runner is billed.
+#   windows-x64   windows-latest   native
+#
+# The Linux glibc floor is NOT set by the runner for this binary — a Dart AOT
+# executable inherits it from the prebuilt Dart runtime it embeds (measured:
+# GLIBC_2.18 on both architectures). The "Verify glibc floor" step holds it to
+# the floor the package README promises.
+#
+# ─── Secrets and variables this workflow reads ─────────────────────────────
+# Org-level with visibility "all" (checked against the org's Actions settings),
+# so they reach this repository:
+#   MACOS_CERT_P12_BASE64 / MACOS_CERT_PASSWORD  — Developer ID Application.
+#   NOTARY_APPLE_ID / NOTARY_PASSWORD            — notarytool credential.
+#   CLOUDFLARE_API_TOKEN                         — R2 write, `crux-releases`.
+#   CLOUDFLARE_ACCOUNT_ID (variable)
+#
+# NOT org-level — they exist per product repository — so until they are added
+# to this repository the Windows binary SHIPS UNSIGNED, with a warning on the
+# run (SmartScreen will warn the person who downloads it):
+#   AZURE_TENANT_ID / AZURE_CLIENT_ID / AZURE_CLIENT_SECRET (secrets)
+#   AZURE_TS_ENDPOINT / AZURE_TS_ACCOUNT / AZURE_TS_PROFILE (variables)
+#
+# Every signing and publishing step is gated on its credential being present,
+# so a secretless dispatch still succeeds — it just produces unsigned,
+# unpublished archives on the run. The exception is macOS on a PUBLISHING run:
+# its credentials are org-level and always expected, so a missing certificate
+# or notary credential there fails the build rather than publishing an
+# unsigned or un-notarized binary on a green run.
+#
+# Third-party actions are pinned to a full commit SHA. A moving major tag is
+# a supply-chain hole in a job that holds a code-signing identity.
+# ─────────────────────────────────────────────────────────────────────────────
+
+permissions:
+  contents: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # CI must be green on THIS commit before anything is built. `needs:` cannot
+  # express it, because CI is a different workflow, so the gate asks the API
+  # for the run on this exact SHA. A run still in progress is waited for
+  # rather than failed: dispatching moments after the push that triggered CI
+  # is the normal way this happens.
+  #
+  # The wait is 45 minutes because a green CI run here takes about 19 (the
+  # `ci` job alone is capped at 45), so a 20-minute wait would refuse a
+  # dispatch made right after a push with "no completed CI run" — which reads
+  # as a CI problem when it is only impatience. The job cap sits just above
+  # the wait.
+  # ───────────────────────────────────────────────────────────────────────────
+  gate:
+    name: CI green on this commit?
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Require a green CI run for ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IGNORE_RED: ${{ inputs.ignore_red_ci }}
+        run: |
+          set -euo pipefail
+
+          if [ "$IGNORE_RED" = "true" ]; then
+            {
+              echo "### :warning: CI gate BYPASSED"
+              echo
+              echo "\`ignore_red_ci\` was set, so this release was built without"
+              echo "a green CI run on \`${GITHUB_SHA}\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::CI gate bypassed via ignore_red_ci"
+            exit 0
+          fi
+
+          api="repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&per_page=20"
+
+          for attempt in $(seq 1 90); do
+            runs=$(gh api "$api" --jq '.workflow_runs | length')
+            if [ "$runs" = "0" ]; then
+              echo "No CI run found yet for ${GITHUB_SHA} (attempt ${attempt})..."
+              sleep 30
+              continue
+            fi
+
+            concl=$(gh api "$api" --jq '.workflow_runs[0].conclusion // "pending"')
+            url=$(gh api "$api" --jq '.workflow_runs[0].html_url')
+
+            case "$concl" in
+              success)
+                echo "CI is green on ${GITHUB_SHA}."
+                echo "- CI: $url" >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+                ;;
+              pending)
+                echo "CI still running for ${GITHUB_SHA} (attempt ${attempt})..."
+                sleep 30
+                ;;
+              *)
+                {
+                  echo "### :x: Release blocked — CI is \`$concl\` on this commit"
+                  echo
+                  echo "- Commit: \`${GITHUB_SHA}\`"
+                  echo "- CI run: $url"
+                } >> "$GITHUB_STEP_SUMMARY"
+                echo "::error::CI concluded '$concl' on ${GITHUB_SHA} — refusing to build a release. See $url"
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "::error::No completed CI run for ${GITHUB_SHA} after 45 minutes — refusing to build a release."
+          exit 1
+
+      # Fail fast, before the four-platform build matrix spends any time
+      # signing and notarizing, when a publishing run is missing the R2
+      # credential its `publish` job needs. Presence only, mirroring the
+      # `prepare` job in edacrux's build-suite-installer.yml: on the free
+      # plan an org-level secret does not reach a private repository, so a
+      # publishing dispatch with the secret simply unset must fail here
+      # rather than build everything and finish green having published
+      # nothing. The `publish` job's own "Detect R2 credentials" step
+      # refuses by itself too, the same belt-and-braces shape as that
+      # workflow's build-time "Preflight R2 credentials" step.
+      - name: Require R2 publish credentials (publishing run)
+        if: ${{ inputs.publish }}
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            echo "::error::Publishing run, but CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID are empty. Refusing to build a release that would finish green having published nothing. Restore them, or dispatch with publish off for a verification build."
+            exit 1
+          fi
+          echo "R2 publish credentials present."
+
+  build:
+    name: Build / ${{ matrix.platform }}
+    needs: gate
+    runs-on: ${{ matrix.os }}
+    # Cap runaway jobs — a hung 6 h macOS job once exhausted the Actions budget.
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos-arm64
+          # Intel macOS needs an Intel runner: `dart build cli` rejects
+          # `--target-os macos --target-arch x64` outright. There is no
+          # floating `-intel` label, so this one is pinned by necessity —
+          # and pinned to the OLDER of the two images on offer, for the same
+          # reason ubuntu-22.04 is. GitHub retires these: when this label
+          # stops resolving, move it to the next `macos-*-intel` rather than
+          # dropping the leg, or Intel Macs lose the tool silently.
+          - os: macos-15-intel
+            platform: macos-x64
+          # Pinned like every Linux release leg in the suite. For THIS binary
+          # the runner does not set the glibc floor (see "Verify glibc floor");
+          # the pin keeps the toolchain image stable, not the floor.
+          - os: ubuntu-22.04
+            platform: linux-x64
+          - os: windows-latest
+            platform: windows-x64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      # Flutter, not a Dart-only SDK: `crux_policy` resolves as part of a
+      # workspace that contains Flutter packages, so the root `pub get` needs
+      # the Flutter SDK even though this package is pure Dart and guarded to
+      # stay that way. Flutter bundles Dart, so `dart build cli` still works.
+      #
+      # The version is the suite pin, identical to ci.yml. A release binary
+      # must be reproducible, and the pin is also what makes the tested
+      # toolchain and the shipped toolchain the same one.
+      - name: Install Flutter (pinned)
+        id: flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: '3.47.3'
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: |
+            ${{ steps.flutter.outputs.pub-cache-path }}
+            .dart_tool/
+          key: pub-release-${{ matrix.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-release-${{ matrix.os }}-
+
+      # One resolution for the whole workspace: `resolution: workspace` means
+      # the lockfile and the package config live at the root, and a per-package
+      # `pub get` would not produce them.
+      - name: Resolve the workspace
+        run: flutter pub get
+
+      # The version in the archive name and the R2 key. Parsed from the
+      # package that is being shipped, not from the workspace root, which has
+      # no version.
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="$(grep -m1 '^version:' packages/crux_policy/pubspec.yaml | sed -E 's/^version:[[:space:]]*//; s/\+.*$//')"
+          [[ -n "$V" ]] || { echo "could not parse version from packages/crux_policy/pubspec.yaml" >&2; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "crux-policy version: $V"
+
+      # tool/build_cli.sh is THE build: the same script CI runs on every push
+      # and a developer runs locally, so this job cannot compile something
+      # different from what was tested. It also refuses a bundle whose `lib/`
+      # is not empty (the single file would no longer run on its own) and
+      # leaves the executable under the name customers type, `crux-policy`.
+      # The script runs from its package, so its output directory (and every
+      # path below) is under packages/crux_policy/.
+      - name: Build the CLI
+        shell: bash
+        run: packages/crux_policy/tool/build_cli.sh build/release/native
+
+      # Cross-compiled on the x64 runner rather than built on a billed arm64
+      # one. The package has no native assets, so this is a pure AOT snapshot
+      # for another architecture and nothing about the build differs.
+      - name: Build the CLI (linux-arm64, cross)
+        if: matrix.platform == 'linux-x64'
+        shell: bash
+        run: |
+          packages/crux_policy/tool/build_cli.sh build/release/linux-arm64 \
+            --target-os linux --target-arch arm64
+
+      # qemu-user plus an arm64 C library, so the cross-built binary gets the
+      # same smoke test as the native ones. qemu alone is not enough: the
+      # binary is dynamically linked, and without `-L` pointing at an arm64
+      # sysroot it dies looking for /lib/ld-linux-aarch64.so.1 — which would
+      # make the one binary nobody ever executed the one that fails in the
+      # field. A leg that never runs looks exactly like a leg that passes.
+      - name: Install qemu-user and an arm64 libc (Linux)
+        if: matrix.platform == 'linux-x64'
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-user-static libc6-arm64-cross
+
+      # ── Smoke test ────────────────────────────────────────────────────────
+      # The binary is driven through the exact sequence the deployment page
+      # teaches, then through the exit codes the policy file reference
+      # publishes. A binary that cannot do that is not a binary worth signing
+      # — and this is the step that would catch an AOT compile that succeeded
+      # and produced something dying at startup.
+      - name: Smoke-test the binary
+        shell: bash
+        env:
+          BUILT: ${{ matrix.platform == 'linux-x64' && 'native linux-arm64' || 'native' }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          OUT="crux-policy"
+          [[ "$RUNNER_OS" == "Windows" ]] && OUT="crux-policy.exe"
+
+          for build in $BUILT; do
+            BIN="$PWD/packages/crux_policy/build/release/$build/$OUT"
+            # How to execute it: directly, or under emulation for the
+            # cross-built leg. `${RUN[@]+...}` because macOS runs bash 3.2,
+            # where an empty array under `set -u` is an unbound variable.
+            RUN=()
+            if [[ "$build" == "linux-arm64" ]]; then
+              RUN=(qemu-aarch64-static -L /usr/aarch64-linux-gnu)
+            fi
+            cli() { ${RUN[@]+"${RUN[@]}"} "$BIN" "$@"; }
+
+            echo "── $build ──"
+            WORK="$(mktemp -d)"
+
+            # It names the release it came in.
+            got="$(cli --version)"
+            if [[ "$got" != "crux-policy $VERSION" ]]; then
+              echo "::error::$build: --version printed '$got', expected 'crux-policy $VERSION'"
+              exit 1
+            fi
+
+            # The published procedure, in order.
+            cli init --out "$WORK/.crux-policy.json"
+            cli lint "$WORK/.crux-policy.json"
+            cli inspect "$WORK/.crux-policy.json" --product lintcrux
+
+            # The published exit codes, asserted rather than assumed. These
+            # numbers are a contract a CI step branches on; 64 is the usage
+            # code every headless tool in the suite uses.
+            check() {
+              local want="$1"; shift
+              local got=0
+              cli "$@" >/dev/null 2>&1 || got=$?
+              if [[ "$got" != "$want" ]]; then
+                echo "::error::$build: 'crux-policy $*' exited $got, expected $want"
+                exit 1
+              fi
+            }
+            check 0 lint "$WORK/.crux-policy.json"
+            check 0 lint --help
+            check 0 sign --version
+            check 64 frobnicate
+            check 64 lint "$WORK/.crux-policy.json" --jso
+            check 3 lint "$WORK/nonexistent.json"
+
+            rm -rf "$WORK"
+          done
+
+      # ── Enforce a runtime floor rather than discovering one in the field ──
+      # A Dart AOT executable's glibc requirement comes from the Dart runtime
+      # it embeds, which the SDK ships prebuilt — not from the runner it was
+      # built on. Measured with Dart 3.13: GLIBC_2.18 on both architectures.
+      # The gate is 2.28 (RHEL 8, Debian 10, Ubuntu 20.04 and later), the
+      # floor the package README promises: headroom, so a toolchain bump that
+      # nudges the requirement does not red a release, while one that crosses
+      # the promise does — that is a customer-facing change and must be a
+      # decision, not a discovery. readelf, not objdump: it reads the arm64
+      # binary on an x64 host.
+      - name: Verify glibc floor (Linux)
+        if: matrix.platform == 'linux-x64'
+        shell: bash
+        env:
+          GLIBC_FLOOR: '2.28'
+        run: |
+          set -euo pipefail
+          for build in native linux-arm64; do
+            BIN="packages/crux_policy/build/release/$build/crux-policy"
+            worst="$(readelf --wide --dyn-syms "$BIN" \
+              | sed -n 's/.*@GLIBC_\([0-9][0-9.]*\).*/\1/p' \
+              | sort -V | tail -1)"
+            echo "$build requires at most GLIBC_${worst:-none}"
+            if [[ -z "$worst" ]]; then
+              echo "::error::$build: no GLIBC symbol versions found — the measurement is broken, not the binary"
+              exit 1
+            fi
+            highest="$(printf '%s\n%s\n' "$worst" "$GLIBC_FLOOR" | sort -V | tail -1)"
+            if [[ "$highest" != "$GLIBC_FLOOR" ]]; then
+              echo "::error::$build needs GLIBC_$worst, above the promised floor $GLIBC_FLOOR"
+              exit 1
+            fi
+          done
+
+      # ── macOS: Developer ID sign ─────────────────────────────────────────
+      - name: Set up macOS signing
+        id: macsign
+        if: runner.os == 'macOS'
+        env:
+          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          PUBLISHING: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${MACOS_CERT_P12_BASE64:-}" ]]; then
+            if [[ "$PUBLISHING" == "true" ]]; then
+              echo "::error::No MACOS_CERT_P12_BASE64 secret on a publishing run — refusing to publish an unsigned macOS binary."
+              exit 1
+            fi
+            echo "No MACOS_CERT_P12_BASE64 secret — the macOS binary stays unsigned (not a publishing run)."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          KC="$RUNNER_TEMP/build.keychain-db"
+          KC_PW="$(openssl rand -base64 24)"
+          echo "$MACOS_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/devid.p12"
+          security create-keychain -p "$KC_PW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KC_PW" "$KC"
+          security import "$RUNNER_TEMP/devid.p12" -k "$KC" -P "${MACOS_CERT_PASSWORD:-}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KC_PW" "$KC" >/dev/null
+          # Put our keychain first in the user search list so find-identity
+          # sees it. The substitution is deliberately unquoted: the existing
+          # search list must arrive as separate arguments, not as one.
+          # shellcheck disable=SC2046
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | sed 's/"//g')
+          rm -f "$RUNNER_TEMP/devid.p12"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      # ── Stage the archive payload ────────────────────────────────────────
+      # The staging directory is named exactly like the archive, so unpacking
+      # yields a self-describing folder rather than a loose `crux-policy` in
+      # whatever directory the customer happened to be in.
+      #
+      # LICENSE and NOTICES travel with the binary: Apache-2.0 requires the
+      # licence to accompany the work, and NOTICES is the third-party
+      # attribution CI already keeps in step with the lockfile.
+      - name: Stage
+        id: stage
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          OUT="crux-policy"
+          [[ "$RUNNER_OS" == "Windows" ]] && OUT="crux-policy.exe"
+
+          stage_one() {
+            local build="$1" platform="$2"
+            local dir="$RUNNER_TEMP/stage/crux-policy-$VERSION-$platform"
+            mkdir -p "$dir"
+            cp "packages/crux_policy/build/release/$build/$OUT" "$dir/$OUT"
+            chmod +x "$dir/$OUT"
+            cp LICENSE "$dir/LICENSE"
+            cp NOTICES "$dir/NOTICES"
+          }
+
+          rm -rf "$RUNNER_TEMP/stage"
+          stage_one native "$PLATFORM"
+          if [[ "$PLATFORM" == "linux-x64" ]]; then
+            stage_one linux-arm64 linux-arm64
+          fi
+          ls -lR "$RUNNER_TEMP/stage"
+
+      # A bare Mach-O downloaded from the internet is quarantined exactly like
+      # an .app, so it needs its own Developer ID signature with the hardened
+      # runtime — notarization rejects anything without it.
+      #
+      # The Hardened Runtime alone KILLS a Dart AOT executable at launch
+      # (SIGKILL, exit 137): the runtime maps its AOT snapshot into executable
+      # memory no code signature covers. The entitlements file grants
+      # `allow-unsigned-executable-memory`, the one entitlement that permits
+      # it (`allow-jit` does not); its header records the measurement. The
+      # smoke test above runs BEFORE signing, so the signed binary is run
+      # again here — a signature that kills the binary still verifies.
+      - name: Sign the binary (macOS)
+        if: runner.os == 'macOS' && steps.macsign.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          IDENTITY="$(security find-identity -v -p codesigning \
+            | awk '/Developer ID Application/ {print $2; exit}')"
+          if [[ -z "$IDENTITY" ]]; then
+            echo "::error::macOS signing was set up but no Developer ID Application identity is in the keychain"
+            exit 1
+          fi
+          for bin in "$RUNNER_TEMP"/stage/*/crux-policy; do
+            codesign --force --timestamp --options runtime \
+              --entitlements packages/crux_policy/tool/macos_cli.entitlements \
+              --sign "$IDENTITY" "$bin"
+            codesign --verify --strict --verbose=2 "$bin"
+            rc=0
+            "$bin" --version || rc=$?
+            if (( rc != 0 )); then
+              echo "::error::$bin does not run once signed (exit $rc; 137 is a launch-time SIGKILL) — check the Hardened Runtime entitlements"
+              exit 1
+            fi
+          done
+
+      # Gated on the SECRET as well as the variable. The Azure variables and
+      # secrets need not live at the same level — a variable visible
+      # org-wide with the service principal's secret held by one product repo
+      # would run the signing action here with an empty credential and fail
+      # the release — so presence is checked, and absence ships unsigned with
+      # a warning, like every other signing step in the suite.
+      - name: Detect Windows signing credentials
+        id: winsign
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          AZURE_TS_ENDPOINT: ${{ vars.AZURE_TS_ENDPOINT }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          if [[ -n "${AZURE_TS_ENDPOINT:-}" && -n "${AZURE_CLIENT_SECRET:-}" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sign the binary (Azure Trusted Signing)
+        if: runner.os == 'Windows' && steps.winsign.outputs.enabled == 'true'
+        uses: azure/trusted-signing-action@0d74250c661747df006298d0fb49944c10f16e03 # v0.5.1
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ vars.AZURE_TS_ENDPOINT }}
+          trusted-signing-account-name: ${{ vars.AZURE_TS_ACCOUNT }}
+          certificate-profile-name: ${{ vars.AZURE_TS_PROFILE }}
+          files-folder: ${{ runner.temp }}\stage
+          files-folder-filter: exe
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Windows signing notice (unconfigured)
+        if: runner.os == 'Windows' && steps.winsign.outputs.enabled != 'true'
+        shell: bash
+        run: echo "::warning::Azure Trusted Signing is not configured for this repository (AZURE_TS_ENDPOINT and/or AZURE_CLIENT_SECRET not visible) — shipping an UNSIGNED Windows binary (SmartScreen will warn)."
+
+      # ── Package ──────────────────────────────────────────────────────────
+      # `ditto -c -k` on macOS, because `zip` does not preserve a code
+      # signature. tar on Linux, 7z on Windows. Each archive carries its
+      # named directory, so extraction never scatters files.
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cd "$RUNNER_TEMP/stage"
+          for dir in */; do
+            name="${dir%/}"
+            case "$RUNNER_OS" in
+              macOS)   ditto -c -k --keepParent "$name" "$GITHUB_WORKSPACE/dist/$name.zip" ;;
+              Linux)   tar -czf "$GITHUB_WORKSPACE/dist/$name.tar.gz" "$name" ;;
+              Windows) 7z a -tzip "$GITHUB_WORKSPACE/dist/$name.zip" "$name" >/dev/null ;;
+            esac
+          done
+          ls -l "$GITHUB_WORKSPACE/dist"
+
+      # `stapler` cannot attach a ticket to a bare Mach-O, so the ARCHIVE is
+      # what gets notarized and what ships; Gatekeeper resolves the ticket
+      # online on first run. Unzip-and-run is therefore the supported path.
+      - name: Notarize the archive (macOS)
+        if: runner.os == 'macOS' && steps.macsign.outputs.enabled == 'true'
+        shell: bash
+        env:
+          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+          PUBLISHING: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${NOTARY_APPLE_ID:-}" || -z "${NOTARY_PASSWORD:-}" ]]; then
+            if [[ "$PUBLISHING" == "true" ]]; then
+              echo "::error::notarytool credentials absent on a publishing run — refusing to publish an archive that is signed but NOT notarized."
+              exit 1
+            fi
+            echo "::warning::notarytool credentials absent — the archive is signed but NOT notarized (not a publishing run)."
+            exit 0
+          fi
+          TEAM_ID="$(security find-identity -v -p codesigning \
+            | sed -n 's/.*Developer ID Application: .*(\([A-Z0-9]*\)).*/\1/p' | head -1)"
+          for z in dist/*.zip; do
+            echo "→ notarizing $z"
+            xcrun notarytool submit "$z" \
+              --apple-id "$NOTARY_APPLE_ID" \
+              --password "$NOTARY_PASSWORD" \
+              --team-id "$TEAM_ID" \
+              --wait
+          done
+
+      # LF line endings on every platform. `Out-File -Encoding ascii` writes
+      # CRLF, which puts a \r on the END OF THE FILENAME in every row — so a
+      # customer running `sha256sum -c` on another OS is told "No such file or
+      # directory" for a file sitting right beside the list. Git Bash ships
+      # coreutils `sha256sum`, so Windows uses the same tool as Linux and the
+      # problem cannot arise.
+      - name: Checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          # An explicit glob, never a bare `*`: the list must not contain
+          # itself, and a name is never mistaken for an option.
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            shasum -a 256 -- crux-policy-* > SHA256SUMS
+          else
+            sha256sum -- crux-policy-* > SHA256SUMS
+          fi
+          cat SHA256SUMS
+
+      - name: Upload archives
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: crux-policy-${{ matrix.platform }}
+          path: dist
+          if-no-files-found: error
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Publish to the suite-wide Cloudflare R2 release bucket.
+  #
+  # Bucket : crux-releases
+  # Key    : suite/<version>/crux-policy-<version>-<platform>.<ext>
+  # Served : https://updates.edacrux.app/<version>/<file>
+  #
+  # The `suite/` prefix is not a claim that this is the suite installer; it is
+  # the only prefix `updates.edacrux.app` maps to. The Worker requires the
+  # first path segment to START WITH A DIGIT, which rules out a `crux-policy/`
+  # segment of our own — a request for one falls through to the static assets
+  # binding and 404s. A collision with the suite bundle is impossible: bundle
+  # stamps are `YYYY.MM.<letter>` and this is semver, so the two can never
+  # name the same segment. Every filename is fully qualified regardless, the
+  # checksum list included.
+  # ───────────────────────────────────────────────────────────────────────────
+  publish:
+    name: Publish to R2
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ inputs.publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="$(grep -m1 '^version:' packages/crux_policy/pubspec.yaml | sed -E 's/^version:[[:space:]]*//; s/\+.*$//')"
+          [[ -n "$V" ]] || { echo "could not parse version" >&2; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Download all platform archives
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: incoming
+
+      # This job only runs when `inputs.publish` is true (see the job-level
+      # `if:` above), so every dispatch that reaches this step already means
+      # "publish". A missing credential here must therefore FAIL, not warn:
+      # the `gate` job's "Require R2 publish credentials" step should already
+      # have caught it before the four-platform build even started, but this
+      # is the belt to that braces — on the free plan an org-level secret
+      # does not reach a private repository, so silently continuing here is
+      # exactly how a publish=true run used to go green having published
+      # nothing.
+      - name: Detect R2 credentials
+        id: r2
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            echo "::error::CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID absent on a publishing run — refusing to finish green having published nothing. Restore them, or dispatch with publish off for a verification build."
+            exit 1
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Each platform emitted its own SHA256SUMS. Flatten every archive into
+      # one directory and concatenate those into a single, version-named list,
+      # so a customer can verify whatever subset they downloaded against one
+      # object.
+      - name: Stage the release payload
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          SUMS="release/crux-policy-$VERSION-SHA256SUMS"
+          : > "$SUMS"
+          shopt -s nullglob
+          for d in incoming/*/; do
+            for f in "$d"*; do
+              base="$(basename "$f")"
+              if [[ "$base" == "SHA256SUMS" ]]; then
+                cat "$f" >> "$SUMS"
+                continue
+              fi
+              if [[ -e "release/$base" ]]; then
+                echo "::error::duplicate archive name '$base' across platforms"
+                exit 1
+              fi
+              cp "$f" "release/$base"
+            done
+          done
+          # Deterministic order, so the object is stable across re-runs.
+          sort -k2 -o "$SUMS" "$SUMS"
+          echo "── release payload ──"
+          ls -l release
+          cat "$SUMS"
+
+      # Published objects are immutable and cached hard at the edge, so
+      # replacing one leaves two different binaries live under a single URL
+      # for as long as the cache holds. Overwriting is therefore a deliberate
+      # act, not the default.
+      - name: Refuse to overwrite a published version
+        if: steps.r2.outputs.enabled == 'true' && !inputs.overwrite
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          key="suite/$VERSION/crux-policy-$VERSION-SHA256SUMS"
+          # wrangler is pinned to an exact version, never a range: it runs
+          # with the R2 token in its environment, so a floating @4 would hand
+          # that token to whatever version is published next.
+          if npx --yes wrangler@4.135.0 r2 object get "crux-releases/$key" \
+               --remote --pipe > /dev/null 2>&1; then
+            {
+              echo "### :x: Release blocked — \`$VERSION\` is already published"
+              echo
+              echo "Bump \`packages/crux_policy/pubspec.yaml\`, or dispatch"
+              echo "again with \`overwrite\` if replacing it is really intended."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::crux-releases/$key already exists — refusing to republish $VERSION"
+            exit 1
+          fi
+          echo "$VERSION is not yet published."
+
+      - name: Upload to R2 (crux-releases/suite/<version>/)
+        if: steps.r2.outputs.enabled == 'true'
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          for f in release/*; do
+            base="$(basename "$f")"
+            case "$base" in
+              *SHA256SUMS) ct="text/plain; charset=utf-8" ;;
+              *.zip)       ct="application/zip" ;;
+              *.tar.gz)    ct="application/gzip" ;;
+              *)           ct="application/octet-stream" ;;
+            esac
+            key="suite/$VERSION/$base"
+            echo "→ crux-releases/$key  ($ct)"
+            npx --yes wrangler@4.135.0 r2 object put "crux-releases/$key" \
+              --file "$f" \
+              --content-type "$ct" \
+              --remote
+          done
+          {
+            echo "### crux-policy $VERSION published"
+            echo
+            for f in release/*; do
+              echo "- https://updates.edacrux.app/$VERSION/$(basename "$f")"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"

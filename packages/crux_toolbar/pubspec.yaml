@@ -1,0 +1,30 @@
+name: crux_toolbar
+description: >-
+  Cross-suite application toolbar for the EDACrux suite: one geometry token
+  set, one button, one divider, one overflow strategy, plus the split-button,
+  morphing run/stop, and badge affordances every product shares.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_keybindings:
+    path: ../crux_keybindings
+  crux_theme:
+    path: ../crux_theme
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+
+dev_dependencies:
+  # Drives the token editor's own write path (`applyOverrides`) in the theme
+  # tests.
+  flutter_riverpod: ^3.3.1
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

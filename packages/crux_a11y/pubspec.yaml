@@ -1,0 +1,23 @@
+name: crux_a11y
+description: >-
+  Accessibility workarounds and guards for the EDACrux suite: an
+  overlay-safe slider, a modal gate and surface for dialogs that cannot be
+  routes, a keyboard-scrollable text region, and widget-test harnesses for
+  what a desktop screen reader hears.
+version: 0.2.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+
+dev_dependencies:
+  very_good_analysis: ^10.2.0

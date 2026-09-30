@@ -1,0 +1,51 @@
+# Public API surface of package:crux_menu_bar/crux_menu_bar.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+final class CruxActionEntry<A extends Object> extends CruxMenuEntry<A>
+  const CruxActionEntry(A action)
+  final action: A
+class CruxAppMenuActions<A extends Object>
+  const CruxAppMenuActions({A? checkForUpdates, required A about, required A quit, required A settings})
+  final about: A
+  final checkForUpdates: A?
+  final quit: A
+  final settings: A
+  get desktopFolded -> Set<A>
+  get macHoisted -> Set<A>
+class CruxDesktopMenuBar<A extends Object> extends StatelessWidget
+  const CruxDesktopMenuBar({Key? key, String? editionLine, bool enabled, required CruxAppMenuActions<A> appActions, required Map<ActionCategory, List<List<A>>> layout, required ShortcutActivator? Function(A) shortcutOf, required String Function(A) labelOf, required String Function(ActionCategory) categoryAcceleratorLabel, required String Function(ActionCategory) categoryLabel, required String windowMenuLabel, required Widget child, required Widget logo, required bool Function(A) isEnabled, required bool Function(A) isVisible, required void Function(A) onAction})
+  build(BuildContext context) -> Widget
+  final appActions: CruxAppMenuActions<A>
+  final categoryAcceleratorLabel: String Function(ActionCategory)
+  final categoryLabel: String Function(ActionCategory)
+  final child: Widget
+  final editionLine: String?
+  final enabled: bool
+  final isEnabled: bool Function(A)
+  final isVisible: bool Function(A)
+  final labelOf: String Function(A)
+  final layout: Map<ActionCategory, List<List<A>>>
+  final logo: Widget
+  final onAction: void Function(A)
+  final shortcutOf: ShortcutActivator? Function(A)
+  final windowMenuLabel: String
+sealed class CruxMenuEntry<A extends Object>
+  const CruxMenuEntry()
+typedef CruxMenuLayout<A extends Object> = Map<ActionCategory, List<List<A>>>
+final class CruxSeparatorEntry<A extends Object> extends CruxMenuEntry<A>
+  const CruxSeparatorEntry()
+class CruxTopMenu<A extends Object>
+  const CruxTopMenu({required List<CruxMenuEntry<A>> entries, required String acceleratorLabel, required String label})
+  final acceleratorLabel: String
+  final entries: List<CruxMenuEntry<A>>
+  final label: String
+cruxEntriesForGroups<A extends Object>(List<List<A>> groups, bool Function(A) visible) -> List<CruxMenuEntry<A>>
+cruxMenuLayoutActions<A extends Object>(Map<ActionCategory, List<List<A>>> layout) -> Set<A>
+displayMenuShortcut(ShortcutActivator? activator) -> MenuSerializableShortcut?
+nativeMenuShortcut(ShortcutActivator? activator) -> MenuSerializableShortcut?

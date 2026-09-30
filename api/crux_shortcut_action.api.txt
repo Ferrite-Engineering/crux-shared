@@ -1,0 +1,21 @@
+# Public API surface of package:crux_shortcut_action/crux_shortcut_action.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum ActionCategory
+  static const app: ActionCategory
+  static const edit: ActionCategory
+  static const file: ActionCategory
+  static const help: ActionCategory
+  static const navigate: ActionCategory
+  static const search: ActionCategory
+  static const tools: ActionCategory
+  static const view: ActionCategory
+interface abstract class CruxAction
+  get category -> ActionCategory
+  get id -> String

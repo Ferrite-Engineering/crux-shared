@@ -1,0 +1,77 @@
+# Public API surface of package:crux_a11y/crux_a11y_testing.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class AnnouncementRecorder
+  factory AnnouncementRecorder.attach(WidgetTester tester)
+  final messages: List<String>
+class FocusStop
+  const FocusStop({required List<String> entered, required List<String> states, required String description, required String focusTarget, required String name, required String role, required String value, required bool spoken})
+  final description: String
+  final entered: List<String>
+  final focusTarget: String
+  final name: String
+  final role: String
+  final spoken: bool
+  final states: List<String>
+  final value: String
+  get isNameless -> bool
+  get line -> String
+  toString() -> String
+class FocusWalk
+  const FocusWalk({required List<FocusStop> stops, required Set<int> offscreen, required bool cycled, required bool reverse})
+  final cycled: bool
+  final offscreen: Set<int>
+  final reverse: bool
+  final stops: List<FocusStop>
+  get transcript -> String
+  problems({Set<FocusWalkRule> ignore}) -> List<FocusWalkProblem>
+class FocusWalkProblem
+  const FocusWalkProblem(FocusWalkRule rule, int stopIndex, String detail)
+  final detail: String
+  final rule: FocusWalkRule
+  final stopIndex: int
+  toString() -> String
+enum FocusWalkRule
+  static const containerRepeatsName: FocusWalkRule
+  static const namelessStop: FocusWalkRule
+  static const noCycle: FocusWalkRule
+  static const offscreenStop: FocusWalkRule
+  static const silentStop: FocusWalkRule
+  static const twoNames: FocusWalkRule
+  static const unspeakableGlyph: FocusWalkRule
+class RecordedSemanticsNode
+  const RecordedSemanticsNode({required List<int> children, required String identifier, required String label, required int id, required int traversalParent})
+  final children: List<int>
+  final id: int
+  final identifier: String
+  final label: String
+  final traversalParent: int
+  toString() -> String
+class SemanticsOrphan
+  const SemanticsOrphan(RecordedSemanticsNode node, int updateIndex, String reason)
+  final node: RecordedSemanticsNode
+  final reason: String
+  final updateIndex: int
+  toString() -> String
+class SemanticsOrphanGuard
+  check({String context}) -> void
+  describe(int id) -> String
+  final orphans: List<SemanticsOrphan>
+  reset() -> void
+  static final instance: SemanticsOrphanGuard
+  var updates: int
+mixin SemanticsOrphanRecording
+  createSemanticsUpdateBuilder() -> SemanticsUpdateBuilder
+class SemanticsOrphanTestBinding extends AutomatedTestWidgetsFlutterBinding with SemanticsOrphanRecording
+  factory SemanticsOrphanTestBinding.ensureInitialized()
+describeFocus(WidgetTester tester, {List<SemanticsNode> previous}) -> FocusStop
+expectCleanFocusWalk(FocusWalk walk, {Set<FocusWalkRule> ignore, String context}) -> void
+expectFocusAnnounced(WidgetTester tester, {String context, String? named}) -> void
+expectFocusWalkGolden(FocusWalk walk, String path) -> void
+walkFocus(WidgetTester tester, {bool reverse, int maxStops}) -> Future<FocusWalk>

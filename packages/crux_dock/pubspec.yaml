@@ -1,0 +1,28 @@
+name: crux_dock
+description: >-
+  Cross-suite tabbed dock for the EDACrux suite. A VSCode-style region
+  container mounted inside a CruxIdeLayout region by every product (WaveCrux,
+  NetCrux, LintCrux, SimCrux): a tab strip with badges and per-tab close, an
+  auto-hiding single-tab header presentation, collapse / maximize / pop-out
+  affordances, and auto-reveal of newly activated on-demand tabs. The package
+  hard-codes no per-app content — hosts assemble CruxDockEntry lists from
+  their own providers.
+version: 0.1.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  crux_a11y:
+    path: ../crux_a11y
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

@@ -1,0 +1,74 @@
+# Public API surface of package:crux_dock/crux_dock.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxDock extends StatefulWidget
+  const CruxDock({CruxDockCollapseDirection collapseDirection, CruxDockPopOut? popOut, Key? key, String? activeId, String? collapseTooltip, String? dockId, String? maximizeTooltip, String? restoreTooltip, String? semanticsLabel, bool isMaximized, required List<CruxDockEntry> entries, required void Function(String) onSelect, void Function()? onCollapse, void Function()? onMaximize, void Function(String)? onAutoReveal, void Function(String, String)? onTabMovedIn})
+  createState() -> State<CruxDock>
+  final activeId: String?
+  final collapseDirection: CruxDockCollapseDirection
+  final collapseTooltip: String?
+  final dockId: String?
+  final entries: List<CruxDockEntry>
+  final isMaximized: bool
+  final maximizeTooltip: String?
+  final onAutoReveal: void Function(String)?
+  final onCollapse: void Function()?
+  final onMaximize: void Function()?
+  final onSelect: void Function(String)
+  final onTabMovedIn: void Function(String, String)?
+  final popOut: CruxDockPopOut?
+  final restoreTooltip: String?
+  final semanticsLabel: String?
+enum CruxDockCollapseDirection
+  const CruxDockCollapseDirection(IconData icon)
+  final icon: IconData
+  static const down: CruxDockCollapseDirection
+  static const left: CruxDockCollapseDirection
+  static const right: CruxDockCollapseDirection
+class CruxDockDragData
+  const CruxDockDragData({required IconData icon, required String dockId, required String entryId, required String label})
+  final dockId: String
+  final entryId: String
+  final icon: IconData
+  final label: String
+class CruxDockEntry
+  const CruxDockEntry({List<Widget> actions, String? closeSemanticLabel, bool movable, int badgeCount, required IconData icon, required String id, required String label, required Widget Function(BuildContext) builder, void Function()? onClose})
+  ==(Object other) -> bool
+  final actions: List<Widget>
+  final badgeCount: int
+  final builder: Widget Function(BuildContext)
+  final closeSemanticLabel: String?
+  final icon: IconData
+  final id: String
+  final label: String
+  final movable: bool
+  final onClose: void Function()?
+  get closable -> bool
+  get hashCode -> int
+typedef CruxDockEntryBuilder = Widget Function(BuildContext)
+class CruxDockPopOut
+  const CruxDockPopOut({required String tooltip, required bool enabled, void Function(String)? onPopOut})
+  final enabled: bool
+  final onPopOut: void Function(String)?
+  final tooltip: String
+class CruxDockRestoreBar extends StatelessWidget
+  const CruxDockRestoreBar({Key? key, String? semanticsLabel, required CruxDockCollapseDirection edge, required List<CruxDockRestoreEntry> entries})
+  build(BuildContext context) -> Widget
+  final edge: CruxDockCollapseDirection
+  final entries: List<CruxDockRestoreEntry>
+  final semanticsLabel: String?
+class CruxDockRestoreEntry
+  const CruxDockRestoreEntry({required IconData icon, required String id, required String label, required void Function() onRestore})
+  final icon: IconData
+  final id: String
+  final label: String
+  final onRestore: void Function()
+get kCruxDockIconSize -> double
+get kCruxDockRestoreBarThickness -> double
+get kCruxDockStripHeight -> double

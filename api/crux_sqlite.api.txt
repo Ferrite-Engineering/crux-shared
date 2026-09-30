@@ -1,0 +1,162 @@
+# Public API surface of package:crux_sqlite/crux_sqlite.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+final class CruxAppIdentity
+  CruxAppIdentity({required String product, required String? appVersion})
+  final appVersion: String?
+  final product: String
+  static final unknown: CruxAppIdentity
+  toString() -> String
+final class CruxAppliedMigration
+  const CruxAppliedMigration({required DateTime? appliedAt, required String description, required String? appliedByAppVersion, required int version})
+  final appliedAt: DateTime?
+  final appliedByAppVersion: String?
+  final description: String
+  final version: int
+  get isBackfilled -> bool
+  toString() -> String
+final class CruxBackupFailedException extends CruxSqliteException
+  const CruxBackupFailedException({Object? cause, StackTrace? stackTrace, required CruxBackupFailureKind kind, required String path, required String storeName, required String? backupPath, required int databaseBytes, required int fromVersion, required int toVersion, required int? freeBytes})
+  final backupPath: String?
+  final cause: Object?
+  final databaseBytes: int
+  final freeBytes: int?
+  final fromVersion: int
+  final kind: CruxBackupFailureKind
+  final stackTrace: StackTrace?
+  final toVersion: int
+  toString() -> String
+enum CruxBackupFailureKind
+  static const insufficientFreeSpace: CruxBackupFailureKind
+  static const vacuumFailed: CruxBackupFailureKind
+typedef CruxBackupListener = void Function(CruxBackupNotice)
+final class CruxBackupNotice
+  const CruxBackupNotice({required CruxBackupFailureKind? failure, required String databasePath, required String storeName, required String? backupPath, required int databaseBytes, required int fromVersion, required int toVersion, required int? freeBytes})
+  final backupPath: String?
+  final databaseBytes: int
+  final databasePath: String
+  final failure: CruxBackupFailureKind?
+  final freeBytes: int?
+  final fromVersion: int
+  final storeName: String
+  final toVersion: int
+  get created -> bool
+  toString() -> String
+final class CruxDatabaseCorruptionException extends CruxSqliteException
+  const CruxDatabaseCorruptionException({StackTrace? stackTrace, required CruxDbRecovery recovery, required Object cause, required String path, required String storeName, required String? quarantinedPath})
+  final cause: Object
+  final quarantinedPath: String?
+  final recovery: CruxDbRecovery
+  final stackTrace: StackTrace?
+  toString() -> String
+enum CruxDbRecovery
+  get isPrecious -> bool
+  static const recreate: CruxDbRecovery
+  static const refuse: CruxDbRecovery
+  static const renameAside: CruxDbRecovery
+typedef CruxDbRecoveryListener = void Function(CruxDatabaseCorruptionException)
+typedef CruxFreeDiskProbe = int? Function(String)
+final class CruxMigration
+  const CruxMigration({required Future<void> Function(Database) apply, required String description, required int version})
+  final apply: Future<void> Function(Database)
+  final description: String
+  final version: int
+  toString() -> String
+final class CruxMigrationFailedException extends CruxSqliteException
+  const CruxMigrationFailedException({StackTrace? stackTrace, String? backupPath, required Object cause, required String description, required String path, required String storeName, required int fromVersion, required int toVersion, required int version})
+  final backupPath: String?
+  final cause: Object
+  final description: String
+  final fromVersion: int
+  final stackTrace: StackTrace?
+  final toVersion: int
+  final version: int
+  toString() -> String
+final class CruxMigrationRunner
+  CruxMigrationRunner({DateTime Function()? now, required CruxAppIdentity identity, required List<CruxMigration> migrations, required String storeName})
+  final identity: CruxAppIdentity
+  final migrations: List<CruxMigration>
+  final storeName: String
+  get latestVersion -> int
+  migrationFor(int version) -> CruxMigration
+  upgrade(Database db, int oldVersion, int newVersion, {String? backupPath, String? reportPath}) -> Future<void>
+typedef CruxMigrationStep = Future<void> Function(Database)
+final class CruxPreUpgradeBackup
+  const CruxPreUpgradeBackup({DateTime Function()? clock, int keep, int sizeGuardBytes, int? Function(String) freeDiskProbe, void Function(CruxBackupNotice)? onBackup})
+  beforeUpgrade(DatabaseExecutor db, {required String dbPath, required String storeName, required int newVersion}) -> Future<String?>
+  final clock: DateTime Function()?
+  final freeDiskProbe: int? Function(String)
+  final keep: int
+  final onBackup: void Function(CruxBackupNotice)?
+  final sizeGuardBytes: int
+  pruneAfterSuccessfulUpgrade(String dbPath) -> void
+  static backupPathFor(String dbPath, {DateTime? now, required int oldVersion}) -> String
+  static backupsFor(String dbPath) -> List<String>
+  static latestBackupFor(String dbPath) -> String?
+final class CruxSchemaHistory
+  const CruxSchemaHistory({required CruxSchemaMetaRow? meta, required List<CruxAppliedMigration> ledger})
+  final ledger: List<CruxAppliedMigration>
+  final meta: CruxSchemaMetaRow?
+  get isPresent -> bool
+  static const absent: CruxSchemaHistory
+  toString() -> String
+final class CruxSchemaMetaRow
+  const CruxSchemaMetaRow({required DateTime? createdAt, required DateTime? lastMigratedAt, required String product, required String? appVersion, required String? lastOpenedByAppVersion, required int schemaVersion})
+  final appVersion: String?
+  final createdAt: DateTime?
+  final lastMigratedAt: DateTime?
+  final lastOpenedByAppVersion: String?
+  final product: String
+  final schemaVersion: int
+  toString() -> String
+final class CruxSchemaVersionSkewException extends CruxSqliteException
+  const CruxSchemaVersionSkewException({Object? cause, StackTrace? stackTrace, String? backupPath, String? fileAppVersion, required String path, required String storeName, required int appVersion, required int fileVersion})
+  final appVersion: int
+  final backupPath: String?
+  final cause: Object?
+  final fileAppVersion: String?
+  final fileVersion: int
+  final stackTrace: StackTrace?
+  toString() -> String
+sealed class CruxSqliteException implements Exception
+  const CruxSqliteException({required String path, required String storeName})
+  final path: String
+  final storeName: String
+  get cause -> Object?
+  get stackTrace -> StackTrace?
+final class CruxSqliteOpenPolicy
+  CruxSqliteOpenPolicy({CruxPreUpgradeBackup backup, required CruxDbRecovery recovery, required CruxMigrationRunner runner, void Function(CruxDatabaseCorruptionException)? onRecovery})
+  buildOptions({required String path, void Function()? onMigrationStart}) -> OpenDatabaseOptions
+  final backup: CruxPreUpgradeBackup
+  final onRecovery: void Function(CruxDatabaseCorruptionException)?
+  final recovery: CruxDbRecovery
+  final runner: CruxMigrationRunner
+  get backsUpBeforeUpgrade -> bool
+  open(String path, {DatabaseFactory? factory}) -> Future<Database>
+cruxFreeDiskBytes(String directory) -> int?
+cruxSchemaMetaMigration({required int version}) -> CruxMigration
+cruxSchemaMetaTablesExist(Database db) -> Future<bool>
+ensureCruxSqliteFfiInitialized() -> void
+formatCruxSchemaTimestamp(DateTime when) -> String
+isSqliteCorruption(Object error) -> bool
+get kCruxBackupFreeSpaceHeadroom -> double
+get kCruxBackupSizeGuardBytes -> int
+get kCruxBackupsKept -> int
+get kCruxSchemaMetaDdl -> String
+get kCruxSchemaMetaMigrationDescription -> String
+get kCruxSchemaMetaTable -> String
+get kCruxSchemaMigrationsDdl -> String
+get kCruxSchemaMigrationsTable -> String
+get kCruxSqliteBusyTimeout -> Duration
+quarantineDatabaseFile(String dbPath, {DateTime? now}) -> String?
+readCruxSchemaHistory(Database db, {int ledgerLimit}) -> Future<CruxSchemaHistory>
+readCruxSchemaMetaQuietly(Database db) -> Future<CruxSchemaMetaRow?>
+readCruxUserVersion(Database db) -> Future<int>
+writeCruxSchemaMetaForOpen(Database db, {required CruxAppIdentity identity, required int latestVersion}) -> Future<void>
+writeCruxSchemaMetaForUpgrade(Database db, {required CruxAppIdentity identity, required DateTime now, required List<CruxMigration> migrations, required int newVersion, required int oldVersion}) -> Future<void>

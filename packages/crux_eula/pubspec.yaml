@@ -1,0 +1,30 @@
+name: crux_eula
+description: >-
+  First-launch End User License Agreement acceptance for the EDACrux suite —
+  the agreement text compiled from counsel's final, a version-keyed acceptance
+  store, and the blocking `CruxEulaGate` / `CruxEulaAcceptanceDialog` surface.
+  One implementation consumed by WaveCrux, NetCrux, LintCrux and SimCrux.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  # `CruxModalGate`, `CruxModalSurface` and `CruxScrollRegion`: what makes the
+  # agreement a dialog to a keyboard and a screen reader, shared with the
+  # telemetry disclosure so the two blocking surfaces cannot drift apart.
+  crux_a11y:
+    path: ../crux_a11y
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

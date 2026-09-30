@@ -1,0 +1,44 @@
+{
+  "_comment": [
+    "CANONICAL TELEMETRY BATCH FIXTURE — the payload contract between",
+    "crux_telemetry's LiveTelemetryService and the crux-telemetry ingestion",
+    "Worker.",
+    "",
+    "SOURCE OF TRUTH: the ingestion Worker's canonical batch document, whose",
+    "acceptance is enforced by the Worker's envelope and event validation.",
+    "This file carries the same data. A change to it is a change to both sides",
+    "and must land on both.",
+    "",
+    "The Worker's own test suite asserts this exact document is accepted;",
+    "test/src/services/telemetry_payload_contract_test.dart asserts this",
+    "package's serializer emits it. If those two facts hold, every client in",
+    "the suite and the Worker cannot have drifted.",
+    "",
+    "The slug and event names below are WaveCrux's because the Worker's",
+    "canonical document is; they are fixture DATA, not vocabulary this package",
+    "knows. The product slug arrives from CruxTelemetryConfig, and the event",
+    "catalog lives in each product.",
+    "",
+    "'_comment' is ignored: unknown top-level fields are dropped by the Worker,",
+    "which is itself part of the contract (forward compatibility for clients",
+    "older or newer than the deployed Worker)."
+  ],
+  "installation_id": "00000000-0000-4000-8000-000000000002",
+  "app_version": "0.6.0",
+  "product": "wavecrux",
+  "os": "macos",
+  "form_factor": "desktop",
+  "locale": "zh_CN",
+  "license_tier": "openCore",
+  "session_start": "2026-08-04T09:15:00Z",
+  "events": [
+    { "name": "workspace.restored", "count": 1 },
+    { "name": "decoder.opened", "properties": { "decoder": "spi" }, "count": 4 },
+    {
+      "name": "cxp.crossprobe",
+      "properties": { "direction": "inbound", "honored": true },
+      "count": 2
+    },
+    { "name": "tool.opened", "properties": { "tool": "fsm" }, "count": 1 }
+  ]
+}

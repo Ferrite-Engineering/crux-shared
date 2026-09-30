@@ -1,0 +1,23 @@
+name: crux_heatmap
+description: >-
+  Calendar heatmap grid for the EDACrux suite — the GitHub-contributions-style
+  date grid that LintCrux and SimCrux both render over their trend stores. The
+  package owns layout and interaction only; the host supplies each day's colour
+  and tooltip, so the metric being visualised stays entirely product-side.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.3.0

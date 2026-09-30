@@ -1,0 +1,61 @@
+# Public API surface of package:crux_project/crux_project.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum CruxOpenRefusal
+  static const kindAbsent: CruxOpenRefusal
+  static const pathMissing: CruxOpenRefusal
+class CruxProjectAmbiguousException implements Exception
+  const CruxProjectAmbiguousException({required List<String> candidates, required String directory})
+  final candidates: List<String>
+  final directory: String
+  get message -> String
+  toString() -> String
+class CruxProjectFormatException implements Exception
+  const CruxProjectFormatException(String message, {String? path})
+  final message: String
+  final path: String?
+  toString() -> String
+class CruxProjectManifest
+  const CruxProjectManifest({List<String> rawSources, List<String> warnings, Map<String, String> rawArtifacts, String? name, String? top, required String directory, required int version})
+  artifact(String kind) -> String?
+  final directory: String
+  final name: String?
+  final rawArtifacts: Map<String, String>
+  final rawSources: List<String>
+  final top: String?
+  final version: int
+  final warnings: List<String>
+  get displayName -> String
+  get isEmpty -> bool
+  get sources -> List<String>
+  resolve(String relativeOrAbsolute) -> String
+  toString() -> String
+class CruxProjectOpenPlan
+  const CruxProjectOpenPlan({CruxOpenRefusal? refusal, List<String> sources, String? artifactPath, String? top, required CruxProjectManifest manifest, required String designId})
+  final artifactPath: String?
+  final designId: String
+  final manifest: CruxProjectManifest
+  final refusal: CruxOpenRefusal?
+  final sources: List<String>
+  final top: String?
+  get isActionable -> bool
+class CruxProjectOpenPlanner
+  const CruxProjectOpenPlanner()
+  plan(CruxProjectManifest manifest, {List<String> fallbackKinds, bool Function(String)? exists, bool includeSources, required String kind}) -> CruxProjectOpenPlan
+class CruxProjectParser
+  const CruxProjectParser()
+  parse(String yamlText, {required String manifestPath}) -> CruxProjectManifest
+  parseFile(String manifestPath) -> CruxProjectManifest
+  static findIn(String directory) -> String?
+  static isLegacyManifestPath(String path) -> bool
+  static isManifestPath(String path) -> bool
+  static locate(String path) -> String?
+get kCruxProjectExtension -> String
+get kCruxProjectFileName -> String
+get kCruxProjectSchemaVersion -> int

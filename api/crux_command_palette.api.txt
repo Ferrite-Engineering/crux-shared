@@ -1,0 +1,25 @@
+# Public API surface of package:crux_command_palette/crux_command_palette.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CommandPalette<T extends CruxAction> extends StatefulWidget
+  const CommandPalette({Key? key, Map<T, ShortcutActivator?> bindings, String Function(ShortcutActivator?)? activatorLabel, Widget Function(BuildContext, ScrollController, Widget)? scrollWrapperBuilder, Widget? Function(T)? trailingBuilder, required List<T> actions, required String Function(T) labelFor, required String hintText, required String noResultsLabel, required void Function(T) onAction})
+  createState() -> State<CommandPalette<T>>
+  final actions: List<T>
+  final activatorLabel: String Function(ShortcutActivator?)?
+  final bindings: Map<T, ShortcutActivator?>
+  final hintText: String
+  final labelFor: String Function(T)
+  final noResultsLabel: String
+  final onAction: void Function(T)
+  final scrollWrapperBuilder: Widget Function(BuildContext, ScrollController, Widget)?
+  final trailingBuilder: Widget? Function(T)?
+  static show<T extends CruxAction>(BuildContext context, {Map<T, ShortcutActivator?> bindings, String Function(ShortcutActivator?)? activatorLabel, Widget Function(BuildContext, ScrollController, Widget)? scrollWrapperBuilder, Widget? Function(T)? trailingBuilder, required List<T> actions, required String Function(T) labelFor, required String hintText, required String noResultsLabel, required void Function(T) onAction}) -> Future<void>
+typedef ScrollWrapperBuilder = Widget Function(BuildContext, ScrollController, Widget)
+typedef ShortcutActivatorLabel = String Function(ShortcutActivator?)
+defaultShortcutActivatorLabel(ShortcutActivator? activator) -> String

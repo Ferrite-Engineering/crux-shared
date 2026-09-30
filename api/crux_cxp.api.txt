@@ -1,0 +1,493 @@
+# Public API surface of package:crux_cxp/crux_cxp.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+abstract class CxpClient
+  connect({String? token, required String host, required int port}) -> Future<void>
+  disconnect() -> Future<void>
+  get events -> Stream<CxpConnectionEvent>
+  get inbound -> Stream<CxpClientInbound>
+  get isConnected -> bool
+  get remotePeer -> PeerIdentity?
+  get selfIdentity -> PeerIdentity
+  send(CxpMessage message) -> void
+class CxpClientInbound
+  const CxpClientInbound({required CxpEnvelope envelope, required CxpMessage message})
+  final envelope: CxpEnvelope
+  final message: CxpMessage
+class CxpConnectionEvent
+  const CxpConnectionEvent({Object? error, PeerIdentity? peer, required bool connected})
+  final connected: bool
+  final error: Object?
+  final peer: PeerIdentity?
+  toString() -> String
+class CxpDialFailure
+  const CxpDialFailure({required Object error, required String host, required String peerId, required int consecutiveFailures, required int nextRetryAfterTicks, required int port})
+  final consecutiveFailures: int
+  final error: Object
+  final host: String
+  final nextRetryAfterTicks: int
+  final peerId: String
+  final port: int
+  toString() -> String
+class CxpDialRefusedException implements Exception
+  const CxpDialRefusedException({required String host, required String reason, required int port})
+  final host: String
+  final port: int
+  final reason: String
+  toString() -> String
+class CxpDiscovery
+  CxpDiscovery({Duration reapThreshold, Duration scanInterval, Duration staleThreshold, String? operatingSystemOverride, String? selfPeerId, required String manifestDirectory})
+  final manifestDirectory: String
+  final operatingSystemOverride: String?
+  final reapThreshold: Duration
+  final scanInterval: Duration
+  final selfPeerId: String?
+  final staleThreshold: Duration
+  get events -> Stream<CxpDiscoveryEvent>
+  get peers -> List<CxpPeerManifest>
+  start() -> Future<void>
+  stop() -> Future<void>
+class CxpDiscoveryEvent
+  const CxpDiscoveryEvent({required CxpPeerManifest manifest, required bool added})
+  final added: bool
+  final manifest: CxpPeerManifest
+  toString() -> String
+class CxpEnvelope
+  const CxpEnvelope({String cxpVersion, required Map<String, Object?> payload, required String from, required String kind, required String messageId})
+  factory CxpEnvelope.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  encodeLine() -> String
+  final cxpVersion: String
+  final from: String
+  final kind: String
+  final messageId: String
+  final payload: Map<String, Object?>
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+final abstract class CxpErrorCode
+  static const elementNotFound: String
+  static const handshakeRequired: String
+  static const internalError: String
+  static const malformedEnvelope: String
+  static const malformedPayload: String
+  static const unauthorized: String
+  static const unknownKind: String
+  static const unsupported: String
+  static const unsupportedVersion: String
+class CxpHandshakeException implements Exception
+  const CxpHandshakeException({required String code, required String message})
+  final code: String
+  final message: String
+  toString() -> String
+class CxpManifestWriter
+  CxpManifestWriter({Duration? heartbeatInterval, String? authToken, required String manifestDirectory})
+  dispose() -> Future<void>
+  final authToken: String
+  final heartbeatInterval: Duration?
+  final manifestDirectory: String
+  remove() -> Future<void>
+  write({required PeerIdentity identity, required String host, required int port}) -> Future<void>
+abstract class CxpMessage
+  const CxpMessage()
+  get kind -> String
+  get referencedElements -> List<ElementId>
+  toJson() -> Map<String, Object?>
+final abstract class CxpMessageKind
+  static const errorResponse: String
+  static const goodbye: String
+  static const hello: String
+  static const helloAck: String
+  static const notifySelection: String
+  static const requestHighlight: String
+  static const requestHighlightAck: String
+  static const requestOpenArtifact: String
+  static const requestOpenArtifactAck: String
+  static const requestOpenSource: String
+  static const requestOpenSourceAck: String
+  static const subscribe: String
+  static const unsubscribe: String
+class CxpPathContainment
+  const CxpPathContainment({Iterable<String> Function()? roots})
+  allows(String path) -> bool
+  final roots: Iterable<String> Function()?
+  refuse(String path) -> String?
+class CxpPeerConnector
+  CxpPeerConnector({CxpClient Function(PeerIdentity)? clientFactory, CxpServer? server, Duration retryInterval, List<CxpSubscription>? subscriptions, int maxRetryBackoffTicks, required CxpDiscovery discovery, required PeerIdentity selfIdentity})
+  dispose() -> Future<void>
+  final discovery: CxpDiscovery
+  final maxRetryBackoffTicks: int
+  final retryInterval: Duration
+  final selfIdentity: PeerIdentity
+  final server: CxpServer?
+  get connectedPeers -> List<PeerIdentity>
+  get dialAttempts -> int
+  get dialFailures -> Stream<CxpDialFailure>
+  get isRunning -> bool
+  get lastDialFailures -> Map<String, CxpDialFailure>
+  get subscriptions -> List<CxpSubscription>
+  start() -> void
+  stop() -> Future<void>
+  updateSubscriptions(List<CxpSubscription> subscriptions) -> void
+class CxpPeerManifest
+  const CxpPeerManifest({String? token, required DateTime startedAt, required PeerIdentity identity, required String host, required String manifestPath, required int port})
+  factory CxpPeerManifest.fromJson({required Map<String, Object?> json, required String manifestPath})
+  ==(Object other) -> bool
+  final host: String
+  final identity: PeerIdentity
+  final manifestPath: String
+  final port: int
+  final startedAt: DateTime
+  final token: String?
+  get hashCode -> int
+  static const maxEpochMillis: int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+abstract class CxpServer
+  attachLinkedPeer(PeerIdentity peer, void Function(CxpMessage) send) -> void
+  broadcast(CxpMessage message) -> void
+  detachLinkedPeer(String peerId) -> void
+  get boundPort -> int?
+  get connectedPeers -> List<PeerIdentity>
+  get inbound -> Stream<InboundCxpMessage>
+  get presence -> Stream<PeerPresenceEvent>
+  get selfIdentity -> PeerIdentity
+  injectInbound(InboundCxpMessage message) -> void
+  sendTo(String peerId, CxpMessage message) -> bool
+  start() -> Future<void>
+  stop() -> Future<void>
+class CxpStreamCoordinate
+  CxpStreamCoordinate({Map<String, String> attributes, String? subId, required String streamId, required int sequenceIndex})
+  ==(Object other) -> bool
+  final attributes: Map<String, String>
+  final sequenceIndex: int
+  final streamId: String
+  final subId: String?
+  get hashCode -> int
+  static const riscvFormalTraceStepStreamId: String
+  static const riscvInsnAttribute: String
+  static const riscvIsaAttribute: String
+  static const riscvModeAttribute: String
+  static const riscvPcAttribute: String
+  static const riscvRvfiChannelAttribute: String
+  static const riscvRvfiRetireStreamId: String
+  static tryFromJson(Object? json) -> CxpStreamCoordinate?
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class CxpSubscription
+  const CxpSubscription({Set<ElementKind> elementKinds, String? pathPrefix, required String messageKind})
+  factory CxpSubscription.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final elementKinds: Set<ElementKind>
+  final messageKind: String
+  final pathPrefix: String?
+  get hashCode -> int
+  matches(CxpMessage message) -> bool
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class CxpWorkspaceStore
+  CxpWorkspaceStore({CxpPathContainment? containment, Duration ttl, String? workspaceDirectory})
+  final containment: CxpPathContainment?
+  final ttl: Duration
+  final workspaceDirectory: String
+  isValidDesignId(String designId) -> bool
+  pruneDesign(String designId) -> Future<List<WorkspaceArtifact>>
+  readArtifacts(String designId) -> List<WorkspaceArtifact>
+  resolveArtifact(String designId, String kind, {String? basename, String? topModule}) -> WorkspaceArtifact?
+  upsertArtifact({String? basename, String? topModule, int? ts, required String designId, required String kind, required String path, required String producer}) -> Future<List<WorkspaceArtifact>>
+class ElementId
+  const ElementId({required ElementKind kind, required String path})
+  factory ElementId.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final kind: ElementKind
+  final path: String
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class ElementKind
+  factory ElementKind(String name)
+  ==(Object other) -> bool
+  final known: KnownElementKind?
+  final name: String
+  get hashCode -> int
+  get isKnown -> bool
+  static const breakpoint: ElementKind
+  static const instance: ElementKind
+  static const marker: ElementKind
+  static const net: ElementKind
+  static const port: ElementKind
+  static const rule: ElementKind
+  static const scope: ElementKind
+  static const signal: ElementKind
+  static const source: ElementKind
+  static const test: ElementKind
+  static const values: List<ElementKind>
+  toString() -> String
+class ErrorResponse extends CxpMessage
+  const ErrorResponse({String inReplyTo, required String code, required String message})
+  factory ErrorResponse.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final code: String
+  final inReplyTo: String
+  final message: String
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class Goodbye extends CxpMessage
+  const Goodbye({String? reason})
+  factory Goodbye.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final reason: String?
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class Hello extends CxpMessage
+  const Hello({String? token, required PeerIdentity identity})
+  factory Hello.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final identity: PeerIdentity
+  final token: String?
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class HelloAck extends CxpMessage
+  const HelloAck({required PeerIdentity identity, required String inReplyTo})
+  factory HelloAck.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final identity: PeerIdentity
+  final inReplyTo: String
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class IdentityNameResolver implements NameResolver
+  const IdentityNameResolver()
+  toCanonical({required ElementKind kind, required String local}) -> ElementId?
+  toLocal(ElementId id) -> String?
+class InboundCxpMessage
+  const InboundCxpMessage({required CxpEnvelope envelope, required CxpMessage message, required PeerIdentity from})
+  final envelope: CxpEnvelope
+  final from: PeerIdentity
+  final message: CxpMessage
+enum KnownElementKind
+  static const breakpoint: KnownElementKind
+  static const instance: KnownElementKind
+  static const marker: KnownElementKind
+  static const net: KnownElementKind
+  static const port: KnownElementKind
+  static const rule: KnownElementKind
+  static const scope: KnownElementKind
+  static const signal: KnownElementKind
+  static const source: KnownElementKind
+  static const test: KnownElementKind
+class LocalCxpClient implements CxpClient
+  LocalCxpClient({Duration connectTimeout, Duration handshakeTimeout, int maxLineLength, int maxPendingWriteBytes, required PeerIdentity selfIdentity})
+  connect({String? token, required String host, required int port}) -> Future<void>
+  disconnect() -> Future<void>
+  dispose() -> Future<void>
+  final connectTimeout: Duration
+  final handshakeTimeout: Duration
+  final maxLineLength: int
+  final maxPendingWriteBytes: int
+  final selfIdentity: PeerIdentity
+  get events -> Stream<CxpConnectionEvent>
+  get inbound -> Stream<CxpClientInbound>
+  get isConnected -> bool
+  get remotePeer -> PeerIdentity?
+  send(CxpMessage message) -> void
+class LocalCxpServer implements CxpServer
+  LocalCxpServer({CxpPathContainment containment, NameResolver? nameResolver, String host, String? authToken, bool requireAuthToken, int maxLineLength, int maxPendingWriteBytes, int port, required PeerIdentity selfIdentity})
+  attachLinkedPeer(PeerIdentity peer, void Function(CxpMessage) send) -> void
+  broadcast(CxpMessage message) -> void
+  debugFailNextSendTo(String peerId) -> void
+  debugPendingWriteBytesOf(String peerId) -> int
+  debugSubscriptionsOf(String peerId) -> List<CxpSubscription>
+  detachLinkedPeer(String peerId) -> void
+  final authToken: String
+  final containment: CxpPathContainment
+  final host: String
+  final maxLineLength: int
+  final maxPendingWriteBytes: int
+  final nameResolver: NameResolver
+  final port: int
+  final requireAuthToken: bool
+  final selfIdentity: PeerIdentity
+  get boundPort -> int?
+  get connectedPeers -> List<PeerIdentity>
+  get inbound -> Stream<InboundCxpMessage>
+  get presence -> Stream<PeerPresenceEvent>
+  injectInbound(InboundCxpMessage message) -> void
+  sendTo(String peerId, CxpMessage message) -> bool
+  start() -> Future<void>
+  stop() -> Future<void>
+abstract class NameResolver
+  toCanonical({required ElementKind kind, required String local}) -> ElementId?
+  toLocal(ElementId id) -> String?
+class NoopCxpServer implements CxpServer
+  const NoopCxpServer({required PeerIdentity selfIdentity})
+  attachLinkedPeer(PeerIdentity peer, void Function(CxpMessage) send) -> void
+  broadcast(CxpMessage message) -> void
+  detachLinkedPeer(String peerId) -> void
+  final selfIdentity: PeerIdentity
+  get boundPort -> int?
+  get connectedPeers -> List<PeerIdentity>
+  get inbound -> Stream<InboundCxpMessage>
+  get presence -> Stream<PeerPresenceEvent>
+  injectInbound(InboundCxpMessage message) -> void
+  sendTo(String peerId, CxpMessage message) -> bool
+  start() -> Future<void>
+  stop() -> Future<void>
+class NoopNameResolver implements NameResolver
+  const NoopNameResolver()
+  toCanonical({required ElementKind kind, required String local}) -> ElementId?
+  toLocal(ElementId id) -> String?
+class NotifySelection extends CxpMessage
+  const NotifySelection({CxpStreamCoordinate? coordinate, Map<String, Object?> metadata, String? displayName, required List<ElementId> elements})
+  factory NotifySelection.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final coordinate: CxpStreamCoordinate?
+  final displayName: String?
+  final elements: List<ElementId>
+  final metadata: Map<String, Object?>
+  get hashCode -> int
+  get kind -> String
+  get referencedElements -> List<ElementId>
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class PeerIdentity
+  const PeerIdentity({Set<String> capabilities, required String peerId, required String productName, required String productVersion})
+  factory PeerIdentity.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final capabilities: Set<String>
+  final peerId: String
+  final productName: String
+  final productVersion: String
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class PeerPresenceEvent
+  const PeerPresenceEvent({required PeerIdentity peer, required bool connected})
+  final connected: bool
+  final peer: PeerIdentity
+  toString() -> String
+class RequestHighlight extends CxpMessage
+  const RequestHighlight({CxpStreamCoordinate? coordinate, Map<String, Object?> metadata, required ElementId element})
+  factory RequestHighlight.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final coordinate: CxpStreamCoordinate?
+  final element: ElementId
+  final metadata: Map<String, Object?>
+  get hashCode -> int
+  get kind -> String
+  get referencedElements -> List<ElementId>
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class RequestHighlightAck extends CxpMessage
+  const RequestHighlightAck({String? reason, required String inReplyTo, required bool honored})
+  factory RequestHighlightAck.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final honored: bool
+  final inReplyTo: String
+  final reason: String?
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class RequestOpenArtifact extends CxpMessage
+  const RequestOpenArtifact({String? path, required String artifactKind, required String designId})
+  factory RequestOpenArtifact.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final artifactKind: String
+  final designId: String
+  final path: String?
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class RequestOpenArtifactAck extends CxpMessage
+  const RequestOpenArtifactAck({String? reason, required String inReplyTo, required bool honored})
+  factory RequestOpenArtifactAck.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final honored: bool
+  final inReplyTo: String
+  final reason: String?
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class RequestOpenSource extends CxpMessage
+  const RequestOpenSource({int? column, required String filePath, required int line})
+  factory RequestOpenSource.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final column: int?
+  final filePath: String
+  final line: int
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class RequestOpenSourceAck extends CxpMessage
+  const RequestOpenSourceAck({String? reason, required String inReplyTo, required bool honored})
+  factory RequestOpenSourceAck.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final honored: bool
+  final inReplyTo: String
+  final reason: String?
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class Subscribe extends CxpMessage
+  const Subscribe({required List<CxpSubscription> subscriptions})
+  factory Subscribe.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final subscriptions: List<CxpSubscription>
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class Unsubscribe extends CxpMessage
+  const Unsubscribe()
+  factory Unsubscribe.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  get hashCode -> int
+  get kind -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class WorkspaceArtifact
+  const WorkspaceArtifact({String? basename, String? topModule, required String kind, required String path, required String producer, required int ts})
+  factory WorkspaceArtifact.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final basename: String?
+  final kind: String
+  final path: String
+  final producer: String
+  final topModule: String?
+  final ts: int
+  get effectiveBasename -> String
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+cxpAuthTokensMatch(String? presented, String expected) -> bool
+get cxpDefaultManifestHeartbeat -> Duration
+cxpDesignIdForPath(String fileOrDirPath) -> String
+get cxpDesignIdMetadataKey -> String
+cxpLoopbackDialAddress(String host) -> String?
+get cxpProcessAuthToken -> String
+get cxpProtocolVersion -> String
+get cxpSubscribeToAll -> List<CxpSubscription>
+decodeCxpMessage(String kind, Map<String, Object?> payload) -> CxpMessage?
+generateCxpAuthToken() -> String
+isCompatibleCxpVersion(String version) -> bool
+isCxpLoopbackHost(String host) -> bool
+sharedCxpManifestDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
+sharedCxpWorkspaceDirectory({Map<String, String>? environment, String? operatingSystem}) -> String

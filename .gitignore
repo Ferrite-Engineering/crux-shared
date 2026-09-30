@@ -1,0 +1,46 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+# pubspec.lock IS tracked here, deliberately (2026-08-17). This is a melos
+# workspace root, not a published package, so the "libraries do not commit
+# lockfiles" rule does not apply — and crux-shared's CI runs the Consumer jobs
+# that build all four products, so an unpinned resolution lets an upstream
+# publish fail four products' gate on a commit that touched nothing.
+build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+
+# Melos
+.melos_tool/
+
+# Python bytecode. `tool/supply-chain.py` is a script rather than a package,
+# but importing it — which is how its licence classifier gets exercised
+# directly — leaves a cache directory beside it.
+__pycache__/
+*.pyc
+
+# Local environment files. None of these exist today, and none should: a
+# public repo with outside contributors is where one gets committed by
+# accident, and a secret in git history outlives its deletion.
+.env
+.env.*
+!.env.example
+# Two more spellings the `.env` rules above do not cover: Wrangler reads
+# local secrets from `.dev.vars`, and direnv from `.envrc`. Both are files a
+# contributor creates on their own machine, which is exactly how one gets
+# committed.
+.dev.vars
+.dev.vars.*
+.envrc

@@ -1,0 +1,21 @@
+name: crux_settings
+description: Cross-suite shared settings infrastructure — CoreSettings model, generic SettingsService<T>, codec interface.
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

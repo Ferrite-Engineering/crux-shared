@@ -1,0 +1,44 @@
+# Public API surface of package:crux_a11y/crux_a11y.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxModalGate extends StatefulWidget
+  const CruxModalGate({Key? key, Widget? modal, required Widget child})
+  createState() -> State<CruxModalGate>
+  final child: Widget
+  final modal: Widget?
+class CruxModalSurface extends StatelessWidget
+  const CruxModalSurface({Key? key, required String label, required Widget child})
+  build(BuildContext context) -> Widget
+  final child: Widget
+  final label: String
+class CruxScrollRegion extends StatefulWidget
+  const CruxScrollRegion({Key? key, bool autofocus, bool excludeContentSemantics, required String semanticLabel, required Widget Function(BuildContext, ScrollController) builder})
+  createState() -> State<CruxScrollRegion>
+  final autofocus: bool
+  final builder: Widget Function(BuildContext, ScrollController)
+  final excludeContentSemantics: bool
+  final semanticLabel: String
+typedef CruxScrollRegionBuilder = Widget Function(BuildContext, ScrollController)
+class CruxSlider extends StatelessWidget
+  const CruxSlider({Color? activeColor, Color? inactiveColor, Color? thumbColor, FocusNode? focusNode, Key? key, String Function(double)? semanticFormatterCallback, String? label, bool autofocus, double max, double min, int? divisions, required double value, required void Function(double)? onChanged, void Function(double)? onChangeEnd, void Function(double)? onChangeStart})
+  build(BuildContext context) -> Widget
+  final activeColor: Color?
+  final autofocus: bool
+  final divisions: int?
+  final focusNode: FocusNode?
+  final inactiveColor: Color?
+  final label: String?
+  final max: double
+  final min: double
+  final onChangeEnd: void Function(double)?
+  final onChangeStart: void Function(double)?
+  final onChanged: void Function(double)?
+  final semanticFormatterCallback: String Function(double)?
+  final thumbColor: Color?
+  final value: double

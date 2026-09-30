@@ -1,0 +1,118 @@
+# Public API surface of package:crux_cxp_ui/crux_cxp_ui.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CrossProbeEvent
+  CrossProbeEvent.peerConnected({DateTime? timestamp, required String peerLabel})
+  CrossProbeEvent.peerDisconnected({DateTime? timestamp, required String peerLabel})
+  const CrossProbeEvent({CrossProbeEventDirection? direction, String? messageKind, String? summary, required CrossProbeEventKind kind, required DateTime timestamp, required String peerLabel})
+  ==(Object other) -> bool
+  final direction: CrossProbeEventDirection?
+  final kind: CrossProbeEventKind
+  final messageKind: String?
+  final peerLabel: String
+  final summary: String?
+  final timestamp: DateTime
+  get hashCode -> int
+  toString() -> String
+enum CrossProbeEventDirection
+  static const inbound: CrossProbeEventDirection
+  static const outbound: CrossProbeEventDirection
+enum CrossProbeEventKind
+  static const highlightReceived: CrossProbeEventKind
+  static const highlightSent: CrossProbeEventKind
+  static const openArtifact: CrossProbeEventKind
+  static const other: CrossProbeEventKind
+  static const peerConnected: CrossProbeEventKind
+  static const peerDisconnected: CrossProbeEventKind
+  static const selectionReceived: CrossProbeEventKind
+  static const selectionSent: CrossProbeEventKind
+class CrossProbePanel extends StatelessWidget
+  const CrossProbePanel({CrossProbePanelStrings strings, Key? key, bool showHeader, required CrossProbePanelController controller})
+  build(BuildContext context) -> Widget
+  final controller: CrossProbePanelController
+  final showHeader: bool
+  final strings: CrossProbePanelStrings
+interface abstract class CrossProbePanelController
+  get events -> ValueListenable<List<CrossProbeEvent>>
+  get peers -> ValueListenable<List<PeerIdentity>>
+  get sendFailure -> ValueListenable<CrossProbeSendFailure?>
+  get serverRunning -> ValueListenable<bool>
+  get unreachable -> ValueListenable<List<CxpDialFailure>>
+  onClearEvents() -> void
+  onClose() -> void
+  onOpenPanel() -> void
+  onSendTo(PeerIdentity peer) -> void
+class CrossProbePanelStrings
+  const CrossProbePanelStrings({String Function(String, String?) sendRejected, String clearEventsLabel, String closeTooltip, String eventsSectionTitle, String noEvents, String noPeers, String peersSectionTitle, String sendTooltip, String serverOffline, String title, String unreachableSectionTitle})
+  final clearEventsLabel: String
+  final closeTooltip: String
+  final eventsSectionTitle: String
+  final noEvents: String
+  final noPeers: String
+  final peersSectionTitle: String
+  final sendRejected: String Function(String, String?)
+  final sendTooltip: String
+  final serverOffline: String
+  final title: String
+  final unreachableSectionTitle: String
+class CrossProbeSendFailure
+  const CrossProbeSendFailure({String? reason, required String peerLabel})
+  ==(Object other) -> bool
+  final peerLabel: String
+  final reason: String?
+  get hashCode -> int
+  toString() -> String
+class CruxCxpSettingsControls extends StatefulWidget
+  const CruxCxpSettingsControls({Key? key, Widget? statusTile, required CruxCxpSettingsStrings strings, required bool broadcastSelection, required bool enabled, required bool requestAttention, required int port, required void Function(bool) onBroadcastSelectionChanged, required void Function(bool) onEnabledChanged, required void Function(bool) onRequestAttentionChanged, required void Function(int) onPortSubmitted})
+  createState() -> State<CruxCxpSettingsControls>
+  final broadcastSelection: bool
+  final enabled: bool
+  final onBroadcastSelectionChanged: void Function(bool)
+  final onEnabledChanged: void Function(bool)
+  final onPortSubmitted: void Function(int)
+  final onRequestAttentionChanged: void Function(bool)
+  final port: int
+  final requestAttention: bool
+  final statusTile: Widget?
+  final strings: CruxCxpSettingsStrings
+class CruxCxpSettingsStrings
+  const CruxCxpSettingsStrings({required String attentionHelp, required String attentionLabel, required String broadcastHelp, required String broadcastLabel, required String enableHelp, required String enableLabel, required String portError, required String portHelp, required String portLabel})
+  final attentionHelp: String
+  final attentionLabel: String
+  final broadcastHelp: String
+  final broadcastLabel: String
+  final enableHelp: String
+  final enableLabel: String
+  final portError: String
+  final portHelp: String
+  final portLabel: String
+class DemoCrossProbePanelController implements CrossProbePanelController
+  DemoCrossProbePanelController()
+  factory DemoCrossProbePanelController.populated()
+  addEvent(CrossProbeEvent event) -> void
+  addPeer(PeerIdentity peer) -> void
+  addUnreachable(CxpDialFailure failure) -> void
+  dispose() -> void
+  final events: ValueNotifier<List<CrossProbeEvent>>
+  final peers: ValueNotifier<List<PeerIdentity>>
+  final sendFailure: ValueNotifier<CrossProbeSendFailure?>
+  final serverRunning: ValueNotifier<bool>
+  final unreachable: ValueNotifier<List<CxpDialFailure>>
+  get running -> bool
+  onClearEvents() -> void
+  onClose() -> void
+  onOpenPanel() -> void
+  onSendTo(PeerIdentity peer) -> void
+  pushSendFailure(CrossProbeSendFailure failure) -> void
+  set running(bool value)
+  var lastSentTo: PeerIdentity?
+  var onClearEventsCount: int
+  var onCloseCount: int
+  var onOpenPanelCount: int
+  var onSendToCount: int

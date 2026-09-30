@@ -1,0 +1,55 @@
+# Public API surface of package:crux_window_chrome/crux_window_chrome.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class MethodChannelWindowAttentionRequester implements WindowAttentionRequester
+  const MethodChannelWindowAttentionRequester()
+  requestUserAttention(WindowAttentionKind kind) -> Future<void>
+class MnemonicMenuBar extends StatefulWidget
+  const MnemonicMenuBar({Key? key, required List<MnemonicMenuEntry> entries})
+  createState() -> State<MnemonicMenuBar>
+  final entries: List<MnemonicMenuEntry>
+class MnemonicMenuEntry
+  const MnemonicMenuEntry({required List<Widget> menuChildren, required String acceleratorLabel})
+  final acceleratorLabel: String
+  final menuChildren: List<Widget>
+class NoopWindowAttentionRequester implements WindowAttentionRequester
+  const NoopWindowAttentionRequester()
+  requestUserAttention(WindowAttentionKind kind) -> Future<void>
+enum WindowAttentionKind
+  static const critical: WindowAttentionKind
+  static const informational: WindowAttentionKind
+interface abstract class WindowAttentionRequester
+  requestUserAttention(WindowAttentionKind kind) -> Future<void>
+class WindowBounds
+  const WindowBounds({bool maximized, double? left, double? top, required double height, required double width})
+  ==(Object other) -> bool
+  copyWith({bool? maximized, double? height, double? left, double? top, double? width}) -> WindowBounds
+  final height: double
+  final left: double?
+  final maximized: bool
+  final top: double?
+  final width: double
+  get hasPosition -> bool
+  get hashCode -> int
+  sanitizedForRestore({double maxExtent, double minHeight, double minLeft, double minWidth}) -> WindowBounds?
+  static fromJson(Map<String, Object?> json) -> WindowBounds?
+  toJson() -> Map<String, Object?>
+  toString() -> String
+buildWindowChrome({required Widget child, required Widget logo, required Widget menuBar}) -> Widget
+buildWindowFrame(Widget child) -> Widget
+buildWindowGeometryPersister({required Future<void> Function(WindowBounds) onChanged, required Widget child}) -> Widget
+buildWindowTitleBar({required Widget logo, required Widget menuBar}) -> Widget
+initWindowChrome({WindowBounds? restore}) -> Future<void>
+readCurrentWindowBounds() -> Future<WindowBounds?>
+requestUserAttention({WindowAttentionKind kind}) -> Future<void>
+get useCustomWindowChrome -> bool
+get windowAttentionChannel -> MethodChannel
+get windowAttentionRequester -> WindowAttentionRequester
+set windowAttentionRequester=(WindowAttentionRequester requester)
+get windowChromeLeftResizeEdge -> double

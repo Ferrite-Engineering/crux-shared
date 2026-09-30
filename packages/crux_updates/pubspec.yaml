@@ -1,0 +1,30 @@
+name: crux_updates
+description: >-
+  Cross-suite update-check mechanism for the EDACrux suite — version-manifest
+  model, semver comparison, HTTP manifest fetch, Riverpod status notifier, and
+  the update-available banner. One implementation consumed by NetCrux, LintCrux,
+  and SimCrux (WaveCrux migration pending).
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_app_info:
+    path: ../crux_app_info
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  http: ^1.2.0
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_localizations:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

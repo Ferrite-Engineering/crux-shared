@@ -1,0 +1,55 @@
+# Public API surface of package:crux_settings/crux_settings.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum AppThemeMode
+  static const dark: AppThemeMode
+  static const light: AppThemeMode
+  static const system: AppThemeMode
+enum AutoReloadMode
+  static const auto: AutoReloadMode
+  static const off: AutoReloadMode
+  static const prompt: AutoReloadMode
+class CoreSettings
+  const CoreSettings({required AppThemeMode themeMode, required AutoReloadMode autoReloadMode, required List<String> userPluginDirectories, required Map<String, String> themeOverrides, required Map<String, bool> perPluginDisabled, required OrientationLockMode orientationLockMode, required String activeThemeName, required String locale, required bool diagnosticsEnabled, required bool pluginLoadingDisabled, required bool pluginSafetyAcknowledged, required bool restoreTabsOnLaunch, required int autoHideChromeSeconds, required int autoSaveIntervalSeconds})
+  const CoreSettings.defaults()
+  ==(Object other) -> bool
+  copyWith({AppThemeMode? themeMode, AutoReloadMode? autoReloadMode, List<String>? userPluginDirectories, Map<String, String>? themeOverrides, Map<String, bool>? perPluginDisabled, OrientationLockMode? orientationLockMode, String? activeThemeName, String? locale, bool? diagnosticsEnabled, bool? pluginLoadingDisabled, bool? pluginSafetyAcknowledged, bool? restoreTabsOnLaunch, int? autoHideChromeSeconds, int? autoSaveIntervalSeconds}) -> CoreSettings
+  final activeThemeName: String
+  final autoHideChromeSeconds: int
+  final autoReloadMode: AutoReloadMode
+  final autoSaveIntervalSeconds: int
+  final diagnosticsEnabled: bool
+  final locale: String
+  final orientationLockMode: OrientationLockMode
+  final perPluginDisabled: Map<String, bool>
+  final pluginLoadingDisabled: bool
+  final pluginSafetyAcknowledged: bool
+  final restoreTabsOnLaunch: bool
+  final themeMode: AppThemeMode
+  final themeOverrides: Map<String, String>
+  final userPluginDirectories: List<String>
+  get hashCode -> int
+class CoreSettingsCodec implements SettingsCodec<CoreSettings>
+  const CoreSettingsCodec()
+  load(SharedPreferences prefs) -> Future<CoreSettings>
+  save(SharedPreferences prefs, CoreSettings settings) -> Future<void>
+enum OrientationLockMode
+  static const auto: OrientationLockMode
+  static const landscapeLock: OrientationLockMode
+  static const portraitLock: OrientationLockMode
+  static const sensor: OrientationLockMode
+abstract class SettingsCodec<T>
+  load(SharedPreferences prefs) -> Future<T>
+  save(SharedPreferences prefs, T settings) -> Future<void>
+class SettingsService<T>
+  const SettingsService(SettingsCodec<T> codec, {SharedPreferences? prefsOverride})
+  final codec: SettingsCodec<T>
+  final prefsOverride: SharedPreferences?
+  load() -> Future<T>
+  save(T settings) -> Future<void>

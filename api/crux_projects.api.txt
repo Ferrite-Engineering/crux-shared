@@ -1,0 +1,80 @@
+# Public API surface of package:crux_projects/crux_projects.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class NoopProjectRegistry implements ProjectRegistry
+  NoopProjectRegistry({DateTime Function()? clock})
+  clearRecentProject(String projectId) -> Future<void>
+  closeAllProjects() -> Future<void>
+  closeProject(String projectId, {bool hardClose}) -> Future<void>
+  get current -> ProjectWorkspace
+  openProject(String projectPath) -> Future<ProjectDescriptor>
+  pinProject(String projectId, {required bool pinned}) -> Future<void>
+  reorderProjects(List<String> newOrderIds) -> Future<void>
+  setActiveProject(String projectId) -> Future<void>
+  shutdownAll() -> Future<void>
+  watch() -> Stream<ProjectWorkspace>
+class PerProjectScope<T>
+  evictProject(ProviderContainer container, String projectId) -> void
+  final family: ProviderFamily<T, String>
+  final provider: Provider<T>
+class ProjectDescriptor
+  const ProjectDescriptor({bool isPinned, required DateTime lastAccessedAt, required DateTime loadedAt, required String displayName, required String id, required String projectPath})
+  ==(Object other) -> bool
+  copyWith({DateTime? lastAccessedAt, DateTime? loadedAt, String? displayName, String? id, String? projectPath, bool? isPinned}) -> ProjectDescriptor
+  final displayName: String
+  final id: String
+  final isPinned: bool
+  final lastAccessedAt: DateTime
+  final loadedAt: DateTime
+  final projectPath: String
+  get hashCode -> int
+  static fromJson(Object? raw) -> ProjectDescriptor?
+  static idForPath(String projectPath) -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class ProjectLoadException implements Exception
+  const ProjectLoadException(String projectPath, String reason, {Object? cause})
+  final cause: Object?
+  final projectPath: String
+  final reason: String
+  toString() -> String
+abstract class ProjectRegistry
+  clearRecentProject(String projectId) -> Future<void>
+  closeAllProjects() -> Future<void>
+  closeProject(String projectId, {bool hardClose}) -> Future<void>
+  get current -> ProjectWorkspace
+  openProject(String projectPath) -> Future<ProjectDescriptor>
+  pinProject(String projectId, {required bool pinned}) -> Future<void>
+  reorderProjects(List<String> newOrderIds) -> Future<void>
+  setActiveProject(String projectId) -> Future<void>
+  shutdownAll() -> Future<void>
+  watch() -> Stream<ProjectWorkspace>
+class ProjectWorkspace
+  ProjectWorkspace({List<ProjectDescriptor> openProjects, List<ProjectDescriptor> recentProjects, String? activeProjectId})
+  factory ProjectWorkspace.empty()
+  ==(Object other) -> bool
+  copyWith({List<ProjectDescriptor>? openProjects, List<ProjectDescriptor>? recentProjects, String? activeProjectId, bool clearActive}) -> ProjectWorkspace
+  final activeProjectId: String?
+  final openProjects: List<ProjectDescriptor>
+  final recentProjects: List<ProjectDescriptor>
+  get activeProject -> ProjectDescriptor?
+  get hashCode -> int
+  get isEmpty -> bool
+  get openCount -> int
+  static const recentProjectsCap: int
+  static const version: int
+  static fromJson(Object? raw) -> ProjectWorkspace?
+  toJson() -> Map<String, Object?>
+get activeProjectIdProvider -> Provider<String?>
+get activeProjectProvider -> Provider<ProjectDescriptor?>
+get emptyWorkspaceProjectId -> String
+perProjectScope<T>(String name, T Function(Ref, String) build) -> Provider<T>
+perProjectScopeWithFamily<T>(String name, T Function(Ref, String) build) -> PerProjectScope<T>
+get projectRegistryProvider -> Provider<ProjectRegistry>
+get projectWorkspaceProvider -> StreamProvider<ProjectWorkspace>

@@ -1,0 +1,197 @@
+# Public API surface of package:crux_issue_reporter/crux_issue_reporter.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+typedef CruxClipboardWriter = Future<void> Function(String)
+class CruxIssueCategory
+  const CruxIssueCategory({String? description, required String id, required String markdownBody, required String title})
+  ==(Object other) -> bool
+  copyWith({String? description, String? id, String? markdownBody, String? title}) -> CruxIssueCategory
+  final description: String?
+  final id: String
+  final markdownBody: String
+  final title: String
+  get hashCode -> int
+  toString() -> String
+final abstract class CruxIssueFallback
+  static const all: String
+  static const none: String
+  static const noneLoaded: String
+  static const redacted: String
+  static const unavailable: String
+class CruxIssueField
+  const CruxIssueField({required String label, required String value})
+  ==(Object other) -> bool
+  final label: String
+  final value: String
+  get hashCode -> int
+  toString() -> String
+class CruxIssueLogEntry
+  const CruxIssueLogEntry({required DateTime timestamp, required Level level, required String loggerName, required String message})
+  final level: Level
+  final loggerName: String
+  final message: String
+  final timestamp: DateTime
+  toString() -> String
+class CruxIssueReporterConfig
+  const CruxIssueReporterConfig({List<String> defaultLabels, String host, String? issueTemplate, String? screenshotFilePrefix, int maxIssueUrlLength, required String productName, required String repositorySlug})
+  ==(Object other) -> bool
+  copyWith({List<String>? defaultLabels, String? host, String? issueTemplate, String? productName, String? repositorySlug, String? screenshotFilePrefix, int? maxIssueUrlLength}) -> CruxIssueReporterConfig
+  final defaultLabels: List<String>
+  final host: String
+  final issueTemplate: String?
+  final maxIssueUrlLength: int
+  final productName: String
+  final repositorySlug: String
+  final screenshotFilePrefix: String?
+  get hashCode -> int
+  get newIssueUrl -> Uri
+  get resolvedScreenshotFilePrefix -> String
+  toString() -> String
+interface abstract class CruxIssueReporterDataProvider
+  extraCategories(CruxIssueSessionContext context) -> List<CruxIssueCategory>
+class CruxIssueReporterDialog extends ConsumerStatefulWidget
+  const CruxIssueReporterDialog({Key? key, Uint8List? screenshotPng})
+  createState() -> ConsumerState<CruxIssueReporterDialog>
+  final screenshotPng: Uint8List?
+  static const desktopHeight: double
+  static const desktopWidth: double
+  static openAdaptive(BuildContext context) -> Future<void>
+class CruxIssueReporterLogBuffer extends ChangeNotifier
+  CruxIssueReporterLogBuffer({int capacity})
+  add(CruxIssueLogEntry entry) -> void
+  attachToLogging() -> void
+  captureFlutterErrors({TelemetryUncaughtErrorCounter? errorCounter}) -> void
+  clear() -> void
+  detach() -> Future<void>
+  final capacity: int
+  get entries -> List<CruxIssueLogEntry>
+  get length -> int
+  recentEntries(int count, {Level? minLevel}) -> List<CruxIssueLogEntry>
+  static const defaultCapacity: int
+  static final instance: CruxIssueReporterLogBuffer
+class CruxIssueReporterService
+  const CruxIssueReporterService({DateTime Function()? now, Future<bool> Function(Uri)? urlLauncher, Future<void> Function(String)? clipboardWriter, required CruxIssueReporterConfig config})
+  buildAppEnvCategory({String? description, required ApplicationBuildInfo info, required String localeTag, required String title, required double devicePixelRatio}) -> CruxIssueCategory
+  buildDiagnosticsCategory({String? description, required CruxIssueReporterLogBuffer buffer, required String logEmptyPlaceholder, required String report, required String title}) -> CruxIssueCategory
+  buildIssueUrl({String? body, String? platform, required String title}) -> Uri
+  buildLogCategory({String? description, required CruxIssueReporterLogBuffer buffer, required String emptyPlaceholder, required String title}) -> CruxIssueCategory
+  buildMarkdownBody(List<CruxIssueCategory> categories) -> String
+  buildSessionCategory({String? description, required CruxIssueSessionContext context, required String title}) -> CruxIssueCategory
+  captureScreenshot(RenderRepaintBoundary? boundary) -> Future<Uint8List?>
+  final config: CruxIssueReporterConfig
+  final now: DateTime Function()?
+  static const appEnvCategoryId: String
+  static const contextLogLineCount: int
+  static const logCategoryId: String
+  static const sessionCategoryId: String
+  static const warningLogLineCount: int
+  static platformLabel() -> String
+  submit({Uint8List? screenshotPng, required String body, required String title}) -> Future<CruxIssueSubmission>
+abstract class CruxIssueReporterStrings
+  const CruxIssueReporterStrings()
+  get cancelButton -> String
+  get categoryAppEnv -> String
+  get categoryAppEnvDescription -> String
+  get categoryLog -> String
+  get categoryLogDescription -> String
+  get categoryScreenshot -> String
+  get categoryScreenshotDescription -> String
+  get categorySession -> String
+  get categorySessionDescription -> String
+  get dialogTitle -> String
+  get emptyLogPlaceholder -> String
+  get emptySessionLogPlaceholder -> String
+  get lockedCategorySemantics -> String
+  get openedToast -> String
+  get openedToastPrefilled -> String
+  get previewHeader -> String
+  get privacyNotice -> String
+  get submitButton -> String
+  get titleFieldHint -> String
+  get titleFieldLabel -> String
+  screenshotSaved(String path) -> String
+class CruxIssueReporterStringsEn extends CruxIssueReporterStrings
+  const CruxIssueReporterStringsEn()
+  get cancelButton -> String
+  get categoryAppEnv -> String
+  get categoryAppEnvDescription -> String
+  get categoryLog -> String
+  get categoryLogDescription -> String
+  get categoryScreenshot -> String
+  get categoryScreenshotDescription -> String
+  get categorySession -> String
+  get categorySessionDescription -> String
+  get dialogTitle -> String
+  get emptyLogPlaceholder -> String
+  get emptySessionLogPlaceholder -> String
+  get lockedCategorySemantics -> String
+  get openedToast -> String
+  get openedToastPrefilled -> String
+  get previewHeader -> String
+  get privacyNotice -> String
+  get submitButton -> String
+  get titleFieldHint -> String
+  get titleFieldLabel -> String
+  screenshotSaved(String path) -> String
+class CruxIssueReporterUnconfiguredError extends StateError
+  CruxIssueReporterUnconfiguredError()
+class CruxIssueSessionContext
+  const CruxIssueSessionContext({List<CruxIssueField> fields, Map<String, Object?> attributes, String localeTag})
+  ==(Object other) -> bool
+  copyWith({List<CruxIssueField>? fields, Map<String, Object?>? attributes, String? localeTag}) -> CruxIssueSessionContext
+  final attributes: Map<String, Object?>
+  final fields: List<CruxIssueField>
+  final localeTag: String
+  get hashCode -> int
+  get isEmpty -> bool
+  get isNotEmpty -> bool
+  static const empty: CruxIssueSessionContext
+  toString() -> String
+class CruxIssueSessionContextBuilder
+  CruxIssueSessionContextBuilder({String localeTag})
+  addCount(String label, int value, {String? attributeKey}) -> void
+  addFlag(String label, {String? attributeKey, required bool value}) -> void
+  addList(String label, List<String> values, {String fallback, String? attributeKey}) -> void
+  addText(String label, String? value, {String fallback, String? attributeKey}) -> void
+  attribute(String key, Object? value) -> void
+  build() -> CruxIssueSessionContext
+  final localeTag: String
+  get fields -> List<CruxIssueField>
+  guard(void Function() block) -> bool
+  redact(String label) -> void
+class CruxIssueSubmission
+  const CruxIssueSubmission({String? screenshotPath, bool bodyPrefilled, required String clipboardBody, required Uri issueUrl})
+  final bodyPrefilled: bool
+  final clipboardBody: String
+  final issueUrl: Uri
+  final screenshotPath: String?
+  toString() -> String
+typedef CruxUrlLauncherFn = Future<bool> Function(Uri)
+class NoopCruxIssueReporterDataProvider implements CruxIssueReporterDataProvider
+  const NoopCruxIssueReporterDataProvider()
+  extraCategories(CruxIssueSessionContext context) -> List<CruxIssueCategory>
+get cruxAppScreenshotBoundaryKeyProvider -> Provider<GlobalKey<State<StatefulWidget>>>
+get cruxIssueDiagnosticsReportProvider -> Provider<String?>
+get cruxIssueReporterBuildInfoProvider -> Provider<ApplicationBuildInfo?>
+get cruxIssueReporterConfigProvider -> Provider<CruxIssueReporterConfig>
+get cruxIssueReporterDataProviderProvider -> Provider<CruxIssueReporterDataProvider>
+get cruxIssueReporterLogBufferProvider -> Provider<CruxIssueReporterLogBuffer>
+get cruxIssueReporterServiceProvider -> Provider<CruxIssueReporterService>
+get cruxIssueReporterStringsProvider -> Provider<CruxIssueReporterStrings>
+get cruxIssueSessionContextProvider -> Provider<CruxIssueSessionContext>
+cruxIssueTileKey(String categoryId) -> Key
+cruxLocaleTag(Locale locale) -> String
+cruxPlatformLocaleTag() -> String
+get isCruxDesktopPlatform -> bool
+get isCruxMobilePlatform -> bool
+get kCruxIssuePreviewBodyKey -> Key
+get kCruxIssuePreviewToggleKey -> Key
+get kCruxIssueReporterMinTouchTarget -> double
+get kCruxIssueScreenshotCategoryId -> String
+get kCruxIssueTitleFieldKey -> Key

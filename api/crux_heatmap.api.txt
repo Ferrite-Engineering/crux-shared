@@ -1,0 +1,23 @@
+# Public API surface of package:crux_heatmap/crux_heatmap.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxCalendarHeatmap<T> extends StatelessWidget
+  const CruxCalendarHeatmap({Key? key, double cellGap, double cellSize, required DateTime start, required List<CruxHeatmapCell<T>> cells, void Function(T)? onCellTap})
+  build(BuildContext context) -> Widget
+  final cellGap: double
+  final cellSize: double
+  final cells: List<CruxHeatmapCell<T>>
+  final onCellTap: void Function(T)?
+  final start: DateTime
+class CruxHeatmapCell<T>
+  const CruxHeatmapCell({required Color color, required DateTime day, required String tooltip, required T payload})
+  final color: Color
+  final day: DateTime
+  final payload: T
+  final tooltip: String

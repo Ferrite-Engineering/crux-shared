@@ -1,0 +1,37 @@
+# Public API surface of package:crux_status_bar/crux_status_bar.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxStatusBar extends StatelessWidget
+  const CruxStatusBar({Color? backgroundColor, Color? borderColor, Color? dividerColor, Key? key, List<Widget> leading, List<Widget> segments, List<Widget> segmentsTrailing, List<Widget> trailing, String? semanticsLabel, TextStyle? textStyle, Widget? center, double maxTextScaleFactor, double? height})
+  build(BuildContext context) -> Widget
+  final backgroundColor: Color?
+  final borderColor: Color?
+  final center: Widget?
+  final dividerColor: Color?
+  final height: double?
+  final leading: List<Widget>
+  final maxTextScaleFactor: double
+  final segments: List<Widget>
+  final segmentsTrailing: List<Widget>
+  final semanticsLabel: String?
+  final textStyle: TextStyle?
+  final trailing: List<Widget>
+  static resolveTextStyle(BuildContext context, {TextStyle? textStyle}) -> TextStyle?
+class CruxStatusBusyIndicator extends StatelessWidget
+  const CruxStatusBusyIndicator({Key? key, String? semanticsLabel, double size})
+  build(BuildContext context) -> Widget
+  final semanticsLabel: String?
+  final size: double
+class CruxStatusSegment extends StatelessWidget
+  const CruxStatusSegment(String label, {Key? key, TextStyle? style})
+  build(BuildContext context) -> Widget
+  final label: String
+  final style: TextStyle?
+get kCruxStatusBarFontSize -> double
+get kCruxStatusBarHeight -> double

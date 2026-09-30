@@ -1,0 +1,58 @@
+{
+  "_comment": [
+    "CANONICAL VOCABULARY OF app.uncaught_error — the contract between",
+    "TelemetryUncaughtErrorCounter and the crux-telemetry ingestion Worker,",
+    "which checks this one event's property values against these lists rather",
+    "than only against its generic value class.",
+    "",
+    "SOURCE OF TRUTH: the ingestion Worker's own copy of this document, which",
+    "its test suite holds its schema to. This file carries the same data;",
+    "test/src/telemetry_error_vocabulary_test.dart asserts this package's",
+    "constants equal it. A change is a change to both sides and must land on",
+    "both, Worker first: a value a client sends before the Worker knows it is",
+    "dropped from the row.",
+    "",
+    "'silent' is a boolean and has no list."
+  ],
+  "event": "app.uncaught_error",
+  "source": [
+    "flutter",
+    "platform"
+  ],
+  "kind": [
+    "flutter_error",
+    "state_error",
+    "argument_error",
+    "range_error",
+    "format_exception",
+    "file_system_exception",
+    "io_exception",
+    "platform_exception",
+    "timeout_exception",
+    "type_error",
+    "no_such_method_error",
+    "assertion_error",
+    "unsupported_error",
+    "concurrent_modification_error",
+    "out_of_memory_error",
+    "stack_overflow_error",
+    "other"
+  ],
+  "library": [
+    "framework",
+    "foundation",
+    "animation",
+    "gestures",
+    "painting",
+    "image_resource_service",
+    "rendering",
+    "scheduler",
+    "semantics",
+    "services",
+    "widgets",
+    "widget_inspector",
+    "material",
+    "none",
+    "other"
+  ]
+}

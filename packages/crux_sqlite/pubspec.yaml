@@ -1,0 +1,48 @@
+name: crux_sqlite
+description: The one SQLite open path in the suite — migration runner, open policy, PRECIOUS/DERIVABLE recovery policy and the typed failure vocabulary every Crux store opens through.
+version: 0.4.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+# PURE DART, PERMANENTLY. No `flutter:` key here, ever, and no transitive
+# route to one — `no_flutter_dependency_test.dart` asserts it on every run.
+# Both products ship a headless Pro CLI built with `dart build cli`, and
+# LintCrux's writes `trends.db` directly. A Flutter import anywhere in this
+# graph drags `dart:ui` into the AOT kernel and kills that compile with an
+# opaque FFI-transformer crash. `crux_license` already paid for this lesson
+# with an entire second `crux_license_core` barrel.
+dependencies:
+  # A relative path, matching every other workspace sibling's dependency on
+  # crux_io (crux_cxp, crux_projects, crux_theme, crux_workspace, ...) —
+  # NOT a bare version constraint. `resolution: workspace` makes a bare
+  # constraint resolve fine from *inside* this workspace (melos, `dart pub
+  # get` at the crux-shared root), which is why this went unnoticed here,
+  # but every product consumes this package the same way it consumes every
+  # other crux-shared package: a plain `path:` dependency from OUTSIDE the
+  # workspace. A non-member's pub solve then reads a bare `crux_io: ^0.2.0`
+  # as a hosted dependency, conflicting with that product's own `path:`
+  # dependency on the same package ("crux_sqlite from path is forbidden").
+  crux_io:
+    path: ../crux_io
+  # Guard G1's schema fingerprints (`crux_sqlite_guards.dart`). Already in the
+  # workspace's resolved set via crux_cxp and crux_license, so it introduces no
+  # new transitive graph — and it is pure Dart, which every dependency of this
+  # package has to be.
+  crypto: ^3.0.6
+  meta: ^1.15.0
+  path: ^1.9.0
+  # Matching what LintCrux Pro and SimCrux open core already pin, so adopting
+  # this package resolves no new major.
+  sqflite_common: ^2.5.4
+  sqflite_common_ffi: ^2.3.3
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^10.2.0
+  # Test-only: the purity guard walks the resolved dependency closure's
+  # pubspecs looking for a route to Flutter.
+  yaml: ^3.1.0

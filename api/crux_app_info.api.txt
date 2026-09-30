@@ -1,0 +1,31 @@
+# Public API surface of package:crux_app_info/crux_app_info.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class ApplicationBranding
+  const ApplicationBranding({required String companyName, required String copyrightYear, required String logoAssetPath, required String squareLogoAssetPath, required String websiteUrl})
+  ==(Object other) -> bool
+  final companyName: String
+  final copyrightYear: String
+  final logoAssetPath: String
+  final squareLogoAssetPath: String
+  final websiteUrl: String
+  get hashCode -> int
+  toString() -> String
+class ApplicationBuildInfo
+  const ApplicationBuildInfo({required String architecture, required String buildNumber, required String dartSdkVersion, required String flutterSdkVersion, required String gitShortSha, required String os, required String version})
+  ==(Object other) -> bool
+  final architecture: String
+  final buildNumber: String
+  final dartSdkVersion: String
+  final flutterSdkVersion: String
+  final gitShortSha: String
+  final os: String
+  final version: String
+  get hashCode -> int
+  toString() -> String

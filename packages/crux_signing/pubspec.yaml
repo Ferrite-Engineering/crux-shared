@@ -1,0 +1,34 @@
+name: crux_signing
+description: Ed25519 signature verification for the EDACrux suite — verify only, no signing, no key generation, no cipher. The one place the suite checks a signature.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+# PURE DART, PERMANENTLY. No `flutter:` key here, ever, and no transitive route
+# to one — `no_flutter_dependency_test.dart` asserts it on every run. Three
+# consumers need it from a headless binary: crux_license resolves credentials,
+# crux_policy verifies the org's signed configuration file, and both LintCrux's
+# and SimCrux's Pro CLIs are bare Dart processes built with `dart build cli`.
+#
+# NO CIPHER MAY ENTER THIS GRAPH. Open core carrying no non-exempt encryption
+# is the load-bearing fact of the suite's export-control position, and adding a
+# dependency that ships one would put a cipher in every product and in the open-core tree. The
+# dependency set below is the whole of it: SHA-512 for the hash Ed25519 is
+# defined over, and `meta` for annotations. `package:crypto` implements no
+# cipher, which is exactly why it is the one that is allowed.
+dependencies:
+  crypto: ^3.0.6
+  meta: ^1.15.0
+
+dev_dependencies:
+  # Test-only: the purity guard resolves package roots by path.
+  path: ^1.9.0
+  test: ^1.25.0
+  very_good_analysis: ^10.2.0
+  # Test-only: the purity guard walks the resolved dependency closure's
+  # pubspecs looking for a route to Flutter.
+  yaml: ^3.1.0

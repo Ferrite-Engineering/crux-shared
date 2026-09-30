@@ -1,0 +1,80 @@
+# Public API surface of package:crux_eula/crux_eula.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxEulaAcceptanceDialog extends StatefulWidget
+  const CruxEulaAcceptanceDialog({CruxEulaMetrics metrics, CruxEulaStrings strings, Key? key, bool isPhoneLayout, bool isReacceptance, required void Function() onAccept, void Function()? onDecline, void Function()? onOpenOnline})
+  createState() -> State<CruxEulaAcceptanceDialog>
+  final isPhoneLayout: bool
+  final isReacceptance: bool
+  final metrics: CruxEulaMetrics
+  final onAccept: void Function()
+  final onDecline: void Function()?
+  final onOpenOnline: void Function()?
+  final strings: CruxEulaStrings
+class CruxEulaAcceptanceStore extends Notifier<String?>
+  accept([String version]) -> Future<void>
+  build() -> String?
+  get loaded -> Future<void>
+  static const storageKey: String
+class CruxEulaBlock
+  const CruxEulaBlock({required String text, required bool isHeading})
+  final isHeading: bool
+  final text: String
+class CruxEulaGate extends ConsumerStatefulWidget
+  const CruxEulaGate({CruxEulaMetrics metrics, CruxEulaStrings strings, Key? key, bool isPhoneLayout, bool presentAgreement, required Widget child})
+  createState() -> ConsumerState<CruxEulaGate>
+  final child: Widget
+  final isPhoneLayout: bool
+  final metrics: CruxEulaMetrics
+  final presentAgreement: bool
+  final strings: CruxEulaStrings
+class CruxEulaMetrics
+  const CruxEulaMetrics({double bodyFontSize, double iconSize, double touchTarget})
+  ==(Object other) -> bool
+  copyWith({double? bodyFontSize, double? iconSize, double? touchTarget}) -> CruxEulaMetrics
+  final bodyFontSize: double
+  final iconSize: double
+  final touchTarget: double
+  get effectiveTouchTarget -> double
+  get hashCode -> int
+  toString() -> String
+abstract class CruxEulaStorage
+  const CruxEulaStorage()
+  read(String key) -> Future<String?>
+  remove(String key) -> Future<void>
+  write(String key, String value) -> Future<void>
+class CruxEulaStrings
+  const CruxEulaStrings({String acceptButton, String acceptCheckboxLabel, String declineButton, String documentLabel, String openOnline, String openSourceNote, String subtitle, String title, String updatedNotice})
+  copyWith({String? acceptButton, String? acceptCheckboxLabel, String? declineButton, String? documentLabel, String? openOnline, String? openSourceNote, String? subtitle, String? title, String? updatedNotice}) -> CruxEulaStrings
+  final acceptButton: String
+  final acceptCheckboxLabel: String
+  final declineButton: String
+  final documentLabel: String
+  final openOnline: String
+  final openSourceNote: String
+  final subtitle: String
+  final title: String
+  final updatedNotice: String
+class InMemoryCruxEulaStorage extends CruxEulaStorage
+  InMemoryCruxEulaStorage([Map<String, String>? seed])
+  get values -> Map<String, String>
+  read(String key) -> Future<String?>
+  remove(String key) -> Future<void>
+  write(String key, String value) -> Future<void>
+get cruxEulaAcceptanceRequiredProvider -> Provider<bool>
+get cruxEulaAcceptanceStoreProvider -> NotifierProvider<CruxEulaAcceptanceStore, String?>
+get cruxEulaOnDeclineProvider -> Provider<void Function()?>
+get cruxEulaOpenOnlineProvider -> Provider<Future<void> Function()?>
+get cruxEulaStorageProvider -> Provider<CruxEulaStorage>
+get kCruxEulaAcceptedVersionKey -> String
+get kCruxEulaDocument -> List<CruxEulaBlock>
+get kCruxEulaEffectiveDate -> String
+get kCruxEulaMinTarget -> double
+get kCruxEulaVersion -> String
+resetCruxEulaAcceptance(CruxEulaStorage storage) -> Future<void>

@@ -1,0 +1,356 @@
+# Public API surface of package:crux_theme/crux_theme.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+final abstract class ChromeTokens
+  static const panelBackground: String
+  static const panelHeaderBackground: String
+  static const panelHeaderForeground: String
+  static const scaffoldBackground: String
+  static const splitter: String
+  static const splitterHover: String
+  static const statusBarBackground: String
+  static const statusBarForeground: String
+  static const tabBarBackground: String
+  static const tabBarLabel: String
+  static const tabBarSelected: String
+  static const toolbarBackground: String
+  static const toolbarIcon: String
+  static const toolbarIconActive: String
+class ColorPickerPaletteSection
+  const ColorPickerPaletteSection({double swatchSize, required List<Color> colors, required String label})
+  final colors: List<Color>
+  final label: String
+  final swatchSize: double
+class CruxChromeColors extends ThemeExtension<CruxChromeColors>
+  const CruxChromeColors({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarIconActive})
+  ==(Object other) -> bool
+  copyWith({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarIconActive}) -> CruxChromeColors
+  final splitter: Color?
+  final splitterHover: Color?
+  final statusBarBackground: Color?
+  final statusBarForeground: Color?
+  final tabBarBackground: Color?
+  final tabBarLabel: Color?
+  final tabBarSelected: Color?
+  final toolbarIconActive: Color?
+  get hashCode -> int
+  get isEmpty -> bool
+  lerp(ThemeExtension<CruxChromeColors>? other, double t) -> CruxChromeColors
+  static of(BuildContext context) -> CruxChromeColors?
+class CruxColorSwatch extends StatelessWidget
+  const CruxColorSwatch({Key? key, String? tooltip, ThemeAppearanceStrings strings, double size, required Color color, void Function(Color)? onColorPicked})
+  build(BuildContext context) -> Widget
+  final color: Color
+  final onColorPicked: void Function(Color)?
+  final size: double
+  final strings: ThemeAppearanceStrings
+  final tooltip: String?
+class CruxColorTheme
+  CruxColorTheme({required Brightness brightness, required Map<String, Map<String, Color>> tokens, required String displayName, required String id})
+  CruxColorTheme.internalUnsafe({required Brightness brightness, required Map<String, Map<String, Color>> tokens, required String displayName, required String id})
+  ==(Object other) -> bool
+  color(String categoryId, String tokenId) -> Color?
+  colorOr(String categoryId, String tokenId, Color fallback) -> Color
+  copyWith({Brightness? brightness, Map<String, Map<String, Color>>? tokens, String? displayName, String? id}) -> CruxColorTheme
+  final brightness: Brightness
+  final displayName: String
+  final hashCode: int
+  final id: String
+  final tokens: Map<String, Map<String, Color>>
+  hasToken(String categoryId, String tokenId) -> bool
+  mergeTokens(Map<String, Color> overrides) -> CruxColorTheme
+  static dottedId(String categoryId, String tokenId) -> String
+  static splitDottedId(String dotted) -> (String, String)?
+  toString() -> String
+class CruxColorThemeNotifier extends Notifier<CruxColorTheme>
+  CruxColorThemeNotifier({required CruxColorTheme initial})
+  activate(CruxColorTheme theme) -> void
+  applyOverrides(Map<String, Color> overrides) -> void
+  build() -> CruxColorTheme
+  final initial: CruxColorTheme
+  reset() -> void
+class CruxThemeExtension extends ThemeExtension<CruxThemeExtension>
+  const CruxThemeExtension({required CruxColorTheme theme})
+  ==(Object other) -> bool
+  color(String categoryId, String tokenId) -> Color?
+  colorOr(String categoryId, String tokenId, Color fallback) -> Color
+  copyWith({CruxColorTheme? theme}) -> CruxThemeExtension
+  final theme: CruxColorTheme
+  get hashCode -> int
+  hasToken(String categoryId, String tokenId) -> bool
+  lerp(ThemeExtension<CruxThemeExtension>? other, double t) -> CruxThemeExtension
+  static get lerpPlanBuildCount -> int
+  static resetLerpPlanCacheForTesting() -> void
+class DirectoryThemePackStore implements ThemePackStore
+  const DirectoryThemePackStore({ThemePackService service, required Directory directory})
+  final directory: Directory
+  final service: ThemePackService
+  installPack(String document) -> Future<ThemePack>
+  listPacks() -> Future<List<ThemePackHeader>>
+  loadPack(String packId) -> Future<ThemePack>
+  uninstallPack(String packId) -> Future<bool>
+class InMemoryThemePackStore implements ThemePackStore
+  InMemoryThemePackStore({List<ThemePack> initialPacks})
+  final installedDocuments: List<String>
+  final uninstalledIds: List<String>
+  installPack(String document) -> Future<ThemePack>
+  listPacks() -> Future<List<ThemePackHeader>>
+  loadPack(String packId) -> Future<ThemePack>
+  uninstallPack(String packId) -> Future<bool>
+  var failWith: Exception?
+typedef PickPackDocument = Future<String?> Function()
+class PresetCard extends StatelessWidget
+  const PresetCard({Key? key, List<(String, String)>? previewTokens, ThemeAppearanceStrings strings, required CruxColorTheme theme, required bool isActive, required void Function() onActivate})
+  build(BuildContext context) -> Widget
+  final isActive: bool
+  final onActivate: void Function()
+  final previewTokens: List<(String, String)>?
+  final strings: ThemeAppearanceStrings
+  final theme: CruxColorTheme
+class PresetPicker extends ConsumerWidget
+  const PresetPicker({Key? key, List<(String, String)>? previewTokens, ThemeAppearanceStrings strings, required List<CruxColorTheme> presets})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final presets: List<CruxColorTheme>
+  final previewTokens: List<(String, String)>?
+  final strings: ThemeAppearanceStrings
+class PresetPreview extends StatelessWidget
+  const PresetPreview({Key? key, List<(String, String)>? tokens, double swatchSize, int maxSwatches, required CruxColorTheme theme})
+  build(BuildContext context) -> Widget
+  final maxSwatches: int
+  final swatchSize: double
+  final theme: CruxColorTheme
+  final tokens: List<(String, String)>?
+class PresetTokenOverlay
+  const PresetTokenOverlay({required Map<String, Map<String, Color>> byPresetId, required String categoryId})
+  ==(Object other) -> bool
+  final byPresetId: Map<String, Map<String, Color>>
+  final categoryId: String
+  get hashCode -> int
+  toString() -> String
+  tokensFor(String presetId) -> Map<String, Color>?
+typedef SavePackDocument = Future<String?> Function(String)
+class ThemeAppearanceSection extends StatelessWidget
+  const ThemeAppearanceSection({Key? key, List<(String, String)>? previewTokens, List<Widget> trailingActions, ThemeAppearanceStrings strings, bool showAdvancedOverrides, required Future<String?> Function() pickPackDocument, required Future<String?> Function(String) savePackDocument, required List<CruxColorTheme> presets, required ThemePackStore store})
+  build(BuildContext context) -> Widget
+  final pickPackDocument: Future<String?> Function()
+  final presets: List<CruxColorTheme>
+  final previewTokens: List<(String, String)>?
+  final savePackDocument: Future<String?> Function(String)
+  final showAdvancedOverrides: bool
+  final store: ThemePackStore
+  final strings: ThemeAppearanceStrings
+  final trailingActions: List<Widget>
+abstract class ThemeAppearanceStrings
+  const ThemeAppearanceStrings()
+  brightnessLabel({required bool isDark}) -> String
+  collapseCategoryLabel(String categoryDisplayName) -> String
+  confirmUninstallDialogBody(String packId) -> String
+  expandCategoryLabel(String categoryDisplayName) -> String
+  exportFailedMessage(String reason) -> String
+  exportSucceededMessage(String destinationPath) -> String
+  get activatePackButtonLabel -> String
+  get activatePresetTooltip -> String
+  get activePresetIndicatorLabel -> String
+  get colorPickerCancelLabel -> String
+  get colorPickerDialogTitle -> String
+  get colorPickerHexLabel -> String
+  get colorPickerHsvLabel -> String
+  get colorPickerHueLabel -> String
+  get colorPickerOkLabel -> String
+  get colorPickerPreviewLabel -> String
+  get colorPickerRgbLabel -> String
+  get colorPickerSaturationLabel -> String
+  get colorPickerValueLabel -> String
+  get confirmUninstallCancelLabel -> String
+  get confirmUninstallConfirmLabel -> String
+  get confirmUninstallDialogTitle -> String
+  get editTokenColorTooltip -> String
+  get emptyTokenCategoryMessage -> String
+  get exportCurrentThemeButtonLabel -> String
+  get importThemePackButtonLabel -> String
+  get installedPacksHeading -> String
+  get noInstalledPacksMessage -> String
+  get noPresetsAvailableMessage -> String
+  get presetSectionHeading -> String
+  get resetTokenToDefaultTooltip -> String
+  get sectionSubtitle -> String
+  get sectionTitle -> String
+  get themePackBrowserSectionHeading -> String
+  get tokenOverridesSectionHeading -> String
+  get uninstallPackButtonLabel -> String
+  importFailedMessage(String reason) -> String
+  importSucceededMessage(String packId) -> String
+  invalidHexMessage(String input) -> String
+class ThemeAppearanceStringsEn extends ThemeAppearanceStrings
+  const ThemeAppearanceStringsEn()
+  brightnessLabel({required bool isDark}) -> String
+  collapseCategoryLabel(String categoryDisplayName) -> String
+  confirmUninstallDialogBody(String packId) -> String
+  expandCategoryLabel(String categoryDisplayName) -> String
+  exportFailedMessage(String reason) -> String
+  exportSucceededMessage(String destinationPath) -> String
+  get activatePackButtonLabel -> String
+  get activatePresetTooltip -> String
+  get activePresetIndicatorLabel -> String
+  get colorPickerCancelLabel -> String
+  get colorPickerDialogTitle -> String
+  get colorPickerHexLabel -> String
+  get colorPickerHsvLabel -> String
+  get colorPickerHueLabel -> String
+  get colorPickerOkLabel -> String
+  get colorPickerPreviewLabel -> String
+  get colorPickerRgbLabel -> String
+  get colorPickerSaturationLabel -> String
+  get colorPickerValueLabel -> String
+  get confirmUninstallCancelLabel -> String
+  get confirmUninstallConfirmLabel -> String
+  get confirmUninstallDialogTitle -> String
+  get editTokenColorTooltip -> String
+  get emptyTokenCategoryMessage -> String
+  get exportCurrentThemeButtonLabel -> String
+  get importThemePackButtonLabel -> String
+  get installedPacksHeading -> String
+  get noInstalledPacksMessage -> String
+  get noPresetsAvailableMessage -> String
+  get presetSectionHeading -> String
+  get resetTokenToDefaultTooltip -> String
+  get sectionSubtitle -> String
+  get sectionTitle -> String
+  get themePackBrowserSectionHeading -> String
+  get tokenOverridesSectionHeading -> String
+  get uninstallPackButtonLabel -> String
+  importFailedMessage(String reason) -> String
+  importSucceededMessage(String packId) -> String
+  invalidHexMessage(String input) -> String
+class ThemePack
+  ThemePack({Uri? sourceUri, required Brightness brightness, required Map<String, Map<String, Color>> tokens, required String displayName, required String id})
+  ==(Object other) -> bool
+  color(String categoryId, String tokenId) -> Color?
+  colorOr(String categoryId, String tokenId, Color fallback) -> Color
+  copyWith({Brightness? brightness, Map<String, Map<String, Color>>? tokens, String? displayName, String? id, Uri? sourceUri}) -> ThemePack
+  final brightness: Brightness
+  final displayName: String
+  final hashCode: int
+  final id: String
+  final sourceUri: Uri?
+  final tokens: Map<String, Map<String, Color>>
+  hasToken(String categoryId, String tokenId) -> bool
+  toHeader() -> ThemePackHeader
+  toString() -> String
+  toTheme() -> CruxColorTheme
+class ThemePackBrowser extends ConsumerStatefulWidget
+  const ThemePackBrowser({Key? key, ThemeAppearanceStrings strings, required Future<String?> Function() pickPackDocument, required Future<String?> Function(String) savePackDocument, required ThemePackStore store})
+  createState() -> ConsumerState<ThemePackBrowser>
+  final pickPackDocument: Future<String?> Function()
+  final savePackDocument: Future<String?> Function(String)
+  final store: ThemePackStore
+  final strings: ThemeAppearanceStrings
+class ThemePackCodec
+  const ThemePackCodec()
+  decode(String source, {Uri? sourceUri}) -> ThemePack
+  decodeHeader(String source, {Uri? sourceUri}) -> ThemePackHeader
+  encode(ThemePack pack) -> String
+  fromJson(Map<String, Object?> json, {Uri? sourceUri}) -> ThemePack
+  static const currentSchemaVersion: int
+  static encodeColor(Color color) -> String
+  static isValidPackId(String id) -> bool
+  static tryParseColor(String input) -> Color?
+  toJson(ThemePack pack) -> Map<String, Object?>
+class ThemePackHeader
+  const ThemePackHeader({Uri? sourceUri, required Brightness brightness, required String displayName, required String id})
+  ==(Object other) -> bool
+  final brightness: Brightness
+  final displayName: String
+  final id: String
+  final sourceUri: Uri?
+  get hashCode -> int
+  toString() -> String
+class ThemePackService
+  const ThemePackService({ThemePackCodec? codec})
+  fileFor(String packId, Directory directory) -> File
+  final codec: ThemePackCodec
+  install(File source, Directory destination) -> Future<ThemePack>
+  list(Directory directory) -> Future<List<ThemePackHeader>>
+  load(File file) -> Future<ThemePack>
+  loadSync(File file) -> ThemePack
+  save(ThemePack pack, Directory destination) -> Future<File>
+  static const themePackExtension: String
+  uninstall(String packId, Directory directory) -> Future<bool>
+  validate(File source) -> Future<ThemePackValidation>
+abstract class ThemePackStore
+  installPack(String document) -> Future<ThemePack>
+  listPacks() -> Future<List<ThemePackHeader>>
+  loadPack(String packId) -> Future<ThemePack>
+  uninstallPack(String packId) -> Future<bool>
+class ThemePackValidation
+  ThemePackValidation.failed(List<String> errors)
+  const ThemePackValidation.ok(ThemePack pack)
+  final errors: List<String>
+  final pack: ThemePack?
+  get isValid -> bool
+class ThemeRegistry
+  category(String categoryId) -> ThemeTokenCategory?
+  get allRegisteredTokens -> Map<String, ThemeTokenDescriptor>
+  get registeredCategories -> List<ThemeTokenCategory>
+  get registeredPresetOverlays -> Iterable<PresetTokenOverlay>
+  get revision -> int
+  hasCategory(String categoryId) -> bool
+  registerCategory(ThemeTokenCategory category) -> void
+  registerPresetOverlay(PresetTokenOverlay overlay) -> void
+  resetForTesting() -> void
+  resolve(CruxColorTheme theme, String categoryId, String tokenId) -> Color?
+  static final instance: ThemeRegistry
+  static merge(CruxColorTheme base, Map<String, Color> overrides) -> CruxColorTheme
+class ThemeTokenCategory
+  const ThemeTokenCategory({required List<ThemeTokenDescriptor> tokens, required String displayName, required String id})
+  ==(Object other) -> bool
+  descriptor(String tokenId) -> ThemeTokenDescriptor?
+  final displayName: String
+  final id: String
+  final tokens: List<ThemeTokenDescriptor>
+  get hashCode -> int
+  toString() -> String
+class ThemeTokenDescriptor
+  const ThemeTokenDescriptor({String? description, required Color darkDefault, required Color lightDefault, required String displayName, required String id})
+  ==(Object other) -> bool
+  defaultFor(Brightness brightness) -> Color
+  final darkDefault: Color
+  final description: String?
+  final displayName: String
+  final id: String
+  final lightDefault: Color
+  get hashCode -> int
+  toString() -> String
+class TokenCategorySection extends StatefulWidget
+  const TokenCategorySection({Key? key, ThemeAppearanceStrings strings, bool initiallyExpanded, required ThemeTokenCategory category, void Function(bool)? onExpansionChanged})
+  createState() -> State<TokenCategorySection>
+  final category: ThemeTokenCategory
+  final initiallyExpanded: bool
+  final onExpansionChanged: void Function(bool)?
+  final strings: ThemeAppearanceStrings
+class TokenEditor extends ConsumerWidget
+  const TokenEditor({Key? key, ThemeAppearanceStrings strings, required String categoryId, required ThemeTokenDescriptor descriptor})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final categoryId: String
+  final descriptor: ThemeTokenDescriptor
+  final strings: ThemeAppearanceStrings
+applyChromeTokens(ThemeData base, CruxThemeExtension chrome) -> ThemeData
+builtinPresetById(String id) -> CruxColorTheme?
+builtinPresets() -> Map<String, CruxColorTheme>
+get chromeCategoryId -> String
+get chromeTokens -> ThemeTokenCategory
+get cruxColorThemeProvider -> NotifierProvider<CruxColorThemeNotifier, CruxColorTheme>
+get cruxDarkPresetId -> String
+get cruxLightPresetId -> String
+defaultBuiltinPreset() -> CruxColorTheme
+get legacyPresetIdAliases -> Map<String, String>
+migratePresetId(String id) -> String
+registerCruxThemeChromeTokens() -> void
+showColorPickerDialog({List<ColorPickerPaletteSection> paletteSections, ThemeAppearanceStrings strings, required BuildContext context, required Color initialColor}) -> Future<Color?>
+themeModeFromBrightness(CruxColorTheme theme) -> ThemeMode

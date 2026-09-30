@@ -1,0 +1,134 @@
+# Public API surface of package:crux_yosys/crux_yosys.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class DefaultProcessRunner implements ProcessRunner
+  const DefaultProcessRunner({Duration drainGrace, ProcessRegistry? registry, SpawnHost? spawnHost, int outputHeadLimit, int outputTailLimit})
+  final drainGrace: Duration
+  final outputHeadLimit: int
+  final outputTailLimit: int
+  final registry: ProcessRegistry?
+  final spawnHost: SpawnHost?
+  run(String executable, List<String> arguments, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, String? stdoutFilePath, String? workingDirectory, void Function(String)? onStderrLine}) -> Future<ProcessRunResult>
+  static const defaultDrainGrace: Duration
+  static const defaultOutputHeadLimit: int
+  static const defaultOutputTailLimit: int
+class ProcessRegistry
+  ProcessRegistry()
+  get liveCount -> int
+  killAll() -> int
+  register(Process process) -> void
+  static final instance: ProcessRegistry
+  unregister(Process process) -> void
+class ProcessRunResult
+  const ProcessRunResult({ProcessTermination termination, bool stderrTruncated, bool stdoutTruncated, required String stderr, required String stdout, required int exitCode})
+  final exitCode: int
+  final stderr: String
+  final stderrTruncated: bool
+  final stdout: String
+  final stdoutTruncated: bool
+  final termination: ProcessTermination
+abstract class ProcessRunner
+  run(String executable, List<String> arguments, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, String? stdoutFilePath, String? workingDirectory, void Function(String)? onStderrLine}) -> Future<ProcessRunResult>
+enum ProcessTermination
+  static const cancelled: ProcessTermination
+  static const exited: ProcessTermination
+  static const timedOut: ProcessTermination
+class YosysAvailability
+  const YosysAvailability.available({required String? executablePath, required String? versionString})
+  const YosysAvailability.notFound({String? reason})
+  const YosysAvailability.unusable({String? reason, required String path})
+  final executablePath: String?
+  final isAvailable: bool
+  final unavailableReason: String?
+  final versionString: String?
+class YosysAvailabilityService
+  YosysAvailabilityService({Duration probeTimeout, ProcessRunner? runner, String? executableNameOverride})
+  final probeTimeout: Duration
+  probe() -> Future<YosysAvailability>
+  static const defaultProbeTimeout: Duration
+class YosysDiagnostic
+  const YosysDiagnostic({String? filePath, String? rawLine, int? column, int? line, required String message, required YosysDiagnosticSeverity severity})
+  ==(Object other) -> bool
+  copyWith({String? filePath, String? message, String? rawLine, YosysDiagnosticSeverity? severity, int? column, int? line}) -> YosysDiagnostic
+  final column: int?
+  final filePath: String?
+  final line: int?
+  final message: String
+  final rawLine: String?
+  final severity: YosysDiagnosticSeverity
+  get hashCode -> int
+  toString() -> String
+class YosysDiagnosticParser
+  const YosysDiagnosticParser()
+  parse(String stderr) -> List<YosysDiagnostic>
+enum YosysDiagnosticSeverity
+  static const error: YosysDiagnosticSeverity
+  static const info: YosysDiagnosticSeverity
+  static const warning: YosysDiagnosticSeverity
+enum YosysFailureKind
+  static const invalidRequest: YosysFailureKind
+  static const launch: YosysFailureKind
+  static const noOutput: YosysFailureKind
+  static const nonZeroExit: YosysFailureKind
+  static const outputUnreadable: YosysFailureKind
+final class YosysRunCancelled extends YosysRunResult
+  const YosysRunCancelled({required String stderr, required String stdout})
+final class YosysRunFailure extends YosysRunResult
+  const YosysRunFailure({YosysFailureKind? kind, required String stderr, required String stdout, required int exitCode})
+  final exitCode: int
+  get kind -> YosysFailureKind
+class YosysRunRequest
+  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, String? vhdlStandard, String? vhdlTopUnit, required List<YosysSourceFile> sources})
+  factory YosysRunRequest.fromPaths({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, required List<String> sourceFiles})
+  ==(Object other) -> bool
+  final defines: List<String>
+  final extraCommands: List<String>
+  final includePaths: List<String>
+  final sources: List<YosysSourceFile>
+  final topModule: String?
+  final vhdlStandard: String?
+  final vhdlTopUnit: String?
+  get hasVerilogSources -> bool
+  get hasVhdlSources -> bool
+  get hashCode -> int
+  get sourcePaths -> List<String>
+sealed class YosysRunResult
+  const YosysRunResult({required String stderr, required String stdout})
+  final stderr: String
+  final stdout: String
+final class YosysRunSuccess extends YosysRunResult
+  const YosysRunSuccess({required String rawJson, required String stderr, required String stdout})
+  final rawJson: String
+final class YosysRunTimeout extends YosysRunResult
+  const YosysRunTimeout({required Duration budget, required String stderr, required String stdout})
+  final budget: Duration
+class YosysRunner
+  YosysRunner({Directory? tempDirectory, ProcessRunner? processRunner, String? executable, String? ghdlExecutable})
+  run(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  static buildGhdlSynthArguments(YosysRunRequest request) -> List<String>
+  static buildScript(YosysRunRequest request, {required String jsonOutputPath}) -> String
+  static const launchFailureExitCode: int
+class YosysSourceFile
+  const YosysSourceFile(String path, {YosysSourceLanguage language})
+  const YosysSourceFile.systemVerilog(String path)
+  const YosysSourceFile.vhdl(String path)
+  ==(Object other) -> bool
+  final language: YosysSourceLanguage
+  final path: String
+  get hashCode -> int
+  toString() -> String
+enum YosysSourceLanguage
+  static const systemVerilog: YosysSourceLanguage
+  static const verilog: YosysSourceLanguage
+  static const vhdl: YosysSourceLanguage
+abstract class YosysUnavailableReason
+  static const bannerUnparsed: String
+  static const execFailed: String
+  static const notOnPath: String
+  static const probeTimedOut: String

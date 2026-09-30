@@ -1,0 +1,138 @@
+# Public API surface of package:crux_ide_layout/crux_ide_layout.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxFocusRegion extends StatefulWidget
+  const CruxFocusRegion({Key? key, String? semanticLabel, bool primary, required Widget child})
+  createState() -> State<CruxFocusRegion>
+  final child: Widget
+  final primary: bool
+  final semanticLabel: String?
+class CruxFocusRegionScope extends StatefulWidget
+  const CruxFocusRegionScope({Key? key, Map<ShortcutActivator, Intent> shortcuts, bool? restoreLostFocus, required Widget child})
+  createState() -> State<CruxFocusRegionScope>
+  final child: Widget
+  final restoreLostFocus: bool?
+  final shortcuts: Map<ShortcutActivator, Intent>
+  static maybeOf(BuildContext context) -> CruxFocusRegionScopeState?
+class CruxFocusRegionScopeState extends State<CruxFocusRegionScope>
+  build(BuildContext context) -> Widget
+  dispose() -> void
+  focusNext() -> bool
+  focusPrevious() -> bool
+  initState() -> void
+class CruxFocusRegionState extends State<CruxFocusRegion>
+  build(BuildContext context) -> Widget
+  contains(FocusNode? node) -> bool
+  didChangeDependencies() -> void
+  dispose() -> void
+  enter() -> bool
+class CruxHelpLink extends StatelessWidget
+  const CruxHelpLink({Key? key, required String tooltip, required String url, void Function()? onTap})
+  build(BuildContext context) -> Widget
+  final onTap: void Function()?
+  final tooltip: String
+  final url: String
+class CruxIdeLayout extends StatefulWidget
+  const CruxIdeLayout({CruxIdeLayoutTheme theme, Key? key, PaneSize? bottomMinSize, PaneSize? centerMinSize, PaneSize? leftMinSize, PaneSize? rightMinSize, required IdePanelLayout layout, required IdePanelLayoutSink sink, required Widget Function(BuildContext, double) bottomBuilder, required Widget Function(BuildContext, double) centerBuilder, required Widget Function(BuildContext, double) leftBuilder, required Widget Function(BuildContext, double) rightBuilder})
+  createState() -> State<CruxIdeLayout>
+  final bottomBuilder: Widget Function(BuildContext, double)
+  final bottomMinSize: PaneSize?
+  final centerBuilder: Widget Function(BuildContext, double)
+  final centerMinSize: PaneSize?
+  final layout: IdePanelLayout
+  final leftBuilder: Widget Function(BuildContext, double)
+  final leftMinSize: PaneSize?
+  final rightBuilder: Widget Function(BuildContext, double)
+  final rightMinSize: PaneSize?
+  final sink: IdePanelLayoutSink
+  final theme: CruxIdeLayoutTheme
+class CruxIdeLayoutTheme
+  const CruxIdeLayoutTheme({Color? resizerColor, Color? resizerFocusedColor, Color? resizerHoverColor, double resizerHitTestThickness, double resizerThickness})
+  final resizerColor: Color?
+  final resizerFocusedColor: Color?
+  final resizerHitTestThickness: double
+  final resizerHoverColor: Color?
+  final resizerThickness: double
+class CruxNextRegionIntent extends Intent
+  const CruxNextRegionIntent()
+class CruxPanelEmptyState extends StatelessWidget
+  const CruxPanelEmptyState({IconData? icon, Key? key, Widget? action, required String message})
+  build(BuildContext context) -> Widget
+  final action: Widget?
+  final icon: IconData?
+  final message: String
+class CruxPreviousRegionIntent extends Intent
+  const CruxPreviousRegionIntent()
+class CruxSearchDialog<T> extends StatefulWidget
+  const CruxSearchDialog({Key? fieldKey, Key? key, Widget Function(BuildContext, void Function())? headerBuilder, required List<T> Function(String) search, required String emptyLabel, required String hintText, required String title, required Widget Function(BuildContext, T, {required bool highlighted, required void Function() onActivate}) rowBuilder, required void Function(T) onActivateResult})
+  createState() -> State<CruxSearchDialog<T>>
+  final emptyLabel: String
+  final fieldKey: Key?
+  final headerBuilder: Widget Function(BuildContext, void Function())?
+  final hintText: String
+  final onActivateResult: void Function(T)
+  final rowBuilder: Widget Function(BuildContext, T, {required bool highlighted, required void Function() onActivate})
+  final search: List<T> Function(String)
+  final title: String
+class CruxSearchResultTile extends StatelessWidget
+  const CruxSearchResultTile({Key? key, String? subtitle, String? trailingChipLabel, Widget? leading, required String title, required bool highlighted, required void Function() onTap})
+  build(BuildContext context) -> Widget
+  final highlighted: bool
+  final leading: Widget?
+  final onTap: void Function()
+  final subtitle: String?
+  final title: String
+  final trailingChipLabel: String?
+typedef CruxSearchRowBuilder<T> = Widget Function(BuildContext, T, {required bool highlighted, required void Function() onActivate})
+class EscapeDismissible extends StatelessWidget
+  const EscapeDismissible({Key? key, required Widget child})
+  build(BuildContext context) -> Widget
+  final child: Widget
+typedef IdePaneBuilder = Widget Function(BuildContext, double)
+abstract class IdePanelLayout
+  get bottomSize -> PaneSize?
+  get bottomVisible -> bool
+  get leftSize -> PaneSize?
+  get leftVisible -> bool
+  get rightSize -> PaneSize?
+  get rightVisible -> bool
+abstract class IdePanelLayoutSink
+  setBottomSize(double pixels) -> void
+  setBottomVisible({required bool visible}) -> void
+  setLeftSize(double pixels) -> void
+  setLeftVisible({required bool visible}) -> void
+  setRightSize(double pixels) -> void
+  setRightVisible({required bool visible}) -> void
+final abstract class ModalGuard
+  static isOpen(String key) -> bool
+  static reset() -> void
+  static run(String key, Future<void> Function() open) -> Future<void>
+sealed class PaneSize
+  const PaneSize()
+  factory PaneSize.fraction(double fraction)
+  factory PaneSize.pixel(double pixels)
+  get size -> double
+class PlatformContextMenu extends StatelessWidget
+  const PlatformContextMenu({Key? key, bool isTouchLayout, required Widget child, required void Function(Offset) onContextMenu})
+  build(BuildContext context) -> Widget
+  final child: Widget
+  final isTouchLayout: bool
+  final onContextMenu: void Function(Offset)
+announceCrux(BuildContext context, String message, {bool assertive}) -> void
+confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirmKey, Key? dialogKey, required String body, required String cancelLabel, required String confirmLabel, required String title}) -> Future<bool>
+get kCruxErrorSnackDuration -> Duration
+get kCruxInfoSnackDuration -> Duration
+get kCruxPaneResizeStep -> double
+get kCruxRegionShortcuts -> Map<ShortcutActivator, Intent>
+get kCruxSearchDebounceInterval -> Duration
+get kCruxSearchDialogRowExtent -> double
+get kCruxSearchDialogSize -> Size
+shouldEnableLongPressContextMenu({required TargetPlatform platform, required bool isTouchLayout}) -> bool
+showCruxErrorSnack(BuildContext context, String message) -> void
+showCruxInfoSnack(BuildContext context, String message) -> void

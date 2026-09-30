@@ -1,0 +1,27 @@
+name: crux_projects_ui
+description: >-
+  Cross-suite multi-project chrome for the EDACrux suite — the project
+  switcher dialog, the recent-projects panel, and the empty-workspace state,
+  built on crux_projects' registry and parameterized by product strings and a
+  tier badge. One implementation consumed by SimCrux and LintCrux.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_projects:
+    path: ../crux_projects
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

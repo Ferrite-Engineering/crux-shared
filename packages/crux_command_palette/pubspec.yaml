@@ -1,0 +1,24 @@
+name: crux_command_palette
+description: Cross-suite VS Code-style command palette widget for the EDACrux suite.
+version: 0.0.2
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_shortcut_action:
+    path: ../crux_shortcut_action
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_localizations:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

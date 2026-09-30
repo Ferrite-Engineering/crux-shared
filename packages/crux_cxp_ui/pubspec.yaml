@@ -1,0 +1,26 @@
+name: crux_cxp_ui
+description: >-
+  Cross-suite CXP cross-probe UI for the EDACrux suite — the one docked
+  cross-probe side-panel (Connected Peers, Unreachable peers, Recent Events)
+  all four products adopt, plus the app-agnostic controller contract it renders
+  against. The Flutter companion to the pure-Dart crux_cxp protocol package.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_cxp:
+    path: ../crux_cxp
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0

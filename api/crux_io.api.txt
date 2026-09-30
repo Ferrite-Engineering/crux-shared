@@ -1,0 +1,39 @@
+# Public API surface of package:crux_io/crux_io.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+typedef RevealCommandRunner = Future<int> Function(String, List<String>)
+class SpawnHost
+  const SpawnHost({Map<String, String> environment, bool Function(String)? exists, required bool windows})
+  factory SpawnHost.current()
+  final environment: Map<String, String>
+  final exists: bool Function(String)?
+  final windows: bool
+  requireExecutable(String executable, {Map<String, String>? childEnvironment}) -> String
+  resolveExecutable(String executable, {Map<String, String>? childEnvironment}) -> String
+enum WriteDurability
+  get flush -> bool
+  static const durable: WriteDurability
+  static const ephemeral: WriteDurability
+appendMissingPathDirs(String currentPath, List<String> extraDirs, {required String separator, required bool caseInsensitive}) -> String?
+canonicalPathKey(String path, {bool resolveSymlinks, bool? caseInsensitive}) -> String
+canonicalizePath(String path, {bool resolveSymlinks}) -> String
+engineSearchDirs() -> List<String>
+get filesystemIsCaseInsensitive -> bool
+isAbsoluteSpawnPath(String path) -> bool
+isSamePath(String a, String b, {bool resolveSymlinks, bool? caseInsensitive}) -> bool
+get kDefaultWindowsPathExt -> String
+parseWindowsPersistentPath(String regQueryOutput, {required Map<String, String> environment}) -> List<String>
+requireSpawnExecutable(String executable, {String? pathExt, bool Function(String)? exists, required String? pathEnvironment, required bool windows}) -> String
+requireSpawnExecutableForHost(String executable, {Map<String, String>? environment}) -> String
+resetEngineSearchDirsCacheForTesting() -> void
+resolveSpawnExecutable(String executable, {String? pathExt, bool Function(String)? exists, required String? pathEnvironment, required bool windows}) -> String
+resolveSpawnExecutableForHost(String executable, {Map<String, String>? environment}) -> String
+revealInFileManager(String filePath, {Future<int> Function(String, List<String>)? runCommand, Map<String, String>? environment, String? operatingSystem, bool Function(String)? exists}) -> Future<bool>
+writeJsonAtomic(File file, Object? data, {FutureOr<void> Function()? onBeforeRename, WriteDurability durability}) -> Future<void>
+writeStringAtomic(File file, String contents, {FutureOr<void> Function()? onBeforeRename, WriteDurability durability}) -> Future<void>

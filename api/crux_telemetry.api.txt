@@ -1,0 +1,276 @@
+# Public API surface of package:crux_telemetry/crux_telemetry.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxTelemetryConfig
+  CruxTelemetryConfig({Duration flushInterval, Duration initialRetryDelay, Duration maxEventAge, Duration maxRetryDelay, Duration postTimeout, Duration volatileFlushInterval, String documentationUri, String productionEndpoint, String stagingEndpoint, int maxQueuedEvents, required String productSlug, required String userAgentName})
+  endpointFor({required bool dev}) -> Uri
+  final documentationUri: Uri
+  final flushInterval: Duration
+  final initialRetryDelay: Duration
+  final maxEventAge: Duration
+  final maxQueuedEvents: int
+  final maxRetryDelay: Duration
+  final postTimeout: Duration
+  final productSlug: String
+  final productionEndpoint: Uri
+  final stagingEndpoint: Uri
+  final userAgentName: String
+  final volatileFlushInterval: Duration
+  toString() -> String
+class CruxTelemetryConsentMetrics
+  const CruxTelemetryConsentMetrics({double bodyFontSize, double iconSize, double touchTarget})
+  ==(Object other) -> bool
+  copyWith({double? bodyFontSize, double? iconSize, double? touchTarget}) -> CruxTelemetryConsentMetrics
+  final bodyFontSize: double
+  final iconSize: double
+  final touchTarget: double
+  get effectiveTouchTarget -> double
+  get hashCode -> int
+  toString() -> String
+abstract class CruxTelemetryStrings
+  const CruxTelemetryStrings()
+  get consentBody -> String
+  get consentContinue -> String
+  get consentTitle -> String
+  get consentToggleLabel -> String
+  get learnMore -> String
+  get settingsDocsDescription -> String
+  get settingsDocsLabel -> String
+  get settingsInstallationIdCopied -> String
+  get settingsInstallationIdCopy -> String
+  get settingsInstallationIdDescription -> String
+  get settingsInstallationIdLabel -> String
+  get settingsToggleDescription -> String
+  get settingsToggleLabel -> String
+class CruxTelemetryStringsEn extends CruxTelemetryStrings
+  const CruxTelemetryStringsEn({String productName})
+  final productName: String
+  get consentBody -> String
+  get consentContinue -> String
+  get consentTitle -> String
+  get consentToggleLabel -> String
+  get learnMore -> String
+  get settingsDocsDescription -> String
+  get settingsDocsLabel -> String
+  get settingsInstallationIdCopied -> String
+  get settingsInstallationIdCopy -> String
+  get settingsInstallationIdDescription -> String
+  get settingsInstallationIdLabel -> String
+  get settingsToggleDescription -> String
+  get settingsToggleLabel -> String
+typedef CruxTelemetryUrlLauncher = Future<bool> Function(Uri)
+class InMemoryTelemetryStorage extends TelemetryStorage
+  InMemoryTelemetryStorage([Map<String, String>? seed])
+  get values -> Map<String, String>
+  read(String key) -> Future<String?>
+  remove(String key) -> Future<void>
+  write(String key, String value) -> Future<void>
+class LiveTelemetryService implements TelemetryService
+  LiveTelemetryService({Client? client, DateTime Function()? now, Duration flushInterval, Duration initialRetryDelay, Duration maxEventAge, Duration maxRetryDelay, Duration postTimeout, Duration volatileFlushInterval, Future<Directory> Function()? directoryFactory, TelemetryEventQueue? queue, int maxQueuedEvents, required Future<TelemetryEnvelope?> Function() envelopeResolver, required Uri endpoint, void Function() Function(void Function())? lifecycleObserver})
+  dispose() -> void
+  final endpoint: Uri
+  final envelopeResolver: Future<TelemetryEnvelope?> Function()
+  final flushInterval: Duration
+  final initialRetryDelay: Duration
+  final maxEventAge: Duration
+  final maxQueuedEvents: int
+  final maxRetryDelay: Duration
+  final postTimeout: Duration
+  final volatileFlushInterval: Duration
+  flush() -> Future<void>
+  get isVolatile -> bool
+  get pending -> List<TelemetryEvent>
+  get retryDelay -> Duration
+  record(TelemetryEvent event) -> void
+  start() -> void
+class NoopTelemetryService implements TelemetryService
+  const NoopTelemetryService()
+  record(TelemetryEvent event) -> void
+class PendingTelemetryService implements TelemetryService
+  PendingTelemetryService(List<TelemetryEvent> buffer, {int maxEvents})
+  final buffer: List<TelemetryEvent>
+  final maxEvents: int
+  get pending -> List<TelemetryEvent>
+  record(TelemetryEvent event) -> void
+class TelemetryBatch
+  const TelemetryBatch({required List<TelemetryBatchEntry> entries, required String body})
+  final body: String
+  final entries: List<TelemetryBatchEntry>
+class TelemetryBatchEntry
+  const TelemetryBatchEntry({required Map<String, Object?> properties, required String name, required int count})
+  final count: int
+  final name: String
+  final properties: Map<String, Object?>
+  get groupKey -> String
+  toJson() -> Map<String, Object?>
+class TelemetryConsentDisclosure extends StatefulWidget
+  const TelemetryConsentDisclosure({CruxTelemetryConsentMetrics metrics, Key? key, bool isPhoneLayout, required CruxTelemetryStrings strings, required bool initialEnabled, required void Function() onLearnMore, required void Function(bool) onContinue})
+  createState() -> State<TelemetryConsentDisclosure>
+  final initialEnabled: bool
+  final isPhoneLayout: bool
+  final metrics: CruxTelemetryConsentMetrics
+  final onContinue: void Function(bool)
+  final onLearnMore: void Function()
+  final strings: CruxTelemetryStrings
+class TelemetryConsentGate extends ConsumerWidget
+  const TelemetryConsentGate({CruxTelemetryConsentMetrics metrics, Key? key, bool isPhoneLayout, required Widget child})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final child: Widget
+  final isPhoneLayout: bool
+  final metrics: CruxTelemetryConsentMetrics
+enum TelemetryConsentState
+  static const disabled: TelemetryConsentState
+  static const enabled: TelemetryConsentState
+  static const unset: TelemetryConsentState
+  static tryParse(String? name) -> TelemetryConsentState?
+class TelemetryConsentStore extends Notifier<TelemetryConsentState>
+  build() -> TelemetryConsentState
+  get loaded -> Future<void>
+  set(TelemetryConsentState consent) -> Future<void>
+  static const storageKey: String
+class TelemetryEnvelope
+  const TelemetryEnvelope({required DateTime sessionStart, required String appVersion, required String formFactor, required String installationId, required String licenseTier, required String locale, required String os, required String product, required String userAgentName})
+  final appVersion: String
+  final formFactor: String
+  final installationId: String
+  final licenseTier: String
+  final locale: String
+  final os: String
+  final product: String
+  final sessionStart: DateTime
+  final userAgentName: String
+  get userAgent -> String
+  toJson() -> Map<String, Object?>
+typedef TelemetryEnvelopeResolver = Future<TelemetryEnvelope?> Function()
+class TelemetryEvent
+  TelemetryEvent(String name, {DateTime? timestamp, Map<String, Object?>? properties})
+  ==(Object other) -> bool
+  final name: String
+  final properties: Map<String, Object?>
+  final timestamp: DateTime
+  get hashCode -> int
+  toString() -> String
+class TelemetryEventQueue
+  TelemetryEventQueue({Duration maxAge, Future<Directory> Function()? directoryFactory, int maxEvents})
+  append(TelemetryEvent event) -> Future<void>
+  final directoryFactory: Future<Directory> Function()?
+  final maxAge: Duration
+  final maxEvents: int
+  hasPersistentBacking() -> Future<bool>
+  load({required DateTime now}) -> Future<List<TelemetryEvent>>
+  replaceAll(List<TelemetryEvent> events) -> Future<void>
+  static const fileName: String
+enum TelemetryGate
+  static const closed: TelemetryGate
+  static const open: TelemetryGate
+  static const pending: TelemetryGate
+typedef TelemetryLifecycleObserver = void Function() Function(void Function())
+enum TelemetryPolicy
+  static const absent: TelemetryPolicy
+  static const allow: TelemetryPolicy
+  static const deny: TelemetryPolicy
+abstract class TelemetryService
+  record(TelemetryEvent event) -> void
+class TelemetrySettingsSection extends ConsumerWidget
+  const TelemetrySettingsSection({Key? key})
+  build(BuildContext context, WidgetRef ref) -> Widget
+abstract class TelemetryStorage
+  const TelemetryStorage()
+  read(String key) -> Future<String?>
+  remove(String key) -> Future<void>
+  write(String key, String value) -> Future<void>
+class TelemetryUncaughtErrorCounter
+  TelemetryUncaughtErrorCounter({bool? inert, int sessionCap})
+  attach(TelemetryService service) -> void
+  detach(TelemetryService service) -> void
+  final inert: bool
+  final sessionCap: int
+  get countedTuples -> int
+  get unattached -> List<TelemetryEvent>
+  recordFlutterError(FlutterErrorDetails details) -> void
+  recordPlatformError(Object error) -> void
+  static final instance: TelemetryUncaughtErrorCounter
+buildTelemetryBatches(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> List<TelemetryBatch>
+canonicalTelemetryProperties(Map<String, Object?> properties) -> Map<String, Object?>
+coalesceTelemetryEvents(Iterable<TelemetryEvent> events) -> List<TelemetryBatchEntry>
+get cruxTelemetryConfigProvider -> Provider<CruxTelemetryConfig>
+get cruxTelemetryStringsProvider -> Provider<CruxTelemetryStrings>
+encodeTelemetryBatch(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> String
+get kTelemetryConsentKey -> String
+get kTelemetryConsentMinTarget -> double
+get kTelemetryDev -> bool
+get kTelemetryDocumentationUri -> String
+get kTelemetryEventMaxAge -> Duration
+get kTelemetryFlushInterval -> Duration
+get kTelemetryFlutterLibraryTokens -> Map<String, String>
+get kTelemetryFormFactors -> List<String>
+get kTelemetryInitialRetryDelay -> Duration
+get kTelemetryInstallationIdKey -> String
+get kTelemetryInstallationIdPattern -> RegExp
+get kTelemetryLicenseTiers -> List<String>
+get kTelemetryMaxBatchBytes -> int
+get kTelemetryMaxBatchEvents -> int
+get kTelemetryMaxQueuedEvents -> int
+get kTelemetryMaxRetryDelay -> Duration
+get kTelemetryOperatingSystems -> List<String>
+get kTelemetryOptInCountries -> Set<String>
+get kTelemetryOptInTimeZonePrefix -> String
+get kTelemetryOptInTimeZones -> Set<String>
+get kTelemetryPostTimeout -> Duration
+get kTelemetryProductionEndpoint -> String
+get kTelemetryStagingEndpoint -> String
+get kTelemetryUncaughtErrorEvent -> String
+get kTelemetryUncaughtErrorKinds -> List<String>
+get kTelemetryUncaughtErrorLibraries -> List<String>
+get kTelemetryUncaughtErrorSessionCap -> int
+get kTelemetryUncaughtErrorSources -> List<String>
+get kTelemetryVolatileFlushInterval -> Duration
+mintTelemetryInstallationId() -> String
+observeTelemetryLifecycle(void Function() onBackgrounded) -> void Function()
+openTelemetryDocumentation(WidgetRef ref) -> Future<void>
+pruneTelemetryEvents(List<TelemetryEvent> events, {Duration maxAge, int maxEvents, required DateTime now}) -> List<TelemetryEvent>
+resetTelemetryConsent(TelemetryStorage storage) -> Future<void>
+resolveTelemetryEnvelope(Ref ref) -> Future<TelemetryEnvelope?>
+get telemetryAppVersionProvider -> FutureProvider<String?>
+get telemetryBetaPeriodProvider -> Provider<bool>
+get telemetryConsentPromptVisibleProvider -> Provider<bool>
+get telemetryConsentReadyProvider -> FutureProvider<void>
+get telemetryConsentStoreProvider -> NotifierProvider<TelemetryConsentStore, TelemetryConsentState>
+get telemetryConsentUiVisibleProvider -> Provider<bool>
+telemetryDefaultConsentFor(Iterable<Locale> locales, {String? timeZone}) -> bool
+get telemetryDefaultConsentProvider -> Provider<bool>
+get telemetryDevModeProvider -> Provider<bool>
+get telemetryEffectivePolicyProvider -> Provider<TelemetryPolicy>
+get telemetryEnabledProvider -> Provider<bool>
+telemetryEndpointFor({required bool dev}) -> Uri
+get telemetryEndpointProvider -> Provider<Uri>
+telemetryEnumToken<T extends Enum>(T value) -> String
+get telemetryEnvelopeResolverProvider -> Provider<Future<TelemetryEnvelope?> Function()>
+telemetryErrorKindOf(Object? error) -> String
+telemetryErrorLibraryOf(String? library) -> String
+get telemetryFormFactorProvider -> Provider<String?>
+get telemetryGateProvider -> Provider<TelemetryGate>
+telemetryGroupKey(String name, Map<String, Object?> properties) -> String
+get telemetryHttpClientProvider -> Provider<Client>
+get telemetryInstallationIdProvider -> FutureProvider<String>
+telemetryIso8601(DateTime time) -> String
+get telemetryLocaleProvider -> Provider<String>
+telemetryOsSlug() -> String
+telemetryOsSlugFor({required TargetPlatform platform, required bool isWeb}) -> String
+get telemetryPendingBufferProvider -> Provider<List<TelemetryEvent>>
+get telemetryPlatformLocalesProvider -> Provider<List<Locale>>
+get telemetryPlatformTimeZoneProvider -> Provider<String?>
+get telemetryPolicyProvider -> Provider<TelemetryPolicy>
+telemetryRequiresOptIn(Iterable<Locale> locales, {String? timeZone}) -> bool
+get telemetryServiceProvider -> Provider<TelemetryService>
+get telemetrySessionStartProvider -> Provider<DateTime>
+get telemetryStorageProvider -> Provider<TelemetryStorage>
+telemetryTimeZoneRequiresOptIn(String? timeZone) -> bool
+get telemetryUncaughtErrorCounterProvider -> Provider<TelemetryUncaughtErrorCounter>
+get telemetryUrlLauncherProvider -> Provider<Future<bool> Function(Uri)>

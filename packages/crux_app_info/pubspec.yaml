@@ -1,0 +1,16 @@
+name: crux_app_info
+description: About-box extension-point models for the EDACrux suite (edition, build info, branding).
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  meta: ^1.15.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^10.2.0
