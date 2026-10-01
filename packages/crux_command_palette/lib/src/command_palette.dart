@@ -598,10 +598,18 @@ class _CommandItem extends StatelessWidget {
               const SizedBox(width: 16),
               Text(
                 shortcut,
+                // A text token, and the one that matches the row's state.
+                // `outline` is a BORDER token (see the no-results label
+                // above), and the products replace it with their own border
+                // colour, which is dimmer than Material's. The hint is what
+                // teaches a user the shortcut, so it has to read as text on a
+                // plain row and on the highlighted one.
                 style: TextStyle(
                   fontSize: 11,
                   fontFamily: 'monospace',
-                  color: colorScheme.outline,
+                  color: isSelected
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

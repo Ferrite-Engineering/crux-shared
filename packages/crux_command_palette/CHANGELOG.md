@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- **Fix: the shortcut hint on each row is readable.** The hint was painted
+  with `colorScheme.outline`, a border token that every product theme replaces
+  with its own, dimmer border colour. It measured 1.08:1 against the selected
+  row in a dark product theme and 1.34:1 in a light one, where text needs
+  4.5:1. The hint now uses `onSurfaceVariant` on a plain row and
+  `onPrimaryContainer` on the selected row, the pair the row's label already
+  follows. (#22)
+- The accessibility guard now binds a shortcut to every demo action and
+  measures each hint against its own row. It had opened the palette with no
+  bindings, so no hint was ever rendered; and Flutter's contrast guideline
+  judges a whole row by its label, so it could not see the hint even when one
+  was there. The guard's theme also carries a product-style border colour for
+  `outline`.
+- No public API change, and no version bump.
+
 ## 0.0.2
 
 - **Fix: Enter now executes the highlighted action.** The palette handled
