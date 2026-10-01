@@ -1,11 +1,29 @@
 ## 0.8.1
 
-No behaviour change. Package **patch**: the very_good_analysis 11 bump
-turned two `return _queuedFor(...)` sites in `CxpWorkspaceStore`
-(`upsertArtifact` and `pruneDesign`) into `return await _queuedFor(...)`, as
-`async_return_with_no_await` requires. Inside an `async` body the two
-spellings complete the returned future with the same value or error, so no
-caller can observe the difference. No wire change.
+A clean shutdown no longer leaves its manifest behind. Package **patch**:
+no signature moves and no caller could depend on the old behaviour. No
+wire change.
+
+### `CxpManifestWriter.remove()` waits out a write in flight
+
+The heartbeat refresh is fire-and-forget, so `remove()` could delete the
+manifest while a refresh was between its scratch write and its rename. The
+rename then landed after the delete and republished the manifest of a peer
+that had gone, against §10.3's clean-shutdown obligation: other peers kept
+dialling it until they reaped it by pid. `remove()` now settles every write
+in flight before it deletes. The TypeScript writer in crux-vscode had the
+same race, and its CI caught it first as a flaky permissions test.
+
+- Conformance: `test/conformance/discovery_test.dart` — a 1 ms heartbeat,
+  removed across forty rounds, leaves an empty directory every time.
+
+### Lint-only edits
+
+The very_good_analysis 11 bump turned two `return _queuedFor(...)` sites in
+`CxpWorkspaceStore` (`upsertArtifact` and `pruneDesign`) into
+`return await _queuedFor(...)`, as `async_return_with_no_await` requires.
+Inside an `async` body the two spellings complete the returned future with
+the same value or error.
 
 ## 0.8.0
 

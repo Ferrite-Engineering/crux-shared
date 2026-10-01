@@ -292,6 +292,40 @@ void main() {
       },
     );
 
+    test(
+      'remove() waits out a heartbeat write in flight, so its rename cannot '
+      'republish the manifest',
+      () async {
+        // A 1 ms heartbeat keeps a refresh in flight most of the time; across
+        // the rounds remove() lands on one. Without the wait, that refresh
+        // renames a fresh manifest into place after the delete.
+        for (var round = 0; round < 40; round++) {
+          final dir = Directory(p.join(tempDir.path, 'round_$round'));
+          final w = CxpManifestWriter(
+            manifestDirectory: dir.path,
+            heartbeatInterval: const Duration(milliseconds: 1),
+          );
+          await w.write(
+            identity: const PeerIdentity(
+              peerId: 'racer-1',
+              productName: 'Racer',
+              productVersion: '0.0.0',
+            ),
+            host: '127.0.0.1',
+            port: 1,
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 3));
+          await w.remove();
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+          expect(
+            dir.listSync().map((e) => p.basename(e.path)),
+            isEmpty,
+            reason: 'round $round',
+          );
+        }
+      },
+    );
+
     test('sweeps orphaned .json.tmp files left by a failed rename', () async {
       // writeAsString succeeded, rename did not. Nothing swept these:
       // the scan correctly skips non-.json files, so they accumulated for

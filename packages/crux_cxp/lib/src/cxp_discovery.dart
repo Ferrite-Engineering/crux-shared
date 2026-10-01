@@ -680,6 +680,7 @@ class CxpManifestWriter {
   PeerIdentity? _identity;
   String? _host;
   int? _port;
+  final Set<Future<void>> _writes = {};
 
   /// Write a manifest for the running [identity] on [host]:[port] and
   /// start the heartbeat (when enabled).
@@ -702,6 +703,16 @@ class CxpManifestWriter {
   }
 
   Future<void> _writeOnce({
+    required PeerIdentity identity,
+    required String host,
+    required int port,
+  }) {
+    final write = _writeManifest(identity: identity, host: host, port: port);
+    _writes.add(write);
+    return write.whenComplete(() => _writes.remove(write));
+  }
+
+  Future<void> _writeManifest({
     required PeerIdentity identity,
     required String host,
     required int port,
@@ -757,12 +768,19 @@ class CxpManifestWriter {
   /// re-dial. A crash that skips it is still handled — peers reap the
   /// orphaned manifest by pid-liveness (immediately, once they scan) or by
   /// the TTL — but a clean exit should not lean on that.
+  ///
+  /// Writes already in flight are waited out before the delete: otherwise a
+  /// heartbeat's rename lands after it and republishes the manifest of a
+  /// peer that has gone.
   Future<void> remove() async {
     _heartbeat?.cancel();
     _heartbeat = null;
     _identity = null;
     _host = null;
     _port = null;
+    await Future.wait([
+      for (final write in _writes) write.catchError((Object _) {}),
+    ]);
     final path = _filePath;
     if (path == null) return;
     final file = File(path);
