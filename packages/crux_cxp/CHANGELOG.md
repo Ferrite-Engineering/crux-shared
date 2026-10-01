@@ -1,3 +1,12 @@
+## 0.8.1
+
+No behaviour change. Package **patch**: the very_good_analysis 11 bump
+turned two `return _queuedFor(...)` sites in `CxpWorkspaceStore`
+(`upsertArtifact` and `pruneDesign`) into `return await _queuedFor(...)`, as
+`async_return_with_no_await` requires. Inside an `async` body the two
+spellings complete the returned future with the same value or error, so no
+caller can observe the difference. No wire change.
+
 ## 0.8.0
 
 Conformance with wire 1.2 as the spec was revised to state it (CXP §11.3,

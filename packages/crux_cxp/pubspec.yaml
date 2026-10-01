@@ -1,6 +1,6 @@
 name: crux_cxp
 description: Cross-Tool eXchange Protocol (CXP) bindings — cross-probe gossip layer for the EDACrux suite.
-version: 0.8.0
+version: 0.8.1
 homepage: https://github.com/Ferrite-Engineering/crux-shared
 repository: https://github.com/Ferrite-Engineering/crux-shared
 issue_tracker: https://github.com/Ferrite-Engineering/crux-shared/issues
