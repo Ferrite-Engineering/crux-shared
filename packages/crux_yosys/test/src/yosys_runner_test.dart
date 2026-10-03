@@ -180,10 +180,7 @@ void main() {
         ),
       );
       expect(result, isA<YosysRunFailure>());
-      expect(
-        (result as YosysRunFailure).stderr,
-        contains('some warning'),
-      );
+      expect((result as YosysRunFailure).stderr, contains('some warning'));
       expect(result.kind, YosysFailureKind.noOutput);
       expect(result.exitCode, 0);
     });
@@ -253,9 +250,12 @@ void main() {
         );
         final script = fake.capturedScript!;
         expect(script, contains('read_verilog'));
-        expect(script, contains('-I "/tmp/inc"'));
-        expect(script, contains('-D "FOO=1"'));
-        expect(script, contains('-D "BAR"'));
+        // Option values are bare: Yosys keeps quotes inside -I / -D values.
+        expect(script, contains('-I /tmp/inc '));
+        expect(script, contains('-D FOO=1 '));
+        expect(script, contains('-D BAR '));
+        expect(script, isNot(contains('-I "')));
+        expect(script, isNot(contains('-D "')));
         expect(script, contains('"/tmp/foo.v"'));
         expect(script, contains('"/tmp/bar.v"'));
         expect(script, contains('hierarchy -check -top top'));
@@ -318,21 +318,99 @@ void main() {
       },
     );
 
-    test('quotes paths and defines against spaces', () {
-      // Paths and defines are emitted double-quoted; an unquoted define or
-      // path containing a space would be tokenized by Yosys as two arguments
-      // and silently change the elaboration.
+    test('quotes file names against spaces', () {
+      // read_verilog strips the quotes from a file name, so a path with a
+      // space survives the tokenizer only when quoted.
       final script = YosysRunner.buildScript(
         const YosysRunRequest(
-          sources: <YosysSourceFile>[
-            YosysSourceFile('/tmp/my design/foo.v'),
-          ],
-          defines: ['MSG=hello world'],
+          sources: <YosysSourceFile>[YosysSourceFile('/tmp/my design/foo.v')],
         ),
         jsonOutputPath: '/tmp/out.json',
       );
-      expect(script, contains('-D "MSG=hello world"'));
       expect(script, contains('"/tmp/my design/foo.v"'));
+    });
+
+    test('refuses a define or an include path that contains whitespace', () {
+      // An option value is emitted bare, and Yosys would split one with a
+      // space into two arguments, silently changing the elaboration.
+      expect(
+        () => YosysRunner.buildScript(
+          const YosysRunRequest(
+            sources: <YosysSourceFile>[YosysSourceFile('/tmp/foo.v')],
+            defines: ['MSG=hello world'],
+          ),
+          jsonOutputPath: '/tmp/out.json',
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('Define must not contain whitespace'),
+          ),
+        ),
+      );
+      expect(
+        () => YosysRunner.buildScript(
+          const YosysRunRequest(
+            sources: <YosysSourceFile>[YosysSourceFile('/tmp/foo.v')],
+            includePaths: ['/tmp/my includes'],
+          ),
+          jsonOutputPath: '/tmp/out.json',
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test(
+      'run reaches an include directory with whitespace through a link',
+      () async {
+        final includes = Directory('${tempDir.path}/my includes')..createSync();
+        final fake = _FakeRunner(exitCode: 0, jsonToWrite: '{}');
+        final runner = YosysRunner(
+          processRunner: fake,
+          executable: 'yosys',
+          tempDirectory: tempDir,
+        );
+        final result = await runner.run(
+          YosysRunRequest(
+            sources: const <YosysSourceFile>[YosysSourceFile('/tmp/foo.v')],
+            includePaths: <String>['/tmp/plain', includes.path],
+          ),
+        );
+        expect(result, isA<YosysRunSuccess>());
+        final script = fake.capturedScript!;
+        expect(script, contains('-I /tmp/plain '));
+        final linked = RegExp(r'-I (\S+)')
+            .allMatches(script)
+            .map((m) => m.group(1)!)
+            .where((path) => path != '/tmp/plain')
+            .toList();
+        expect(linked, hasLength(1));
+        final linkPath = linked.single;
+        expect(linkPath, isNot(contains(' ')));
+        expect(linkPath, startsWith(tempDir.path));
+        // The link is gone after the run; what it pointed at is not.
+        expect(Link(linkPath).existsSync(), isFalse);
+        expect(Directory(linkPath).parent.existsSync(), isFalse);
+        expect(includes.existsSync(), isTrue);
+      },
+    );
+
+    test('a define with whitespace comes back from run as a failure', () async {
+      final runner = YosysRunner(
+        processRunner: _FakeRunner(exitCode: 0, jsonToWrite: '{}'),
+        executable: 'yosys',
+        tempDirectory: tempDir,
+      );
+      final result = await runner.run(
+        const YosysRunRequest(
+          sources: <YosysSourceFile>[YosysSourceFile('/tmp/foo.v')],
+          defines: ['MSG=hello world'],
+        ),
+      );
+      expect(result, isA<YosysRunFailure>());
+      expect((result as YosysRunFailure).kind, YosysFailureKind.invalidRequest);
+      expect(result.stderr, contains('whitespace'));
     });
 
     test('emits the hierarchy -top and ghdl -e units BARE (unquoted)', () {
@@ -675,11 +753,7 @@ void main() {
     });
 
     test('a ghdl --synth that emits no Verilog is noOutput', () async {
-      final fake = _FakeRunner(
-        exitCode: 0,
-        jsonToWrite: '{}',
-        ghdlVerilog: '',
-      );
+      final fake = _FakeRunner(exitCode: 0, jsonToWrite: '{}', ghdlVerilog: '');
       final runner = YosysRunner(
         processRunner: fake,
         executable: 'yosys',

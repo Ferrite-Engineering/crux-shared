@@ -124,6 +124,9 @@ class YosysRunner {
     // Holds the ghdl-emitted Verilog for a VHDL request; cleaned up in the
     // finally alongside the JSON temp file. Null for pure-Verilog requests.
     File? loweredVerilogFile;
+    // Holds the links to include directories whose paths contain whitespace;
+    // removed in the finally. Null when no include directory needs one.
+    Directory? includeLinkDirectory;
     try {
       // VHDL pre-synth: lower every VHDL source to Verilog with a
       // standalone `ghdl --synth` before Yosys ever runs. On any non-happy
@@ -180,6 +183,9 @@ class YosysRunner {
           loweredVerilogFile.path,
         );
       }
+      final linked = _linkWhitespaceIncludeDirs(effectiveRequest);
+      includeLinkDirectory = linked.directory;
+      effectiveRequest = linked.request;
       final script = _buildScript(effectiveRequest, jsonFile.path);
       final processResult = await _runProcess(
         script,
@@ -286,6 +292,67 @@ class YosysRunner {
           }
         }
       }
+      final linkDirectory = includeLinkDirectory;
+      if (linkDirectory != null) _removeLinkDirectory(linkDirectory);
+    }
+  }
+
+  /// Gives every include directory whose path contains whitespace a
+  /// whitespace-free alias: a link (a symlink, or a junction on Windows)
+  /// inside a fresh per-run directory under the temp directory. Yosys cannot
+  /// take such a path as `-I` at all (see [_bareOption]), and a folder name
+  /// with a space in it is common on every desktop platform.
+  ///
+  /// Returns [request] unchanged, with no directory, when nothing needs a
+  /// link. An include directory whose link cannot be created keeps its own
+  /// path, so [_buildScript] refuses it with a message naming the path
+  /// instead of the run failing on an unrelated file-system error.
+  ({YosysRunRequest request, Directory? directory}) _linkWhitespaceIncludeDirs(
+    YosysRunRequest request,
+  ) {
+    if (!request.includePaths.any(_hasWhitespace)) {
+      return (request: request, directory: null);
+    }
+    final directory = Directory(_allocateTempPath('inc'))..createSync();
+    final includePaths = <String>[];
+    for (final (index, include) in request.includePaths.indexed) {
+      if (!_hasWhitespace(include)) {
+        includePaths.add(include);
+        continue;
+      }
+      try {
+        final link = Link(p.join(directory.path, 'i$index'))
+          ..createSync(p.absolute(include));
+        includePaths.add(link.path);
+      } on FileSystemException {
+        includePaths.add(include);
+      }
+    }
+    return (
+      request: YosysRunRequest(
+        sources: request.sources,
+        topModule: request.topModule,
+        defines: request.defines,
+        includePaths: includePaths,
+        extraCommands: request.extraCommands,
+        vhdlStandard: request.vhdlStandard,
+        vhdlTopUnit: request.vhdlTopUnit,
+      ),
+      directory: directory,
+    );
+  }
+
+  /// Removes the links [_linkWhitespaceIncludeDirs] made, then their
+  /// directory. Only links are deleted and the directory is removed
+  /// non-recursively, so nothing a link points at is ever touched.
+  static void _removeLinkDirectory(Directory directory) {
+    try {
+      for (final entity in directory.listSync(followLinks: false)) {
+        if (entity is Link) entity.deleteSync();
+      }
+      directory.deleteSync();
+    } on FileSystemException {
+      // Ignore — a leftover temp directory is not fatal.
     }
   }
 
@@ -319,11 +386,14 @@ class YosysRunner {
   /// collision-proof naming as [_allocateJsonFile].
   File _allocateVerilogFile() => _allocateTempFile('v');
 
-  File _allocateTempFile(String extension) {
+  File _allocateTempFile(String extension) =>
+      File(_allocateTempPath(extension));
+
+  String _allocateTempPath(String extension) {
     final stamp = DateTime.now().microsecondsSinceEpoch;
     final salt = _random.nextInt(1 << 32).toRadixString(16).padLeft(8, '0');
     final name = 'crux_yosys_${pid}_${stamp}_$salt.$extension';
-    return File(p.join(_tempDirectory.path, name));
+    return p.join(_tempDirectory.path, name);
   }
 
   /// Builds the script passed via `yosys -p`. Returns a single string
@@ -352,14 +422,15 @@ class YosysRunner {
     final commands = <String>[];
 
     // Verilog read (1995/2001/2005). `-I` and `-D` are Verilog
-    // preprocessor flags, so they go on this read command.
+    // preprocessor flags, so they go on this read command. Their values are
+    // emitted bare and file names quoted; see [_bareOption] for why.
     if (verilogSources.isNotEmpty) {
       final readBuffer = StringBuffer('read_verilog');
       for (final inc in request.includePaths) {
-        readBuffer.write(' -I "${_escape(inc)}"');
+        readBuffer.write(' -I ${_bareOption(inc, 'Include path')}');
       }
       for (final def in request.defines) {
-        readBuffer.write(' -D "${_escape(def)}"');
+        readBuffer.write(' -D ${_bareOption(def, 'Define')}');
       }
       for (final file in verilogSources) {
         readBuffer.write(' "${_escape(file.path)}"');
@@ -372,10 +443,10 @@ class YosysRunner {
     if (systemVerilogSources.isNotEmpty) {
       final readBuffer = StringBuffer('read_verilog -sv');
       for (final inc in request.includePaths) {
-        readBuffer.write(' -I "${_escape(inc)}"');
+        readBuffer.write(' -I ${_bareOption(inc, 'Include path')}');
       }
       for (final def in request.defines) {
-        readBuffer.write(' -D "${_escape(def)}"');
+        readBuffer.write(' -D ${_bareOption(def, 'Define')}');
       }
       for (final file in systemVerilogSources) {
         readBuffer.write(' "${_escape(file.path)}"');
@@ -467,13 +538,15 @@ class YosysRunner {
     );
   }
 
-  /// Validates a path or define value that will be emitted double-quoted
-  /// into the `-p` script. Paths and defines are wrapped in `"…"` so
-  /// embedded spaces survive Yosys's tokenizer. Quoting cannot make every
-  /// character safe, though: a `"` would terminate the quoted region, and
-  /// `;` / newlines split the `-p` string into commands regardless of
-  /// quoting. Those are refused loudly rather than emitted as a silently
-  /// corrupted script; callers will not normally hit this with real designs.
+  /// Validates a file path that will be emitted double-quoted into the `-p`
+  /// script. File names are wrapped in `"…"` so embedded spaces survive
+  /// Yosys's tokenizer; `read_verilog` and `write_json` strip the quotes from
+  /// file names. Quoting cannot make every character safe, though: a `"`
+  /// would terminate the quoted region, and `;` / newlines split the `-p`
+  /// string into commands regardless of quoting. Those are refused loudly
+  /// rather than emitted as a silently corrupted script; callers will not
+  /// normally hit this with real designs. [_bareOption] applies the same
+  /// checks to option values.
   static String _escape(String value) {
     const forbidden = ['"', ';', '\n', '\r'];
     for (final ch in forbidden) {
@@ -488,6 +561,33 @@ class YosysRunner {
     }
     return value;
   }
+
+  /// Validates an option value emitted BARE (unquoted) into the `-p` script:
+  /// `read_verilog -I <dir>` and `-D <NAME[=VALUE]>`. Yosys's tokenizer keeps
+  /// double quotes inside a token and `read_verilog` strips them only from
+  /// file names, so a quoted `-I "dir"` registers a directory literally named
+  /// `"dir"` (no include is ever found) and a quoted `-D "FOO=1"` defines a
+  /// macro named `"FOO`. Unquoted, a value cannot contain whitespace either:
+  /// [run] reaches an include directory with whitespace through a link (see
+  /// [_linkWhitespaceIncludeDirs]), and a define with whitespace cannot be
+  /// expressed, so it is refused rather than passed as a broken token.
+  static String _bareOption(String value, String what) {
+    _escape(value);
+    if (_hasWhitespace(value)) {
+      throw ArgumentError.value(
+        value,
+        'value',
+        '$what must not contain whitespace: a Yosys script cannot pass it '
+            'to read_verilog',
+      );
+    }
+    return value;
+  }
+
+  static final RegExp _whitespacePattern = RegExp(r'\s');
+
+  static bool _hasWhitespace(String value) =>
+      _whitespacePattern.hasMatch(value);
 
   static final RegExp _identifierPattern = RegExp(
     r'^[A-Za-z_$][A-Za-z0-9_$.]*$',

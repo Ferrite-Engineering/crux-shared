@@ -23,6 +23,15 @@
 
 ### Fixed
 
+- **Include paths and defines reach Yosys again** (crux-shared#23). The
+  script quoted every `read_verilog -I` and `-D` value, and Yosys keeps the
+  quotes inside an option value (it strips them only from file names), so no
+  include directory was ever found and no define ever applied. Both are now
+  emitted bare. An include directory whose path contains whitespace, which
+  Yosys cannot take as `-I`, is reached through a link in a per-run temp
+  directory (a symlink, or a junction on Windows) that `run` removes
+  afterwards. A define containing whitespace cannot be expressed in a Yosys
+  script and comes back as a `YosysFailureKind.invalidRequest` failure.
 - The `hierarchy -top <module>` and `ghdl -e <unit>` names are now emitted
   bare (unquoted) again. The earlier space-safety change quoted them, but
   Yosys treats surrounding quotes as part of the module name (`-top "and2"`
