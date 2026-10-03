@@ -7,6 +7,17 @@ import 'package:crux_cxp_ui/src/cross_probe_panel_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// Builds the badge shown beside one peer row's direct-send button, or
+/// returns null for no badge.
+///
+/// The panel cannot know any product's tiers, so a product that prices
+/// cross-probe origination supplies this to label the button before it is
+/// pressed: the suite's badge-before-click convention, which a gate that
+/// only answers after the click does not meet on its own. [peer] is the row's
+/// peer, for a product whose answer differs per peer; most ignore it.
+typedef CrossProbeSendBadgeBuilder =
+    Widget? Function(BuildContext context, PeerIdentity peer);
+
 /// The shared, docked cross-probe side-panel.
 ///
 /// One reusable panel adopted by all four Crux products, richer than any
@@ -31,6 +42,7 @@ class CrossProbePanel extends StatelessWidget {
     required this.controller,
     this.strings = const CrossProbePanelStrings(),
     this.showHeader = true,
+    this.sendBadgeBuilder,
     super.key,
   });
 
@@ -48,6 +60,17 @@ class CrossProbePanel extends StatelessWidget {
   /// chrome the dock model exists to remove. Defaults to true for
   /// standalone embeddings.
   final bool showHeader;
+
+  /// Builds the badge each peer row shows beside its direct-send button,
+  /// typically the suite's feature-tier chip for the tier that originating a
+  /// cross-probe requires.
+  ///
+  /// Optional: null (the default), or a builder that returns null for a row,
+  /// renders the send button alone, so a product with no licence model keeps
+  /// a fully usable panel. The badge labels the button and does not gate it;
+  /// the product's [CrossProbePanelController.onSendTo] still owns the
+  /// decision and the explanation of a denial.
+  final CrossProbeSendBadgeBuilder? sendBadgeBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +105,7 @@ class CrossProbePanel extends StatelessWidget {
                       peers: peers,
                       strings: strings,
                       onSendTo: controller.onSendTo,
+                      sendBadgeBuilder: sendBadgeBuilder,
                     ),
                   ),
                   ValueListenableBuilder<List<CxpDialFailure>>(
@@ -265,11 +289,13 @@ class _PeersSection extends StatelessWidget {
     required this.peers,
     required this.strings,
     required this.onSendTo,
+    required this.sendBadgeBuilder,
   });
 
   final List<PeerIdentity> peers;
   final CrossProbePanelStrings strings;
   final void Function(PeerIdentity peer) onSendTo;
+  final CrossProbeSendBadgeBuilder? sendBadgeBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -287,13 +313,30 @@ class _PeersSection extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: IconButton(
-              key: Key('cross_probe_send_${peer.peerId}'),
-              icon: const Icon(Icons.send),
-              tooltip: strings.sendTooltip,
-              onPressed: () => onSendTo(peer),
-            ),
+            trailing: _sendControl(context, peer),
           ),
+      ],
+    );
+  }
+
+  Widget _sendControl(BuildContext context, PeerIdentity peer) {
+    final button = IconButton(
+      key: Key('cross_probe_send_${peer.peerId}'),
+      icon: const Icon(Icons.send),
+      tooltip: strings.sendTooltip,
+      onPressed: () => onSendTo(peer),
+    );
+    final badge = sendBadgeBuilder?.call(context, peer);
+    if (badge == null) return button;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        KeyedSubtree(
+          key: Key('cross_probe_send_badge_${peer.peerId}'),
+          child: badge,
+        ),
+        const SizedBox(width: 4),
+        button,
       ],
     );
   }

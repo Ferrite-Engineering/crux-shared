@@ -33,9 +33,10 @@ enum CrossProbeEventKind
   static const selectionReceived: CrossProbeEventKind
   static const selectionSent: CrossProbeEventKind
 class CrossProbePanel extends StatelessWidget
-  const CrossProbePanel({CrossProbePanelStrings strings, Key? key, bool showHeader, required CrossProbePanelController controller})
+  const CrossProbePanel({CrossProbePanelStrings strings, Key? key, Widget? Function(BuildContext, PeerIdentity)? sendBadgeBuilder, bool showHeader, required CrossProbePanelController controller})
   build(BuildContext context) -> Widget
   final controller: CrossProbePanelController
+  final sendBadgeBuilder: Widget? Function(BuildContext, PeerIdentity)?
   final showHeader: bool
   final strings: CrossProbePanelStrings
 interface abstract class CrossProbePanelController
@@ -61,6 +62,7 @@ class CrossProbePanelStrings
   final serverOffline: String
   final title: String
   final unreachableSectionTitle: String
+typedef CrossProbeSendBadgeBuilder = Widget? Function(BuildContext, PeerIdentity)
 class CrossProbeSendFailure
   const CrossProbeSendFailure({String? reason, required String peerLabel})
   ==(Object other) -> bool

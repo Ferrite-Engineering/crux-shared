@@ -11,6 +11,7 @@ Future<void> pumpPanel(
   WidgetTester tester,
   DemoCrossProbePanelController controller, {
   ThemeData? theme,
+  CrossProbeSendBadgeBuilder? sendBadgeBuilder,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -19,7 +20,10 @@ Future<void> pumpPanel(
         body: SizedBox(
           width: 360,
           height: 700,
-          child: CrossProbePanel(controller: controller),
+          child: CrossProbePanel(
+            controller: controller,
+            sendBadgeBuilder: sendBadgeBuilder,
+          ),
         ),
       ),
     ),
@@ -109,6 +113,55 @@ void main() {
         find.byKey(const Key('cross_probe_send_simcrux-2')),
       );
 
+      expect(controller.onSendToCount, 1);
+      expect(controller.lastSentTo, target);
+    });
+
+    testWidgets('no send badge without a builder', (tester) async {
+      final controller = DemoCrossProbePanelController()
+        ..addPeer(peer('NetCrux', 'netcrux-1'));
+      addTearDown(controller.dispose);
+
+      await pumpPanel(tester, controller);
+
+      expect(find.byKey(const Key('cross_probe_send_netcrux-1')), findsOne);
+      expect(
+        find.byKey(const Key('cross_probe_send_badge_netcrux-1')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the send badge renders beside the button and labels it, '
+        'without gating it', (tester) async {
+      final target = peer('SimCrux', 'simcrux-2');
+      final controller = DemoCrossProbePanelController()
+        ..addPeer(peer('NetCrux', 'netcrux-1'))
+        ..addPeer(target);
+      addTearDown(controller.dispose);
+
+      await pumpPanel(
+        tester,
+        controller,
+        // Per-peer: a builder returning null leaves that row bare.
+        sendBadgeBuilder: (context, p) =>
+            p.peerId == 'simcrux-2' ? const Text('PRO') : null,
+      );
+
+      final badge = find.byKey(const Key('cross_probe_send_badge_simcrux-2'));
+      final send = find.byKey(const Key('cross_probe_send_simcrux-2'));
+      expect(badge, findsOneWidget);
+      expect(find.descendant(of: badge, matching: find.text('PRO')), findsOne);
+      // Badge before the click: it sits to the button's leading side.
+      expect(
+        tester.getCenter(badge).dx,
+        lessThan(tester.getCenter(send).dx),
+      );
+      expect(
+        find.byKey(const Key('cross_probe_send_badge_netcrux-1')),
+        findsNothing,
+      );
+
+      await tester.tap(send);
       expect(controller.onSendToCount, 1);
       expect(controller.lastSentTo, target);
     });

@@ -66,6 +66,28 @@ their reactive store (a Riverpod `ref.listen`, a `ChangeNotifier`, or a stream
 CrossProbePanel(controller: myAppController)
 ```
 
+### Labelling the send button with a tier badge
+
+Originating a cross-probe is a priced capability in some products, and the
+suite labels every gated control before it is pressed. The panel knows no
+tiers, so it takes an optional `sendBadgeBuilder`
+(`CrossProbeSendBadgeBuilder`: `(BuildContext, PeerIdentity) -> Widget?`) and
+renders what it returns on the leading side of each row's send button:
+
+```dart
+CrossProbePanel(
+  controller: myAppController,
+  sendBadgeBuilder: (context, peer) =>
+      const FeatureTierBadge(requiredTier: LicenseTier.pro),
+)
+```
+
+Leave it out (or return null for a row) and the button renders alone, so a
+product with no licence model keeps a fully usable panel. The badge labels the
+button and does not gate it: the decision, and the explanation of a denial,
+stay in the product's `onSendTo`. The badge widget is the product's choice;
+`crux_cxp_ui` deliberately takes no `crux_license` dependency.
+
 ## Status
 
 The four apps adopt it by: implementing a

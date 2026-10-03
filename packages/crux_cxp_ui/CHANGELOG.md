@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- `CrossProbePanel.sendBadgeBuilder` (`CrossProbeSendBadgeBuilder`): an
+  optional per-row badge rendered on the leading side of each peer's
+  direct-send button, so a product that prices cross-probe origination can
+  show its tier badge before the click. Null by default, and a builder may
+  return null for a row; either leaves the button alone. The badge labels the
+  button; gating stays in the product's `onSendTo`. The badge's key is
+  `cross_probe_send_badge_<peerId>`.
+
 ## 0.1.0
 
 - Initial release — the shared cross-probe side-panel.
