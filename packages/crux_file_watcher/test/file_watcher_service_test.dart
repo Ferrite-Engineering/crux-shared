@@ -71,18 +71,49 @@ void main() {
     });
 
     test('an attribute-only change is not reported', () async {
+      final dir = Directory.systemTemp.createTempSync('crux_watch_');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/design.json')..writeAsStringSync('{}');
       final service = FileWatcherService(
-        watchFactory: _factory([_attributeEvent('/tmp/a.vcd')]),
+        watchFactory: _factory([_attributeEvent(file.path)]),
         debounceDelay: const Duration(milliseconds: 10),
       );
       addTearDown(service.dispose);
       final emitted = <FileWatchEvent>[];
       service.events.listen(emitted.add);
-      service.startWatching('/tmp/a.vcd');
+      service.startWatching(file.path);
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(emitted, isEmpty);
     });
+
+    test(
+      'a touch is reported, though its event says no content changed',
+      () async {
+        // `touch` moves the modification time and leaves the bytes alone;
+        // macOS reports it as a metadata change (contentChanged false).
+        final dir = Directory.systemTemp.createTempSync('crux_watch_');
+        addTearDown(() => dir.deleteSync(recursive: true));
+        final file = File('${dir.path}/picorv32.v')
+          ..writeAsStringSync('x')
+          ..setLastModifiedSync(DateTime(2026));
+        final events = StreamController<FileSystemEvent>();
+        addTearDown(events.close);
+        final service = FileWatcherService(
+          watchFactory: (_) => events.stream,
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+        addTearDown(service.dispose);
+        final emitted = <FileWatchEvent>[];
+        service.events.listen(emitted.add);
+        service.startWatching(file.path);
+
+        file.setLastModifiedSync(DateTime(2026, 6));
+        events.add(_attributeEvent(file.path));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(emitted, [FileWatchEvent.modified]);
+      },
+    );
 
     test('a modify event that leaves the file as it was is dropped', () async {
       final dir = Directory.systemTemp.createTempSync('crux_watch_');

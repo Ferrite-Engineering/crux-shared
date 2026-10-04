@@ -191,13 +191,14 @@ class FileWatcherService {
 
   /// Stream of file events. Subscribe before calling [startWatching].
   ///
-  /// [FileWatchEvent.modified] means the file's contents changed. A change to
-  /// its attributes only is not reported: macOS writes an extended attribute
+  /// [FileWatchEvent.modified] means the file's size or modification time
+  /// changed since the watch started or last reported. A modify event that
+  /// leaves both as last seen is dropped: macOS writes an extended attribute
   /// to a file picked in the open dialog, and treating that as an edit raised
-  /// a reload prompt for a file nobody had touched. A modify event that
-  /// leaves the file's size and modification time as last seen is dropped
-  /// for the same reason, since platforms do not always say which kind of
-  /// change they saw.
+  /// a reload prompt for a file nobody had touched. The event's own
+  /// `contentChanged` flag is not consulted, because a `touch` (a new
+  /// modification time, the same bytes) arrives with it false and must still
+  /// count, as it does for every build tool.
   Stream<FileWatchEvent> get events => _controller.stream;
 
   /// Stream of spontaneous watch deaths. A deliberate [stopWatching] or
@@ -286,7 +287,6 @@ class FileWatcherService {
   }
 
   void _onFsEvent(FileSystemEvent event) {
-    if (event is FileSystemModifyEvent && !event.contentChanged) return;
     _pending =
         (event.type == FileSystemEvent.delete ||
             event.type == FileSystemEvent.move)
