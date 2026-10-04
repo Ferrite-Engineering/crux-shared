@@ -28,4 +28,12 @@ service.startWatching('/path/to/your/file');
 service.dispose();
 ```
 
+On macOS the platform watch can stop delivering events for the rest of the process, with no error (crux-shared#25). Pass `pollInterval` to also read the file's size and modification time on that interval, so a change the watch misses is still reported:
+
+```dart
+final service = FileWatcherService(pollInterval: const Duration(seconds: 1));
+```
+
+A change both sources see is reported once. Polling is off by default.
+
 For tests, inject a custom `WatchFactory` to feed deterministic `FileSystemEvent`s into the service without touching the real filesystem.

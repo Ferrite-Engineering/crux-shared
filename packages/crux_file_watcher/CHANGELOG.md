@@ -4,6 +4,16 @@
 
 ### Fixed
 
+- **A change the platform watch misses can still be reported**
+  (crux-shared#25). On macOS, `dart:io`'s directory watch can stop
+  delivering events for the rest of the process, with no error and no done
+  event, and a new watch in the same process hears nothing either. A host
+  then raised one reload prompt and never another. `FileWatcherService`
+  takes an optional `pollInterval`: while a watch is live, the file's size
+  and modification time are read on that interval, and a change the watch
+  did not report goes through the same debounce. A change both sources see
+  is reported once. Off by default.
+
 - **An attribute-only change is no longer reported as `modified`**
   (crux-shared#24). macOS writes an extended attribute to a file picked in
   the open dialog, and the watcher treated that as an edit, so a product
@@ -29,6 +39,7 @@
 
 ### Added
 
+- `FileWatcherService.pollInterval`.
 - `FileWatcherService.stopped`, `isWatching`, `watchedPath`.
 - `FileWatchStopped` / `FileWatchStopReason`.
 - `debounceDelay` and `maxWait` constructor parameters.

@@ -127,6 +127,18 @@ String _normalizePath(String path) =>
 /// leave [isWatching] false, so a host can tell the user auto-reload is no
 /// longer live instead of silently never reloading again.
 ///
+/// ## Polling backstop
+///
+/// The platform watch is not always reliable. On macOS, `dart:io`'s directory
+/// watch can stop delivering events for the rest of the process, without an
+/// error or a done event, and a new watch in the same process hears nothing
+/// either (crux-shared#25). A host that passes [pollInterval] gets a second
+/// source: while a watch is live, the file's size and modification time are
+/// read on that interval, and a change the platform watch did not report is
+/// fed through the same debounce as a platform event. A change both sources
+/// see is reported once, because an emission records the state it reported
+/// and a later look at the same state is dropped.
+///
 /// The internal [StreamController]s are broadcast, so multiple subscribers are
 /// allowed. They are kept open for the lifetime of the service; call [dispose]
 /// to close them.
@@ -144,11 +156,15 @@ class FileWatcherService {
   /// [statReader] reads the watched file's size and modification time, which
   /// decide whether a modify event really changed it (see [events]); tests
   /// inject one alongside [watchFactory].
+  ///
+  /// [pollInterval] turns on the polling backstop (see the class docs). Null,
+  /// the default, relies on the platform watch alone.
   FileWatcherService({
     WatchFactory? watchFactory,
     FileStatReader? statReader,
     this.debounceDelay = defaultDebounceDelay,
     this.maxWait = defaultMaxWait,
+    this.pollInterval,
   }) : _watchFactory = watchFactory ?? _defaultFactory,
        _statReader = statReader ?? FileStat.statSync;
 
@@ -167,11 +183,15 @@ class FileWatcherService {
   /// resulting emission.
   final Duration maxWait;
 
+  /// How often a live watch also reads the file's state, to catch a change
+  /// the platform watch did not report. Null when polling is off.
+  final Duration? pollInterval;
+
   final WatchFactory _watchFactory;
   final FileStatReader _statReader;
 
   /// Size and modification time of the watched file when the watch started
-  /// or last emitted [FileWatchEvent.modified]; null when unknown.
+  /// or last emitted an event; null when unknown or when the file is gone.
   ({DateTime modified, int size})? _lastSeen;
   final StreamController<FileWatchEvent> _controller =
       StreamController<FileWatchEvent>.broadcast();
@@ -181,6 +201,7 @@ class FileWatcherService {
   StreamSubscription<FileSystemEvent>? _fsSub;
   Timer? _debounce;
   Timer? _maxWaitTimer;
+  Timer? _pollTimer;
   FileWatchEvent? _pending;
   String? _watchedPath;
 
@@ -241,6 +262,7 @@ class FileWatcherService {
         // the service has already reported as stopped.
         cancelOnError: true,
       );
+      _startPolling(generation);
     } on Object catch (error, stackTrace) {
       // Establishing the watch failed outright (missing parent directory,
       // unsupported platform, permission denial). Report it rather than
@@ -262,6 +284,7 @@ class FileWatcherService {
   void stopWatching() {
     _generation++;
     _cancelTimers();
+    _stopPolling();
     _pending = null;
     _watchedPath = null;
     _lastSeen = null;
@@ -286,12 +309,40 @@ class FileWatcherService {
     _maxWaitTimer = null;
   }
 
+  void _startPolling(int generation) {
+    final interval = pollInterval;
+    if (interval == null) return;
+    _pollTimer = Timer.periodic(interval, (_) => _poll(generation));
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  /// Reads the watched file's state and reports a change the platform watch
+  /// has not. A burst already being debounced is left alone: its emission
+  /// reads the state itself.
+  void _poll(int generation) {
+    if (generation != _generation || _pending != null) return;
+    final path = _watchedPath;
+    if (path == null) return;
+    final now = _readState(path);
+    if (now == _lastSeen) return;
+    _noteChange(now == null ? FileWatchEvent.deleted : FileWatchEvent.modified);
+  }
+
   void _onFsEvent(FileSystemEvent event) {
-    _pending =
-        (event.type == FileSystemEvent.delete ||
-            event.type == FileSystemEvent.move)
-        ? FileWatchEvent.deleted
-        : FileWatchEvent.modified;
+    _noteChange(
+      (event.type == FileSystemEvent.delete ||
+              event.type == FileSystemEvent.move)
+          ? FileWatchEvent.deleted
+          : FileWatchEvent.modified,
+    );
+  }
+
+  void _noteChange(FileWatchEvent event) {
+    _pending = event;
 
     // Restart the quiet-period timer on every event — that is the debounce.
     _debounce?.cancel();
@@ -316,6 +367,11 @@ class FileWatcherService {
       final before = _lastSeen;
       if (now != null && before != null && now == before) return;
       _lastSeen = now;
+    } else {
+      // Record what is there after the delete (usually nothing), so the
+      // polling backstop does not report the same delete again.
+      final path = _watchedPath;
+      _lastSeen = path == null ? null : _readState(path);
     }
     _controller.add(event);
   }
@@ -346,6 +402,7 @@ class FileWatcherService {
     // callbacks from it are ignored, and cancel the subscription so an
     // errored-but-unclosed source stream cannot keep delivering events.
     _generation++;
+    _stopPolling();
     unawaited(_fsSub?.cancel());
     final path = _watchedPath;
     // Flush any debounced-but-unemitted event first. The watch dying does

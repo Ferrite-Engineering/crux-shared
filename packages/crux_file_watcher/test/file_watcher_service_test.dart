@@ -538,6 +538,142 @@ void main() {
       });
     });
 
+    group('polling backstop', () {
+      // A platform watch that has gone deaf: it stays open and never
+      // delivers, which is what a macOS directory watch can do for the rest
+      // of the process (crux-shared#25).
+      Stream<FileSystemEvent> deaf(String _) {
+        final controller = StreamController<FileSystemEvent>();
+        addTearDown(controller.close);
+        return controller.stream;
+      }
+
+      const poll = Duration(milliseconds: 20);
+      const debounce = Duration(milliseconds: 10);
+      const settle = Duration(milliseconds: 150);
+
+      test('a change the platform watch misses is found by polling', () async {
+        var size = 10;
+        final service = FileWatcherService(
+          watchFactory: deaf,
+          statReader: (_) => _FakeStat(size: size),
+          debounceDelay: debounce,
+          pollInterval: poll,
+        );
+        addTearDown(service.dispose);
+        final emitted = <FileWatchEvent>[];
+        service.events.listen(emitted.add);
+        service.startWatching('/virtual/picorv32.v');
+
+        await Future<void>.delayed(settle);
+        expect(emitted, isEmpty, reason: 'nothing changed yet');
+
+        size = 20;
+        await Future<void>.delayed(settle);
+        expect(emitted, [FileWatchEvent.modified]);
+
+        size = 30;
+        await Future<void>.delayed(settle);
+        expect(
+          emitted,
+          [FileWatchEvent.modified, FileWatchEvent.modified],
+          reason: 'every later change is found too, once each',
+        );
+      });
+
+      test('a deaf watch without polling reports nothing', () async {
+        var size = 10;
+        final service = FileWatcherService(
+          watchFactory: deaf,
+          statReader: (_) => _FakeStat(size: size),
+          debounceDelay: debounce,
+        );
+        addTearDown(service.dispose);
+        final emitted = <FileWatchEvent>[];
+        service.events.listen(emitted.add);
+        service.startWatching('/virtual/picorv32.v');
+
+        size = 20;
+        await Future<void>.delayed(settle);
+        expect(emitted, isEmpty);
+      });
+
+      test('a change both sources see is reported once', () async {
+        var size = 10;
+        final events = StreamController<FileSystemEvent>();
+        addTearDown(events.close);
+        final service = FileWatcherService(
+          watchFactory: (_) => events.stream,
+          statReader: (_) => _FakeStat(size: size),
+          debounceDelay: debounce,
+          pollInterval: poll,
+        );
+        addTearDown(service.dispose);
+        final emitted = <FileWatchEvent>[];
+        service.events.listen(emitted.add);
+        service.startWatching('/virtual/a.vcd');
+
+        size = 20;
+        events.add(_modifyEvent('/virtual/a.vcd'));
+        await Future<void>.delayed(settle);
+        // A late platform event for the change already reported.
+        events.add(_modifyEvent('/virtual/a.vcd'));
+        await Future<void>.delayed(settle);
+        expect(emitted, [FileWatchEvent.modified]);
+      });
+
+      test('a deletion is found by polling and reported once', () async {
+        var exists = true;
+        FileStat stat(String path) {
+          if (!exists) throw FileSystemException('gone', path);
+          return _FakeStat(size: 10);
+        }
+
+        final service = FileWatcherService(
+          watchFactory: deaf,
+          statReader: stat,
+          debounceDelay: debounce,
+          pollInterval: poll,
+        );
+        addTearDown(service.dispose);
+        final emitted = <FileWatchEvent>[];
+        service.events.listen(emitted.add);
+        service.startWatching('/virtual/a.vcd');
+
+        exists = false;
+        await Future<void>.delayed(settle);
+        expect(emitted, [FileWatchEvent.deleted]);
+
+        exists = true;
+        await Future<void>.delayed(settle);
+        expect(
+          emitted,
+          [FileWatchEvent.deleted, FileWatchEvent.modified],
+          reason: 'the file coming back is a change',
+        );
+      });
+
+      test('stopWatching stops polling', () async {
+        var size = 10;
+        final service = FileWatcherService(
+          watchFactory: deaf,
+          statReader: (_) => _FakeStat(size: size),
+          debounceDelay: debounce,
+          pollInterval: poll,
+        );
+        addTearDown(service.dispose);
+        final emitted = <FileWatchEvent>[];
+        service.events.listen(emitted.add);
+        service
+          ..startWatching('/virtual/a.vcd')
+          ..stopWatching();
+
+        size = 20;
+        await Future<void>.delayed(settle);
+        expect(emitted, isEmpty);
+      });
+    });
+
     test('multiple subscribers receive events', () async {
       final completer1 = Completer<FileWatchEvent>();
       final completer2 = Completer<FileWatchEvent>();
