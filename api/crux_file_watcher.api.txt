@@ -7,6 +7,7 @@
 # disappears or changes shape is a breaking change for all four
 # products; a line that appears is new public surface to justify.
 
+typedef FileStatReader = FileStat Function(String)
 enum FileWatchEvent
   static const deleted: FileWatchEvent
   static const modified: FileWatchEvent
@@ -21,7 +22,7 @@ class FileWatchStopped
   final stackTrace: StackTrace?
   toString() -> String
 class FileWatcherService
-  FileWatcherService({Duration debounceDelay, Duration maxWait, Stream<FileSystemEvent> Function(String)? watchFactory})
+  FileWatcherService({Duration debounceDelay, Duration maxWait, FileStat Function(String)? statReader, Stream<FileSystemEvent> Function(String)? watchFactory})
   dispose() -> void
   final debounceDelay: Duration
   final maxWait: Duration

@@ -4,6 +4,15 @@
 
 ### Fixed
 
+- **An attribute-only change is no longer reported as `modified`**
+  (crux-shared#24). macOS writes an extended attribute to a file picked in
+  the open dialog, and the watcher treated that as an edit, so a product
+  offered to reload a file nobody had touched. A `FileSystemModifyEvent`
+  without `contentChanged` is now ignored, and a modify event that leaves
+  the file's size and modification time as last seen is dropped, since
+  platforms do not always say which kind of change they saw. A file whose
+  state cannot be read never suppresses an event. `FileWatcherService`
+  takes an optional `statReader` for tests.
 - The debounce is now bounded by `maxWait` (default 2 s). Previously every
   filesystem event restarted the 500 ms timer with no ceiling, so a file
   under sustained writes — a simulator streaming into a dump for the

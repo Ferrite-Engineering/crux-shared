@@ -65,6 +65,10 @@ class FileWatchStopped {
 /// the given [path]. Injected in tests to avoid real file-system I/O.
 typedef WatchFactory = Stream<FileSystemEvent> Function(String path);
 
+/// Signature for a function that returns the [FileStat] of [path]. Injected
+/// in tests; defaults to [FileStat.statSync].
+typedef FileStatReader = FileStat Function(String path);
+
 /// Watches the containing directory and filters events down to [path].
 ///
 /// `File(path).watch()` delivers **no events on Windows**: `dart:io`
@@ -136,11 +140,17 @@ class FileWatcherService {
   /// [FileSystemEvent]s without touching the real filesystem.
   /// [debounceDelay] is the quiet period; [maxWait] bounds how long a
   /// sustained burst can suppress emission (see the class docs).
+  ///
+  /// [statReader] reads the watched file's size and modification time, which
+  /// decide whether a modify event really changed it (see [events]); tests
+  /// inject one alongside [watchFactory].
   FileWatcherService({
     WatchFactory? watchFactory,
+    FileStatReader? statReader,
     this.debounceDelay = defaultDebounceDelay,
     this.maxWait = defaultMaxWait,
-  }) : _watchFactory = watchFactory ?? _defaultFactory;
+  }) : _watchFactory = watchFactory ?? _defaultFactory,
+       _statReader = statReader ?? FileStat.statSync;
 
   /// Default quiet period before a burst of writes is reported.
   static const Duration defaultDebounceDelay = Duration(milliseconds: 500);
@@ -158,6 +168,11 @@ class FileWatcherService {
   final Duration maxWait;
 
   final WatchFactory _watchFactory;
+  final FileStatReader _statReader;
+
+  /// Size and modification time of the watched file when the watch started
+  /// or last emitted [FileWatchEvent.modified]; null when unknown.
+  ({DateTime modified, int size})? _lastSeen;
   final StreamController<FileWatchEvent> _controller =
       StreamController<FileWatchEvent>.broadcast();
   final StreamController<FileWatchStopped> _stopController =
@@ -175,6 +190,14 @@ class FileWatcherService {
   int _generation = 0;
 
   /// Stream of file events. Subscribe before calling [startWatching].
+  ///
+  /// [FileWatchEvent.modified] means the file's contents changed. A change to
+  /// its attributes only is not reported: macOS writes an extended attribute
+  /// to a file picked in the open dialog, and treating that as an edit raised
+  /// a reload prompt for a file nobody had touched. A modify event that
+  /// leaves the file's size and modification time as last seen is dropped
+  /// for the same reason, since platforms do not always say which kind of
+  /// change they saw.
   Stream<FileWatchEvent> get events => _controller.stream;
 
   /// Stream of spontaneous watch deaths. A deliberate [stopWatching] or
@@ -201,6 +224,7 @@ class FileWatcherService {
     if (kIsWeb) return;
     final generation = _generation;
     _watchedPath = path;
+    _lastSeen = _readState(path);
     try {
       _fsSub = _watchFactory(path).listen(
         _onFsEvent,
@@ -239,6 +263,7 @@ class FileWatcherService {
     _cancelTimers();
     _pending = null;
     _watchedPath = null;
+    _lastSeen = null;
     unawaited(_fsSub?.cancel());
     _fsSub = null;
   }
@@ -261,6 +286,7 @@ class FileWatcherService {
   }
 
   void _onFsEvent(FileSystemEvent event) {
+    if (event is FileSystemModifyEvent && !event.contentChanged) return;
     _pending =
         (event.type == FileSystemEvent.delete ||
             event.type == FileSystemEvent.move)
@@ -284,7 +310,27 @@ class FileWatcherService {
     _pending = null;
     if (event == null) return;
     if (_controller.isClosed) return;
+    if (event == FileWatchEvent.modified) {
+      final path = _watchedPath;
+      final now = path == null ? null : _readState(path);
+      final before = _lastSeen;
+      if (now != null && before != null && now == before) return;
+      _lastSeen = now;
+    }
     _controller.add(event);
+  }
+
+  /// The size and modification time of [path], or null when the file does
+  /// not exist or cannot be read, so an unknown state never suppresses an
+  /// event.
+  ({DateTime modified, int size})? _readState(String path) {
+    try {
+      final stat = _statReader(path);
+      if (stat.type == FileSystemEntityType.notFound) return null;
+      return (modified: stat.modified, size: stat.size);
+    } on FileSystemException {
+      return null;
+    }
   }
 
   void _onWatchDied(

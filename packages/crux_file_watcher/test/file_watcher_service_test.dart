@@ -25,8 +25,14 @@ WatchFactory _factory(List<FileSystemEvent> events) {
 WatchFactory get _silentFactory =>
     (_) => const Stream.empty();
 
-/// Creates a fake [FileSystemModifyEvent].
+/// Creates a fake [FileSystemModifyEvent] for a write to the file.
 FileSystemEvent _modifyEvent(String path) =>
+    FileSystemModifyEvent(path, false, true);
+
+/// Creates a fake [FileSystemModifyEvent] for a change to the file's
+/// attributes only, such as the extended attribute macOS writes when a file
+/// is picked in the open dialog.
+FileSystemEvent _attributeEvent(String path) =>
     FileSystemModifyEvent(path, false, false);
 
 /// Creates a fake [FileSystemDeleteEvent].
@@ -62,6 +68,72 @@ void main() {
 
       final event = await completer.future.timeout(const Duration(seconds: 2));
       expect(event, FileWatchEvent.modified);
+    });
+
+    test('an attribute-only change is not reported', () async {
+      final service = FileWatcherService(
+        watchFactory: _factory([_attributeEvent('/tmp/a.vcd')]),
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+      addTearDown(service.dispose);
+      final emitted = <FileWatchEvent>[];
+      service.events.listen(emitted.add);
+      service.startWatching('/tmp/a.vcd');
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(emitted, isEmpty);
+    });
+
+    test('a modify event that leaves the file as it was is dropped', () async {
+      final dir = Directory.systemTemp.createTempSync('crux_watch_');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/design.json')..writeAsStringSync('{}');
+      final events = StreamController<FileSystemEvent>();
+      addTearDown(events.close);
+      final service = FileWatcherService(
+        watchFactory: (_) => events.stream,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+      addTearDown(service.dispose);
+      final emitted = <FileWatchEvent>[];
+      service.events.listen(emitted.add);
+      service.startWatching(file.path);
+
+      // The platform says the content changed, but size and mtime agree.
+      events.add(_modifyEvent(file.path));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(emitted, isEmpty);
+
+      // A real write is reported.
+      file.writeAsStringSync('{"modules": {}}');
+      events.add(_modifyEvent(file.path));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(emitted, [FileWatchEvent.modified]);
+    });
+
+    test('the state check uses the injected stat reader', () async {
+      var size = 10;
+      FileStat stat(String path) => _FakeStat(size: size);
+      final events = StreamController<FileSystemEvent>();
+      addTearDown(events.close);
+      final service = FileWatcherService(
+        watchFactory: (_) => events.stream,
+        statReader: stat,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+      addTearDown(service.dispose);
+      final emitted = <FileWatchEvent>[];
+      service.events.listen(emitted.add);
+      service.startWatching('/virtual/a.vcd');
+
+      events.add(_modifyEvent('/virtual/a.vcd'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(emitted, isEmpty);
+
+      size = 20;
+      events.add(_modifyEvent('/virtual/a.vcd'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(emitted, [FileWatchEvent.modified]);
     });
 
     test('delete event emits FileWatchEvent.deleted after debounce', () async {
@@ -455,4 +527,30 @@ void main() {
       expect(results, [FileWatchEvent.modified, FileWatchEvent.modified]);
     });
   });
+}
+
+/// A [FileStat] with a fixed modification time and the given [size].
+class _FakeStat implements FileStat {
+  _FakeStat({required this.size});
+
+  @override
+  final int size;
+
+  @override
+  DateTime get modified => DateTime.utc(2026);
+
+  @override
+  DateTime get accessed => DateTime.utc(2026);
+
+  @override
+  DateTime get changed => DateTime.utc(2026);
+
+  @override
+  int get mode => 0;
+
+  @override
+  FileSystemEntityType get type => FileSystemEntityType.file;
+
+  @override
+  String modeString() => 'rw-r--r--';
 }
