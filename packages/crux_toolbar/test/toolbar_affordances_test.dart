@@ -13,6 +13,7 @@ CruxToolbarButtonItem<_Export> _variant(_Export a, IconData icon) =>
     CruxToolbarButtonItem<_Export>(action: a, icon: icon, tooltip: a.name);
 
 Widget _wrapSplit({
+  String Function(_Export)? faceTooltip,
   bool Function(_Export)? isEnabled,
   void Function(_Export)? onAction,
   void Function(_Export)? onVariantChanged,
@@ -25,6 +26,7 @@ Widget _wrapSplit({
         item: CruxToolbarSplitItem<_Export>(
           id: 'export',
           tooltip: 'Export Report…',
+          faceTooltip: faceTooltip,
           variants: [
             _variant(_Export.sarif, Icons.upload_file_outlined),
             _variant(_Export.json, Icons.data_object),
@@ -121,6 +123,31 @@ void main() {
         expect(find.text('json'), findsNothing);
       });
     }
+
+    testWidgets('the face tooltip names the cluster and follows the faced '
+        'variant', (tester) async {
+      await tester.pumpWidget(
+        _wrapSplit(
+          faceTooltip: (a) => 'Export… (${a.name.toUpperCase()} is default)',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Export… (SARIF is default)'), findsOneWidget);
+
+      await tester.longPress(find.byKey(const ValueKey(_Export.sarif)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('json').last);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Export… (JSON is default)'), findsOneWidget);
+    });
+
+    testWidgets('without a face tooltip the faced variant names itself', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapSplit());
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('sarif'), findsOneWidget);
+    });
 
     testWidgets('choosing a sibling dispatches it, re-faces, and notifies', (
       tester,

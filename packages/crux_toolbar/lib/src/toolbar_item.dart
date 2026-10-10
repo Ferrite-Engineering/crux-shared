@@ -76,6 +76,7 @@ final class CruxToolbarSplitItem<A extends Object> extends CruxToolbarItem<A> {
     required this.id,
     required this.variants,
     required this.tooltip,
+    this.faceTooltip,
   });
 
   /// Stable identifier for this cluster, used as the widget key and as the
@@ -87,6 +88,18 @@ final class CruxToolbarSplitItem<A extends Object> extends CruxToolbarItem<A> {
 
   /// Tooltip for the cluster as a whole, shown on the corner affordance.
   final String tooltip;
+
+  /// The button's hover tooltip, given the action currently on its face.
+  ///
+  /// The face stands for the whole cluster, so the tooltip should name the
+  /// cluster, and say what a plain click does: it runs the faced action,
+  /// which changes when the user picks another variant from the menu. For
+  /// example "Export Violations… (SARIF is default)", then
+  /// "(JSON is default)" after JSON was picked. The faced action's shortcut
+  /// is appended as for any toolbar button.
+  ///
+  /// Null keeps the faced variant's own tooltip.
+  final String Function(A facedAction)? faceTooltip;
 }
 
 /// A host-supplied widget dropped into the strip verbatim.

@@ -104,7 +104,8 @@ class CruxToolbarSplitButton<A extends Object> extends StatefulWidget
   final onVariantChanged: void Function(A)?
   final shortcutOf: ShortcutActivator? Function(A)
 final class CruxToolbarSplitItem<A extends Object> extends CruxToolbarItem<A>
-  const CruxToolbarSplitItem({required List<CruxToolbarButtonItem<A>> variants, required String id, required String tooltip})
+  const CruxToolbarSplitItem({String Function(A)? faceTooltip, required List<CruxToolbarButtonItem<A>> variants, required String id, required String tooltip})
+  final faceTooltip: String Function(A)?
   final id: String
   final tooltip: String
   final variants: List<CruxToolbarButtonItem<A>>

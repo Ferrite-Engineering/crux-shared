@@ -168,7 +168,7 @@ class _CruxToolbarSplitButtonState<A extends Object>
                   ? face.selectedIcon!
                   : face.icon,
               tooltip: cruxToolbarTooltip(
-                face.tooltip,
+                widget.item.faceTooltip?.call(face.action) ?? face.tooltip,
                 widget.shortcutOf(face.action),
               ),
               onPressed: faceEnabled
