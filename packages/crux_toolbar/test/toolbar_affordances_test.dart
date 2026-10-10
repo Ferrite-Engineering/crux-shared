@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_toolbar/crux_toolbar.dart';
+import 'package:flutter/gestures.dart' show kSecondaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
 
 enum _Export { sarif, json, csv, html }
@@ -91,6 +93,34 @@ void main() {
         );
       }
     });
+
+    for (final (how, open) in <(String, Future<void> Function(WidgetTester))>[
+      (
+        'long-press',
+        (t) => t.longPress(find.byKey(const ValueKey(_Export.sarif))),
+      ),
+      (
+        'right-click',
+        (t) => t.tap(
+          find.byKey(const ValueKey(_Export.sarif)),
+          buttons: kSecondaryButton,
+        ),
+      ),
+    ]) {
+      testWidgets('Escape closes the sibling menu opened by $how', (
+        tester,
+      ) async {
+        await tester.pumpWidget(_wrapSplit());
+        await tester.pumpAndSettle();
+        await open(tester);
+        await tester.pumpAndSettle();
+        expect(find.text('json'), findsOneWidget);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.text('json'), findsNothing);
+      });
+    }
 
     testWidgets('choosing a sibling dispatches it, re-faces, and notifies', (
       tester,

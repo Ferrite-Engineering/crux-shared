@@ -63,6 +63,34 @@ class _CruxToolbarSplitButtonState<A extends Object>
   final MenuController _menu = MenuController();
   late A _current = _resolveInitial();
 
+  /// A focus target inside the sibling menu, focused when the menu opens.
+  ///
+  /// A `MenuAnchor` opened by the pointer (long-press, right-click, the
+  /// corner triangle) leaves focus where it was, outside the menu, so the
+  /// menu's own Escape handling never saw the key: Escape did nothing and
+  /// macOS beeped. Focusing a node inside the menu routes Escape (and the
+  /// arrow keys) to the menu. It is not one of the items, so opening with the
+  /// pointer highlights nothing, as a desktop menu opened by the mouse
+  /// should look.
+  final FocusNode _menuFocus = FocusNode(
+    debugLabel: 'CruxToolbarSplitButton menu',
+    skipTraversal: true,
+  );
+
+  @override
+  void dispose() {
+    _menuFocus.dispose();
+    super.dispose();
+  }
+
+  void _openMenu() {
+    _menu.open();
+    // After the frame that mounts the menu's overlay.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _menu.isOpen) _menuFocus.requestFocus();
+    });
+  }
+
   A _resolveInitial() {
     final initial = widget.initialVariant;
     if (initial != null &&
@@ -102,23 +130,35 @@ class _CruxToolbarSplitButtonState<A extends Object>
     return MenuAnchor(
       controller: _menu,
       menuChildren: [
-        for (final variant in widget.item.variants)
-          MenuItemButton(
-            key: ValueKey<A>(variant.action),
-            leadingIcon: Icon(variant.icon, size: widget.metrics.iconSize),
-            shortcut: switch (widget.shortcutOf(variant.action)) {
-              final SingleActivator a => a,
-              _ => null,
-            },
-            onPressed: widget.isEnabled(variant.action)
-                ? () => _select(variant)
-                : null,
-            child: Text(variant.tooltip),
+        Focus(
+          focusNode: _menuFocus,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final variant in widget.item.variants)
+                MenuItemButton(
+                  key: ValueKey<A>(variant.action),
+                  leadingIcon: Icon(
+                    variant.icon,
+                    size: widget.metrics.iconSize,
+                  ),
+                  shortcut: switch (widget.shortcutOf(variant.action)) {
+                    final SingleActivator a => a,
+                    _ => null,
+                  },
+                  onPressed: widget.isEnabled(variant.action)
+                      ? () => _select(variant)
+                      : null,
+                  child: Text(variant.tooltip),
+                ),
+            ],
           ),
+        ),
       ],
       builder: (context, controller, _) => GestureDetector(
-        onLongPress: controller.open,
-        onSecondaryTap: controller.open,
+        onLongPress: _openMenu,
+        onSecondaryTap: _openMenu,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -152,7 +192,7 @@ class _CruxToolbarSplitButtonState<A extends Object>
                 label: widget.item.tooltip,
                 button: true,
                 child: GestureDetector(
-                  onTap: controller.open,
+                  onTap: _openMenu,
                   child: CustomPaint(
                     size: const Size(6, 6),
                     painter: _CornerTrianglePainter(
