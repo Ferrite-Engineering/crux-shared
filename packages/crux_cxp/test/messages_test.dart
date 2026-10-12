@@ -50,6 +50,38 @@ void main() {
       expect(recovered, equals(ack));
     });
 
+    test('Hello and HelloAck round-trip the 1.3 proof fields', () {
+      const hello = Hello(identity: identity, nonce: 'n0', proof: 'p0');
+      expect(Hello.fromJson(hello.toJson()), equals(hello));
+      expect(hello.toJson().containsKey('token'), isFalse);
+      expect(hello.toString(), isNot(contains('p0')));
+
+      const ack = HelloAck(identity: identity, inReplyTo: 'm', proof: 'q0');
+      expect(HelloAck.fromJson(ack.toJson()), equals(ack));
+      expect(ack.toString(), isNot(contains('q0')));
+    });
+
+    test('half a proof in a Hello reads as none', () {
+      for (final half in <Map<String, Object?>>[
+        {'nonce': 'n0'},
+        {'proof': 'p0'},
+        {'nonce': '', 'proof': 'p0'},
+        {'nonce': 'n0', 'proof': 1},
+      ]) {
+        final hello = Hello.fromJson({'identity': identity.toJson(), ...half});
+        expect(hello.nonce, isNull, reason: '$half');
+        expect(hello.proof, isNull, reason: '$half');
+      }
+      expect(
+        HelloAck.fromJson({
+          'identity': identity.toJson(),
+          'in_reply_to': 'm',
+          'proof': '',
+        }).proof,
+        isNull,
+      );
+    });
+
     test('Goodbye round-trips with reason', () {
       const bye = Goodbye(reason: 'shutting down');
       final recovered = Goodbye.fromJson(bye.toJson());

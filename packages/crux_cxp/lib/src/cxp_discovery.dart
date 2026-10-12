@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:crux_cxp/src/cxp_auth_token.dart';
 import 'package:crux_cxp/src/cxp_private_files.dart';
+import 'package:crux_cxp/src/messages/cxp_message.dart';
 import 'package:crux_cxp/src/peer_identity.dart';
 import 'package:crux_cxp/src/process_liveness.dart';
 import 'package:meta/meta.dart';
@@ -42,6 +43,7 @@ class CxpPeerManifest {
     required this.startedAt,
     required this.manifestPath,
     this.token,
+    this.cxpVersion,
   });
 
   /// Decodes a manifest from its JSON form. Throws [FormatException] on
@@ -89,6 +91,7 @@ class CxpPeerManifest {
       );
     }
     final token = json['token'];
+    final cxpVersion = json['cxp_version'];
     return CxpPeerManifest(
       identity: PeerIdentity.fromJson(identityMap),
       host: host,
@@ -98,6 +101,11 @@ class CxpPeerManifest {
       // Optional (wire 1.2): a pre-1.2 peer publishes none, and a dialler
       // then presents none, which a receiver that requires one refuses.
       token: token is String && token.isNotEmpty ? token : null,
+      // Optional (wire 1.3): a pre-1.3 peer publishes none, and a dialler
+      // then presents the token verbatim rather than a proof (§7.4).
+      cxpVersion: cxpVersion is String && cxpVersion.isNotEmpty
+          ? cxpVersion
+          : null,
     );
   }
 
@@ -127,6 +135,13 @@ class CxpPeerManifest {
   /// See `cxpProcessAuthToken`.
   final String? token;
 
+  /// The wire version the peer speaks, as it published it, or null when the
+  /// manifest carries none (a pre-1.3 peer). A dialler reads this, not the
+  /// socket, to decide whether to prove the token or present it
+  /// (`cxpVersionHasMutualAuth`, §7.4): the manifest is what another
+  /// user's process cannot write.
+  final String? cxpVersion;
+
   /// JSON form suitable for writing to disk.
   Map<String, Object?> toJson() => <String, Object?>{
     'identity': identity.toJson(),
@@ -134,6 +149,7 @@ class CxpPeerManifest {
     'port': port,
     'started_at': startedAt.millisecondsSinceEpoch,
     'token': ?token,
+    'cxp_version': ?cxpVersion,
   };
 
   @override
@@ -144,10 +160,12 @@ class CxpPeerManifest {
           other.host == host &&
           other.port == port &&
           other.startedAt == startedAt &&
-          other.token == token);
+          other.token == token &&
+          other.cxpVersion == cxpVersion);
 
   @override
-  int get hashCode => Object.hash(identity, host, port, startedAt, token);
+  int get hashCode =>
+      Object.hash(identity, host, port, startedAt, token, cxpVersion);
 
   /// Deliberately omits [token]: this string reaches logs and event rows.
   @override
@@ -736,6 +754,9 @@ class CxpManifestWriter {
       startedAt: DateTime.now().toUtc(),
       manifestPath: path,
       token: authToken,
+      // Diallers choose the 1.3 proof handshake from this, so it names the
+      // version the server this manifest advertises actually speaks.
+      cxpVersion: cxpProtocolVersion,
     );
     // Owner-only from the moment the scratch file exists, before the token
     // is written into it, and renamed into place atomically (§10.2). No

@@ -885,8 +885,22 @@ class _PeerConnection {
     }
 
     if (message is Hello) {
-      if (server.requireAuthToken &&
-          !cxpAuthTokensMatch(message.token, server.authToken)) {
+      // Two ways to be a peer that can read the manifest (§7.4): present
+      // the token (1.2), or prove it with a nonce and an HMAC over it
+      // (1.3). The proof is recomputed from the token this server holds.
+      final nonce = message.nonce;
+      final proved =
+          nonce != null &&
+          cxpAuthTokensMatch(
+            message.proof,
+            cxpAuthProof(
+              token: server.authToken,
+              nonce: nonce,
+              label: cxpHelloProofLabel,
+            ),
+          );
+      final presented = cxpAuthTokensMatch(message.token, server.authToken);
+      if (server.requireAuthToken && !proved && !presented) {
         // The peer could reach the port but not the manifest that names
         // it — or reached a stale one. Either way it has not shown what
         // this server requires, so it is told which requirement failed
@@ -896,25 +910,37 @@ class _PeerConnection {
           code: CxpErrorCode.unauthorized,
           message:
               'A hello to this peer must carry the token published in its '
-              'manifest.',
+              'manifest, or a proof of it.',
           inReplyTo: envelope.messageId,
         );
         _disconnect();
         return;
       }
       identity = message.identity;
+      final ack = HelloAck(
+        identity: server.selfIdentity,
+        inReplyTo: envelope.messageId,
+        // The listener's half of mutual authentication: prove that this
+        // process holds the token its manifest publishes, so the dialler
+        // can tell it from a process that merely bound the port. Answered
+        // only to a dialler whose own proof verified — a dialler that sent
+        // the token verbatim checks nothing, and one that proved nothing
+        // (a lenient server accepting a pre-1.2 peer) is owed nothing
+        // derived from the secret.
+        proof: proved
+            ? cxpAuthProof(
+                token: server.authToken,
+                nonce: nonce,
+                label: cxpHelloAckProofLabel,
+              )
+            : null,
+      );
       _sendEnvelope(
         CxpEnvelope(
           messageId: _newMessageId(),
           from: server.selfIdentity.peerId,
-          kind: HelloAck(
-            identity: server.selfIdentity,
-            inReplyTo: envelope.messageId,
-          ).kind,
-          payload: HelloAck(
-            identity: server.selfIdentity,
-            inReplyTo: envelope.messageId,
-          ).toJson(),
+          kind: ack.kind,
+          payload: ack.toJson(),
         ),
       );
       server._onPeerHello(this);

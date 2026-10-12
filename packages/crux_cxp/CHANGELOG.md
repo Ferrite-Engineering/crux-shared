@@ -1,3 +1,75 @@
+## 0.10.0
+
+Wire **1.3**: mutual peer authentication. The listener now proves to the
+dialler that it holds the token its manifest publishes, and the token itself
+stops crossing the wire. Package **minor**: `CxpClient.connect` gains a
+parameter, which every implementor of the interface must add; everything
+else is additive. Closes §11.4 item 1 of the 1.2 specification.
+
+### Why an echo would not have done
+
+The obvious fix — have `hello_ack` carry the listener's token — proves
+nothing. Under 1.2 the dialler sends the token in its `hello`, so whatever
+answered the port has just been handed it and can echo it, or anything
+derived from it, as well as the real peer could. A process that binds a
+peer's well-known port after the peer exits, while the manifest still names
+it, was accepted as the peer *and* learned the token; an echo would have
+left both halves in place.
+
+### What changed on the wire
+
+Neither side sends the token.
+
+- `hello` MAY carry a `nonce` (fresh, 128 bits, 32 hex digits) and a
+  `proof`: `HMAC-SHA256(key = token, message = "cxp-hello:" + nonce)`, as
+  64 lowercase hex digits. A dialler sends this *instead of* `token`.
+- `hello_ack` carries a `proof` — `HMAC-SHA256(key = token, message =
+  "cxp-hello-ack:" + nonce)` — in reply to a `hello` whose proof verified,
+  and nothing otherwise. The dialler checks it against the token it read
+  from the manifest before the handshake completes; a missing or wrong
+  proof fails the handshake as `unauthorized`, closes the socket, and is
+  recorded like any refused dial.
+- The manifest carries `cxp_version`. **The dialler chooses the handshake
+  from the manifest, never from the socket**: a manifest announcing 1.3 or
+  later gets a proof; one announcing less, or nothing (every pre-1.3
+  writer), gets the token verbatim as 1.2 did. The manifest is the file
+  another user's process cannot write; the port is the thing it can bind,
+  so a squatter on the port cannot talk a dialler down to sending the token.
+- A listener accepts either form. A pre-1.2 dialler is still refused unless
+  `requireAuthToken: false`, as before. Nothing an older peer sends is
+  refused by this revision, so unlike 1.2 it does not bend the minor rule.
+
+### Dart API
+
+- `Hello` gains `nonce` and `proof`; `HelloAck` gains `proof`. Half a pair
+  (a nonce without a proof, or the reverse) decodes as neither.
+  `toString()` prints none of them.
+- `CxpPeerManifest` gains `cxpVersion`; `CxpManifestWriter` publishes
+  `cxpProtocolVersion` in every manifest.
+- `CxpClient.connect` gains `bool mutualAuth = false`. **Breaking for an
+  implementor of `CxpClient`** (one test double in this repository; no
+  product implements it); a caller is unaffected.
+- New: `generateCxpAuthNonce`, `cxpAuthProof`, `cxpHelloProofLabel`,
+  `cxpHelloAckProofLabel`, `cxpVersionHasMutualAuth`.
+- `cxpProtocolVersion` is `1.3`.
+- Conformance: `test/conformance/auth_token_test.dart`, group "mutual
+  authentication (wire 1.3)" — proof vectors computed independently in
+  Python so the TypeScript implementation has a target; a squatter that
+  echoes whatever it receives is refused by a 1.3 dial and never sees the
+  token, and is accepted by a 1.2-style dial, which is why the manifest
+  chooses; a lenient listener that cannot prove the token is refused from
+  the dialling side; the listener proves the token only to a dialler that
+  proved it; the connector presents a proof to a 1.3 manifest and the token
+  to a pre-1.3 one, and reaches a real peer either way.
+
+### Not in this release
+
+The TypeScript implementation (`host-core`, in the Crux VS Code extensions)
+does not yet speak 1.3: it publishes no `cxp_version`, so a `crux_cxp`
+dialler presents it the token as before, and it presents the token to a
+`crux_cxp` listener, which accepts it. Both routes keep working; neither is
+mutually authenticated until it is updated.
+
 ## 0.9.0
 
 Windows network paths are refused before the filesystem is asked about

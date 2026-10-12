@@ -8,7 +8,7 @@
 # products; a line that appears is new public surface to justify.
 
 abstract class CxpClient
-  connect({String? token, required String host, required int port}) -> Future<void>
+  connect({String? token, bool mutualAuth, required String host, required int port}) -> Future<void>
   disconnect() -> Future<void>
   get events -> Stream<CxpConnectionEvent>
   get inbound -> Stream<CxpClientInbound>
@@ -136,9 +136,10 @@ class CxpPeerConnector
   stop() -> Future<void>
   updateSubscriptions(List<CxpSubscription> subscriptions) -> void
 class CxpPeerManifest
-  const CxpPeerManifest({String? token, required DateTime startedAt, required PeerIdentity identity, required String host, required String manifestPath, required int port})
+  const CxpPeerManifest({String? cxpVersion, String? token, required DateTime startedAt, required PeerIdentity identity, required String host, required String manifestPath, required int port})
   factory CxpPeerManifest.fromJson({required Map<String, Object?> json, required String manifestPath})
   ==(Object other) -> bool
+  final cxpVersion: String?
   final host: String
   final identity: PeerIdentity
   final manifestPath: String
@@ -252,21 +253,24 @@ class Goodbye extends CxpMessage
   toJson() -> Map<String, Object?>
   toString() -> String
 class Hello extends CxpMessage
-  const Hello({String? token, required PeerIdentity identity})
+  const Hello({String? nonce, String? proof, String? token, required PeerIdentity identity})
   factory Hello.fromJson(Map<String, Object?> json)
   ==(Object other) -> bool
   final identity: PeerIdentity
+  final nonce: String?
+  final proof: String?
   final token: String?
   get hashCode -> int
   get kind -> String
   toJson() -> Map<String, Object?>
   toString() -> String
 class HelloAck extends CxpMessage
-  const HelloAck({required PeerIdentity identity, required String inReplyTo})
+  const HelloAck({String? proof, required PeerIdentity identity, required String inReplyTo})
   factory HelloAck.fromJson(Map<String, Object?> json)
   ==(Object other) -> bool
   final identity: PeerIdentity
   final inReplyTo: String
+  final proof: String?
   get hashCode -> int
   get kind -> String
   toJson() -> Map<String, Object?>
@@ -293,7 +297,7 @@ enum KnownElementKind
   static const test: KnownElementKind
 class LocalCxpClient implements CxpClient
   LocalCxpClient({Duration connectTimeout, Duration handshakeTimeout, int maxLineLength, int maxPendingWriteBytes, required PeerIdentity selfIdentity})
-  connect({String? token, required String host, required int port}) -> Future<void>
+  connect({String? token, bool mutualAuth, required String host, required int port}) -> Future<void>
   disconnect() -> Future<void>
   dispose() -> Future<void>
   final connectTimeout: Duration
@@ -479,15 +483,20 @@ class WorkspaceArtifact
   get hashCode -> int
   toJson() -> Map<String, Object?>
   toString() -> String
+cxpAuthProof({required String label, required String nonce, required String token}) -> String
 cxpAuthTokensMatch(String? presented, String expected) -> bool
 get cxpDefaultManifestHeartbeat -> Duration
 cxpDesignIdForPath(String fileOrDirPath) -> String
 get cxpDesignIdMetadataKey -> String
+get cxpHelloAckProofLabel -> String
+get cxpHelloProofLabel -> String
 cxpLoopbackDialAddress(String host) -> String?
 get cxpProcessAuthToken -> String
 get cxpProtocolVersion -> String
 get cxpSubscribeToAll -> List<CxpSubscription>
+cxpVersionHasMutualAuth(String? cxpVersion) -> bool
 decodeCxpMessage(String kind, Map<String, Object?> payload) -> CxpMessage?
+generateCxpAuthNonce() -> String
 generateCxpAuthToken() -> String
 isCompatibleCxpVersion(String version) -> bool
 isCxpLoopbackHost(String host) -> bool

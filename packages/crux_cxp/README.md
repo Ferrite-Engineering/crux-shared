@@ -29,7 +29,7 @@ to any third-party tool that links this package.
 | `CxpServer` (+ `LocalCxpServer`, `NoopCxpServer`) | Abstract server interface and a TCP/JSON-line implementation bound to localhost. |
 | `CxpClient` (+ `LocalCxpClient`) | Symmetric client with connect/handshake timeouts. |
 | `CxpDiscovery`, `CxpManifestWriter`, `CxpPeerManifest` | Discovery via a shared directory of `<peer_id>.json` manifest files. Hygiene: pid-liveness reaping of dead peers, TTL fallback where liveness is indeterminate, orphaned atomic-write `.tmp` sweeping, endpoint dedupe, heartbeat refresh, and a `dispose()`/`remove()` clean-shutdown hook. A manifest that does not decode costs only itself, never the scan. |
-| `cxpProcessAuthToken`, `generateCxpAuthToken`, `cxpAuthTokensMatch` | Peer authentication (wire 1.2). The manifest publishes a per-process token and `LocalCxpServer` requires it in every Hello, so a fixed loopback port is reachable only by processes that can read the user's private manifest directory — the boundary the spec's trust model already assumes. See "Authentication" below. |
+| `cxpProcessAuthToken`, `generateCxpAuthToken`, `cxpAuthTokensMatch`, `cxpAuthProof`, `generateCxpAuthNonce`, `cxpVersionHasMutualAuth` | Peer authentication (wire 1.2) and mutual authentication (wire 1.3). The manifest publishes a per-process token and `LocalCxpServer` requires it in every Hello, so a fixed loopback port is reachable only by processes that can read the user's private manifest directory — the boundary the spec's trust model already assumes. Since 1.3 the token is proved with an HMAC rather than sent, and the listener proves it back. See "Authentication" below. |
 | `sharedCxpManifestDirectory` | The suite-shared, bundle-independent per-user manifest directory every product publishes into and scans. Throws `StateError` — "discovery unavailable" — when it cannot be resolved: a missing `$HOME` / `%APPDATA%`, or a web build, which has no environment or filesystem to take part in discovery with. |
 | `CxpPeerConnector` | Dials every discovered peer — loopback only (`isCxpLoopbackHost`); any other host is refused before a socket exists, as a `CxpDialRefusedException` dial failure — and routes each link's traffic into the local server's dispatch stream (see below). |
 | `cxpLoopbackDialAddress`, `isCxpLoopbackHost` | CXP §10.5's closed loopback set — `localhost`, `127.0.0.0/8` as four decimal octets with no leading zeros, `::1` in any RFC 3986 form, bracketed or not, with no zone — decided without any platform address parser. `cxpLoopbackDialAddress` returns the literal to connect to (trimmed, unbracketed), so a dialler connects to exactly what it checked. |
@@ -244,6 +244,21 @@ present it:
   `Hello.toString()` nor `CxpPeerManifest.toString()` prints it.
 - `LocalCxpServer(requireAuthToken: false)` is the pre-1.2 behaviour, for a
   receiver that must accept diallers that send no token.
+
+Since wire **1.3** the handshake is mutual, and the token no longer crosses
+the wire at all. A dialler that reads a manifest announcing `cxp_version`
+1.3 or later sends a fresh `nonce` and `proof = HMAC-SHA256(token,
+"cxp-hello:" + nonce)` instead of the token; the listener recomputes it,
+and answers with `HMAC-SHA256(token, "cxp-hello-ack:" + nonce)`, which the
+dialler checks before the handshake completes. A process that merely bound
+the port — another user's, after the real peer exited — can compute neither
+and is refused from the dialling side. The choice between proof and token
+is made from the **manifest**, which such a process cannot write, never
+from what the socket answers; a manifest without `cxp_version` (every
+pre-1.3 writer) gets the token verbatim, as 1.2 did, and a 1.3 listener
+accepts both forms. `CxpPeerConnector` does all of this; by hand it is
+`LocalCxpClient.connect(token:, mutualAuth: true)`, and `cxpAuthProof` is
+the primitive, stated plainly enough to implement from the spec.
 
 The token is only as private as the manifest file. On macOS and Linux the
 writer and discovery create every directory they create on the manifest

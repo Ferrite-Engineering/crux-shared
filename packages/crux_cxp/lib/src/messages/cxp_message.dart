@@ -38,7 +38,16 @@ import 'package:meta/meta.dart';
 /// bends, and it bends on purpose: see `cxpProcessAuthToken` for what the
 /// token closes, and `LocalCxpServer.requireAuthToken` to opt a receiver
 /// out.
-const String cxpProtocolVersion = '1.2';
+///
+/// **1.3** (additive): mutual authentication. Adds an optional `nonce` and
+/// `proof` to the `hello` payload, an optional `proof` to `hello_ack`, and
+/// an optional `cxp_version` to the peer manifest. A dialler that reads a
+/// 1.3 manifest proves it holds the listener's token instead of sending
+/// it, and the listener proves the same back; a dialler that reads an
+/// older manifest presents the token as 1.2 did, and a 1.3 listener still
+/// accepts that. Nothing an older peer sends is refused, so unlike 1.2
+/// this revision does not bend the minor rule. See `cxpAuthProof`.
+const String cxpProtocolVersion = '1.3';
 
 /// True when [version]'s major component matches this implementation's
 /// major version — the acceptance test of the version policy documented

@@ -419,6 +419,7 @@ class _RecordingClient implements CxpClient {
     required String host,
     required int port,
     String? token,
+    bool mutualAuth = false,
   }) async {
     connectCalls.add((host: host, port: port));
     hosts.add(host);

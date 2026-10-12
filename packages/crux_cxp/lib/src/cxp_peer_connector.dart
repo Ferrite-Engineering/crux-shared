@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:crux_cxp/src/cxp_auth_token.dart';
 import 'package:crux_cxp/src/cxp_client.dart';
 import 'package:crux_cxp/src/cxp_discovery.dart';
 import 'package:crux_cxp/src/cxp_server.dart';
@@ -514,12 +515,18 @@ class CxpPeerConnector {
       _dialAttempts++;
       // The manifest is where the peer's token lives; presenting it is
       // what a 1.2 receiver requires, and a pre-1.2 manifest carries none.
-      // The address is the literal that was checked, trimmed and
-      // unbracketed, never the manifest's own spelling (§10.5).
+      // A manifest that announces 1.3 or later gets a proof instead of the
+      // token, and must prove the token back (§7.4). The choice is made
+      // from the manifest — the file another user's process cannot write —
+      // and never from what the port answers, so a squatter on the port
+      // cannot talk the dialler down to sending the token. The address is
+      // the literal that was checked, trimmed and unbracketed, never the
+      // manifest's own spelling (§10.5).
       await link.client.connect(
         host: address,
         port: link.manifest.port,
         token: link.manifest.token,
+        mutualAuth: cxpVersionHasMutualAuth(link.manifest.cxpVersion),
       );
       // Handshake succeeded — clear the backoff and the recorded failure.
       link

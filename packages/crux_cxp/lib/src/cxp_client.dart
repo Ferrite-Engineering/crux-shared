@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crux_cxp/src/cxp_auth_token.dart';
 import 'package:crux_cxp/src/line_framing.dart';
 import 'package:crux_cxp/src/messages/cxp_message.dart';
 import 'package:crux_cxp/src/messages/decoder.dart';
@@ -79,12 +80,22 @@ abstract class CxpClient {
   /// requires one and is not given it rejects the handshake with
   /// `unauthorized`. Null presents none.
   ///
+  /// With [mutualAuth] (wire 1.3, §7.4) the token is not sent: the Hello
+  /// carries a nonce and a proof that this client holds it, and the
+  /// handshake completes only if the [HelloAck] carries the peer's proof
+  /// that it holds the token too — otherwise it fails with
+  /// `CxpHandshakeException(unauthorized)` and the socket is closed. Pass
+  /// it when the peer's manifest says it speaks 1.3 or later
+  /// (`cxpVersionHasMutualAuth`); an older listener would refuse a Hello
+  /// without the token. Ignored when [token] is null.
+  ///
   /// Completes once the [HelloAck] is received. Throws on socket failure
   /// or handshake rejection.
   Future<void> connect({
     required String host,
     required int port,
     String? token,
+    bool mutualAuth = false,
   });
 
   /// Disconnect from the peer, sending [Goodbye] if connected.
@@ -171,11 +182,17 @@ class LocalCxpClient implements CxpClient {
   @override
   Stream<CxpConnectionEvent> get events => _events.stream;
 
+  /// The `hello_ack` proof this connection's handshake must carry, or null
+  /// when the Hello presented the token verbatim (or none) and the ack is
+  /// taken as it comes. See [connect].
+  String? _expectedAckProof;
+
   @override
   Future<void> connect({
     required String host,
     required int port,
     String? token,
+    bool mutualAuth = false,
   }) async {
     if (_disposed) throw StateError('LocalCxpClient already disposed.');
     if (_socket != null) {
@@ -212,7 +229,31 @@ class LocalCxpClient implements CxpClient {
           cancelOnError: false,
         );
 
-    final hello = Hello(identity: selfIdentity, token: token);
+    final Hello hello;
+    if (mutualAuth && token != null) {
+      // §7.4 (1.3): the token stays here. What crosses the wire is a fresh
+      // nonce and an HMAC over it keyed with the token, and what must come
+      // back is the listener's HMAC under the other label — which only a
+      // process holding the token can produce.
+      final nonce = generateCxpAuthNonce();
+      hello = Hello(
+        identity: selfIdentity,
+        nonce: nonce,
+        proof: cxpAuthProof(
+          token: token,
+          nonce: nonce,
+          label: cxpHelloProofLabel,
+        ),
+      );
+      _expectedAckProof = cxpAuthProof(
+        token: token,
+        nonce: nonce,
+        label: cxpHelloAckProofLabel,
+      );
+    } else {
+      hello = Hello(identity: selfIdentity, token: token);
+      _expectedAckProof = null;
+    }
     _writeEnvelope(
       CxpEnvelope(
         messageId: _newMessageId(),
@@ -442,6 +483,26 @@ class LocalCxpClient implements CxpClient {
     }
 
     if (body is HelloAck) {
+      final expectedProof = _expectedAckProof;
+      if (expectedProof != null &&
+          !cxpAuthTokensMatch(body.proof, expectedProof)) {
+        // Whatever answered the port did not prove it holds the token the
+        // manifest publishes (§7.4): a process that bound a well-known port
+        // after the real peer exited, or a listener whose manifest has
+        // gone stale. It is not a peer, so nothing it sent is dispatched
+        // and nothing more is sent to it — the socket is closed without an
+        // error_response, which would only tell a squatter what it got
+        // wrong. Recorded like any refused handshake.
+        _failHandshake(
+          const CxpHandshakeException(
+            code: CxpErrorCode.unauthorized,
+            message:
+                'The peer did not prove it holds the token published in its '
+                'manifest.',
+          ),
+        );
+        return;
+      }
       _remotePeer = body.identity;
       if (!_events.isClosed) {
         _events.add(
