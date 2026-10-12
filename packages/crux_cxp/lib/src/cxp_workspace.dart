@@ -1,6 +1,12 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+// The store is read on the `request_open_artifact` path, on the isolate that
+// serves CXP — the UI isolate, in the products. The avoid_slow_async_io lint
+// prefers the *Sync() calls, which hold that isolate for the whole system
+// call; the asynchronous paths here stay on the asynchronous API on purpose.
+// ignore_for_file: avoid_slow_async_io
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -175,14 +181,16 @@ class WorkspaceArtifact {
 /// across every store instance, so each one reads what the one before it
 /// wrote: any number of concurrent upserts for one design all survive.
 ///
-/// Across processes nothing is queued. The atomic rename guarantees that a
-/// reader sees a whole document — the old one or the new one, never a torn
-/// one — and that a crash leaves one of the two. It does not make a
-/// read-change-write atomic: when two processes upsert the same design at
-/// the same moment, each writes the document it read plus its own entry, and
-/// the rename that lands second drops the first one's entry. The window is
-/// the few milliseconds between one process's read and its rename; the lost
-/// entry comes back with that producer's next upsert of it.
+/// Across processes each read-change-write also holds an exclusive lock on
+/// a sidecar `<design_id>.json.lock`, which is created on first use and
+/// never deleted. The atomic rename guarantees that a reader sees a whole
+/// document — the old one or the new one, never a torn one — and the lock
+/// keeps two processes upserting the same design from each writing the
+/// document it read plus its own entry, which dropped one of them. The lock
+/// is best effort: when it cannot be taken within two seconds the write
+/// goes ahead unlocked rather than wait on a stopped process, and an entry
+/// lost that way comes back with its producer's next upsert. Readers take
+/// no lock; the rename is what they rely on.
 class CxpWorkspaceStore {
   /// Creates a store rooted at [workspaceDirectory] (defaults to
   /// [sharedCxpWorkspaceDirectory]). [ttl] bounds how long an entry survives
@@ -245,7 +253,7 @@ class CxpWorkspaceStore {
       // Prune stale entries as we write, so ordinary producer activity
       // bounds the document without relying on a read-time rewrite, as
       // discovery does.
-      final current = _prune(_readRaw(designId));
+      final current = await _prune(await _readRaw(designId));
       final next = <WorkspaceArtifact>[];
       var replaced = false;
       for (final a in current) {
@@ -283,13 +291,21 @@ class CxpWorkspaceStore {
   /// Returns the (stale-pruned) artifacts recorded for [designId] that pass
   /// [containment], when one is set.
   ///
-  /// Pruning is applied to the returned view only — this method performs no
-  /// disk I/O, so it is safe to call synchronously from a resolver on a hot
-  /// path. Persisting the pruned document is the job of [upsertArtifact] (on
-  /// the next produce) and the explicit [pruneDesign]. An unknown design
-  /// yields an empty list.
+  /// Pruning is applied to the returned view only; persisting the pruned
+  /// document is the job of [upsertArtifact] (on the next produce) and the
+  /// explicit [pruneDesign]. An unknown design yields an empty list.
+  ///
+  /// This reads the design document and checks that every recorded file
+  /// still exists, **synchronously**, on the calling isolate. Prefer
+  /// [readArtifactsAsync], which does the same reads without blocking.
   List<WorkspaceArtifact> readArtifacts(String designId) =>
-      List.unmodifiable(_admitted(_prune(_readRaw(designId))));
+      List.unmodifiable(_admitted(_pruneSync(_readRawSync(designId))));
+
+  /// [readArtifacts] with its disk I/O done asynchronously: the design
+  /// document is read, and each recorded file's existence checked, without
+  /// blocking the calling isolate.
+  Future<List<WorkspaceArtifact>> readArtifactsAsync(String designId) async =>
+      List.unmodifiable(_admitted(await _prune(await _readRaw(designId))));
 
   /// The artifacts of [artifacts] whose path [containment] allows — all of
   /// them when no rule is set.
@@ -312,8 +328,8 @@ class CxpWorkspaceStore {
     final file = _fileFor(designId);
     if (file == null) return const <WorkspaceArtifact>[];
     return await _queuedFor(file, () async {
-      final raw = _readRaw(designId);
-      final pruned = _prune(raw);
+      final raw = await _readRaw(designId);
+      final pruned = await _prune(raw);
       if (pruned.length != raw.length) await _write(designId, pruned);
       return List<WorkspaceArtifact>.unmodifiable(pruned);
     });
@@ -330,15 +346,56 @@ class CxpWorkspaceStore {
   /// 4. else the most recently upserted one.
   ///
   /// Returns null when the design has no artifact of [kind].
+  ///
+  /// [accepts], when given, admits only the records whose path the receiver
+  /// can open — typically a check on the file extension. Several products
+  /// publish the same kind (`source` names an HDL file, a lint project and a
+  /// simulation config alike), and without it step 4 hands a receiver
+  /// whichever product upserted last. Filtering happens before every step,
+  /// so a single record of another product's file is not returned either.
+  ///
+  /// Reads synchronously, as [readArtifacts] does; prefer
+  /// [resolveArtifactAsync].
   WorkspaceArtifact? resolveArtifact(
     String designId,
     String kind, {
     String? topModule,
     String? basename,
+    bool Function(String path)? accepts,
+  }) => _resolve(
+    readArtifacts(designId),
+    kind,
+    topModule: topModule,
+    basename: basename,
+    accepts: accepts,
+  );
+
+  /// [resolveArtifact] with its disk I/O done asynchronously, through
+  /// [readArtifactsAsync].
+  Future<WorkspaceArtifact?> resolveArtifactAsync(
+    String designId,
+    String kind, {
+    String? topModule,
+    String? basename,
+    bool Function(String path)? accepts,
+  }) async => _resolve(
+    await readArtifactsAsync(designId),
+    kind,
+    topModule: topModule,
+    basename: basename,
+    accepts: accepts,
+  );
+
+  static WorkspaceArtifact? _resolve(
+    List<WorkspaceArtifact> artifacts,
+    String kind, {
+    String? topModule,
+    String? basename,
+    bool Function(String path)? accepts,
   }) {
-    final ofKind = readArtifacts(
-      designId,
-    ).where((a) => a.kind == kind).toList(growable: false);
+    final ofKind = artifacts
+        .where((a) => a.kind == kind && (accepts == null || accepts(a.path)))
+        .toList(growable: false);
     if (ofKind.isEmpty) return null;
     if (ofKind.length == 1) return ofKind.first;
 
@@ -360,11 +417,23 @@ class CxpWorkspaceStore {
     return ofKind.first;
   }
 
-  List<WorkspaceArtifact> _prune(List<WorkspaceArtifact> artifacts) {
-    final cutoff = DateTime.now().millisecondsSinceEpoch - ttl.inMilliseconds;
+  int get _cutoff => DateTime.now().millisecondsSinceEpoch - ttl.inMilliseconds;
+
+  List<WorkspaceArtifact> _pruneSync(List<WorkspaceArtifact> artifacts) {
+    final cutoff = _cutoff;
     return <WorkspaceArtifact>[
       for (final a in artifacts)
         if (a.ts >= cutoff && File(a.path).existsSync()) a,
+    ];
+  }
+
+  Future<List<WorkspaceArtifact>> _prune(
+    List<WorkspaceArtifact> artifacts,
+  ) async {
+    final cutoff = _cutoff;
+    return <WorkspaceArtifact>[
+      for (final a in artifacts)
+        if (a.ts >= cutoff && await File(a.path).exists()) a,
     ];
   }
 
@@ -395,28 +464,46 @@ class CxpWorkspaceStore {
       ? File(p.join(workspaceDirectory, '$designId.json'))
       : null;
 
-  List<WorkspaceArtifact> _readRaw(String designId) {
+  List<WorkspaceArtifact> _readRawSync(String designId) {
     final file = _fileFor(designId);
     if (file == null || !file.existsSync()) return const <WorkspaceArtifact>[];
     try {
-      final decoded = jsonDecode(file.readAsStringSync());
-      if (decoded is! Map) return const <WorkspaceArtifact>[];
-      final rawArtifacts = decoded['artifacts'];
-      if (rawArtifacts is! List) return const <WorkspaceArtifact>[];
-      final result = <WorkspaceArtifact>[];
-      for (final entry in rawArtifacts) {
-        if (entry is Map<String, Object?>) {
-          result.add(WorkspaceArtifact.fromJson(entry));
-        } else if (entry is Map) {
-          result.add(WorkspaceArtifact.fromJson(entry.cast<String, Object?>()));
-        }
-      }
-      return result;
+      return _decode(file.readAsStringSync());
     } on FormatException {
       return const <WorkspaceArtifact>[];
     } on FileSystemException {
       return const <WorkspaceArtifact>[];
     }
+  }
+
+  Future<List<WorkspaceArtifact>> _readRaw(String designId) async {
+    final file = _fileFor(designId);
+    if (file == null || !await file.exists()) {
+      return const <WorkspaceArtifact>[];
+    }
+    try {
+      return _decode(await file.readAsString());
+    } on FormatException {
+      return const <WorkspaceArtifact>[];
+    } on FileSystemException {
+      return const <WorkspaceArtifact>[];
+    }
+  }
+
+  static List<WorkspaceArtifact> _decode(String content) {
+    final decoded = jsonDecode(content);
+    if (decoded is! Map) return const <WorkspaceArtifact>[];
+    final rawArtifacts = decoded['artifacts'];
+    if (rawArtifacts is! List) return const <WorkspaceArtifact>[];
+    final result = <WorkspaceArtifact>[];
+    for (final entry in rawArtifacts) {
+      if (entry is Map<String, Object?>) {
+        result.add(WorkspaceArtifact.fromJson(entry));
+      } else if (entry is Map) {
+        result.add(WorkspaceArtifact.fromJson(entry.cast<String, Object?>()));
+      }
+    }
+    return result;
   }
 
   Future<void> _write(
@@ -463,7 +550,7 @@ final Map<String, Future<void>> _documentQueues = <String, Future<void>>{};
 Future<T> _queuedFor<T>(File file, Future<T> Function() body) {
   final key = p.normalize(p.absolute(file.path));
   final previous = _documentQueues[key] ?? Future<void>.value();
-  final result = previous.then((_) => body());
+  final result = previous.then((_) => _underDocumentLock(file, body));
   // The queue waits on each body but never inherits its failure; the caller
   // still gets it through [result].
   final settled = result.then<void>((_) {}, onError: (Object _) {});
@@ -477,4 +564,55 @@ Future<T> _queuedFor<T>(File file, Future<T> Function() body) {
     }),
   );
   return result;
+}
+
+/// How long a read-change-write waits for another process to release a
+/// design document's lock before it goes ahead without it.
+const Duration _documentLockWait = Duration(seconds: 2);
+
+/// Runs [body] holding an exclusive lock on [file]'s sidecar
+/// `<design>.json.lock`, so a read-change-write in another process cannot
+/// interleave with this one and drop its entry.
+///
+/// The lock file is never deleted: deleting it would let a process that
+/// opened the old one and a process that created a new one each hold "the"
+/// lock at once. It is empty and one per design document.
+///
+/// Best effort, by design. A filesystem that refuses the lock file, or a
+/// holder that keeps the lock past [_documentLockWait] (a stopped process;
+/// a crashed one releases it with its descriptors), leaves [body] to run
+/// unlocked, as it always did, rather than wedging every upsert behind it:
+/// the cost of a lost race is one entry until its producer's next upsert,
+/// and the cost of waiting for ever is the producer itself.
+Future<T> _underDocumentLock<T>(File file, Future<T> Function() body) async {
+  RandomAccessFile? handle;
+  try {
+    await file.parent.create(recursive: true);
+    final opened = await File(
+      '${file.path}.lock',
+    ).open(mode: FileMode.append);
+    handle = opened;
+    final deadline = DateTime.now().add(_documentLockWait);
+    while (true) {
+      try {
+        await opened.lock();
+        break;
+      } on FileSystemException {
+        if (DateTime.now().isAfter(deadline)) break;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    }
+  } on FileSystemException {
+    // No lock to be had; run unlocked.
+  }
+  try {
+    return await body();
+  } finally {
+    // Closing the descriptor releases any lock it holds.
+    try {
+      await handle?.close();
+    } on FileSystemException {
+      // Best effort.
+    }
+  }
 }

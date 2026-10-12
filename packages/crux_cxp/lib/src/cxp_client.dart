@@ -370,18 +370,27 @@ class LocalCxpClient implements CxpClient {
       return;
     }
     if (!isCompatibleCxpVersion(envelope.cxpVersion)) {
-      // Major-version mismatch: fatal during the handshake; dropped
-      // afterwards (the peer already passed a compatible handshake, so a
-      // stray incompatible frame is the anomaly, not the connection).
+      // §6: a receiver MUST reject an envelope of another major version
+      // with `unsupported_version` and SHOULD close; a dialler MUST fail
+      // its pending handshake. After the handshake the frame is still
+      // rejected, not dropped: dropping it left the sender unable to tell
+      // "refused" from "not delivered".
+      final error = CxpHandshakeException(
+        code: CxpErrorCode.unsupportedVersion,
+        message: 'Peer speaks cxp_version "${envelope.cxpVersion}".',
+      );
       final handshake = _handshake;
       if (handshake != null && !handshake.isCompleted) {
-        _failHandshake(
-          CxpHandshakeException(
-            code: CxpErrorCode.unsupportedVersion,
-            message: 'Peer speaks cxp_version "${envelope.cxpVersion}".',
-          ),
-        );
+        _failHandshake(error);
+        return;
       }
+      _rejectAndClose(
+        error,
+        // §9.8: an error_response is never answered with one.
+        inReplyTo: envelope.kind == CxpMessageKind.errorResponse
+            ? null
+            : envelope.messageId,
+      );
       return;
     }
 
@@ -446,6 +455,23 @@ class LocalCxpClient implements CxpClient {
       return;
     }
 
+    // A known kind other than hello_ack or error_response before the
+    // handshake completes is a peer that skipped it (§7.2): the link would
+    // otherwise carry its frames into this process's inbound stream from a
+    // peer that never identified itself.
+    final pending = _handshake;
+    if (pending != null && !pending.isCompleted) {
+      _failHandshake(
+        CxpHandshakeException(
+          code: CxpErrorCode.handshakeRequired,
+          message:
+              'Peer sent "${envelope.kind}" before completing the '
+              'handshake.',
+        ),
+      );
+      return;
+    }
+
     if (!_inbound.isClosed) {
       _inbound.add(CxpClientInbound(envelope: envelope, message: body));
     }
@@ -468,6 +494,32 @@ class LocalCxpClient implements CxpClient {
           inReplyTo: inReplyTo,
         ).toJson(),
       ),
+    );
+  }
+
+  /// Answers with an `error_response` carrying [error]'s code (unless
+  /// [inReplyTo] is null), stops reading, and closes the connection once
+  /// that answer has been written.
+  void _rejectAndClose(CxpHandshakeException error, {String? inReplyTo}) {
+    final socket = _socket;
+    if (socket == null) return;
+    // Nothing more is read from a peer that is being closed.
+    final sub = _lineSub;
+    _lineSub = null;
+    if (sub != null) unawaited(sub.cancel());
+    if (inReplyTo != null) {
+      _sendError(
+        code: error.code,
+        message:
+            'Unsupported cxp_version; this peer speaks '
+            '"$cxpProtocolVersion".',
+        inReplyTo: inReplyTo,
+      );
+    }
+    unawaited(
+      _writeChain.whenComplete(() {
+        if (identical(_socket, socket)) _failHandshake(error);
+      }),
     );
   }
 

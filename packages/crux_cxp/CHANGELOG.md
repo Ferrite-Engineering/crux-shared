@@ -1,3 +1,77 @@
+## 0.9.0
+
+Windows network paths are refused before the filesystem is asked about
+them; the dialling client rejects another major version for the life of
+the link and refuses traffic ahead of its `hello_ack`; workspace writes
+from two processes no longer lose an entry; the workspace store gains an
+asynchronous read path and a receiver-side filter for records of a shared
+kind. Package **minor**, which under 0.x is the breaking position: paths
+and frames that were accepted are now refused. No wire change.
+
+### Windows network and device paths are judged on their spelling
+
+With roots set, `CxpPathContainment.refuse` resolved a peer-supplied
+`\\server\share\…` path through the filesystem, which opens an SMB
+connection to a server the peer chose, and can offer the user's NTLM
+credentials to it, before any decision was made. The floor tier let such a
+path through to the product. A path beginning with two separators
+(`\\server\share`, `\\?\…`, `\\.\…`, either slash) is now refused on
+Windows before the filesystem is touched, in both tiers, unless an open
+root begins with the same `\\server\share`. New refusal reason:
+`file_path is a network or device path`.
+
+- Conformance: `test/conformance/network_path_test.dart`.
+
+### `LocalCxpClient` after the handshake (§6, §7.2)
+
+- An envelope of another major version is answered with
+  `unsupported_version` and the connection is closed, as §6 requires of
+  every receiver. It used to be dropped silently, leaving the sender unable
+  to tell "refused" from "not delivered". An `error_response` of another
+  major version closes without an answer (§9.8).
+- A known kind other than `hello_ack` or `error_response` that arrives
+  before the handshake completes fails `connect()` with a
+  `CxpHandshakeException` of code `handshake_required`, instead of
+  reaching `inbound` from a peer that never identified itself.
+
+- Conformance: `test/conformance/robustness_test.dart`, "version
+  negotiation" and "client handshake ordering".
+
+### Workspace store
+
+- **Cross-process upserts.** `upsertArtifact` and `pruneDesign` now hold an
+  exclusive lock on a sidecar `<design_id>.json.lock` around each
+  read-change-write, in addition to the in-isolate queue. Two processes
+  upserting one design within milliseconds used to drop one entry. The
+  lock file is never deleted. The lock is best effort: after two seconds
+  the write goes ahead unlocked rather than wait on a stopped process.
+  Conformance: "concurrent writers in two processes", which spawns two
+  writer processes and fails without the lock.
+- **Asynchronous reads.** New `readArtifactsAsync` and
+  `resolveArtifactAsync` do the document read and the per-artifact
+  existence checks without blocking the isolate. `readArtifacts` and
+  `resolveArtifact` keep their synchronous signatures, and their
+  documentation no longer claims they perform no disk I/O; prefer the
+  asynchronous forms on the `request_open_artifact` path. The upsert and
+  prune paths are asynchronous throughout.
+- **`accepts` on resolution.** `resolveArtifact` and `resolveArtifactAsync`
+  take an optional `accepts` predicate that admits only records the
+  receiver can open. Several products publish the kind `source` (an HDL
+  file, a lint project, a simulation configuration), and without a filter
+  the newest record won, so a receiver could be handed another product's
+  file. This is the receiver-side stop-gap; per-product kinds would be a
+  spec revision.
+
+### Discovery: an invalid-UTF-8 manifest is reaped
+
+`readAsString` reports invalid UTF-8 as a `FileSystemException`, which the
+scan reads as a race with the owner and never reaps, so such a file was
+read again on every scan. The scan now reads bytes and decodes them
+itself, so invalid UTF-8 is a `FormatException` and the file is reaped
+after `reapThreshold` like any other unparseable manifest.
+
+- Conformance: `test/conformance/discovery_robustness_test.dart`.
+
 ## 0.8.1
 
 A clean shutdown no longer leaves its manifest behind. Package **patch**:

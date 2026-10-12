@@ -12,6 +12,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:crux_cxp/src/process_liveness.dart';
@@ -517,6 +518,18 @@ final class _SlowFile implements File {
   String readAsStringSync({Encoding encoding = utf8}) {
     _hold();
     return _real.readAsStringSync(encoding: encoding);
+  }
+
+  @override
+  Future<Uint8List> readAsBytes() async {
+    await _wait();
+    return await _real.readAsBytes();
+  }
+
+  @override
+  Uint8List readAsBytesSync() {
+    _hold();
+    return _real.readAsBytesSync();
   }
 
   @override

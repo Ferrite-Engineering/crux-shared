@@ -243,5 +243,32 @@ void main() {
         expect(fresh.existsSync(), isTrue);
       },
     );
+
+    test(
+      'a file of invalid UTF-8 older than reapThreshold is reaped like any '
+      'other unparseable one',
+      () async {
+        final ancient = File(p.join(tempDir.path, 'aaa-invalid-utf8.json'))
+          ..writeAsBytesSync(<int>[0x7B, 0xC3, 0x28, 0xFF, 0xFE, 0x7D]);
+        await ancient.setLastModified(
+          DateTime.now().subtract(const Duration(days: 2)),
+        );
+        write('$goodPeerId.json', jsonEncode(liveManifest(goodPeerId)));
+
+        final discovery = CxpDiscovery(
+          manifestDirectory: tempDir.path,
+          selfPeerId: 'wavecrux-observer',
+          scanInterval: const Duration(milliseconds: 50),
+        );
+        addTearDown(discovery.stop);
+        await discovery.start();
+
+        await pollUntil(
+          () => !ancient.existsSync(),
+          reason: 'invalid UTF-8 is unparseable, not a race with the owner',
+        );
+        expect(discovery.peers.map((m) => m.identity.peerId), [goodPeerId]);
+      },
+    );
   });
 }

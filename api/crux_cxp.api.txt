@@ -199,7 +199,9 @@ class CxpWorkspaceStore
   isValidDesignId(String designId) -> bool
   pruneDesign(String designId) -> Future<List<WorkspaceArtifact>>
   readArtifacts(String designId) -> List<WorkspaceArtifact>
-  resolveArtifact(String designId, String kind, {String? basename, String? topModule}) -> WorkspaceArtifact?
+  readArtifactsAsync(String designId) -> Future<List<WorkspaceArtifact>>
+  resolveArtifact(String designId, String kind, {String? basename, String? topModule, bool Function(String)? accepts}) -> WorkspaceArtifact?
+  resolveArtifactAsync(String designId, String kind, {String? basename, String? topModule, bool Function(String)? accepts}) -> Future<WorkspaceArtifact?>
   upsertArtifact({String? basename, String? topModule, int? ts, required String designId, required String kind, required String path, required String producer}) -> Future<List<WorkspaceArtifact>>
 class ElementId
   const ElementId({required ElementKind kind, required String path})

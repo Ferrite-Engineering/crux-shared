@@ -3,6 +3,7 @@
 
 import 'dart:io';
 
+import 'package:crux_cxp/src/cxp_network_path.dart';
 import 'package:crux_io/crux_io.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -54,6 +55,15 @@ import 'package:path/path.dart' as p;
 /// it when it opens, so keeping it would name one file two ways. No Crux
 /// product writes such a path.
 ///
+/// ### Network and device paths on Windows
+///
+/// A `\\server\share\…`, `\\?\…` or `\\.\…` path is judged on its spelling
+/// alone, before the filesystem is asked anything: resolving it would open
+/// an SMB connection to a server the peer chose, which can offer the user's
+/// credentials to it. Such a path is refused in both tiers, unless one of
+/// [roots] begins with the same `\\server\share`, in which case it goes on
+/// to the ordinary containment check.
+///
 /// ### What a check cannot promise
 ///
 /// The answer describes the filesystem at the moment [refuse] ran. A
@@ -94,12 +104,21 @@ class CxpPathContainment {
     if (!p.isAbsolute(path) || p.isRootRelative(path)) {
       return 'file_path must be an absolute path';
     }
-    final openRoots = roots;
+    final openRoots = roots?.call().toList();
+    // Before anything below asks the filesystem about the path: on Windows
+    // that question, for a `\\server\share` path, is an SMB connection to a
+    // server the peer chose.
+    final network = cxpNetworkPathRefusal(
+      path,
+      windows: Platform.isWindows,
+      roots: openRoots,
+    );
+    if (network != null) return network;
     if (openRoots == null) return null;
 
     final rootKeys = <String>[];
     var anyRoot = false;
-    for (final root in openRoots()) {
+    for (final root in openRoots) {
       if (root.trim().isEmpty) continue;
       anyRoot = true;
       final rootKey = _key(p.absolute(root));

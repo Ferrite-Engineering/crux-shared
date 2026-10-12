@@ -5,6 +5,7 @@
 library;
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:path/path.dart' as p;
@@ -463,6 +464,135 @@ void main() {
         calls,
       ).timeout(const Duration(seconds: 5));
       expect(outcomes, everyElement(isA<FileSystemException>()));
+    });
+  });
+
+  group('concurrent writers in two processes', () {
+    // Two products upserting one design within milliseconds each read the
+    // document, added their own entry and renamed; the rename that landed
+    // second dropped the first one's entry. The sidecar lock serialises the
+    // read-change-write across processes.
+    test('every upsert from both processes survives', () async {
+      const designId = 'designs/shared';
+      const perChild = 15;
+      final packageConfig = await Isolate.packageConfig;
+      final goFile = p.join(tempDir.path, 'go');
+      final script = p.join(
+        'test',
+        'conformance',
+        'support',
+        'workspace_upsert_child.dart',
+      );
+      final children = <Process>[];
+      for (final prefix in ['a', 'b']) {
+        final child = await Process.start(Platform.resolvedExecutable, [
+          if (packageConfig != null) '--packages=${packageConfig.toFilePath()}',
+          script,
+          wsDir.path,
+          designId,
+          tempDir.path,
+          prefix,
+          '$perChild',
+          goFile,
+        ]);
+        children.add(child);
+      }
+      // Both children are running and waiting before either writes.
+      final ready = await Future.wait([
+        for (final child in children)
+          child.stdout
+              .transform(const SystemEncoding().decoder)
+              .firstWhere((line) => line.contains('ready')),
+      ]).timeout(const Duration(seconds: 60));
+      expect(ready, hasLength(2));
+      File(goFile).writeAsStringSync('go');
+      final codes = await Future.wait([
+        for (final child in children) child.exitCode,
+      ]).timeout(const Duration(seconds: 60));
+      expect(codes, [0, 0]);
+
+      final producers = <String, int>{};
+      for (final a in store.readArtifacts(designId)) {
+        producers[a.producer] = (producers[a.producer] ?? 0) + 1;
+      }
+      expect(producers, {'a': perChild, 'b': perChild});
+      // The lock file stays; deleting it would let two processes each hold
+      // a lock on a different file of the same name.
+      expect(
+        File(p.join(wsDir.path, '$designId.json.lock')).existsSync(),
+        isTrue,
+      );
+    }, timeout: const Timeout(Duration(minutes: 2)));
+  });
+
+  group('asynchronous reads', () {
+    test('readArtifactsAsync and resolveArtifactAsync agree with the '
+        'synchronous forms', () async {
+      final kept = touch('kept.vcd');
+      final gone = touch('gone.vcd');
+      for (final path in [kept, gone]) {
+        await store.upsertArtifact(
+          designId: 'd',
+          kind: 'waveform',
+          path: path,
+          producer: 'simcrux',
+        );
+      }
+      File(gone).deleteSync();
+      final asyncRead = await store.readArtifactsAsync('d');
+      expect(asyncRead, store.readArtifacts('d'));
+      expect(asyncRead.single.path, kept);
+      expect((await store.resolveArtifactAsync('d', 'waveform'))!.path, kept);
+      expect(await store.readArtifactsAsync('nope'), isEmpty);
+      expect(await store.resolveArtifactAsync('../escape', 'waveform'), isNull);
+    });
+  });
+
+  group('resolveArtifact with accepts', () {
+    // Several products publish `source`: an HDL file, a lint project and a
+    // simulation config. Without a filter the newest wins, so a receiver
+    // could be handed another product's file.
+    late String hdl;
+    late String lintProject;
+    late String simConfig;
+
+    setUp(() async {
+      hdl = touch('top.sv');
+      lintProject = touch('design.lintcrux');
+      simConfig = touch('simcrux.yaml');
+      var ts = older();
+      for (final path in [hdl, lintProject, simConfig]) {
+        await store.upsertArtifact(
+          designId: 'd',
+          kind: 'source',
+          path: path,
+          producer: 'x',
+          ts: ts++,
+        );
+      }
+    });
+
+    bool hdlOnly(String path) => path.endsWith('.sv') || path.endsWith('.v');
+
+    test('without it, the newest record of the kind wins', () {
+      expect(store.resolveArtifact('d', 'source')!.path, simConfig);
+    });
+
+    test('with it, only a record the receiver opens is returned', () async {
+      expect(store.resolveArtifact('d', 'source', accepts: hdlOnly)!.path, hdl);
+      expect(
+        (await store.resolveArtifactAsync(
+          'd',
+          'source',
+          accepts: hdlOnly,
+        ))!.path,
+        hdl,
+      );
+    });
+
+    test('a single record of another product is not returned', () async {
+      File(hdl).deleteSync();
+      expect(store.resolveArtifact('d', 'source', accepts: hdlOnly), isNull);
     });
   });
 }

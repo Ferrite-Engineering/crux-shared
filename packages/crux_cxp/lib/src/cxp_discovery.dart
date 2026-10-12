@@ -401,8 +401,14 @@ class CxpDiscovery {
         final stat = await entity.stat();
         if (abandoned()) return;
         if (stat.type != FileSystemEntityType.file) continue;
-        final content = await entity.readAsString();
+        // Bytes, then decoded here: `readAsString` reports invalid UTF-8 as
+        // a FileSystemException, which the handler below reads as a race
+        // with the owner and never reaps, so such a file was re-read on
+        // every scan for ever. Decoded here it is a FormatException, and
+        // unparseable like any other.
+        final bytes = await entity.readAsBytes();
         if (abandoned()) return;
+        final content = utf8.decode(bytes);
         final decoded = jsonDecode(content);
         if (decoded is! Map<String, Object?> && decoded is! Map) continue;
         final manifestJson = decoded is Map<String, Object?>

@@ -995,6 +995,121 @@ void main() {
       );
       expect(client.isConnected, isFalse);
     });
+
+    test(
+      'client rejects a major-version frame after the handshake with '
+      'unsupported_version AND closes',
+      () async {
+        final fake = await _FakeCxpServer.start((fake, socket, envelope) {
+          if (envelope['kind'] == CxpMessageKind.hello) {
+            fake
+              ..writeHelloAck(socket, envelope)
+              ..writeEnvelope(
+                socket,
+                kind: CxpMessageKind.requestHighlight,
+                payload: const RequestHighlight(element: _element).toJson(),
+                messageId: 'v9-request-1',
+                cxpVersion: '9.0',
+              );
+          }
+        });
+        addTearDown(fake.close);
+
+        final client = LocalCxpClient(selfIdentity: _rawId);
+        addTearDown(client.dispose);
+        final inbound = <CxpClientInbound>[];
+        client.inbound.listen(inbound.add);
+        await client.connect(host: '127.0.0.1', port: fake.port);
+
+        await pollUntil(
+          () => fake.errorPayloads(CxpErrorCode.unsupportedVersion).isNotEmpty,
+          reason: 'a major mismatch must be answered with unsupported_version',
+        );
+        expect(
+          fake
+              .errorPayloads(CxpErrorCode.unsupportedVersion)
+              .single['in_reply_to'],
+          'v9-request-1',
+        );
+        await pollUntil(
+          () => !client.isConnected,
+          reason: 'a major mismatch closes the connection',
+        );
+        expect(inbound, isEmpty);
+      },
+    );
+
+    test(
+      'client closes without an answer on an error_response of another '
+      'major version after the handshake',
+      () async {
+        final fake = await _FakeCxpServer.start((fake, socket, envelope) {
+          if (envelope['kind'] == CxpMessageKind.hello) {
+            fake
+              ..writeHelloAck(socket, envelope)
+              ..writeEnvelope(
+                socket,
+                kind: CxpMessageKind.errorResponse,
+                payload: const ErrorResponse(
+                  code: CxpErrorCode.internalError,
+                  message: 'from the future',
+                ).toJson(),
+                messageId: 'v9-error-1',
+                cxpVersion: '9.0',
+              );
+          }
+        });
+        addTearDown(fake.close);
+
+        final client = LocalCxpClient(selfIdentity: _rawId);
+        addTearDown(client.dispose);
+        await client.connect(host: '127.0.0.1', port: fake.port);
+        await pollUntil(
+          () => !client.isConnected,
+          reason: 'a major mismatch closes the connection',
+        );
+        expect(fake.errorPayloads(CxpErrorCode.unsupportedVersion), isEmpty);
+      },
+    );
+  });
+
+  group('client handshake ordering', () {
+    test(
+      'a known kind before hello_ack fails the handshake and never reaches '
+      'inbound',
+      () async {
+        final fake = await _FakeCxpServer.start((fake, socket, envelope) {
+          if (envelope['kind'] == CxpMessageKind.hello) {
+            fake
+              ..writeEnvelope(
+                socket,
+                kind: CxpMessageKind.requestHighlight,
+                payload: const RequestHighlight(element: _element).toJson(),
+                messageId: 'early-request-1',
+              )
+              ..writeHelloAck(socket, envelope);
+          }
+        });
+        addTearDown(fake.close);
+
+        final client = LocalCxpClient(selfIdentity: _rawId);
+        addTearDown(client.dispose);
+        final inbound = <CxpClientInbound>[];
+        client.inbound.listen(inbound.add);
+        await expectLater(
+          client.connect(host: '127.0.0.1', port: fake.port),
+          throwsA(
+            isA<CxpHandshakeException>().having(
+              (e) => e.code,
+              'code',
+              CxpErrorCode.handshakeRequired,
+            ),
+          ),
+        );
+        expect(client.isConnected, isFalse);
+        expect(inbound, isEmpty);
+      },
+    );
   });
 
   // CXP §9.8: a peer MUST NOT send an error_response in reply to an
