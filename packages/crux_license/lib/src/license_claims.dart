@@ -29,6 +29,7 @@ class LicenseClaims {
     this.licenseId,
     this.created,
     this.expiry,
+    this.expiryUnreadable = false,
     this.email,
     this.maxMachines,
     this.fingerprint,
@@ -66,6 +67,19 @@ class LicenseClaims {
   /// When the licence expires. `null` means perpetual, which no current SKU
   /// issues.
   final DateTime? expiry;
+
+  /// Whether the payload carries an expiry that is not a date this build
+  /// can read: present, but of another type, in another format, or with a
+  /// year outside 1970 to 9999. [expiry] is `null` then too, and must not be
+  /// read as perpetual.
+  ///
+  /// The validator refuses such a credential (fails closed). Only the
+  /// issuer can produce one, so the realistic cause is a change or a bug on
+  /// the issuer's side, and the two ways to be wrong are not symmetric:
+  /// reading it as perpetual would silently give every affected licence for
+  /// ever, with nothing to notice it by, while refusing it is loud, reaches
+  /// support on the first day, and is fixed by a build or a reissue.
+  final bool expiryUnreadable;
 
   /// Licensee email, when the credential carries one. A bare Keygen licence
   /// key does not.

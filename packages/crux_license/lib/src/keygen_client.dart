@@ -8,6 +8,7 @@ import 'package:crux_license/src/install_fingerprint.dart'
     show mintInstallFingerprint;
 import 'package:crux_license/src/keygen_issuer.dart';
 import 'package:crux_license/src/license_actions.dart';
+import 'package:crux_license/src/license_time.dart';
 import 'package:crux_signing/crux_signing.dart';
 import 'package:crypto/crypto.dart' show sha256;
 import 'package:http/http.dart' as http;
@@ -768,5 +769,10 @@ String? _string(Object? value) =>
 int? _int(Object? value) =>
     value is num && value.isFinite ? value.toInt() : null;
 
-DateTime? _time(Object? value) =>
-    value is String ? DateTime.tryParse(value)?.toUtc() : null;
+/// The issuer's reported expiry, or `null` when it is absent or unreadable.
+///
+/// Unknown rather than refused, unlike the signed expiry: this one only ever
+/// extends what the signed credential says (the later of the two is taken),
+/// so reading an unreadable one as absent falls back to the credential's own
+/// date and gives nothing away.
+DateTime? _time(Object? value) => readLicenseTimeOrNull(value);

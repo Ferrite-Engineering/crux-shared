@@ -9,6 +9,7 @@ import 'package:crux_license/src/license_credential.dart';
 import 'package:crux_license/src/license_grant.dart';
 import 'package:crux_license/src/license_issuer.dart';
 import 'package:crux_license/src/license_tier.dart';
+import 'package:crux_license/src/license_time.dart';
 import 'package:meta/meta.dart';
 
 /// Keygen account the suite's licences are minted under.
@@ -155,8 +156,9 @@ class KeygenLicenseIssuer implements LicenseIssuer {
       policyId: _string(policy?['id']),
       policyDuration: duration == null ? null : Duration(seconds: duration),
       licenseId: _string(license?['id']),
-      created: _time(license?['created']),
-      expiry: _time(license?['expiry']),
+      created: readLicenseTimeOrNull(license?['created']),
+      expiry: _expiry(license?['expiry']),
+      expiryUnreadable: _expiryUnreadable(license?['expiry']),
       email: _string(_object(payload['user'])?['email']),
       raw: payload,
     );
@@ -239,8 +241,9 @@ class KeygenLicenseIssuer implements LicenseIssuer {
       ),
       policyId: policyId,
       licenseId: _string(data?['id']),
-      created: _time(attributes?['created']),
-      expiry: _time(attributes?['expiry']),
+      created: readLicenseTimeOrNull(attributes?['created']),
+      expiry: _expiry(attributes?['expiry']),
+      expiryUnreadable: _expiryUnreadable(attributes?['expiry']),
       email: _string(_object(attributes?['metadata'])?['email']),
       maxMachines: _int(attributes?['maxMachines']),
       fingerprint: fingerprint,
@@ -314,5 +317,11 @@ String? _string(Object? value) =>
 int? _int(Object? value) =>
     value is num && value.isFinite ? value.toInt() : null;
 
-DateTime? _time(Object? value) =>
-    value is String ? DateTime.tryParse(value)?.toUtc() : null;
+/// The signed expiry, or `null` when it is absent or unreadable; see
+/// [_expiryUnreadable] for telling the two apart.
+DateTime? _expiry(Object? value) => readLicenseTimeOrNull(value);
+
+/// Whether a signed expiry is present but unreadable, which the validator
+/// refuses rather than read as perpetual (`LicenseClaims.expiryUnreadable`).
+bool _expiryUnreadable(Object? value) =>
+    readLicenseTime(value) is LicenseTimeUnreadable;

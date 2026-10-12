@@ -107,7 +107,9 @@ class NoopLicenseValidator implements LicenseValidator {
 ///    turn. Nothing verified means [LicenseRejection.untrustedIssuer], which
 ///    covers a tampered payload, a tampered signature and a key minted by
 ///    somebody else alike — they are cryptographically the same event.
-/// 3. **Read** the payload into claims, and check the issuer account.
+/// 3. **Read** the payload into claims, and check the issuer account. A
+///    signed expiry this build cannot read is refused here as
+///    [LicenseRejection.undecodablePayload], never read as perpetual.
 /// 4. **Resolve** claims onto a grant: embedded entitlements when the
 ///    credential carries them, the compiled policy table when it does not.
 /// 5. **Entitle** — does the grant cover [product]?
@@ -167,6 +169,13 @@ class CruxLicenseValidator implements LicenseValidator {
       return LicenseRejected(
         LicenseRejection.undecodablePayload,
         'issuer ${issuer.id} does not recognise this payload shape',
+      );
+    }
+    if (claims.expiryUnreadable) {
+      // Fails closed; `LicenseClaims.expiryUnreadable` gives the reasoning.
+      return LicenseRejected(
+        LicenseRejection.undecodablePayload,
+        'issuer ${issuer.id} signed an expiry this build cannot read',
       );
     }
     final expected = issuer.accountId;

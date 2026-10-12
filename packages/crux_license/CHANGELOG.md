@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **An unreadable signed expiry is refused, not read as perpetual.** A
+  credential whose signed `expiry` is present but is not a date this build
+  can read (another type, another format, a year outside 1970 to 9999) is
+  now `LicenseRejected(undecodablePayload)`, and `LicenseClaims` carries
+  `expiryUnreadable`. It used to resolve as perpetual. Only the issuer can
+  sign such a payload, so the realistic cause is a format change or a
+  template bug there; failing open would give every affected licence away
+  for ever with nothing to notice it by, while failing closed is loud and is
+  fixed by a build or a reissue. `null` is still perpetual. Years are bounded
+  on the text as well as on the parsed value, because `DateTime.tryParse`
+  wraps a year past ±275760 instead of refusing it. The issuer's reported
+  expiry from an online check reads an unreadable date as unknown, since it
+  only ever extends the signed one.
 - **One fingerprint per machine, not per product install.** A suite
   licence's `maxMachines` counts machines, but each product minted its own
   fingerprint in its own credential-store namespace, so four products on one

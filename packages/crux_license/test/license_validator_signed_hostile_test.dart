@@ -163,17 +163,73 @@ void main() {
       });
     }
 
-    test('a garbage expiry reads as none, not as a crash', () async {
-      // Keygen writes `expiry: null` for a perpetual licence, so an absent
-      // or unreadable one resolving the same way is consistent, not a hole:
-      // only the issuer's key can produce the payload.
-      final payload = keyPayload();
-      (payload['license']! as Map<String, Object?>)['expiry'] = 'next spring';
+    group('an expiry this build cannot read fails closed', () {
+      // Keygen writes `expiry: null` for a perpetual licence. A present but
+      // unreadable one is a change or a bug at the issuer, and reading it as
+      // perpetual would give every affected licence away for ever with
+      // nothing to notice it by; refusing it is loud and is fixed by a build
+      // or a reissue. So it is refused, by name, and never thrown.
+      for (final (label, Object? expiry) in <(String, Object?)>[
+        ('a phrase', 'next spring'),
+        ('an empty string', ''),
+        ('another format', '01/02/2027'),
+        ('a number', 1798761600),
+        ('an object', <String, Object?>{'at': '2027-01-01'}),
+        ('a year past 9999', '10000-01-01T00:00:00Z'),
+        ('a year DateTime wraps', '+300000-01-01T00:00:00Z'),
+        ('a year before 1970', '1969-12-31T00:00:00Z'),
+        ('a negative year', '-2027-01-01T00:00:00Z'),
+      ]) {
+        test('in a licence key: $label', () async {
+          final payload = keyPayload();
+          (payload['license']! as Map<String, Object?>)['expiry'] = expiry;
 
-      final result = await validate(await keygenKeys.mintKey(payload));
+          final result = await validate(await keygenKeys.mintKey(payload));
 
-      expect(result, isA<LicenseAccepted>());
-      expect(result.grant!.expiry, isNull);
+          expect(result, isA<LicenseRejected>(), reason: label);
+          expect(
+            (result as LicenseRejected).reason,
+            LicenseRejection.undecodablePayload,
+          );
+          expect(result.detail, contains('expiry'));
+          expect(result.grant, isNull);
+        });
+      }
+
+      test('in a licence file', () async {
+        final payload = filePayload();
+        ((payload['data']! as Map<String, Object?>)['attributes']!
+                as Map<String, Object?>)['expiry'] =
+            '+300000-01-01T00:00:00Z';
+
+        final result = await validate(await keygenKeys.mintFile(payload));
+
+        expect(
+          (result as LicenseRejected).reason,
+          LicenseRejection.undecodablePayload,
+        );
+      });
+
+      test('an absent expiry is still perpetual', () async {
+        final payload = keyPayload();
+        (payload['license']! as Map<String, Object?>)['expiry'] = null;
+
+        final result = await validate(await keygenKeys.mintKey(payload));
+
+        expect(result, isA<LicenseAccepted>());
+        expect(result.grant!.expiry, isNull);
+      });
+
+      test('the last day of 9999 is a readable expiry', () async {
+        final payload = keyPayload();
+        (payload['license']! as Map<String, Object?>)['expiry'] =
+            '9999-12-31T00:00:00Z';
+
+        final result = await validate(await keygenKeys.mintKey(payload));
+
+        expect(result, isA<LicenseAccepted>());
+        expect(result.grant!.expiry, DateTime.utc(9999, 12, 31));
+      });
     });
 
     test('an unreadable licence section reads as unknown, too', () async {

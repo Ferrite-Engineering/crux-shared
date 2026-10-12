@@ -501,12 +501,13 @@ class LicenseBadgeStringsEn extends LicenseBadgeStrings
   get tierBadgePro -> String
   get tierBadgeProSemantic -> String
 class LicenseClaims
-  const LicenseClaims({DateTime? created, DateTime? expiry, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, int? maxMachines, required String issuerId})
+  const LicenseClaims({DateTime? created, DateTime? expiry, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, bool expiryUnreadable, int? maxMachines, required String issuerId})
   final accountId: String?
   final created: DateTime?
   final email: String?
   final entitlementCodes: Set<String>
   final expiry: DateTime?
+  final expiryUnreadable: bool
   final fingerprint: String?
   final issuerId: String
   final licenseId: String?
