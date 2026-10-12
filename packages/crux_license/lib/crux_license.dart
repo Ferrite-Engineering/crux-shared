@@ -111,6 +111,7 @@ export 'src/license_validation.dart';
 export 'src/license_validator.dart';
 export 'src/machine_release_marker.dart';
 export 'src/policy_binding.dart';
+export 'src/widgets/beta_expired_overlay.dart';
 export 'src/widgets/beta_expiry_banner.dart';
 export 'src/widgets/beta_expiry_banner_strings.dart';
 export 'src/widgets/edition_badge.dart';

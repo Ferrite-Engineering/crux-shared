@@ -19,6 +19,30 @@ class CruxAuditRecorder
   final sink: AuditSink
   record(String kind, {AuditSeverity severity, DateTime? at, Map<String, Object?> payload}) -> void
   recordAndFlush(String kind, {AuditSeverity severity, DateTime? at, Map<String, Object?> payload}) -> Future<void>
+class CruxBetaExpiredOverlay extends StatelessWidget
+  const CruxBetaExpiredOverlay({CruxBetaExpiredStrings strings, CruxBetaExpirySizing sizing, Key? key, bool blocking, required Widget child, required void Function() onDownload, required void Function() onQuit})
+  build(BuildContext context) -> Widget
+  final blocking: bool
+  final child: Widget
+  final onDownload: void Function()
+  final onQuit: void Function()
+  final sizing: CruxBetaExpirySizing
+  final strings: CruxBetaExpiredStrings
+  static const dialogKey: Key
+  static const downloadButtonKey: Key
+  static const quitButtonKey: Key
+abstract class CruxBetaExpiredStrings
+  const CruxBetaExpiredStrings()
+  get body -> String
+  get downloadLabel -> String
+  get quitLabel -> String
+  get title -> String
+class CruxBetaExpiredStringsEn extends CruxBetaExpiredStrings
+  const CruxBetaExpiredStringsEn()
+  get body -> String
+  get downloadLabel -> String
+  get quitLabel -> String
+  get title -> String
 class CruxBetaExpiryBanner extends StatelessWidget
   const CruxBetaExpiryBanner({CruxBetaExpirySizing sizing, CruxBetaExpiryStrings strings, Key? key, required int daysRemaining, required void Function() onDismiss, required void Function() onDownload})
   build(BuildContext context) -> Widget

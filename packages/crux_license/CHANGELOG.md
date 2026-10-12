@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **`CruxBetaExpiredOverlay`**, the blocking modal for an expired beta
+  build, lifted from the four products' identical
+  `BetaExpiryBlockingOverlay` copies with `CruxBetaExpiredStrings` (+ the
+  English `CruxBetaExpiredStringsEn`) and the existing
+  `CruxBetaExpirySizing`. Built on `crux_a11y`'s `CruxModalGate` and
+  `CruxModalSurface`: the app behind it is out of focus and semantics, the
+  dialog is announced by its title, Tab stays inside it, Escape and the back
+  gesture do nothing, and the download action takes focus on open. The
+  products' copies were a `Stack` and a `ModalBarrier`, which left focus on
+  the hidden app. `blocking: false` renders the child untouched, keeping its
+  state across the transition. New dependency on `crux_a11y` (already in
+  every product's graph through `crux_eula`).
 - **An unreadable signed expiry is refused, not read as perpetual.** A
   credential whose signed `expiry` is present but is not a date this build
   can read (another type, another format, a year outside 1970 to 9999) is

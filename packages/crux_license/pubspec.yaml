@@ -12,6 +12,13 @@ resolution: workspace
 dependencies:
   # Set equality on LicenseGrant.products.
   collection: ^1.19.0
+  # `CruxModalGate` / `CruxModalSurface` for the beta-expired overlay, which
+  # sits above the Navigator and must still be modal to the keyboard and a
+  # screen reader. crux_eula and crux_telemetry already depend on it, so the
+  # edge adds nothing to any product's graph; the headless crux_license_core
+  # barrel does not import it.
+  crux_a11y:
+    path: ../crux_a11y
   # The audit envelope and JSONL sink. Pure Dart; the binding that turns a
   # policy file's `audit` key into a sink lives here because this package
   # already has Riverpod and crux_audit deliberately does not.
