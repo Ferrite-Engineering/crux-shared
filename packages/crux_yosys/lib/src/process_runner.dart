@@ -47,7 +47,11 @@ abstract class ProcessRunner {
   ///
   /// Throws on the same conditions as [Process.start] — notably a
   /// [ProcessException] when the binary is not found. The calling service
-  /// decides how to surface that to the user.
+  /// decides how to surface that to the user. A real runner also throws
+  /// `crux_io`'s [ProcessOutputIncompleteException] when the process exited
+  /// on its own but its output could not be read to the end (a pipe still
+  /// open after the drain grace, or a read error): the capture may be
+  /// missing the tool's last lines, so it is not returned as if complete.
   ///
   /// When [timeout] is non-null and the process has not exited within
   /// that budget, the runner kills it (`SIGKILL`) and returns a result
@@ -197,8 +201,22 @@ class DefaultProcessRunner implements ProcessRunner {
   /// a timeout had already fired. It is the difference between a bounded
   /// run and a bounded-looking one.
   ///
+  /// What happens when it runs out depends on who ended the process. After
+  /// a timeout or a cancel the result is returned with its termination
+  /// reason, and whatever output was captured: the run did not complete,
+  /// the result says so, and the open pipe is the expected shape. After a
+  /// process that exited on its own, [run] throws
+  /// [ProcessOutputIncompleteException] instead of returning output it
+  /// cannot vouch for — the tool's last lines may be the diagnostic a caller
+  /// is about to parse for. The waiting itself is `crux_io`'s
+  /// `drainProcessOutput`, shared with every other subprocess read in the
+  /// suite.
+  ///
   /// This is the worst-case tail added to [run] beyond `timeout`, so a
-  /// caller on a user-facing path may want it shorter.
+  /// caller on a user-facing path may want it shorter. The default is
+  /// shorter than `crux_io`'s [kProcessOutputDrainGrace] for that reason:
+  /// the cost lands on every cancel of a wrapper script, while a pipe takes
+  /// milliseconds, not seconds, to flush after a natural exit.
   final Duration drainGrace;
 
   // Tolerate malformed bytes rather than throwing: tool logs are usually
@@ -209,22 +227,14 @@ class DefaultProcessRunner implements ProcessRunner {
   /// Default value for [drainGrace].
   static const Duration defaultDrainGrace = Duration(seconds: 2);
 
-  /// Subscribes to [raw], decodes it, and feeds it into [capture],
-  /// completing [done] when the stream ends for any reason.
-  ///
-  /// A subscription rather than `forEach` so the caller can cancel it when
-  /// the drain grace expires instead of leaking a live listener onto a pipe
-  /// nobody is going to close.
-  static StreamSubscription<String> _drain(
+  /// Subscribes to [raw], decodes it, and feeds it into [capture], as a
+  /// drain whose end — and whose failure to end — `drainProcessOutput`
+  /// checks after the exit.
+  static ProcessStreamDrain<String> _drain(
     Stream<List<int>> raw,
-    _BoundedCapture capture,
-    Completer<void> done, {
+    _BoundedCapture capture, {
     void Function(String line)? onLine,
   }) {
-    void complete() {
-      if (!done.isCompleted) done.complete();
-    }
-
     // Chunk boundaries are arbitrary, so a line can straddle two chunks.
     // Buffer the partial tail rather than emitting half a line — a
     // progress parser fed `2.1. Executing HIER` would match nothing and
@@ -248,43 +258,20 @@ class DefaultProcessRunner implements ProcessRunner {
       }
     }
 
-    return raw
-        .transform(_decoder)
-        .listen(
-          (chunk) {
-            capture.add(chunk);
-            emitLines(chunk);
-          },
-          onDone: complete,
-          // A pipe read error (the child was killed mid-write) ends the
-          // capture; it is not a failure of the run itself, whose outcome
-          // is decided by the exit code and termination reason.
-          onError: (Object _, StackTrace _) => complete(),
-          cancelOnError: true,
-        );
+    return ProcessStreamDrain<String>(raw.transform(_decoder), (chunk) {
+      capture.add(chunk);
+      emitLines(chunk);
+    });
   }
 
   /// Streams the raw bytes of [raw] straight to [sink] (no decoding, no
-  /// bounding), completing [done] when the stream ends for any reason.
-  /// Used for the [ProcessRunner.run] `stdoutFilePath` mode, where stdout
-  /// is a payload that must survive intact rather than a log to be
-  /// truncated.
-  static StreamSubscription<List<int>> _drainToSink(
+  /// bounding). Used for the [ProcessRunner.run] `stdoutFilePath` mode,
+  /// where stdout is a payload that must survive intact rather than a log
+  /// to be truncated.
+  static ProcessStreamDrain<List<int>> _drainToSink(
     Stream<List<int>> raw,
     IOSink sink,
-    Completer<void> done,
-  ) {
-    void complete() {
-      if (!done.isCompleted) done.complete();
-    }
-
-    return raw.listen(
-      sink.add,
-      onDone: complete,
-      onError: (Object _, StackTrace _) => complete(),
-      cancelOnError: true,
-    );
-  }
+  ) => ProcessStreamDrain<List<int>>(raw, sink.add);
 
   @override
   Future<ProcessRunResult> run(
@@ -330,21 +317,18 @@ class DefaultProcessRunner implements ProcessRunner {
       // available in both modes.
       _BoundedCapture? stdoutCapture;
       final stderrCapture = _BoundedCapture(outputHeadLimit, outputTailLimit);
-      final stdoutDone = Completer<void>();
-      final stderrDone = Completer<void>();
-      final StreamSubscription<Object?> stdoutSub;
+      final ProcessStreamDrain<Object?> stdoutDrain;
       if (stdoutFilePath != null) {
         stdoutSink = File(stdoutFilePath).openWrite();
-        stdoutSub = _drainToSink(process.stdout, stdoutSink, stdoutDone);
+        stdoutDrain = _drainToSink(process.stdout, stdoutSink);
       } else {
         final capture = _BoundedCapture(outputHeadLimit, outputTailLimit);
         stdoutCapture = capture;
-        stdoutSub = _drain(process.stdout, capture, stdoutDone);
+        stdoutDrain = _drain(process.stdout, capture);
       }
-      final stderrSub = _drain(
+      final stderrDrain = _drain(
         process.stderr,
         stderrCapture,
-        stderrDone,
         onLine: onStderrLine,
       );
 
@@ -395,13 +379,21 @@ class DefaultProcessRunner implements ProcessRunner {
       // it spawned keeps running is the common shape. Those pipes stay open,
       // so waiting on them unconditionally hangs `run` forever *despite* the
       // timeout that just fired. The timeout is only meaningful if this wait
-      // is bounded too. Whatever was captured by the deadline is returned.
-      await Future.wait(<Future<void>>[
-        stdoutDone.future,
-        stderrDone.future,
-      ]).timeout(drainGrace, onTimeout: () => const <void>[]);
-      await stdoutSub.cancel();
-      await stderrSub.cancel();
+      // is bounded too. For a process the runner killed, whatever was
+      // captured by the deadline is returned under its termination reason.
+      // For a process that exited on its own, a pipe still open or a read
+      // that failed means the capture may be missing the tool's last lines,
+      // and that is thrown rather than returned as a complete-looking log.
+      await drainProcessOutput(
+        exitCode: exitCode,
+        drains: <ProcessStreamDrain<Object?>>[stdoutDrain, stderrDrain],
+        drainGrace: drainGrace,
+        terminatedByCaller: () => termination != ProcessTermination.exited,
+        excerpt: () => processOutputExcerpt(<String>[
+          ...?stdoutCapture?.build().split('\n'),
+          ...stderrCapture.build().split('\n'),
+        ]),
+      );
 
       // Flush the file sink before returning so the caller sees the
       // complete payload; the close happens in the finally.

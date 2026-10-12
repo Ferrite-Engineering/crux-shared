@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Added reading a child process to its end: `collectProcessOutput`,
+  `CapturedProcessOutput`, `ProcessStreamDrain`, `drainProcessOutput`,
+  `ProcessOutputIncompleteException` / `ProcessOutputLoss`,
+  `processOutputExcerpt`, and the `kProcessOutputDrainGrace` (5 s) and
+  `kProcessOutputExcerptLines` constants.** The exit code and the output of
+  a child reach Dart on separate channels, and nothing orders them; an
+  adapter that stopped reading at the exit lost the one stderr line a lint
+  engine printed in 22 runs out of 300 and reported the run clean. The
+  shared form subscribes to both streams first, waits for both to reach
+  end-of-file rather than for the exit, and, when a stream is still open
+  after a bounded grace or a read failed, throws rather than returning
+  output it cannot vouch for. Lifted from the lint product's fixed adapter;
+  `drainProcessOutput` is the lower level `crux_yosys`'s runner shares,
+  with `terminatedByCaller` so a process the caller killed is not reported
+  as short. Pure `dart:async`, so a web build can import it.
 - **Added spawn resolution: `resolveSpawnExecutable`,
   `resolveSpawnExecutableForHost`, `isAbsoluteSpawnPath` and
   `kDefaultWindowsPathExt`.** On Windows, `CreateProcess` searches the

@@ -4,6 +4,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:crux_io/crux_io.dart';
 import 'package:crux_yosys/src/process_runner.dart';
 import 'package:crux_yosys/src/yosys_run.dart';
 import 'package:path/path.dart' as p;
@@ -257,6 +258,18 @@ class YosysRunner {
         exitCode: launchFailureExitCode,
         stdout: '',
         stderr: 'Could not run the executable "${e.executable}": ${e.message}',
+      );
+    } on ProcessOutputIncompleteException catch (e) {
+      // The tool exited on its own but its stdout/stderr could not be read
+      // to the end, so the log may be missing the last diagnostic it
+      // printed. The same never-throws contract applies, and the result
+      // must not look like a run whose stderr the diagnostic parser can
+      // trust.
+      return YosysRunFailure(
+        kind: YosysFailureKind.outputUnreadable,
+        exitCode: launchFailureExitCode,
+        stdout: '',
+        stderr: 'Could not read the tool output to its end: it ${e.message}',
       );
       // Deliberately catching an Error. `_escape` signals a rejected path or
       // identifier with ArgumentError, which is the right signal for the

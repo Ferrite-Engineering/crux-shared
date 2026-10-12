@@ -29,6 +29,15 @@
 ///   in three products, with a fourth product and this package's own file
 ///   manager reveal still spawning bare names. The absolute-path check that
 ///   guards an editor argv had two names for one function.
+/// * **Reading a child process to its end** — `collectProcessOutput` and the
+///   `ProcessStreamDrain` / `drainProcessOutput` pair under it — came from a
+///   false clean: a lint engine's one-line stderr report arrived after its
+///   exit, the adapter had already stopped reading, and the run was reported
+///   as having found nothing. A second runner in the suite bounded the same
+///   wait and returned whatever it had when the bound ran out. The shared
+///   form waits for end-of-file, not for the exit, and throws
+///   `ProcessOutputIncompleteException` instead of returning output it cannot
+///   vouch for.
 ///
 /// `crux_io` is a **pure-Dart leaf**: it depends on no other Crux package, so
 /// every persistence layer in the suite can depend on it without creating a
@@ -53,5 +62,6 @@ library;
 export 'src/atomic_write.dart';
 export 'src/engine_path_augmentation.dart';
 export 'src/path_identity.dart';
+export 'src/process_output.dart';
 export 'src/reveal_in_file_manager.dart';
 export 'src/spawn_guards.dart';

@@ -105,6 +105,41 @@ Its optional named parameters (`operatingSystem`, `environment`, `exists`,
 `runCommand`) are the host, so each platform's branch is tested without spawning
 anything; products pass none of them.
 
+## Reading a child process to its end
+
+The exit code and the output of a child reach Dart on separate channels, and nothing
+orders them. `exitCode` routinely completes while the last lines are still in flight,
+and for a tool that prints one error and quits those are the only lines. An adapter
+that stopped reading at the exit lost a one-line stderr report in 22 runs out of 300
+on macOS, and a lint run that loses its output is reported clean.
+
+```dart
+final process = await Process.start(exe, args);
+final output = await collectProcessOutput(
+  stdout: process.stdout.transform(utf8.decoder).transform(const LineSplitter()),
+  stderr: process.stderr.transform(utf8.decoder).transform(const LineSplitter()),
+  exitCode: process.exitCode,
+);                                   // waits for end-of-file, not for the exit
+```
+
+- Both streams are subscribed before the exit is awaited, so a chatty child cannot
+  stall on a full pipe.
+- The result is returned only when both streams have ended. When one is still open
+  `kProcessOutputDrainGrace` (5 s) after the exit, or a read failed, the call throws
+  `ProcessOutputIncompleteException` rather than returning output it cannot vouch for.
+  The exception carries the exit code, the kind of loss, an excerpt of what was read,
+  and a tool-neutral `message` a caller can embed in its own failure.
+- The grace is what keeps the wait bounded: a child the process spawned can outlive it
+  holding the inherited pipe, and waiting on that without a bound would hang a run,
+  and a cancel of the run, until the grandchild exits.
+
+`ProcessStreamDrain` and `drainProcessOutput` are the layer underneath, for a runner
+that captures bytes rather than lines or streams stdout to a file. `drainProcessOutput`
+takes `terminatedByCaller`, so a process the runner killed on a timeout or a cancel is
+returned under its termination reason rather than reported as short: its output is
+incomplete by definition and the result already says so. Pure `dart:async`, so a web
+build can import it.
+
 ## Scope
 
 Deliberately tiny. The next thing that lands here should have the same "implemented N

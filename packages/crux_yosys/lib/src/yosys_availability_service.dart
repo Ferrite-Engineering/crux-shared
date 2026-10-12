@@ -3,6 +3,7 @@
 
 import 'dart:io';
 
+import 'package:crux_io/crux_io.dart';
 import 'package:crux_yosys/src/process_runner.dart';
 import 'package:crux_yosys/src/yosys_availability.dart';
 
@@ -86,6 +87,14 @@ class YosysAvailabilityService {
       );
     } on ProcessException {
       return const YosysAvailability.notFound();
+    } on ProcessOutputIncompleteException {
+      // The probe exited but its banner could not be read to the end. The
+      // binary ran, so it is not "not found"; it is a run the probe could
+      // not make sense of.
+      return YosysAvailability.unusable(
+        path: _executableName,
+        reason: YosysUnavailableReason.execFailed,
+      );
     }
   }
 

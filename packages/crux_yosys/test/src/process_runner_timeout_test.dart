@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:crux_io/crux_io.dart';
 import 'package:crux_yosys/crux_yosys.dart';
 import 'package:test/test.dart';
 
@@ -228,6 +229,38 @@ void main() {
           stopwatch.elapsed,
           lessThan(const Duration(seconds: 5)),
           reason: 'the drain wait must be bounded, like the process wait',
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+
+    test(
+      'a process that exits on its own with a grandchild on the pipe throws',
+      () async {
+        // The same wrapper-script shape, but the shell exits by itself and
+        // leaves the tool it started holding stdout. Nothing killed the
+        // process, so an open pipe is not an expected consequence of a
+        // kill: it means the capture may be short, and the runner must say
+        // so rather than hand back a complete-looking log.
+        if (Platform.isWindows) return;
+        const runner = DefaultProcessRunner(
+          drainGrace: Duration(milliseconds: 300),
+        );
+        await expectLater(
+          runner.run('/bin/sh', const <String>[
+            '-c',
+            'echo started; (sleep 2 &); exit 0',
+          ]),
+          throwsA(
+            isA<ProcessOutputIncompleteException>()
+                .having((e) => e.exitCode, 'exitCode', 0)
+                .having(
+                  (e) => e.loss,
+                  'loss',
+                  ProcessOutputLoss.streamStillOpen,
+                )
+                .having((e) => e.excerpt, 'excerpt', contains('started')),
+          ),
         );
       },
       timeout: const Timeout(Duration(seconds: 30)),

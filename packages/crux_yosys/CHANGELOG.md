@@ -23,6 +23,25 @@
 
 ### Fixed
 
+- **`DefaultProcessRunner` no longer returns partial output as if it were
+  complete.** When the drain grace after a process's exit ran out, `run`
+  returned whatever stdout/stderr it had captured by then, with nothing to
+  say the tool's last lines were missing. That is the class of bug that
+  produced a false clean in another product's lint engines, where the one
+  stderr line a tool printed arrived after its exit. The grace stays, and
+  stays bounded, because a killed wrapper script leaves a grandchild holding
+  the pipe and an unbounded wait would hang a run after its timeout had
+  fired; what changes is what its expiry means. After a timeout or a cancel
+  the result is returned under its termination reason, as before. After a
+  process that exited on its own, a pipe still open or a read that failed
+  now throws `crux_io`'s `ProcessOutputIncompleteException`, and
+  `YosysRunner` maps it to a `YosysRunFailure` of kind `outputUnreadable`
+  (whose doc now covers the log as well as the `write_json` file), and
+  `YosysAvailabilityService` to `execFailed`, so neither throws. A pipe read
+  error on an exited process was previously swallowed. The wait itself is
+  the shared `drainProcessOutput`, the same code every subprocess read in
+  the suite goes through. `defaultDrainGrace` stays at 2 s, shorter than
+  `crux_io`'s 5 s, because its cost lands on every cancel.
 - **Include paths and defines reach Yosys again** (crux-shared#23). The
   script quoted every `read_verilog -I` and `-D` value, and Yosys keeps the
   quotes inside an option value (it strips them only from file names), so no
