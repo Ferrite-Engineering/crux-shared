@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_netlist/src/bit_ref.dart';
+import 'package:crux_netlist/src/json_shape.dart';
 import 'package:crux_netlist/src/port_direction.dart';
 import 'package:meta/meta.dart';
 
@@ -21,9 +22,14 @@ class Port {
 
   /// Parses a port from the JSON shape Yosys writes under
   /// `modules.<m>.ports.<name>`.
+  ///
+  /// Throws [FormatException], naming the field, when a field has the wrong
+  /// JSON type or `direction` is missing.
   factory Port.fromJson(String name, Map<String, Object?> json) {
-    final direction = PortDirection.fromJson(json['direction']! as String);
-    final rawBits = json['bits'] as List<Object?>? ?? const <Object?>[];
+    final direction = PortDirection.fromJson(
+      requireJsonString(json, 'direction'),
+    );
+    final rawBits = optionalJsonList(json, 'bits');
     final bits = <BitRef>[
       for (final bit in rawBits) BitRef.fromJson(bit),
     ];

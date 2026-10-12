@@ -3,6 +3,7 @@
 
 import 'package:crux_netlist/crux_netlist.dart' show Module;
 import 'package:crux_netlist/src/bit_ref.dart';
+import 'package:crux_netlist/src/json_shape.dart';
 import 'package:crux_netlist/src/module.dart' show Module;
 import 'package:meta/meta.dart';
 
@@ -21,14 +22,16 @@ class Net {
 
   /// Parses a net from the JSON shape Yosys writes under
   /// `modules.<m>.netnames.<name>`.
+  ///
+  /// Throws [FormatException], naming the field, when a field has the wrong
+  /// JSON type.
   factory Net.fromJson(String name, Map<String, Object?> json) {
-    final hideName = (json['hide_name'] as int? ?? 0) != 0;
-    final rawBits = json['bits'] as List<Object?>? ?? const <Object?>[];
+    final hideName = readHideName(json);
+    final rawBits = optionalJsonList(json, 'bits');
     final bits = <BitRef>[
       for (final bit in rawBits) BitRef.fromJson(bit),
     ];
-    final attributesRaw =
-        json['attributes'] as Map<String, Object?>? ?? const {};
+    final attributesRaw = optionalJsonObject(json, 'attributes');
     final attributes = <String, String>{
       for (final entry in attributesRaw.entries)
         entry.key: entry.value?.toString() ?? '',

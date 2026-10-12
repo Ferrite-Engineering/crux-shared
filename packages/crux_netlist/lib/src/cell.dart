@@ -3,6 +3,7 @@
 
 import 'package:crux_netlist/crux_netlist.dart' show Module;
 import 'package:crux_netlist/src/bit_ref.dart';
+import 'package:crux_netlist/src/json_shape.dart';
 import 'package:crux_netlist/src/module.dart' show Module;
 import 'package:crux_netlist/src/port_direction.dart';
 import 'package:meta/meta.dart';
@@ -30,23 +31,34 @@ class Cell {
 
   /// Parses a cell from the JSON shape Yosys writes under
   /// `modules.<m>.cells.<name>`.
+  ///
+  /// Throws [FormatException], naming the field, when a field has the wrong
+  /// JSON type or `type` is missing. `parameters` and `attributes` of the
+  /// wrong type read as empty.
   factory Cell.fromJson(String name, Map<String, Object?> json) {
-    final type = json['type']! as String;
-    final hideName = (json['hide_name'] as int? ?? 0) != 0;
+    final type = requireJsonString(json, 'type');
+    final hideName = readHideName(json);
     final parameters = _readStringMap(json['parameters']);
     final attributes = _readStringMap(json['attributes']);
-    final portDirsRaw =
-        json['port_directions'] as Map<String, Object?>? ?? const {};
+    final portDirsRaw = optionalJsonObject(json, 'port_directions');
     final portDirections = <String, PortDirection>{
       for (final entry in portDirsRaw.entries)
-        entry.key: PortDirection.fromJson(entry.value! as String),
+        entry.key: PortDirection.fromJson(
+          requireJsonStringValue(
+            entry.value,
+            'port_directions.${entry.key}',
+          ),
+        ),
     };
-    final connectionsRaw =
-        json['connections'] as Map<String, Object?>? ?? const {};
+    final connectionsRaw = optionalJsonObject(json, 'connections');
     final connections = <String, List<BitRef>>{
       for (final entry in connectionsRaw.entries)
         entry.key: <BitRef>[
-          for (final bit in entry.value! as List<Object?>) BitRef.fromJson(bit),
+          for (final bit in requireJsonList(
+            entry.value,
+            'connections.${entry.key}',
+          ))
+            BitRef.fromJson(bit),
         ],
     };
     return Cell(

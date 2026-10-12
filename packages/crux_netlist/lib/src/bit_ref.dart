@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_netlist/crux_netlist.dart' show Net;
+import 'package:crux_netlist/src/json_shape.dart';
 import 'package:crux_netlist/src/net.dart' show Net;
 import 'package:meta/meta.dart';
 
@@ -47,7 +48,9 @@ sealed class BitRef {
         return NetBit(parsed);
       }
     }
-    throw FormatException('Unrecognized Yosys bit reference: $value');
+    throw FormatException(
+      'Unrecognized Yosys bit reference: ${describeJsonValue(value)}',
+    );
   }
 
   /// Serializes back to the Yosys-compatible JSON representation.

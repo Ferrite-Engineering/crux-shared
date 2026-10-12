@@ -34,6 +34,31 @@ void main() {
       expect(BitRef.fromJson('z'), const ConstantBit(ConstantBitValue.z));
     });
 
+    test('an oversized value is echoed as a short prefix and its length', () {
+      // The message is copied into logs, the issue reporter's buffer and the
+      // interface; a multi-megabyte bit must not come along with it.
+      final huge = 'w' * 3000000;
+      try {
+        BitRef.fromJson(huge);
+        fail('an unknown bit parsed');
+      } on FormatException catch (e) {
+        expect(e.message.length, lessThan(200));
+        expect(e.message, contains('w' * 64));
+        expect(e.message, isNot(contains('w' * 65)));
+        expect(e.message, contains('3000000 characters'));
+      }
+      expect(
+        () => BitRef.fromJson(List<int>.filled(100000, 1)),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message.length,
+            'message length',
+            lessThan(200),
+          ),
+        ),
+      );
+    });
+
     test('constant literals are case-insensitive for x and z', () {
       expect(BitRef.fromJson('X'), const ConstantBit(ConstantBitValue.x));
       expect(BitRef.fromJson('Z'), const ConstantBit(ConstantBitValue.z));

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_netlist/src/cell.dart';
+import 'package:crux_netlist/src/json_shape.dart';
 import 'package:crux_netlist/src/net.dart';
 import 'package:crux_netlist/src/port.dart';
 import 'package:meta/meta.dart';
@@ -25,45 +26,57 @@ class Module {
 
   /// Parses a module from the JSON shape Yosys writes at
   /// `modules.<name>`.
-  factory Module.fromJson(String name, Map<String, Object?> json) {
-    final attributesRaw =
-        json['attributes'] as Map<String, Object?>? ?? const {};
-    final attributes = <String, String>{
-      for (final entry in attributesRaw.entries)
-        entry.key: entry.value?.toString() ?? '',
-    };
-    final portsRaw = json['ports'] as Map<String, Object?>? ?? const {};
-    final ports = <String, Port>{
-      for (final entry in portsRaw.entries)
-        entry.key: Port.fromJson(
-          entry.key,
-          entry.value! as Map<String, Object?>,
-        ),
-    };
-    final cellsRaw = json['cells'] as Map<String, Object?>? ?? const {};
-    final cells = <String, Cell>{
-      for (final entry in cellsRaw.entries)
-        entry.key: Cell.fromJson(
-          entry.key,
-          entry.value! as Map<String, Object?>,
-        ),
-    };
-    final netsRaw = json['netnames'] as Map<String, Object?>? ?? const {};
-    final nets = <String, Net>{
-      for (final entry in netsRaw.entries)
-        entry.key: Net.fromJson(
-          entry.key,
-          entry.value! as Map<String, Object?>,
-        ),
-    };
-    return Module(
-      name: name,
-      attributes: attributes,
-      ports: ports,
-      cells: cells,
-      nets: nets,
-    );
-  }
+  ///
+  /// Throws [FormatException], naming the field, when a field has the wrong
+  /// JSON type.
+  factory Module.fromJson(String name, Map<String, Object?> json) =>
+      withJsonContext('module ${describeJsonValue(name)}', () {
+        final attributesRaw = optionalJsonObject(json, 'attributes');
+        final attributes = <String, String>{
+          for (final entry in attributesRaw.entries)
+            entry.key: entry.value?.toString() ?? '',
+        };
+        final portsRaw = optionalJsonObject(json, 'ports');
+        final ports = <String, Port>{
+          for (final entry in portsRaw.entries)
+            entry.key: withJsonContext(
+              'port ${describeJsonValue(entry.key)}',
+              () => Port.fromJson(
+                entry.key,
+                requireJsonObject(entry.value, 'ports.${entry.key}'),
+              ),
+            ),
+        };
+        final cellsRaw = optionalJsonObject(json, 'cells');
+        final cells = <String, Cell>{
+          for (final entry in cellsRaw.entries)
+            entry.key: withJsonContext(
+              'cell ${describeJsonValue(entry.key)}',
+              () => Cell.fromJson(
+                entry.key,
+                requireJsonObject(entry.value, 'cells.${entry.key}'),
+              ),
+            ),
+        };
+        final netsRaw = optionalJsonObject(json, 'netnames');
+        final nets = <String, Net>{
+          for (final entry in netsRaw.entries)
+            entry.key: withJsonContext(
+              'net ${describeJsonValue(entry.key)}',
+              () => Net.fromJson(
+                entry.key,
+                requireJsonObject(entry.value, 'netnames.${entry.key}'),
+              ),
+            ),
+        };
+        return Module(
+          name: name,
+          attributes: attributes,
+          ports: ports,
+          cells: cells,
+          nets: nets,
+        );
+      });
 
   /// Module name.
   final String name;

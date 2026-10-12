@@ -3,6 +3,7 @@
 
 import 'package:crux_netlist/crux_netlist.dart' show BitRef;
 import 'package:crux_netlist/src/bit_ref.dart' show BitRef;
+import 'package:crux_netlist/src/json_shape.dart';
 import 'package:crux_netlist/src/module.dart';
 import 'package:meta/meta.dart';
 
@@ -26,10 +27,12 @@ class NetlistModel {
 
   /// Parses a full Yosys `write_json` document.
   ///
-  /// Throws [FormatException] if the top-level shape is wrong (missing
-  /// `modules`, wrong type). Per-module / per-cell parse errors propagate
-  /// from the inner [Module.fromJson] / [BitRef.fromJson] calls so the
-  /// caller can surface a precise diagnostic.
+  /// Throws [FormatException] for any malformed input: a missing or
+  /// wrong-typed `modules`, and a field of the wrong JSON type anywhere
+  /// inside it (a string where an object belongs, a number where a list
+  /// does). The message names the module and the field, and repeats no more
+  /// than a short prefix of the offending value. Per-module / per-cell parse
+  /// errors come from the inner [Module.fromJson] / [BitRef.fromJson] calls.
   factory NetlistModel.fromJson(Map<String, Object?> json) {
     final creator = json['creator']?.toString() ?? '';
     final modulesRaw = json['modules'];
@@ -40,7 +43,10 @@ class NetlistModel {
       for (final entry in modulesRaw.entries)
         entry.key: Module.fromJson(
           entry.key,
-          entry.value! as Map<String, Object?>,
+          withJsonContext(
+            'module ${describeJsonValue(entry.key)}',
+            () => requireJsonObject(entry.value, 'modules.${entry.key}'),
+          ),
         ),
     };
     return NetlistModel(creator: creator, modules: modules);

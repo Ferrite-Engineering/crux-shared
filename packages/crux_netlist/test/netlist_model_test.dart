@@ -93,6 +93,53 @@ void main() {
       });
     }
 
+    // NetlistModel.fromJson's own contract, for a caller that does not go
+    // through the parser and catches only what the documentation promises.
+    // The deeply nested shapes are left out: stringifying them is a stack
+    // overflow, which only the parser's wider handler can turn into an
+    // exception.
+    for (final entry in rejected.entries) {
+      if (entry.key.contains('deep')) continue;
+      test('fromJson throws FormatException: ${entry.key}', () {
+        final decoded = jsonDecode(entry.value) as Map<String, Object?>;
+        expect(() => NetlistModel.fromJson(decoded), throwsFormatException);
+      });
+    }
+
+    test('a wrong-typed field is named, with its module and cell', () {
+      final decoded =
+          jsonDecode(_cells('{"u1":{"type":"x","connections":{"A":7}}}'))
+              as Map<String, Object?>;
+      expect(
+        () => NetlistModel.fromJson(decoded),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('module "top"'),
+              contains('cell "u1"'),
+              contains('connections.A'),
+              contains('expected a list'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('an oversized value is not repeated whole in the message', () {
+      final huge = 'q' * (4 << 20);
+      final decoded =
+          jsonDecode(_bits(jsonEncode([huge]))) as Map<String, Object?>;
+      try {
+        NetlistModel.fromJson(decoded);
+        fail('an unknown bit parsed');
+      } on FormatException catch (e) {
+        expect(e.message.length, lessThan(400));
+        expect(e.message, contains('${huge.length} characters'));
+      }
+    });
+
     test('tolerated: shapes Yosys may vary, or that name nothing', () {
       // Each parses. What it parses to is checked where it matters.
       final creatorNumber = _parseOk('{"creator":42,"modules":{}}');
