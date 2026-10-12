@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **`CruxScrollRegion`'s focus ring clears the text.** It sat flush against
+  the content with square corners, and since it paints in front of the
+  content the stroke landed on the glyphs, so the first-launch dialogs' text
+  read as compressed and the ring as a selection. The content is now inset
+  8 px horizontally and 6 px vertically inside a 4 px-radius ring. The inset
+  is unconditional and the stroke is still always 2 px (transparent when
+  unfocused), so focus never reflows the text.
 - **Added `CruxModalGate`, `CruxModalSurface` and `CruxScrollRegion`**, for a
   modal surface that cannot be a route: a licence agreement or consent
   disclosure mounted above the app's `Navigator`. Stacked over the app with

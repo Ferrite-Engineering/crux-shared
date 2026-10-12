@@ -73,6 +73,15 @@ class _CruxScrollRegionState extends State<CruxScrollRegion> {
   /// One line: the same increment the framework's `ScrollAction` uses.
   static const double _lineStep = 50;
 
+  /// The focus ring's stroke, corner radius, and the clearance between it
+  /// and the content.
+  static const double _ringWidth = 2;
+  static const double _ringRadius = 4;
+  static const EdgeInsets _ringInset = EdgeInsets.symmetric(
+    horizontal: 8,
+    vertical: 6,
+  );
+
   void _scroll(_ScrollBy intent) {
     if (!_controller.hasClients) return;
     final position = _controller.position;
@@ -122,15 +131,25 @@ class _CruxScrollRegionState extends State<CruxScrollRegion> {
             label: widget.semanticLabel,
             focusable: true,
             focused: _focused,
+            // The ring is drawn in front of the content so it stays above it
+            // as the region scrolls, and it is always 2 px wide, transparent
+            // when unfocused, so focusing never reflows the text. The inset
+            // is unconditional for the same reason: it keeps the stroke off
+            // the glyphs, and the rounded corners read as a focus indicator
+            // rather than a text selection.
             child: DecoratedBox(
               position: DecorationPosition.foreground,
               decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(_ringRadius),
                 border: Border.all(
                   color: _focused ? outline : Colors.transparent,
-                  width: 2,
+                  width: _ringWidth,
                 ),
               ),
-              child: widget.builder(context, _controller),
+              child: Padding(
+                padding: _ringInset,
+                child: widget.builder(context, _controller),
+              ),
             ),
           ),
         ),

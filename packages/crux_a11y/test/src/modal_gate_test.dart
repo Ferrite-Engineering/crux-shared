@@ -327,6 +327,9 @@ void main() {
       );
     }
 
+    // The region is 200 tall; the focus ring's inset takes 6 from each end.
+    const viewport = 200.0 - 2 * 6;
+
     double offset(WidgetTester tester) => tester
         .state<ScrollableState>(
           find.descendant(
@@ -364,19 +367,19 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.pageDown);
       await tester.pump();
-      expect(offset(tester), 50 + 200 * .8);
+      expect(offset(tester), 50 + viewport * .8);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pump();
-      expect(offset(tester), 160);
+      expect(offset(tester), 50 + viewport * .8 - 50);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.end);
       await tester.pump();
-      expect(offset(tester), 40 * 30 - 200);
+      expect(offset(tester), 40 * 30 - viewport);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.pageUp);
       await tester.pump();
-      expect(offset(tester), 40 * 30 - 200 - 160);
+      expect(offset(tester), 40 * 30 - viewport - viewport * .8);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.home);
       await tester.pump();
@@ -424,6 +427,33 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
       expect(outline(), Colors.transparent);
+    });
+
+    testWidgets('the ring clears the content, and focus never moves it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(region());
+      await tester.pumpAndSettle();
+
+      final ring = tester.getRect(
+        find
+            .descendant(
+              of: find.byKey(const Key('region')),
+              matching: find.byType(DecoratedBox),
+            )
+            .first,
+      );
+      Rect content() => tester.getRect(find.byKey(const Key('scroll')));
+      final focused = content();
+      // Clear of the 2 px stroke on every side, with room to spare.
+      expect(focused.left - ring.left, greaterThanOrEqualTo(6));
+      expect(ring.right - focused.right, greaterThanOrEqualTo(6));
+      expect(focused.top - ring.top, greaterThanOrEqualTo(4));
+      expect(ring.bottom - focused.bottom, greaterThanOrEqualTo(4));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(content(), focused, reason: 'focus must not reflow the text');
     });
 
     testWidgets('can carry its content as its name', (tester) async {
