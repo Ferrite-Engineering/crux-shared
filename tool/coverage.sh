@@ -71,6 +71,7 @@ crux_about_dialog:95
 crux_app_info:98
 crux_async:98
 crux_audit:98
+crux_collections:98
 crux_command_palette:92
 crux_cxp:85
 crux_cxp_ui:90

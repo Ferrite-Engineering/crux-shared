@@ -7,6 +7,7 @@ environment:
 
 workspace:
   - packages/crux_async
+  - packages/crux_collections
   - packages/crux_io
   - packages/crux_sqlite
   - packages/crux_linux_integration

@@ -1,0 +1,32 @@
+# Public API surface of package:crux_collections/crux_collections.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class LruCache<K, V>
+  LruCache({bool Function(K, V)? isPinned, int Function(V)? weigh, int? maxWeight, required int maxEntries, void Function(K, V)? onEvict})
+  [](K key) -> V?
+  []=(K key, V value) -> void
+  clear() -> void
+  containsKey(K key) -> bool
+  final isPinned: bool Function(K, V)?
+  final maxEntries: int
+  final maxWeight: int?
+  final onEvict: void Function(K, V)?
+  final weigh: int Function(V)?
+  get entries -> Iterable<MapEntry<K, V>>
+  get evictionCount -> int
+  get isEmpty -> bool
+  get isNotEmpty -> bool
+  get keys -> Iterable<K>
+  get length -> int
+  get totalWeight -> int
+  get values -> Iterable<V>
+  peek(K key) -> V?
+  putIfAbsent(K key, V Function() ifAbsent) -> V
+  remove(K key) -> V?
+  toString() -> String

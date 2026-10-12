@@ -1,0 +1,13 @@
+name: crux_collections
+description: Cross-suite pure-Dart collection primitives — the one bounded least-recently-used cache every product's memo, label-layout and log-buffer cache evicts through.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^11.0.0
