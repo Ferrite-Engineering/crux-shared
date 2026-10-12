@@ -4,6 +4,13 @@
 
 ### Security
 
+- **`extraCommands` entries must each be one statement.** They were joined
+  into the `-p` script as written, the one interpolated input the runner's
+  quote-and-separator check never saw, so an entry like `proc; exec -- id`
+  ran a second statement. An entry containing `;`, a newline or `"` is now an
+  `ArgumentError` from `buildScript`, which `run` returns as a
+  `YosysRunFailure` of kind `invalidRequest`. Which passes are acceptable
+  stays the consumer's policy: `exec` and `shell` are single statements too.
 - **`DefaultProcessRunner` resolves a bare executable name to an absolute
   path before it spawns.** On Windows, `CreateProcess` searches the launching
   process's current directory before `PATH`, and a product launched from a

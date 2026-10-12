@@ -482,7 +482,7 @@ class YosysRunner {
     commands
       ..add(hierarchy.toString())
       ..add('proc')
-      ..addAll(request.extraCommands)
+      ..addAll(request.extraCommands.map(_singleStatement))
       ..add('write_json "${_escape(jsonOutputPath)}"');
     return commands.join('; ');
   }
@@ -573,6 +573,30 @@ class YosysRunner {
       }
     }
     return value;
+  }
+
+  /// Validates one entry of [YosysRunRequest.extraCommands] as a single,
+  /// well-formed Yosys statement: the same forbidden set as [_escape], so an
+  /// entry can neither smuggle a second statement in (`;`, a newline) nor
+  /// break the quoting of the statements around it (`"`).
+  ///
+  /// This is the engine's structural invariant, not a policy on which passes
+  /// may run: a consumer that reads these commands from an untrusted file
+  /// still filters them against its own allow-list, because `exec` and
+  /// `shell` are single statements too.
+  static String _singleStatement(String command) {
+    const forbidden = ['"', ';', '\n', '\r'];
+    for (final ch in forbidden) {
+      if (command.contains(ch)) {
+        throw ArgumentError.value(
+          command,
+          'extraCommands',
+          'Each extra command must be one Yosys statement, without double '
+              'quotes, semicolons, or newlines',
+        );
+      }
+    }
+    return command;
   }
 
   /// Validates an option value emitted BARE (unquoted) into the `-p` script:

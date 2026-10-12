@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crux_yosys/crux_yosys.dart';
@@ -495,6 +496,51 @@ void main() {
         ),
         throwsArgumentError,
       );
+    });
+
+    group('extraCommands are single statements', () {
+      // The one interpolated input `_escape` never saw: an entry was joined
+      // into the script as written, so `proc; exec -- id` ran a second
+      // statement whatever the consumer's own filtering did.
+      const hostile = <String>['proc; exec -- id', 'exec\nwrite_json x', 'x"y'];
+      YosysRunRequest withExtra(String command) => YosysRunRequest(
+        sources: const <YosysSourceFile>[YosysSourceFile('/tmp/foo.v')],
+        extraCommands: [command],
+      );
+
+      for (final command in hostile) {
+        test('buildScript refuses ${jsonEncode(command)}', () {
+          expect(
+            () => YosysRunner.buildScript(
+              withExtra(command),
+              jsonOutputPath: '/tmp/out.json',
+            ),
+            throwsArgumentError,
+          );
+        });
+
+        test('run returns a failure for ${jsonEncode(command)}', () async {
+          final runner = YosysRunner(
+            processRunner: _FakeRunner(exitCode: 0, jsonToWrite: '{}'),
+            executable: 'yosys',
+            tempDirectory: tempDir,
+          );
+          final result = await runner.run(withExtra(command));
+          expect(result, isA<YosysRunFailure>());
+          expect(
+            (result as YosysRunFailure).kind,
+            YosysFailureKind.invalidRequest,
+          );
+        });
+      }
+
+      test('a well-formed statement is still emitted as written', () {
+        final script = YosysRunner.buildScript(
+          withExtra('opt -purge'),
+          jsonOutputPath: '/tmp/out.json',
+        );
+        expect(script, contains('proc; opt -purge; write_json'));
+      });
     });
 
     test(
