@@ -6,6 +6,19 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `CruxDockRestoreFrame`: the fixed frame that places up to three
+  collapsed-region restore bars around the IDE layout, always as
+  `Row(leftBar?, Expanded(Column(Expanded(child), bottomBar?)), rightBar?)`
+  with keyed slots (`leftBarKey`, `rightBarKey`, `bottomBarKey`,
+  `centerKey`). Four products carried this frame, and all four once chose
+  the wrapper widget by which regions were collapsed, so every dock toggle
+  changed the widget type above the IDE layout and Flutter rebuilt every
+  dock, the pane scope, the show/hide animation and the dock scroll
+  positions beneath it; in one product a `GlobalKey`'d canvas then crossed a
+  fresh semantics boundary and tripped a `flushSemantics` assertion under a
+  screen reader. The bars arrive built, so the frame has no dock dependency
+  and each product keeps the widget that owns its entries. A test pins the
+  invariant: toggling any bar keeps the layout's element and state.
 - The pane resizers follow the theme's `splitter` (at rest) and
   `splitter.hover` (hovered, dragged or focused) chrome tokens, read from
   `crux_theme`'s `CruxChromeColors`; the defaults are unchanged. A colour set

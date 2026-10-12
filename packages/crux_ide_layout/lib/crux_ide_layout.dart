@@ -36,6 +36,10 @@
 /// - `announceCrux` — speaks a status message through the screen reader.
 ///   The feedback snack bars call it, because the desktop accessibility
 ///   bridges do not announce live regions.
+/// - `CruxDockRestoreFrame` — the fixed, keyed frame that places the
+///   collapsed-region restore bars around the IDE layout without ever
+///   changing the widget type above it, so a dock toggle rebuilds nothing
+///   beneath.
 library;
 
 export 'package:panes/panes.dart' show IdePaneBuilder, PaneSize;
@@ -43,6 +47,7 @@ export 'package:panes/panes.dart' show IdePaneBuilder, PaneSize;
 export 'src/crux_ide_layout.dart';
 export 'src/crux_ide_layout_theme.dart';
 export 'src/crux_search_dialog.dart';
+export 'src/dock_restore_frame.dart';
 export 'src/escape_dismissible.dart';
 export 'src/feedback.dart';
 export 'src/focus_regions.dart';

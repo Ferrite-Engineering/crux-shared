@@ -7,6 +7,17 @@
 # disappears or changes shape is a breaking change for all four
 # products; a line that appears is new public surface to justify.
 
+class CruxDockRestoreFrame extends StatelessWidget
+  const CruxDockRestoreFrame({Key? key, Widget? bottomBar, Widget? leftBar, Widget? rightBar, required Widget child})
+  build(BuildContext context) -> Widget
+  final bottomBar: Widget?
+  final child: Widget
+  final leftBar: Widget?
+  final rightBar: Widget?
+  static const bottomBarKey: Key
+  static const centerKey: Key
+  static const leftBarKey: Key
+  static const rightBarKey: Key
 class CruxFocusRegion extends StatefulWidget
   const CruxFocusRegion({Key? key, String? semanticLabel, bool primary, required Widget child})
   createState() -> State<CruxFocusRegion>
