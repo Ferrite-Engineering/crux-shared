@@ -432,55 +432,46 @@ class WorkspaceNotifier<P> extends AsyncNotifier<Workspace<P>> {
     });
   }
 
-  /// Splits the workspace into two panes. When the active pane has more than
-  /// one tab, the active tab moves into the new (right) pane; otherwise the
-  /// new pane opens empty. No-op when the workspace is already split — the
-  /// active pane id is returned in that case.
+  /// Whether [splitPaneRight] would split the current workspace; see
+  /// [Workspace.canSplitPaneRight]. False while the workspace is loading.
+  bool get canSplitPaneRight => state.value?.canSplitPaneRight ?? false;
+
+  /// Splits the workspace into two panes, moving the active tab into the new
+  /// (right) pane so both panes hold a tab.
+  ///
+  /// An empty pane never exists, so this changes nothing unless
+  /// [Workspace.canSplitPaneRight] holds: with a single tab, or when the
+  /// workspace is already split, the active pane id is returned and the
+  /// workspace is left as it was.
   ///
   /// Returns the id of the newly-created (or already-active) pane.
   Future<PaneId> splitPaneRight() async {
     var resultId = state.requireValue.activePaneId;
     await mutate((c) {
-      if (c.panes.length >= 2) {
+      if (!c.canSplitPaneRight) {
         resultId = c.activePaneId;
         return c;
       }
       final newPane = WorkspacePane(id: PaneId.generate());
       resultId = newPane.id;
 
-      // Move the active tab into the new pane when the source pane has more
-      // than one tab. When the source has exactly one tab, the new pane
-      // opens empty.
-      final sourcePaneTabs = c.tabs
-          .where((t) => t.paneId == c.activePaneId)
+      final activeTabId = c.activePane.activeTabId!;
+      final remainingInSource = c.tabs
+          .where((t) => t.paneId == c.activePaneId && t.id != activeTabId)
           .toList();
-      final activeTabId = c.activePane.activeTabId;
-      if (sourcePaneTabs.length > 1 && activeTabId != null) {
-        final tabs = [
-          for (final t in c.tabs)
-            if (t.id == activeTabId) t.copyWith(paneId: newPane.id) else t,
-        ];
-        final remainingInSource = sourcePaneTabs
-            .where((t) => t.id != activeTabId)
-            .toList();
-        final panes = [
-          for (final p in c.panes)
-            if (p.id == c.activePaneId)
-              p.copyWith(activeTabId: remainingInSource.first.id)
-            else
-              p,
-          newPane.copyWith(activeTabId: activeTabId),
-        ];
-        return c.copyWith(
-          tabs: tabs,
-          panes: panes,
-          activePaneId: newPane.id,
-        );
-      }
-      return c.copyWith(
-        panes: [...c.panes, newPane],
-        activePaneId: newPane.id,
-      );
+      final tabs = [
+        for (final t in c.tabs)
+          if (t.id == activeTabId) t.copyWith(paneId: newPane.id) else t,
+      ];
+      final panes = [
+        for (final p in c.panes)
+          if (p.id == c.activePaneId)
+            p.copyWith(activeTabId: remainingInSource.first.id)
+          else
+            p,
+        newPane.copyWith(activeTabId: activeTabId),
+      ];
+      return c.copyWith(tabs: tabs, panes: panes, activePaneId: newPane.id);
     });
     return resultId;
   }

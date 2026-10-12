@@ -51,6 +51,18 @@ class _NotifierHarness {
   WorkspaceNotifier<String> get notifier => container.read(provider.notifier);
   Workspace<String> get state => container.read(provider).requireValue;
 
+  /// Adds a second, empty pane and makes it active: the two-pane layout the
+  /// pane tests start from before they place tabs. `splitPaneRight` no
+  /// longer produces one (it splits only a pane with two tabs, so neither
+  /// side is empty), so the layout is installed directly.
+  Future<PaneId> addEmptyPane() async {
+    final pane = WorkspacePane(id: PaneId.generate());
+    await notifier.replaceWith(
+      state.copyWith(panes: [...state.panes, pane], activePaneId: pane.id),
+    );
+    return pane.id;
+  }
+
   Future<void> dispose() async {
     // Await any in-flight auto-save before tearing down. With a zero debounce
     // a mutation kicks off `service.save()` eagerly and the dispose hook is
@@ -98,7 +110,7 @@ void main() {
     });
 
     test('openTab honors explicit paneId', () async {
-      final secondPaneId = await h.notifier.splitPaneRight();
+      final secondPaneId = await h.addEmptyPane();
       final tabInSecond = await h.notifier.openTab(
         displayName: 'right',
         payload: 'r',
@@ -150,7 +162,7 @@ void main() {
         // paneA's tab count, so a global-index lookup selects the wrong
         // survivor (or the pane's last tab) instead of the true next tab.
         final paneA = h.state.activePaneId;
-        final paneB = await h.notifier.splitPaneRight();
+        final paneB = await h.addEmptyPane();
         // paneA: two tabs, so paneB's globals are offset by 2.
         await h.notifier.openTab(
           displayName: 'a0',
@@ -204,7 +216,7 @@ void main() {
       'closeTab on empty non-active pane collapses to single pane',
       () async {
         final paneA = h.state.activePaneId;
-        final paneB = await h.notifier.splitPaneRight();
+        final paneB = await h.addEmptyPane();
         await h.notifier.openTab(
           displayName: 'left',
           payload: 'left',
@@ -232,7 +244,7 @@ void main() {
 
     test('moveTabToPane activates the moved tab in the target pane', () async {
       final paneA = h.state.activePaneId;
-      final paneB = await h.notifier.splitPaneRight();
+      final paneB = await h.addEmptyPane();
       // Keep paneA populated so it survives the move (its collapse is
       // covered by the dedicated regression test below).
       await h.notifier.openTab(
@@ -265,7 +277,7 @@ void main() {
         // generic WorkspaceNotifier.moveTabToPane originally only retargeted
         // the tab and never pruned the emptied source pane (closeTab did).
         final paneA = h.state.activePaneId;
-        final paneB = await h.notifier.splitPaneRight();
+        final paneB = await h.addEmptyPane();
         final t = await h.notifier.openTab(
           displayName: 'movable',
           payload: 'm',
@@ -297,7 +309,7 @@ void main() {
         // Moving the *active* tab out of a still-populated pane must leave
         // that pane showing a surviving sibling, never a blank selection.
         final paneA = h.state.activePaneId;
-        final paneB = await h.notifier.splitPaneRight();
+        final paneB = await h.addEmptyPane();
         final keep = await h.notifier.openTab(
           displayName: 'keep',
           payload: 'k',
@@ -330,7 +342,7 @@ void main() {
 
     test('setActivePane focuses the named pane', () async {
       final paneA = h.state.activePaneId;
-      final paneB = await h.notifier.splitPaneRight();
+      final paneB = await h.addEmptyPane();
       await h.notifier.setActivePane(paneA);
       expect(h.state.activePaneId, equals(paneA));
       await h.notifier.setActivePane(paneB);
@@ -338,32 +350,61 @@ void main() {
     });
 
     test('splitPaneRight is a no-op when already split', () async {
+      await h.notifier.openTab(displayName: 'a', payload: 'a');
+      await h.notifier.openTab(displayName: 'b', payload: 'b');
+      await h.notifier.openTab(displayName: 'c', payload: 'c');
       final paneB = await h.notifier.splitPaneRight();
+      expect(h.notifier.canSplitPaneRight, isFalse);
+      final before = h.state;
       final paneBAgain = await h.notifier.splitPaneRight();
       expect(paneBAgain, equals(paneB));
       expect(h.state.panes, hasLength(2));
+      expect(
+        h.state.tabs.map((t) => t.paneId),
+        before.tabs.map((t) => t.paneId),
+      );
     });
 
     test(
-      'splitPaneRight moves active tab into new pane when source has 2+',
+      'splitPaneRight with two tabs gives two panes with one tab each',
       () async {
-        await h.notifier.openTab(displayName: 'a', payload: 'a');
+        final a = await h.notifier.openTab(displayName: 'a', payload: 'a');
         final b = await h.notifier.openTab(displayName: 'b', payload: 'b');
+        final paneA = h.state.activePaneId;
+        expect(h.notifier.canSplitPaneRight, isTrue);
         final paneB = await h.notifier.splitPaneRight();
+        expect(paneB, isNot(paneA));
+        expect(h.state.panes, hasLength(2));
         expect(h.state.tabsForPane(paneB).map((t) => t.id), equals([b]));
-        expect(h.state.tabsForPane(h.state.panes.first.id), hasLength(1));
+        expect(h.state.tabsForPane(paneA).map((t) => t.id), equals([a]));
+        expect(h.state.activePaneId, paneB);
+        expect(h.state.panes.firstWhere((p) => p.id == paneA).activeTabId, a);
       },
     );
 
-    test('splitPaneRight opens empty when source has a single tab', () async {
+    test('splitPaneRight with one tab changes nothing', () async {
+      // An empty pane never exists: with a single tab there is nothing to
+      // put on the other side of a split.
       await h.notifier.openTab(displayName: 'sole', payload: 'sole');
-      final paneB = await h.notifier.splitPaneRight();
-      expect(h.state.tabsForPane(paneB), isEmpty);
+      final before = h.state;
+      expect(h.notifier.canSplitPaneRight, isFalse);
+      final returned = await h.notifier.splitPaneRight();
+      expect(returned, before.activePaneId);
+      expect(h.state.panes, hasLength(1));
+      expect(h.state.panes.single.id, before.activePaneId);
+      expect(h.state.tabs.single.paneId, before.activePaneId);
+    });
+
+    test('splitPaneRight with no tabs changes nothing', () async {
+      expect(h.notifier.canSplitPaneRight, isFalse);
+      final sole = h.state.activePaneId;
+      expect(await h.notifier.splitPaneRight(), sole);
+      expect(h.state.panes, hasLength(1));
     });
 
     test('closePane merges tabs into the surviving pane', () async {
       final paneA = h.state.activePaneId;
-      final paneB = await h.notifier.splitPaneRight();
+      final paneB = await h.addEmptyPane();
       final aTab = await h.notifier.openTab(
         displayName: 'a',
         payload: 'a',
@@ -388,7 +429,7 @@ void main() {
 
     test('focusOtherPane toggles between panes', () async {
       final paneA = h.state.activePaneId;
-      final paneB = await h.notifier.splitPaneRight();
+      final paneB = await h.addEmptyPane();
       expect(h.state.activePaneId, equals(paneB));
       await h.notifier.focusOtherPane();
       expect(h.state.activePaneId, equals(paneA));
@@ -419,7 +460,7 @@ void main() {
 
     test('resetWorkspace clears all tabs to a single empty pane', () async {
       await h.notifier.openTab(displayName: 'a', payload: 'a');
-      await h.notifier.splitPaneRight();
+      await h.addEmptyPane();
       await h.notifier.openTab(displayName: 'b', payload: 'b');
       await h.notifier.resetWorkspace();
       expect(h.state.tabs, isEmpty);

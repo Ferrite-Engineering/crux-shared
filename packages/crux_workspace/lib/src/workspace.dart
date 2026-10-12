@@ -317,6 +317,16 @@ class Workspace<P> {
   /// The active tab id for the active pane, if any.
   TabId? get activeTabId => activePane.activeTabId;
 
+  /// Whether Split Pane Right would split: the workspace is not already
+  /// split, and the active pane holds at least two tabs, one of them active,
+  /// so each side of the split gets a tab. An empty pane never exists, so
+  /// with a single tab there is nothing to split; a product disables its
+  /// Split Pane Right menu item, palette entry and shortcut on this.
+  bool get canSplitPaneRight =>
+      panes.length < 2 &&
+      activeTabId != null &&
+      tabs.where((t) => t.paneId == activePaneId).length >= 2;
+
   /// Tabs that belong to the pane identified by [paneId], preserving the
   /// workspace ordering.
   List<WorkspaceTab<P>> tabsForPane(PaneId paneId) => [

@@ -224,6 +224,7 @@ class Workspace<P>
   final version: int
   get activePane -> WorkspacePane
   get activeTabId -> TabId?
+  get canSplitPaneRight -> bool
   get hashCode -> int
   get isEmpty -> bool
   tabsForPane(PaneId paneId) -> List<WorkspaceTab<P>>
@@ -261,6 +262,7 @@ class WorkspaceNotifier<P> extends AsyncNotifier<Workspace<P>>
   final service: WorkspaceService<P>
   flushPendingSave() -> Future<void>
   focusOtherPane() -> Future<void>
+  get canSplitPaneRight -> bool
   loadFrom(String path) -> Future<Workspace<P>>
   moveTabToPane(TabId tabId, PaneId targetPane) -> Future<void>
   mutate(Workspace<P> Function(Workspace<P>) update) -> Future<void>

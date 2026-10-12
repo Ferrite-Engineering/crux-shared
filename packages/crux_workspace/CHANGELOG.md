@@ -1,5 +1,12 @@
 ## Unreleased
 
+- **`splitPaneRight` never opens an empty pane.** With one tab (or none) it
+  changes nothing and returns the active pane id, as it already did when the
+  workspace was split; with two or more it moves the active tab into the new
+  pane, so both panes hold a tab. New `Workspace.canSplitPaneRight` and
+  `WorkspaceNotifier.canSplitPaneRight` say whether a split would happen, so
+  a product can disable its Split Pane Right menu item, palette entry and
+  shortcut on the same condition.
 - `ViewerTabBar` follows the theme's `tabBar.background` (the strip),
   `tabBar.selected` (the active tab) and `tabBar.label` (every tab title)
   chrome tokens, read from `crux_theme`'s `CruxChromeColors`; the defaults

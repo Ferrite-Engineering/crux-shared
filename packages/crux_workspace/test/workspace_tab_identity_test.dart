@@ -369,11 +369,12 @@ void main() {
       await h.hydrate();
 
       final restored = await h.cliOpen(projectPath);
-      await h.notifier.splitPaneRight();
       await h.notifier.openTab(
         displayName: 'other',
         payload: const _ProjectPayload('/elsewhere/other.project'),
       );
+      // Moves the active tab, 'other', into the new pane.
+      await h.notifier.splitPaneRight();
       final otherPane = h.state.activePaneId;
       final restoredPane = h.state.tabs
           .firstWhere((t) => t.id == restored)
