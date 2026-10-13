@@ -160,6 +160,18 @@ Set<String> cruxOpenReachingEntryPoints({
 /// derivation does not see. [extraOpenEntryPoints] adds names by hand for the
 /// cases it cannot reach.
 ///
+/// A seed in [extraOpenEntryPoints] matches only as a call, `Class.method(`.
+/// The most common way the products reach a store is not a call at all:
+/// `await ref.watch(trendStoreProvider.future)` is a property access. Those
+/// are matched as **expressions**, by [cruxOpenReachingProviders]: every
+/// top-level `…Provider` declared in the sources whose initializer reaches
+/// an open is derived and matched as `<name>.future`, and
+/// [extraOpenReachingExpressions] seeds expressions declared outside the
+/// sources (a Pro overlay scanning its own tree passes
+/// `trendStoreProvider.future`, declared in its open core). An expression
+/// matches wherever it appears as a whole token sequence, with or without a
+/// call after it.
+///
 /// ### The allowlist
 ///
 /// [CruxOpenCatchAllowlistEntry], honoured only when the store it references
@@ -172,11 +184,17 @@ CruxGuardReport cruxAuditOpenCatchShapes({
   Iterable<CruxOpenCatchAllowlistEntry> allowlist =
       const <CruxOpenCatchAllowlistEntry>[],
   Set<String> extraOpenEntryPoints = const <String>{},
+  Set<String> extraOpenReachingExpressions = const <String>{},
 }) {
   final files = sources.toList();
   final entryPoints = cruxOpenReachingEntryPoints(
     sources: files,
     seeds: extraOpenEntryPoints,
+  );
+  final expressions = cruxOpenReachingProviders(
+    sources: files,
+    entryPoints: entryPoints,
+    seeds: extraOpenReachingExpressions,
   );
   final findings = <CruxGuardFinding>[];
   final observations = <CruxGuardFinding>[];
@@ -203,7 +221,11 @@ CruxGuardReport cruxAuditOpenCatchShapes({
   for (final file in files) {
     final code = _blankNonCode(file.source);
     for (final statement in _tryStatements(code)) {
-      final calls = _openReachingCallsIn(statement.body, entryPoints);
+      final calls = _openReachingCallsIn(
+        statement.body,
+        entryPoints,
+        expressions,
+      );
       if (calls.isEmpty) continue;
       for (final clause in statement.clauses) {
         if (!clause.isCatchAll) continue;
@@ -307,8 +329,92 @@ CruxGuardReport cruxAuditOpenCatchShapes({
         'in a package outside the scanned sources is not derived, and a '
         'catch-all around one of those is not flagged. Passing it in '
         'extraOpenEntryPoints is how that gap is closed deliberately rather '
-        'than discovered.',
+        'than discovered. A provider seam is matched as an expression, not '
+        'a call: a top-level `…Provider` in the scanned sources whose '
+        'initializer reaches an open is derived as `<name>.future`, and one '
+        'declared elsewhere is passed in extraOpenReachingExpressions.',
   );
+}
+
+/// Expressions that reach a database open through a Riverpod provider seam:
+/// [seeds] as given, plus `<name>.future` for every top-level `…Provider`
+/// declared in [sources] whose initializer reaches an open.
+///
+/// "Reaches an open" is the same test [cruxAuditOpenCatchShapes] applies to a
+/// try body: an open root, a call to one of [entryPoints], or one of the
+/// expressions already found. So a provider that awaits another
+/// open-reaching provider is derived too, in rounds, until the set stops
+/// growing (at most [kCruxOpenReachRounds]).
+///
+/// A declaration is matched by name, `<name>Provider = …`, at the start of a
+/// statement, and its initializer runs to the `;` that ends that statement.
+/// Like the rest of G5b this is a text scan: a provider built by a helper
+/// function the scan cannot see into is not derived, and is seeded instead.
+Set<String> cruxOpenReachingProviders({
+  required Iterable<CruxSourceFile> sources,
+  Set<String> entryPoints = const <String>{},
+  Set<String> seeds = const <String>{},
+}) {
+  final declarations = <(String, String)>[];
+  for (final file in sources) {
+    final code = _blankNonCode(file.source);
+    for (final match in _providerDeclaration.allMatches(code)) {
+      final end = _statementEnd(code, match.end);
+      declarations.add((match.group(1)!, code.substring(match.end, end)));
+    }
+  }
+  final found = <String>{...seeds};
+  for (var round = 0; round < kCruxOpenReachRounds; round++) {
+    var grew = false;
+    for (final (name, initializer) in declarations) {
+      final expression = '$name.future';
+      if (found.contains(expression)) continue;
+      if (_openReachingCallsIn(initializer, entryPoints, found).isEmpty) {
+        continue;
+      }
+      found.add(expression);
+      grew = true;
+    }
+    if (!grew) break;
+  }
+  return found;
+}
+
+/// `final fooProvider =` / `fooProvider =` at the start of a statement.
+///
+/// Every quantifier here is over a class the next one cannot also match, so
+/// a long run of blanked comment or string (all spaces) costs linear time.
+final RegExp _providerDeclaration = RegExp(
+  r'(?:^|[;{}])[ \t]*(?:(?:final|const|late)[ \t]+)*'
+  r'(?:[\w$]+(?:<[^<>;{}=\n]*(?:<[^<>;{}=\n]*>[^<>;{}=\n]*)?>)?\??[ \t]+)?'
+  r'([a-z][\w$]*Provider)[ \t]*=(?!=)',
+  multiLine: true,
+);
+
+/// The index of the `;` ending the statement that continues at [start], at
+/// bracket depth zero, or the end of [code].
+int _statementEnd(String code, int start) {
+  var depth = 0;
+  for (var i = start; i < code.length; i++) {
+    final c = code[i];
+    if (c == '(' || c == '{' || c == '[') {
+      depth++;
+    } else if (c == ')' || c == '}' || c == ']') {
+      depth--;
+      if (depth < 0) return i;
+    } else if (c == ';' && depth == 0) {
+      return i;
+    }
+  }
+  return code.length;
+}
+
+/// [expression] as a whole token sequence: `trendStoreProvider.future`
+/// matches in `ref.watch(trendStoreProvider.future)` and not in
+/// `myTrendStoreProvider.future` or `trendStoreProvider.futureish`.
+RegExp _expressionPattern(String expression) {
+  final parts = expression.split('.').map(RegExp.escape).join(r'\s*\.\s*');
+  return RegExp('(?<![\\w\$.])$parts(?![\\w\$])');
 }
 
 // ---------------------------------------------------------------------------
@@ -330,8 +436,15 @@ final RegExp _namesAPolicy = RegExp('policy', caseSensitive: false);
 /// [code] must already be blanked by [_blankNonCode]: a `.open(` inside a
 /// doc comment is not a call, and the fixtures that prove this guard are full
 /// of prose about open calls.
-List<String> _openReachingCallsIn(String code, Set<String> entryPoints) {
+List<String> _openReachingCallsIn(
+  String code,
+  Set<String> entryPoints, [
+  Set<String> expressions = const <String>{},
+]) {
   final found = <String>{};
+  for (final expression in expressions) {
+    if (_expressionPattern(expression).hasMatch(code)) found.add(expression);
+  }
   if (_openDatabaseCall.hasMatch(code)) found.add('openDatabase(...)');
   for (final match in _dotOpenCall.allMatches(code)) {
     final statement = _statementAround(code, match.start);

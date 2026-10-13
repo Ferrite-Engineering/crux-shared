@@ -1,6 +1,6 @@
 name: crux_sqlite
 description: The one SQLite open path in the suite — migration runner, open policy, PRECIOUS/DERIVABLE recovery policy and the typed failure vocabulary every Crux store opens through.
-version: 0.4.1
+version: 0.5.0
 publish_to: 'none'
 
 environment:

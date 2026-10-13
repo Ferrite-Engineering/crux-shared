@@ -87,12 +87,13 @@ cruxAuditDestructiveDdl({required Iterable<CruxSourceFile> sources, required Str
 cruxAuditFixtureCoverage({required CruxMigrationRunner runner, required Set<int> fixtureVersions}) -> CruxGuardReport
 cruxAuditFixtureSuites({required Iterable<CruxSourceFile> testSources, required Map<String, List<String>> storeMarkers, required String subject}) -> CruxGuardReport
 cruxAuditMigrationListRegistry({required Iterable<CruxSourceFile> sources, required Set<String> registeredListNames, required String subject}) -> CruxGuardReport
-cruxAuditOpenCatchShapes({Iterable<CruxOpenCatchAllowlistEntry> allowlist, Set<String> extraOpenEntryPoints, required Iterable<CruxSourceFile> sources, required String subject}) -> CruxGuardReport
+cruxAuditOpenCatchShapes({Iterable<CruxOpenCatchAllowlistEntry> allowlist, Set<String> extraOpenEntryPoints, Set<String> extraOpenReachingExpressions, required Iterable<CruxSourceFile> sources, required String subject}) -> CruxGuardReport
 cruxAuditOpenOptions({Set<String> expectedDirectOpenFiles, required Iterable<CruxSourceFile> sources, required String subject}) -> CruxGuardReport
 cruxAuditSchemaFingerprints({required CruxMigrationRunner runner, required CruxSchemaManifest manifest, required List<CruxSchemaSnapshot> snapshots}) -> CruxGuardReport
 cruxBalancedParens(String source, int open) -> String?
 cruxDartSourcesIn(Directory root, {Iterable<String> excludeSegments, String? relativeTo}) -> List<CruxSourceFile>
 cruxOpenReachingEntryPoints({Set<String> seeds, required Iterable<CruxSourceFile> sources}) -> Set<String>
+cruxOpenReachingProviders({Set<String> entryPoints, Set<String> seeds, required Iterable<CruxSourceFile> sources}) -> Set<String>
 cruxRenderSchemaManifest(List<CruxSchemaSnapshot> snapshots, {required String storeName}) -> String
 cruxSchemaSnapshotsOf(CruxMigrationRunner runner, {DatabaseFactory? factory}) -> Future<List<CruxSchemaSnapshot>>
 get kCruxDestructiveWaiverMarker -> String

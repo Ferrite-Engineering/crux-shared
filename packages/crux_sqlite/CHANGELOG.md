@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
+
+- **G5b sees provider seams.** A seed in `extraOpenEntryPoints` matched only
+  as a call, `Class.method(`, and the commonest way the products reach a
+  store is not one: `await ref.watch(trendStoreProvider.future)` is a
+  property access, so a catch-all around it could not be flagged by any
+  seed. A live violation sat behind exactly that shape while G5b ran green.
+  New `cruxOpenReachingProviders` derives every top-level `…Provider` in the
+  scanned sources whose initializer reaches an open (an open root, a derived
+  `Class.method`, or a provider already found) and matches it as the
+  expression `<name>.future`; new `extraOpenReachingExpressions` on
+  `cruxAuditOpenCatchShapes` seeds expressions declared outside the sources
+  (a Pro overlay passes its open core's `trendStoreProvider.future`).
+  Derived `Class.method` entries still match only as calls. **A consumer's
+  G5b run can go red at the pin bump** if its own tree wraps such a seam in
+  a catch-all.
 
 - **The Windows free-space probe runs `fsutil` by absolute path.** A bare
   name is searched for in the launching process's current directory before

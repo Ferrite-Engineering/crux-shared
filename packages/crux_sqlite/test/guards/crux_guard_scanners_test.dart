@@ -690,6 +690,128 @@ try {
       expect(seeded.findings.single.detail, contains('bootstrap.openStore'));
     });
 
+    group('provider seams match as expressions', () {
+      // The dominant idiom in all four products is not a call:
+      // `await ref.watch(trendStoreProvider.future)` is a property access,
+      // and a seed matched as `Class.method(` could never see it. A live
+      // violation sat behind exactly this shape while G5b ran green.
+      const seam = '''
+Future<List<Alert>> alerts(Ref ref) async {
+  final SqlTrendStore store;
+  try {
+    store = await ref.watch(trendStoreProvider.future);
+  } on Object {
+    return const [];
+  }
+  return store.alerts();
+}
+''';
+
+      CruxGuardReport scanSeam(
+        String source, {
+        Set<String> expressions = const {},
+        List<CruxSourceFile> extraSources = const [],
+      }) => cruxAuditOpenCatchShapes(
+        sources: [...extraSources, _src(source)],
+        subject: 'fixture',
+        extraOpenReachingExpressions: expressions,
+      );
+
+      test('a seeded provider seam is reported', () {
+        expect(scanSeam(seam).isClean, isTrue, reason: 'nothing seeded');
+        final report = scanSeam(
+          seam,
+          expressions: {'trendStoreProvider.future'},
+        );
+        expect(report.isClean, isFalse);
+        expect(report.findings.single.location, 'lib/fixture.dart:5');
+        expect(
+          report.findings.single.detail,
+          contains('trendStoreProvider.future'),
+        );
+      });
+
+      test('a provider declared in the sources is derived', () {
+        final report = scanSeam(
+          seam,
+          extraSources: [
+            CruxSourceFile.inline('lib/providers.dart', '''
+class SqlTrendStore {
+  static Future<SqlTrendStore> open(String path) async {
+    final policy = CruxSqliteOpenPolicy(runner: _runner, recovery: dataValue);
+    return SqlTrendStore._(await policy.open(path));
+  }
+}
+
+final trendStoreProvider = FutureProvider<SqlTrendStore>((ref) async {
+  final path = await ref.watch(trendDbPathProvider.future);
+  return SqlTrendStore.open(path);
+});
+
+final trendDbPathProvider = FutureProvider<String>((ref) async => '/tmp/t.db');
+'''),
+          ],
+        );
+        expect(report.isClean, isFalse, reason: 'derived from its open');
+        expect(
+          cruxOpenReachingProviders(
+            sources: [
+              CruxSourceFile.inline('lib/p.dart', '''
+final aProvider = FutureProvider((ref) => openDatabase('x'));
+final bProvider = FutureProvider((ref) async => ref.watch(aProvider.future));
+final cProvider = Provider((ref) => 42);
+'''),
+            ],
+          ),
+          {'aProvider.future', 'bProvider.future'},
+          reason: 'transitive through a provider that awaits one, and no more',
+        );
+      });
+
+      test('the typed shape around a seam is green', () {
+        final report = scanSeam(
+          '''
+try {
+  store = await ref.watch(trendStoreProvider.future);
+} on CruxSqliteException catch (e) {
+  return const [];
+}
+''',
+          expressions: {'trendStoreProvider.future'},
+        );
+        expect(report.isClean, isTrue, reason: report.describe());
+      });
+
+      test('an expression matches only as a whole token sequence', () {
+        final report = scanSeam(
+          '''
+try {
+  await ref.watch(myTrendStoreProvider.future);
+  await ref.watch(trendStoreProvider.futureish);
+} on Object {
+  return null;
+}
+''',
+          expressions: {'trendStoreProvider.future'},
+        );
+        expect(report.isClean, isTrue, reason: report.describe());
+      });
+
+      test('derived Class.method entries still match only as calls', () {
+        // A tear-off or a mention is not a call; the call form is kept for
+        // the derived entries so this does not start flagging them.
+        final report = scan('''
+try {
+  final opener = SqliteLintRunCacheService.open;
+  register(opener);
+} on Object {
+  return null;
+}
+''');
+        expect(report.isClean, isTrue, reason: report.describe());
+      });
+    });
+
     test('the message states its own boundary', () {
       // A guard that quietly checks less than it appears to is worse than
       // one with a stated limit, so the limit is in the failure text a
