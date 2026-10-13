@@ -50,6 +50,7 @@ export 'src/services/pending_telemetry_service.dart';
 export 'src/services/telemetry_batch.dart';
 export 'src/services/telemetry_event_queue.dart';
 export 'src/services/telemetry_uncaught_error_counter.dart';
+export 'src/services/telemetry_unclean_shutdown_detector.dart';
 export 'src/storage/telemetry_storage.dart';
 export 'src/telemetry_endpoint.dart';
 export 'src/telemetry_enum_token.dart';

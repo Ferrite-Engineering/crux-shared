@@ -178,6 +178,7 @@ enum TelemetryPolicy
   static const deny: TelemetryPolicy
 abstract class TelemetryService
   record(TelemetryEvent event) -> void
+typedef TelemetrySessionMarkerProbe = bool Function(File)
 class TelemetrySettingsSection extends ConsumerWidget
   const TelemetrySettingsSection({Key? key})
   build(BuildContext context, WidgetRef ref) -> Widget
@@ -197,12 +198,28 @@ class TelemetryUncaughtErrorCounter
   recordFlutterError(FlutterErrorDetails details) -> void
   recordPlatformError(Object error) -> void
   static final instance: TelemetryUncaughtErrorCounter
+class TelemetryUncleanShutdownDetector
+  TelemetryUncleanShutdownDetector({Future<Directory> Function()? directoryFactory, bool Function(File)? markerHeld, bool installLifecycleListener, bool? eventEnabled, bool? inert, bool? supported, int? processId})
+  attach(TelemetryService service) -> void
+  detach(TelemetryService service) -> void
+  final eventEnabled: bool
+  final inert: bool
+  final installLifecycleListener: bool
+  final supported: bool
+  get marker -> File?
+  get unattached -> TelemetryEvent?
+  markCleanExit() -> void
+  start() -> Future<bool>
+  static const markerPrefix: String
+  static const markerSuffix: String
+  static final instance: TelemetryUncleanShutdownDetector
 buildTelemetryBatches(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> List<TelemetryBatch>
 canonicalTelemetryProperties(Map<String, Object?> properties) -> Map<String, Object?>
 coalesceTelemetryEvents(Iterable<TelemetryEvent> events) -> List<TelemetryBatchEntry>
 get cruxTelemetryConfigProvider -> Provider<CruxTelemetryConfig>
 get cruxTelemetryStringsProvider -> Provider<CruxTelemetryStrings>
 encodeTelemetryBatch(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> String
+get kCruxUncleanShutdownEventEnabled -> bool
 get kTelemetryConsentKey -> String
 get kTelemetryConsentMinTarget -> double
 get kTelemetryDev -> bool
@@ -231,6 +248,7 @@ get kTelemetryUncaughtErrorKinds -> List<String>
 get kTelemetryUncaughtErrorLibraries -> List<String>
 get kTelemetryUncaughtErrorSessionCap -> int
 get kTelemetryUncaughtErrorSources -> List<String>
+get kTelemetryUncleanShutdownEvent -> String
 get kTelemetryVolatileFlushInterval -> Duration
 mintTelemetryInstallationId() -> String
 observeTelemetryLifecycle(void Function() onBackgrounded) -> void Function()
@@ -274,4 +292,5 @@ get telemetrySessionStartProvider -> Provider<DateTime>
 get telemetryStorageProvider -> Provider<TelemetryStorage>
 telemetryTimeZoneRequiresOptIn(String? timeZone) -> bool
 get telemetryUncaughtErrorCounterProvider -> Provider<TelemetryUncaughtErrorCounter>
+get telemetryUncleanShutdownDetectorProvider -> Provider<TelemetryUncleanShutdownDetector>
 get telemetryUrlLauncherProvider -> Provider<Future<bool> Function(Uri)>

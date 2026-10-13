@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **`TelemetryUncleanShutdownDetector` and `app.unclean_shutdown`, shipped
+  dark.** Each desktop release session holds a locked
+  `session.<pid>.running` marker in the application-support directory and
+  removes it on a clean exit (`onExitRequested` or `detached`). At launch, a
+  marker no live process holds means the previous session never reached its
+  exit path, and one `app.unclean_shutdown` event (no properties) is recorded
+  through the same gate as every other event. `telemetryServiceProvider`
+  starts the process-wide detector on its first resolution and attaches it
+  to every service it resolves; `telemetryUncleanShutdownDetectorProvider` is
+  the test seam. No event is constructed while
+  `kCruxUncleanShutdownEventEnabled` is `false`, which is how it ships; the
+  marker is kept regardless. Never runs on mobile, on the web or in a debug
+  build. Products list `kTelemetryUncleanShutdownEvent` in their catalogs.
+
 - **The consent disclosure is reachable and operable from the keyboard and a
   screen reader.** It was stacked over the app with only a barrier, so on a
   first launch focus stayed on the hidden app: Tab walked its controls (each

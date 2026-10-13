@@ -16,6 +16,7 @@ import 'package:crux_telemetry/src/services/live_telemetry_service.dart';
 import 'package:crux_telemetry/src/services/noop_telemetry_service.dart';
 import 'package:crux_telemetry/src/services/pending_telemetry_service.dart';
 import 'package:crux_telemetry/src/services/telemetry_uncaught_error_counter.dart';
+import 'package:crux_telemetry/src/services/telemetry_unclean_shutdown_detector.dart';
 import 'package:crux_telemetry/src/telemetry_platform.dart';
 import 'package:crux_telemetry/src/telemetry_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -181,6 +182,19 @@ telemetryUncaughtErrorCounterProvider = Provider<TelemetryUncaughtErrorCounter>(
   name: 'telemetryUncaughtErrorCounterProvider',
 );
 
+/// The unclean-shutdown detector [telemetryServiceProvider] starts and
+/// attaches to whichever service it resolves.
+///
+/// [TelemetryUncleanShutdownDetector.instance] unless a test overrides it,
+/// for the same reason as [telemetryUncaughtErrorCounterProvider]: that
+/// instance is process-wide and owns the real session marker.
+final Provider<TelemetryUncleanShutdownDetector>
+telemetryUncleanShutdownDetectorProvider =
+    Provider<TelemetryUncleanShutdownDetector>(
+      (_) => TelemetryUncleanShutdownDetector.instance,
+      name: 'telemetryUncleanShutdownDetectorProvider',
+    );
+
 /// Collects the batch envelope for the next flush, or `null` if it cannot be
 /// collected yet.
 ///
@@ -338,23 +352,37 @@ final Provider<void> _gateOpenedWatcherProvider = Provider<void>(
 /// allocation-free no-op.
 ///
 /// **Every service this resolves is attached to the uncaught-error counter**
-/// ([telemetryUncaughtErrorCounterProvider]), so `app.uncaught_error` reaches
-/// the same gate as every other event with no wiring in any product. Attaching
-/// the no-op is how a closed gate discards what the counter buffered before the
-/// container existed; attaching the pending service is how those events wait
-/// for the consent store like the launch counter does. A product that
-/// overrides this provider — an editor host relaying events to its own sender
-/// — attaches nothing, and the counter's buffer stays at its cap.
+/// ([telemetryUncaughtErrorCounterProvider]) and to the unclean-shutdown
+/// detector ([telemetryUncleanShutdownDetectorProvider], which the first
+/// resolution also starts), so `app.uncaught_error` and `app.unclean_shutdown`
+/// reach the same gate as every other event with no wiring in any product.
+/// Attaching the no-op is how a closed gate discards what the counter
+/// buffered before the container existed; attaching the pending service is
+/// how those events wait for the consent store like the launch counter does.
+/// A product that overrides this provider — an editor host relaying events to
+/// its own sender — attaches nothing and starts nothing: the counter's buffer
+/// stays at its cap, and the session marker is not kept unless the product
+/// calls `TelemetryUncleanShutdownDetector.instance.start()` itself.
 final Provider<TelemetryService> telemetryServiceProvider =
     Provider<TelemetryService>(
       (ref) {
         final buffer = ref.read(telemetryPendingBufferProvider);
         final gate = ref.watch(telemetryGateProvider);
         final errorCounter = ref.read(telemetryUncaughtErrorCounterProvider);
+        final shutdownDetector = ref.read(
+          telemetryUncleanShutdownDetectorProvider,
+        );
+        // Idempotent: the first resolution of this provider in the process
+        // checks and rotates the session marker, whatever the gate says.
+        unawaited(shutdownDetector.start());
 
         TelemetryService attachErrorCounter(TelemetryService service) {
           errorCounter.attach(service);
-          ref.onDispose(() => errorCounter.detach(service));
+          shutdownDetector.attach(service);
+          ref.onDispose(() {
+            errorCounter.detach(service);
+            shutdownDetector.detach(service);
+          });
           return service;
         }
 
