@@ -86,7 +86,7 @@ const Map<String, Map<String, bool>> kProductKeys = {
     'symbolLibraries': true,
   },
   'lintcrux': {
-    'ruleSeverityOverrides': false,
+    'ruleSeverityOverrides': true,
     'mandatoryEngines': false,
     'ciGateThreshold': true,
     'teamDatabaseSubmitter': true,

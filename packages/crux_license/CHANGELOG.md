@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **`CruxLicensePanelStrings.licenseEduUnderReview` is abstract.** Its
+  English default stood in until the products localised it; all four Pro
+  overlays now implement it from their own ARB files, so the default is
+  gone from the interface and the English sentence lives in
+  `CruxLicensePanelStringsEn` only. A subclass that does not implement it no
+  longer compiles.
+
 - **`CruxBetaExpiredOverlay`**, the blocking modal for an expired beta
   build, lifted from the four products' identical
   `BetaExpiryBlockingOverlay` copies with `CruxBetaExpiredStrings` (+ the

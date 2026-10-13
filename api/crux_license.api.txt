@@ -248,6 +248,7 @@ class CruxLicensePanelStringsEn extends CruxLicensePanelStrings
   get licenseEduEmailLabel -> String
   get licenseEduRequestButton -> String
   get licenseEduSectionTitle -> String
+  get licenseEduUnderReview -> String
   get licenseEmailLabel -> String
   get licenseErrorAccount -> String
   get licenseErrorAlreadyRequested -> String

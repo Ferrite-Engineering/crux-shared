@@ -199,19 +199,9 @@ abstract class CruxLicensePanelStrings {
 
   /// Shown when the request went to a person instead of being fulfilled
   /// automatically, because the address's domain is not one the backend
-  /// recognises.
-  ///
-  /// Defaulted rather than abstract, unlike every other string here. Each
-  /// product implements this interface from its own ARB files, so a new
-  /// abstract getter compiles nowhere until five locales have a new entry in
-  /// each of four products. Shipping the English sentence now and localising
-  /// it next is the lesser fault: the alternative on the shelf is telling a
-  /// reviewed applicant to follow a link that does not exist.
-  String get licenseEduUnderReview =>
-      'Thanks — that domain is not one we recognise automatically, so a '
-      'person is checking the request. There is no link to follow: the '
-      'license will arrive by email. If you have not heard within two '
-      'working days, write to edu@ferriteengineering.com.';
+  /// recognises. It says the licence will arrive by email, and when to write
+  /// if it does not.
+  String get licenseEduUnderReview;
 
   // --- Commerce links ---------------------------------------------------
 
@@ -504,6 +494,13 @@ class CruxLicensePanelStringsEn extends CruxLicensePanelStrings {
   String get licenseEduCheckYourEmail =>
       'Check your email — we have sent a link to confirm the address. The '
       'license arrives once you follow it.';
+
+  @override
+  String get licenseEduUnderReview =>
+      'Thanks — that domain is not one we recognise automatically, so a '
+      'person is checking the request. There is no link to follow: the '
+      'license will arrive by email. If you have not heard within two '
+      'working days, write to edu@ferriteengineering.com.';
 
   @override
   String get licenseBuyButton => 'Buy a license';

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `kProductKeys['lintcrux']['ruleSeverityOverrides']` is `true`: LintCrux
+  now reads the key, so `crux-policy lint` no longer reports it as inert.
+
 - **`kSuiteKeys`: the suite block has an honoured column.** New public
   `const Map<String, bool> kSuiteKeys`, beside `kProductKeys` and with the
   same meaning: `true` when some production code reads the key, `false` when
