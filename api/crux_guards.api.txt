@@ -7,6 +7,32 @@
 # disappears or changes shape is a breaking change for all four
 # products; a line that appears is new public surface to justify.
 
+final class CruxClassIndex
+  factory CruxClassIndex(Iterable<CruxGuardSource> sources)
+  get length -> int
+  holdsTypedInput(String name, String fromPath) -> bool
+final class CruxDialogSite
+  const CruxDialogSite({required Set<String> referencedTypes, required String member, required String opener, required String path, required bool dismissible, required bool guarded, required bool namesTypedInput, required int line})
+  final dismissible: bool
+  final guarded: bool
+  final line: int
+  final member: String
+  final namesTypedInput: bool
+  final opener: String
+  final path: String
+  final referencedTypes: Set<String>
+  get key -> String
+  toString() -> String
+final class CruxDismissibleFormAllowance
+  const CruxDismissibleFormAllowance({required String file, required String member, required String reason})
+  final file: String
+  final member: String
+  final reason: String
+final class CruxEmptyStateExemption
+  const CruxEmptyStateExemption({required String className, required String file, required String reason})
+  final className: String
+  final file: String
+  final reason: String
 final class CruxGuardFinding
   const CruxGuardFinding({required String detail, required String path, required int line})
   final detail: String
@@ -24,9 +50,19 @@ final class CruxGuardSource
   const CruxGuardSource({required String path, required String source})
   final path: String
   final source: String
+final class CruxKnownFormDialog
+  const CruxKnownFormDialog({required String file, required String member, required String reason})
+  final file: String
+  final member: String
+  final reason: String
 final class CruxL10nRetention
   const CruxL10nRetention({required String key, required String reason})
   final key: String
+  final reason: String
+final class CruxModalGuardAllowance
+  const CruxModalGuardAllowance({required String file, required String member, required String reason})
+  final file: String
+  final member: String
   final reason: String
 final class CruxOutlineExemption
   const CruxOutlineExemption({required String expectedTrimmed, required String file, required String reason, required int line})
@@ -40,6 +76,12 @@ final class CruxRefAfterAwaitExemption
   final function: String
   final reason: String
 cruxArbMessageKeys(String arbJson) -> Set<String>
+cruxAuditDismissibleFormDialogs({Iterable<CruxDismissibleFormAllowance> allowances, Iterable<CruxGuardSource> classSources, Iterable<CruxKnownFormDialog> knownForms, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
+cruxAuditModalGuard({Iterable<CruxModalGuardAllowance> allowances, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditOutlineText({Iterable<CruxOutlineExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
+cruxAuditPrivateEmptyStates({Iterable<CruxEmptyStateExemption> exemptions, bool includePublic, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditRefAfterAwait({Iterable<CruxRefAfterAwaitExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditUnusedL10nKeys({Iterable<CruxL10nRetention> retained, String arbPath, required Iterable<CruxGuardSource> sources, required Set<String> keys}) -> CruxGuardResult
+cruxFindDialogSites(Iterable<CruxGuardSource> sources) -> List<CruxDialogSite>
+get kCruxModalOpeners -> Set<String>
+get kCruxTypedInputMarkers -> Set<String>

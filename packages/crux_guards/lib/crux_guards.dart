@@ -26,14 +26,33 @@
 ///   localisation key is read by some code, or retained with a reason.
 /// - `cruxAuditRefAfterAwait`: a widget's `ref` is never used after an
 ///   `await` without a `mounted` check.
+/// - `cruxAuditModalGuard`: every `showDialog` / `showModalBottomSheet` /
+///   `showGeneralDialog` runs inside `ModalGuard.run`, or is allowed with a
+///   reason.
+/// - `cruxAuditDismissibleFormDialogs`: a dialog that holds typed input
+///   sets `barrierDismissible: false`.
+/// - `cruxAuditPrivateEmptyStates`: no hand-rolled copy of
+///   `CruxPanelEmptyState`.
+/// - `cruxFindDialogSites` and `CruxClassIndex`: the dialog-site scan the
+///   first two share, for a host's own canaries.
 ///
 /// Every scanner reads the syntax tree, so comments and strings never match,
 /// and every exemption or retention list is exact: an entry that matches
 /// nothing is a finding.
 library;
 
+export 'src/dialog_sites.dart'
+    show
+        CruxClassIndex,
+        CruxDialogSite,
+        cruxFindDialogSites,
+        kCruxModalOpeners,
+        kCruxTypedInputMarkers;
+export 'src/dismissible_form_dialog_guard.dart';
 export 'src/guard_types.dart'
     show CruxGuardFinding, CruxGuardResult, CruxGuardSource;
+export 'src/modal_guard_guard.dart';
 export 'src/outline_text_guard.dart';
+export 'src/private_empty_state_guard.dart';
 export 'src/ref_after_await_guard.dart';
 export 'src/unused_l10n_keys_guard.dart';

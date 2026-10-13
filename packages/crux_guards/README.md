@@ -10,6 +10,9 @@ list and its own exemptions.
 | `cruxAuditOutlineText` | A `ColorScheme`'s `outline` token never colours text. Every `.outline` member access is a finding unless pinned to its file, line and trimmed text with a reason. |
 | `cruxAuditUnusedL10nKeys` + `cruxArbMessageKeys` | Every key in the template ARB is read by some hand-written `lib/` code, or retained with a reason. |
 | `cruxAuditRefAfterAwait` | A `ConsumerState`'s `ref`, or a `WidgetRef` parameter, is never used after an `await` without a `mounted` check in between. |
+| `cruxAuditModalGuard` | Every `showDialog` / `showModalBottomSheet` / `showGeneralDialog` runs inside `ModalGuard.run(...)`, or its enclosing member is allowed with the reason it cannot be re-fired. |
+| `cruxAuditDismissibleFormDialogs` | A dialog that holds typed input passes `barrierDismissible: false`; forms the scan cannot infer are declared as known forms. |
+| `cruxAuditPrivateEmptyStates` | No private `*Empty*` / `*Placeholder*` class duplicates `CruxPanelEmptyState`, unless exempted with a reason. |
 
 ## Shape
 
