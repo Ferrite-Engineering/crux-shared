@@ -26,3 +26,10 @@
 # it is available: remove what trips the rule, and allowlist only what history
 # has frozen.
 471705a1e23bee19d61b4ddd595e092023614405:packages/crux_telemetry/test/src/storage/telemetry_reset_test.dart:generic-api-key:8
+
+# The CXP wire-1.3 conformance test computes an HMAC proof from a fixed
+# 32-hex-digit token so its expected value can be checked against vectors
+# computed independently. The token is a counting pattern typed into the test,
+# never issued and never used by any peer. The line now carries an inline
+# `gitleaks:allow`, so only the commit that introduced it needs an entry.
+f8c0e3473685523cddca540c267974cdc49d31d9:packages/crux_cxp/test/conformance/auth_token_test.dart:generic-api-key:467
