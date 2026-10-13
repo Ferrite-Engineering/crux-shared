@@ -319,6 +319,9 @@ void main() {
         ),
         recorder: rec,
         productId: 'lintcrux',
+        // Every shipped product key is honoured, so the dead key comes from
+        // a registry built for the test.
+        productKeys: _withDeadMandatoryEngines,
         onDiagnostic: log.add,
       );
       final line = log.firstWhere((l) => l.contains('keysNotHonoured'));
@@ -433,12 +436,37 @@ void main() {
           discovery: PolicyDiscovery.environmentVariable,
         ),
         recorder: rec,
+        productKeys: _withDeadMandatoryEngines,
+        onDiagnostic: log.add,
+      );
+      expect(log.where((l) => l.contains('keysNotHonoured')), isEmpty);
+    });
+
+    test('a key the shipped registry honours is not named', () {
+      final (rec, _) = recorder();
+      final log = <String>[];
+      reportPolicyLoad(
+        result: PolicyLoadResult(
+          document: PolicyDocument.parse(
+            '{"schema":1,"products":{"lintcrux":'
+            '{"mandatoryEngines":["verilator"]}}}',
+          ),
+          discovery: PolicyDiscovery.environmentVariable,
+        ),
+        recorder: rec,
+        productId: 'lintcrux',
         onDiagnostic: log.add,
       );
       expect(log.where((l) => l.contains('keysNotHonoured')), isEmpty);
     });
   });
 }
+
+/// A product-key registry in which `lintcrux.mandatoryEngines` is registered
+/// and not honoured, for the paths the shipped registry no longer exercises.
+const Map<String, Map<String, bool>> _withDeadMandatoryEngines = {
+  'lintcrux': {'mandatoryEngines': false, 'ciGateThreshold': true},
+};
 
 /// Keeps every event, so a test can assert what reached the sink.
 class _CapturingSink implements AuditSink {

@@ -183,13 +183,20 @@ void main() {
     });
 
     test('a misspelled key and an unhonoured key read differently', () {
+      // Every shipped product key is honoured, so the unhonoured one comes
+      // from a registry built for the test.
       final findings = byKey(
-        lint({
-          'schema': 1,
-          'products': {
-            'simcrux': {'retentionPolcy': 1, 'defaultSimulator': 'x'},
+        lintPolicySource(
+          jsonEncode({
+            'schema': 1,
+            'products': {
+              'simcrux': {'retentionPolcy': 1, 'defaultSimulator': 'x'},
+            },
+          }),
+          productKeys: const {
+            'simcrux': {'retentionPolicy': true, 'defaultSimulator': false},
           },
-        }),
+        ),
       );
       expect(
         findings['products.simcrux.retentionPolcy'],

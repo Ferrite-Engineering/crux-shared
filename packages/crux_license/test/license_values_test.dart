@@ -257,6 +257,7 @@ void main() {
         await actions.openPurchasePage(),
         await actions.openManagePage(),
         await actions.requestEducationalLicense('a@b.edu'),
+        await actions.openEducationalRequestPage(),
       ];
       for (final result in results) {
         expect(result.isOk, isFalse);
@@ -423,9 +424,9 @@ void main() {
         s.licenseCloseAction,
         s.licenseEduSectionTitle,
         s.licenseEduBody,
-        s.licenseEduEmailLabel,
-        s.licenseEduRequestButton,
-        s.licenseEduCheckYourEmail,
+        s.licenseEduHandOff,
+        s.licenseEduOpenRequestPageButton,
+        s.licensePolicyLocked,
         s.licenseBuyButton,
         s.licenseManageButton,
         s.licenseErrorMalformed,

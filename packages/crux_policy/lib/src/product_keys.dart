@@ -67,6 +67,16 @@ const Map<String, bool> kSuiteKeys = {
 /// concludes the restriction is in force. Silence is the worst answer
 /// available: worse than rejecting the key, because a rejection is visible.
 ///
+/// Two of the restriction keys, in the words the policy reference uses:
+///
+/// - `lintcrux.mandatoryEngines` is a list of engine ids added to every run,
+///   whatever the project or the command line selects. A mandated engine that
+///   is not installed fails a headless run; the desktop app reports it
+///   unavailable and runs the rest.
+/// - `simcrux.simulatorBinaryPolicy` is an allow-list of simulator ids: which
+///   simulators a fleet may use. The app and the CI runner refuse any other
+///   simulator. It names simulators, not executable paths.
+///
 /// Kept here rather than in the products because the linter is a standalone
 /// CLI in this package and cannot import them. Each product's
 /// `*_policy_keys_test.dart` asserts its registry matches its entry, so the
@@ -81,20 +91,17 @@ const Map<String, Map<String, bool>> kProductKeys = {
     'cxpServer': true,
     'approvedPlugins': true,
   },
-  'netcrux': {
-    'crossProbePeerAllowlist': true,
-    'symbolLibraries': true,
-  },
+  'netcrux': {'crossProbePeerAllowlist': true, 'symbolLibraries': true},
   'lintcrux': {
     'ruleSeverityOverrides': true,
-    'mandatoryEngines': false,
+    'mandatoryEngines': true,
     'ciGateThreshold': true,
     'teamDatabaseSubmitter': true,
   },
   'simcrux': {
-    'defaultSimulator': false,
-    'simulatorBinaryPolicy': false,
-    'ciGateThreshold': false,
+    'defaultSimulator': true,
+    'simulatorBinaryPolicy': true,
+    'ciGateThreshold': true,
     'retentionPolicy': true,
     'distributedExecutionBackend': true,
     'teamDatabaseSubmitter': true,

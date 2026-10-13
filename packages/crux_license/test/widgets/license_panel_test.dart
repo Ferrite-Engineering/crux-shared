@@ -432,57 +432,40 @@ void main() {
       expect(find.text(strings.licenseEduSectionTitle), findsNothing);
     });
 
-    testWidgets('says the licence arrives by email, not here', (tester) async {
+    testWidgets('hands the request to the browser, with no form', (
+      tester,
+    ) async {
+      // The request page carries the bot check the issuing endpoint needs,
+      // so the panel collects nothing: it says where the request is made
+      // and opens it.
       final actions = _RecordingActions();
       await tester.pumpWidget(host(actions: actions));
 
-      await tester.enterText(
-        find.byType(TextField).last,
-        'student@university.edu',
+      expect(find.text(strings.licenseEduHandOff), findsOneWidget);
+      await tapVisible(
+        tester,
+        find.text(strings.licenseEduOpenRequestPageButton),
       );
-      await tapVisible(tester, find.text(strings.licenseEduRequestButton));
 
-      expect(actions.eduRequests, <String>['student@university.edu']);
-      expect(find.text(strings.licenseEduCheckYourEmail), findsOneWidget);
+      expect(actions.eduPagesOpened, 1);
+      // Only the licence-key field: no address is typed into the app.
+      expect(find.byType(TextField), findsOneWidget);
     });
 
-    testWidgets('a reviewed address is not told to follow a link', (
-      tester,
-    ) async {
-      // Measured against the live backend: an address whose domain is not
-      // allow-listed gets a person and no confirmation mail at all. The panel
-      // showed "we have sent a link to confirm the address" anyway, so the
-      // applicant most likely to need clear instructions — the one whose
-      // institution we have never heard of — was the one told to wait for
-      // mail that was never sent.
+    testWidgets('a browser that cannot be opened is said so', (tester) async {
       final actions = _RecordingActions(
-        result: const LicenseActionSucceeded(underReview: true),
+        result: const LicenseActionFailed(CruxLicenseActionFailure.unknown),
       );
       await tester.pumpWidget(host(actions: actions));
 
-      await tester.enterText(
-        find.byType(TextField).last,
-        'someone@robotics-lab.example',
+      await tapVisible(
+        tester,
+        find.text(strings.licenseEduOpenRequestPageButton),
       );
-      await tapVisible(tester, find.text(strings.licenseEduRequestButton));
+      await tester.pump();
 
-      expect(find.text(strings.licenseEduUnderReview), findsOneWidget);
-      expect(find.text(strings.licenseEduCheckYourEmail), findsNothing);
-    });
-
-    testWidgets('a refused address is explained in the field', (tester) async {
-      final actions = _RecordingActions(
-        result: const LicenseActionFailed(
-          CruxLicenseActionFailure.invalidEmail,
-        ),
-      );
-      await tester.pumpWidget(host(actions: actions));
-
-      await tester.enterText(find.byType(TextField).last, 'me@example.com');
-      await tapVisible(tester, find.text(strings.licenseEduRequestButton));
-
-      expect(find.text(strings.licenseErrorInvalidEmail), findsOneWidget);
-      expect(find.text(strings.licenseEduCheckYourEmail), findsNothing);
+      expect(actions.eduPagesOpened, 1);
+      expect(find.text(strings.licenseErrorUnknown), findsOneWidget);
     });
   });
 
@@ -780,6 +763,7 @@ class _RecordingActions implements CruxLicenseActions {
   final CruxLicenseActionResult result;
   final List<String> activatedWith = <String>[];
   final List<String> eduRequests = <String>[];
+  int eduPagesOpened = 0;
   int deactivated = 0;
   int refreshed = 0;
 
@@ -826,6 +810,12 @@ class _RecordingActions implements CruxLicenseActions {
     String email,
   ) async {
     eduRequests.add(email);
+    return result;
+  }
+
+  @override
+  Future<CruxLicenseActionResult> openEducationalRequestPage() async {
+    eduPagesOpened++;
     return result;
   }
 

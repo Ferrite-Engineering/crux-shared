@@ -18,6 +18,7 @@ library;
 
 export 'src/crux_auto_reload_setting_tile.dart';
 export 'src/crux_locale_setting_tile.dart';
+export 'src/crux_policy_lock.dart';
 export 'src/crux_policy_lock_note.dart';
 export 'src/crux_settings_card.dart';
 export 'src/crux_settings_category.dart';

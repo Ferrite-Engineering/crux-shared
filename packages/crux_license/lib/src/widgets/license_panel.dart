@@ -94,16 +94,11 @@ class CruxLicensePanel extends ConsumerStatefulWidget {
 
 class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
   final _controller = TextEditingController();
-  final _eduController = TextEditingController();
   String? _error;
-  String? _eduError;
-  bool _eduSubmitted = false;
-  bool _eduUnderReview = false;
 
   @override
   void dispose() {
     _controller.dispose();
-    _eduController.dispose();
     super.dispose();
   }
 
@@ -501,6 +496,11 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
 
   /// Only rendered at Open Core: a user who already holds a licence has no
   /// use for it, and offering it anyway invites them to end up with two.
+  ///
+  /// A hand-off, not a form. The request page on the web carries the bot
+  /// check that guards the issuing endpoint, which a desktop app cannot run,
+  /// so the panel's whole part is to say where the request is made and open
+  /// it. The licence arrives by email either way.
   Widget _educationalSection(
     CruxLicenseStatus status,
     CruxLicenseActions actions,
@@ -514,65 +514,21 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(_s.licenseEduHandOff, style: theme.textTheme.bodyMedium),
         const SizedBox(height: 12),
-        if (_eduSubmitted)
-          // The licence does not arrive here; it arrives by email. Saying so
-          // plainly is the whole job of this state — a user who waits for the
-          // panel to change is a user who files a support ticket.
-          //
-          // Which sentence depends on which path the backend took: an
-          // unrecognised domain gets a human and no confirmation link, so the
-          // automatic path's instructions would send that applicant looking
-          // for mail that was never sent.
-          Text(
-            _eduUnderReview
-                ? _s.licenseEduUnderReview
-                : _s.licenseEduCheckYourEmail,
-            style: theme.textTheme.bodyMedium,
-          )
-        else ...[
-          TextField(
-            controller: _eduController,
-            enabled: !status.busy,
-            autocorrect: false,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: _s.licenseEduEmailLabel,
-              errorText: _eduError,
-              errorMaxLines: 3,
-              border: const OutlineInputBorder(),
-            ),
-            onChanged: (_) {
-              if (_eduError != null) setState(() => _eduError = null);
-            },
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: FilledButton.tonalIcon(
+            onPressed: status.busy
+                ? null
+                : () => _run(actions.openEducationalRequestPage),
+            icon: const Icon(Icons.open_in_new),
+            label: Text(_s.licenseEduOpenRequestPageButton),
           ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: FilledButton.tonal(
-              onPressed: status.busy ? null : () => _requestEdu(actions),
-              child: Text(_s.licenseEduRequestButton),
-            ),
-          ),
-        ],
+        ),
       ],
     );
-  }
-
-  Future<void> _requestEdu(CruxLicenseActions actions) async {
-    final result = await actions.requestEducationalLicense(
-      _eduController.text,
-    );
-    if (!mounted) return;
-    if (result.isOk) {
-      setState(() {
-        _eduSubmitted = true;
-        _eduUnderReview = (result as LicenseActionSucceeded).underReview;
-        _eduError = null;
-      });
-    } else {
-      setState(() => _eduError = _messageFor(result as LicenseActionFailed));
-    }
   }
 
   // --- Offline activation ------------------------------------------------

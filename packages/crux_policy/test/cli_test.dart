@@ -135,16 +135,16 @@ void main() {
       // who set a restriction was never told it was not in force.
       final path = write('unhonoured.json', {
         'schema': 1,
-        'products': {
-          'lintcrux': {
-            'mandatoryEngines': <String>['verilator'],
+        'suite': {
+          'filePathRestrictions': {
+            'deny': ['/secret/**'],
           },
         },
       });
       final result = run(['lint', path]);
       expect(result.exitCode, 1);
       final out = result.stdout as String;
-      expect(out, contains('products.lintcrux.mandatoryEngines'));
+      expect(out, contains('suite.filePathRestrictions'));
       expect(out, contains('NOT honoured'));
       expect(out, isNot(contains('check the spelling')));
     });

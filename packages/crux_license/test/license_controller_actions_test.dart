@@ -1,6 +1,10 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+// The in-app educational request is deprecated in favour of the browser
+// hand-off, and stays covered here until it is removed.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'dart:convert';
 
 import 'package:crux_license/crux_license.dart';
@@ -180,11 +184,48 @@ void main() {
   });
 
   group('the educational request', () {
-    test('is unavailable without an endpoint', () async {
+    test('opens the request page for this product in the browser', () async {
       final controller = controllerOver(_Store());
       addTearDown(controller.dispose);
 
-      expect(controller.supportsEducationalRequest, isFalse);
+      // Offered with no endpoint configured: the page needs only a browser.
+      expect(controller.supportsEducationalRequest, isTrue);
+      expect((await controller.openEducationalRequestPage()).isOk, isTrue);
+      expect(opened, [
+        Uri.parse('https://edacrux.app/edu/request?product=wavecrux'),
+      ]);
+    });
+
+    test('names each product by its slug', () {
+      expect(
+        CruxProduct.values.map((p) => cruxEducationalRequestPage(p).toString()),
+        [
+          'https://edacrux.app/edu/request?product=wavecrux',
+          'https://edacrux.app/edu/request?product=netcrux',
+          'https://edacrux.app/edu/request?product=lintcrux',
+          'https://edacrux.app/edu/request?product=simcrux',
+        ],
+      );
+    });
+
+    test('a browser that cannot be opened is a failure, not a throw', () async {
+      final controller = controllerOver(
+        _Store(),
+        openUrl: (_) async => throw StateError('no browser'),
+      );
+      addTearDown(controller.dispose);
+
+      final result = await controller.openEducationalRequestPage();
+      expect(
+        (result as LicenseActionFailed).failure,
+        CruxLicenseActionFailure.unknown,
+      );
+    });
+
+    test('the in-app request is refused without an endpoint', () async {
+      final controller = controllerOver(_Store());
+      addTearDown(controller.dispose);
+
       expect(
         ((await controller.requestEducationalLicense('a@uni.edu'))
                 as LicenseActionFailed)

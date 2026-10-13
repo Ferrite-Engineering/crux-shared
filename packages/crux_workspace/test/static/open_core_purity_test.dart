@@ -397,8 +397,15 @@ const Map<String, Set<String>> _proFeatureNouns = <String, Set<String>>{
     'CruxSharedAuditKinds',
   },
   // Policy locks: the resolver is the open mechanism and the signed policy
-  // file is the paid input; the note is what a locked setting renders.
-  'policyLock': <String>{'CruxPolicyLockNote'},
+  // file is the paid input. The note is what a locked setting renders;
+  // `CruxPolicyLock` is the one wrapper that mounts it, keyed on the resolved
+  // source, with its sentence scope and note placement.
+  'policyLock': <String>{
+    'CruxPolicyLockNote',
+    'CruxPolicyLock',
+    'CruxPolicyLockScope',
+    'CruxPolicyLockNotePlacement',
+  },
   'airgap': <String>{},
   'offlineActivation': <String>{},
   'managedUpdate': <String>{},

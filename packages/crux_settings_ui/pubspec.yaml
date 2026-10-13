@@ -14,6 +14,10 @@ resolution: workspace
 dependencies:
   crux_a11y:
     path: ../crux_a11y
+  # Pure Dart, for PolicySource: CruxPolicyLock is keyed on the resolved
+  # source. The edge runs this way only; crux_policy never imports UI.
+  crux_policy:
+    path: ../crux_policy
   crux_settings:
     path: ../crux_settings
   flutter:

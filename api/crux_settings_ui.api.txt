@@ -24,11 +24,27 @@ class CruxLocaleSettingTile extends StatelessWidget
   final label: String
   final locale: String
   final onChanged: void Function(String)
+class CruxPolicyLock extends StatelessWidget
+  const CruxPolicyLock({CruxPolicyLockNotePlacement placement, Key? key, String? detail, Widget? child, required PolicySource source})
+  build(BuildContext context) -> Widget
+  final child: Widget?
+  final detail: String?
+  final placement: CruxPolicyLockNotePlacement
+  final source: PolicySource
+  get isLocked -> bool
 class CruxPolicyLockNote extends StatelessWidget
   const CruxPolicyLockNote({Key? key, String? source, required String message})
   build(BuildContext context) -> Widget
   final message: String
   final source: String?
+enum CruxPolicyLockNotePlacement
+  static const above: CruxPolicyLockNotePlacement
+  static const below: CruxPolicyLockNotePlacement
+class CruxPolicyLockScope extends InheritedWidget
+  const CruxPolicyLockScope({Key? key, required String message, required Widget child})
+  final message: String
+  static messageOf(BuildContext context) -> String
+  updateShouldNotify(CruxPolicyLockScope oldWidget) -> bool
 class CruxSettingsCard extends StatelessWidget
   const CruxSettingsCard({Key? key, required List<Widget> children})
   build(BuildContext context) -> Widget
@@ -103,5 +119,6 @@ class CruxSettingsSliderTile extends StatelessWidget
   final title: String
   final value: double
   final valueText: String
+get kCruxPolicyLockNoteEn -> String
 get kCruxSupportedLocales -> Map<String, String>
 openCruxSettings(BuildContext context, {Widget Function(BuildContext, Widget)? wrap, required String closeTooltip, required String title, required Widget Function(BuildContext) bodyBuilder, required bool asDialog}) -> Future<void>

@@ -1,8 +1,23 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_license/src/crux_product.dart';
 import 'package:crux_license/src/license_validation.dart';
 import 'package:meta/meta.dart';
+
+/// The suite's educational-licence request page.
+///
+/// The request is made there, in the browser, rather than from a form inside
+/// the app: the page carries the bot check that guards the issuing endpoint,
+/// and a desktop app cannot host one. One page serves all four products.
+const String kCruxEducationalRequestPageUrl = 'https://edacrux.app/edu/request';
+
+/// The educational-licence request page for [product]:
+/// [kCruxEducationalRequestPageUrl] with `?product=<slug>`, so the request
+/// records which app it came from.
+Uri cruxEducationalRequestPage(CruxProduct product) => Uri.parse(
+  kCruxEducationalRequestPageUrl,
+).replace(queryParameters: {'product': product.slug});
 
 /// Why a licence action did not do what was asked.
 enum CruxLicenseActionFailure {
@@ -155,7 +170,20 @@ abstract class CruxLicenseActions {
   /// purchase is broken.
   bool get supportsManageLink => true;
 
-  /// Start the educational-licence round trip for [email].
+  /// Open the educational-licence request page,
+  /// [cruxEducationalRequestPage], in the user's browser.
+  ///
+  /// This is the whole of the app's part in an educational request: the page
+  /// collects the address, runs the bot check and starts the round trip, and
+  /// the licence arrives by email.
+  Future<CruxLicenseActionResult> openEducationalRequestPage();
+
+  /// Start the educational-licence round trip for [email] from inside the
+  /// app.
+  ///
+  /// No longer called by the licence panel, which hands the request to the
+  /// browser through [openEducationalRequestPage]: the issuing endpoint is
+  /// guarded by a bot check that only the web page can run.
   ///
   /// The app's whole part in it: collect the address, call the endpoint, and
   /// say "check your email". The issuing side — creating the unactivated
@@ -166,9 +194,17 @@ abstract class CruxLicenseActions {
   ///
   /// EDU is suite-wide: one `edu-annual` policy grants all four products, so
   /// this is the same call whichever app makes it.
+  // Package versions here are informational and the products pin a commit;
+  // the deprecation policy keeps this until every overlay has migrated.
+  // ignore: remove_deprecations_in_breaking_versions
+  @Deprecated(
+    'The licence panel hands educational requests to the browser; use '
+    'openEducationalRequestPage. Removed after 1.1.',
+  )
   Future<CruxLicenseActionResult> requestEducationalLicense(String email);
 
-  /// Whether [requestEducationalLicense] is offered.
+  /// Whether the licence panel offers an educational request at all, through
+  /// [openEducationalRequestPage].
   bool get supportsEducationalRequest => true;
 }
 
@@ -237,6 +273,10 @@ class UnsupportedLicenseActions implements CruxLicenseActions {
   Future<CruxLicenseActionResult> requestEducationalLicense(
     String email,
   ) async => _unsupported;
+
+  @override
+  Future<CruxLicenseActionResult> openEducationalRequestPage() async =>
+      _unsupported;
 
   @override
   bool get supportsPurchaseLinks => false;

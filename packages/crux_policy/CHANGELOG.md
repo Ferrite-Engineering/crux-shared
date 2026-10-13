@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `kProductKeys`: `lintcrux.mandatoryEngines`, `simcrux.defaultSimulator`,
+  `simcrux.ciGateThreshold` and `simcrux.simulatorBinaryPolicy` are `true`;
+  every registered product key is now honoured. `simulatorBinaryPolicy` is
+  documented as an allow-list of simulator ids (which simulators a fleet may
+  use), not of executable paths.
+- `lintPolicySource` and `reportPolicyLoad` (in `crux_license`) take an
+  optional `productKeys` registry, defaulting to `kProductKeys`, so the
+  unhonoured-product-key path stays tested while no shipped key is unhonoured.
+
 - `kProductKeys['lintcrux']['ruleSeverityOverrides']` is `true`: LintCrux
   now reads the key, so `crux-policy lint` no longer reports it as inert.
 

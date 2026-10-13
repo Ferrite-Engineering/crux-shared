@@ -18,7 +18,9 @@ import 'package:flutter/material.dart';
 /// four products.
 ///
 /// Pair it with a disabled control, never instead of one. It explains a lock;
-/// it does not create one.
+/// it does not create one. A product does not mount it directly: it wraps the
+/// control in `CruxPolicyLock`, which disables the control and mounts this
+/// note with the shared sentence, keyed on the resolved policy source.
 class CruxPolicyLockNote extends StatelessWidget {
   /// Creates the lock note.
   const CruxPolicyLockNote({required this.message, this.source, super.key});

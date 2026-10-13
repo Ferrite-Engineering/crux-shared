@@ -112,6 +112,7 @@ abstract class CruxLicenseActions
   get supportsOfflineActivation -> bool
   get supportsPurchaseLinks -> bool
   importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openEducationalRequestPage() -> Future<CruxLicenseActionResult>
   openManagePage() -> Future<CruxLicenseActionResult>
   openPurchasePage() -> Future<CruxLicenseActionResult>
   refresh() -> Future<CruxLicenseActionResult>
@@ -139,6 +140,7 @@ class CruxLicenseController implements CruxLicenseActions
   get supportsOfflineActivation -> bool
   get supportsPurchaseLinks -> bool
   importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openEducationalRequestPage() -> Future<CruxLicenseActionResult>
   openManagePage() -> Future<CruxLicenseActionResult>
   openPurchasePage() -> Future<CruxLicenseActionResult>
   refresh() -> Future<CruxLicenseActionResult>
@@ -170,6 +172,8 @@ abstract class CruxLicensePanelStrings
   get licenseEduBody -> String
   get licenseEduCheckYourEmail -> String
   get licenseEduEmailLabel -> String
+  get licenseEduHandOff -> String
+  get licenseEduOpenRequestPageButton -> String
   get licenseEduRequestButton -> String
   get licenseEduSectionTitle -> String
   get licenseEduUnderReview -> String
@@ -205,6 +209,7 @@ abstract class CruxLicensePanelStrings
   get licenseOfflineBody -> String
   get licenseOfflineSectionTitle -> String
   get licenseOfflineSteps -> String
+  get licensePolicyLocked -> String
   get licensePolicyRefused -> String
   get licensePolicyRefusedBadSignature -> String
   get licensePolicyRefusedInsecurePath -> String
@@ -244,11 +249,9 @@ class CruxLicensePanelStringsEn extends CruxLicensePanelStrings
   get licenseDeactivateConfirmTitle -> String
   get licenseDeactivatedMessage -> String
   get licenseEduBody -> String
-  get licenseEduCheckYourEmail -> String
-  get licenseEduEmailLabel -> String
-  get licenseEduRequestButton -> String
+  get licenseEduHandOff -> String
+  get licenseEduOpenRequestPageButton -> String
   get licenseEduSectionTitle -> String
-  get licenseEduUnderReview -> String
   get licenseEmailLabel -> String
   get licenseErrorAccount -> String
   get licenseErrorAlreadyRequested -> String
@@ -332,6 +335,7 @@ enum CruxProduct
   const CruxProduct(String entitlementCode, String displayName)
   final displayName: String
   final entitlementCode: String
+  get slug -> String
   static const lintCrux: CruxProduct
   static const netCrux: CruxProduct
   static const simCrux: CruxProduct
@@ -678,6 +682,7 @@ class UnsupportedLicenseActions implements CruxLicenseActions
   get supportsOfflineActivation -> bool
   get supportsPurchaseLinks -> bool
   importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openEducationalRequestPage() -> Future<CruxLicenseActionResult>
   openManagePage() -> Future<CruxLicenseActionResult>
   openPurchasePage() -> Future<CruxLicenseActionResult>
   refresh() -> Future<CruxLicenseActionResult>
@@ -695,6 +700,7 @@ get cruxAuditPeerIdProvider -> Provider<String?>
 get cruxAuditProductIdProvider -> Provider<String>
 get cruxAuditRecorderProvider -> Provider<CruxAuditRecorder>
 get cruxAuditSinkProvider -> Provider<AuditSink>
+cruxEducationalRequestPage(CruxProduct product) -> Uri
 cruxGatedSettingsCategory({CruxUpgradeDialogStrings Function(BuildContext)? strings, LicenseBadgeStrings Function(BuildContext)? badgeStrings, required IconData icon, required LicenseTier requiredTier, required String Function(BuildContext) labelBuilder, required String id, required Widget Function(BuildContext) bodyBuilder}) -> CruxSettingsExtraCategory
 cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 cruxLicenseEditionLine(CruxLicenseStatus status, CruxEditionLineStrings strings) -> String?
@@ -711,6 +717,7 @@ get kAiExperimental -> bool
 get kBetaExpiry -> DateTime?
 get kBetaExpiryWarningDays -> int
 get kBetaPeriod -> bool
+get kCruxEducationalRequestPageUrl -> String
 get kCruxLicenseCategoryIcon -> IconData
 get kCruxLicenseCategoryId -> String
 get kKeygenAccountId -> String
@@ -727,5 +734,5 @@ mintInstallFingerprint([Random? random]) -> String
 get observedServerTimeProvider -> Provider<DateTime?>
 parseBetaExpiryDate(int yyyymmdd) -> DateTime?
 parseLicenseCredential(String raw) -> LicenseEnvelopeParse
-reportPolicyLoad({String? productId, required CruxAuditRecorder recorder, required PolicyLoadResult result, void Function(String)? onDiagnostic}) -> PolicyLoadReport?
+reportPolicyLoad({Map<String, Map<String, bool>> productKeys, String? productId, required CruxAuditRecorder recorder, required PolicyLoadResult result, void Function(String)? onDiagnostic}) -> PolicyLoadReport?
 trustedBetaExpiryNow(DateTime deviceNow, {DateTime? observedServerTime}) -> DateTime

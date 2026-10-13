@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+- **The licence panel's educational section is a browser hand-off.** It no
+  longer collects an address: it says the request is made on the web and
+  opens `https://edacrux.app/edu/request?product=<slug>` through the
+  controller's existing `openUrl`, because the issuing endpoint is guarded by
+  a bot check that only the web page can run. New:
+  `CruxLicenseActions.openEducationalRequestPage` (abstract; implemented by
+  `CruxLicenseController` and `UnsupportedLicenseActions`),
+  `cruxEducationalRequestPage`, `kCruxEducationalRequestPageUrl` and
+  `CruxProduct.slug`. `CruxLicenseController.supportsEducationalRequest` is
+  now always true. New abstract strings `licenseEduHandOff` and
+  `licenseEduOpenRequestPageButton`; every overlay implements them.
+- **Deprecated, removed after 1.1:** `requestEducationalLicense` (interface
+  and controller), the controller's `educationalRequestUrl` argument, and the
+  strings only the in-app form showed (`licenseEduEmailLabel`,
+  `licenseEduRequestButton`, `licenseEduCheckYourEmail`,
+  `licenseEduUnderReview`). The four strings are concrete again, with English
+  defaults, so an overlay can delete its overrides.
+- `CruxLicensePanelStrings.licensePolicyLocked`: the sentence under a
+  control the organization's policy file locked, in the voice of the
+  refused-policy notice. Concrete, defaulting to `crux_settings_ui`'s
+  `kCruxPolicyLockNoteEn`; an overlay localises it and hands it to the one
+  `CruxPolicyLockScope` it mounts.
+- `reportPolicyLoad` takes an optional `productKeys` registry, defaulting to
+  `kProductKeys`, so the unhonoured-product-key report stays tested while
+  every shipped product key is honoured.
+
 - **`CruxLicensePanelStrings.licenseEduUnderReview` is abstract.** Its
   English default stood in until the products localised it; all four Pro
   overlays now implement it from their own ARB files, so the default is

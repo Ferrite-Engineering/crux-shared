@@ -34,6 +34,10 @@ enum CruxProduct {
   /// Product name as written in prose and UI, e.g. `WaveCrux`.
   final String displayName;
 
+  /// The lower-case product id used in URLs, file names and the policy
+  /// file's `products` block, e.g. `wavecrux`.
+  String get slug => displayName.toLowerCase();
+
   /// The product an entitlement [code] grants, or `null` if [code] is not a
   /// product entitlement (tier codes such as `TIER_PRO` land here).
   ///

@@ -294,11 +294,16 @@ class PolicyLoadReport {
 /// that product's unhonoured keys from `kProductKeys`. Pass [productId];
 /// omitting it is silently reporting less.
 ///
+/// [productKeys] is the product-key registry, `kProductKeys` unless given;
+/// only a test passes one, to keep the unhonoured-product-key path covered in
+/// a release where every product key is honoured.
+///
 /// [onDiagnostic] defaults to stderr, matching [JsonlAuditSink].
 PolicyLoadReport? reportPolicyLoad({
   required PolicyLoadResult result,
   required CruxAuditRecorder recorder,
   String? productId,
+  Map<String, Map<String, bool>> productKeys = kProductKeys,
   void Function(String message)? onDiagnostic,
 }) {
   final diagnose = onDiagnostic ?? _defaultPolicyDiagnostic;
@@ -333,7 +338,7 @@ PolicyLoadReport? reportPolicyLoad({
   }
   if (productId != null) {
     final present = result.document.products[productId];
-    final known = kProductKeys[productId];
+    final known = productKeys[productId];
     if (present != null && known != null) {
       final ignored = present.keys.where((k) => known[k] == false).toList()
         ..sort();

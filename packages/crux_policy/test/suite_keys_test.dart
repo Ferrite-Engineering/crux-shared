@@ -127,6 +127,11 @@ void main() {
             'lintcrux': {'mandatoryEngines': <String>[]},
           },
         }),
+        // Every shipped product key is honoured; this registry keeps one
+        // unhonoured so the two findings can be compared.
+        productKeys: const {
+          'lintcrux': {'mandatoryEngines': false},
+        },
       ).single;
 
       expect(suiteFinding.key, 'suite.filePathRestrictions');

@@ -141,6 +141,14 @@ class CruxLicenseController implements CruxLicenseActions {
     required Future<void> Function(Uri url) openUrl,
     required Uri purchaseUrl,
     Uri? manageUrl,
+    // Package versions here are informational and the products pin a commit;
+    // the deprecation policy keeps this until every overlay has migrated.
+    // ignore: remove_deprecations_in_breaking_versions
+    @Deprecated(
+      'The licence panel hands educational requests to the browser, at '
+      'cruxEducationalRequestPage(product); drop this argument. Removed after '
+      '1.1.',
+    )
     Uri? educationalRequestUrl,
     LicenseGracePolicy grace = LicenseGracePolicy.standard,
     Duration phoneHomeInterval = const Duration(hours: 24),
@@ -475,6 +483,13 @@ class CruxLicenseController implements CruxLicenseActions {
       // request/response flow is the remaining half.
       activate(token);
 
+  // Package versions here are informational and the products pin a commit;
+  // the deprecation policy keeps this until every overlay has migrated.
+  // ignore: remove_deprecations_in_breaking_versions
+  @Deprecated(
+    'The licence panel hands educational requests to the browser; use '
+    'openEducationalRequestPage. Removed after 1.1.',
+  )
   @override
   Future<CruxLicenseActionResult> requestEducationalLicense(
     String email,
@@ -503,8 +518,13 @@ class CruxLicenseController implements CruxLicenseActions {
     }
   }
 
+  /// Always true: the request page needs only a browser.
   @override
-  bool get supportsEducationalRequest => _educationalRequestUrl != null;
+  bool get supportsEducationalRequest => true;
+
+  @override
+  Future<CruxLicenseActionResult> openEducationalRequestPage() =>
+      _open(cruxEducationalRequestPage(product));
 
   /// A courtesy check, not the enforcement.
   ///

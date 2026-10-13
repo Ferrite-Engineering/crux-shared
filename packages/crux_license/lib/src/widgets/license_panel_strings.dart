@@ -1,6 +1,8 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_settings_ui/crux_settings_ui.dart'
+    show kCruxPolicyLockNoteEn;
 import 'package:meta/meta.dart';
 
 /// Localized strings consumed by `CruxLicensePanel`.
@@ -187,21 +189,58 @@ abstract class CruxLicensePanelStrings {
   /// Explanation of what an educational licence is and what it costs.
   String get licenseEduBody;
 
-  /// Label of the institutional-email field.
-  String get licenseEduEmailLabel;
+  /// The sentence above the request button: the request is made on the web,
+  /// and the licence arrives by email. Says so before the browser opens, so
+  /// the user is not surprised to leave the app, and does not wait for this
+  /// panel to change.
+  String get licenseEduHandOff;
 
-  /// Label of the request button.
-  String get licenseEduRequestButton;
+  /// Label of the button that opens the request page in the browser.
+  String get licenseEduOpenRequestPageButton;
 
-  /// Shown after a request is accepted. The licence does not arrive here —
-  /// it arrives by email, and saying so is the whole job of this string.
-  String get licenseEduCheckYourEmail;
+  /// Label of the institutional-email field of the in-app request form.
+  // Package versions here are informational and the products pin a commit;
+  // the deprecation policy keeps this until every overlay has migrated.
+  // ignore: remove_deprecations_in_breaking_versions
+  @Deprecated(
+    'The request form moved to the browser and this is no longer shown. '
+    'Removed after 1.1.',
+  )
+  String get licenseEduEmailLabel => 'Institutional email address';
 
-  /// Shown when the request went to a person instead of being fulfilled
-  /// automatically, because the address's domain is not one the backend
-  /// recognises. It says the licence will arrive by email, and when to write
-  /// if it does not.
-  String get licenseEduUnderReview;
+  /// Label of the in-app request button.
+  // Package versions here are informational and the products pin a commit;
+  // the deprecation policy keeps this until every overlay has migrated.
+  // ignore: remove_deprecations_in_breaking_versions
+  @Deprecated(
+    'Use licenseEduOpenRequestPageButton; the request is made in the browser. '
+    'Removed after 1.1.',
+  )
+  String get licenseEduRequestButton => 'Request a license';
+
+  /// Shown after an in-app request was accepted.
+  // Package versions here are informational and the products pin a commit;
+  // the deprecation policy keeps this until every overlay has migrated.
+  // ignore: remove_deprecations_in_breaking_versions
+  @Deprecated(
+    'The request page says this now, not the panel. Removed after 1.1.',
+  )
+  String get licenseEduCheckYourEmail =>
+      'Check your email: we have sent a link to confirm the address. The '
+      'license arrives once you follow it.';
+
+  /// Shown when an in-app request went to a person for review.
+  // Package versions here are informational and the products pin a commit;
+  // the deprecation policy keeps this until every overlay has migrated.
+  // ignore: remove_deprecations_in_breaking_versions
+  @Deprecated(
+    'The request page says this now, not the panel. Removed after 1.1.',
+  )
+  String get licenseEduUnderReview =>
+      'Thanks. That domain is not one we recognise automatically, so a '
+      'person is checking the request. There is no link to follow: the '
+      'license will arrive by email. If you have not heard within two '
+      'working days, write to edu@ferriteengineering.com.';
 
   // --- Commerce links ---------------------------------------------------
 
@@ -274,6 +313,17 @@ abstract class CruxLicensePanelStrings {
   /// Without this a refused policy is a line in the process log, and from the
   /// app a refused file and an absent one look identical: an ungoverned seat.
   String get licensePolicyRefused;
+
+  /// The sentence under a control whose value the organization's policy file
+  /// locked, in the same voice as [licensePolicyRefused]: what the file did,
+  /// what that means here, and who to ask.
+  ///
+  /// Not used by this panel. An overlay hands it to the one
+  /// `CruxPolicyLockScope` it mounts above its navigator, so every
+  /// `CruxPolicyLock` in the app reads it. Concrete so an adapter that has not
+  /// localised it yet still compiles; it defaults to the shared English
+  /// sentence.
+  String get licensePolicyLocked => kCruxPolicyLockNoteEn;
 
   /// Why, when the file is signed and the machine has no usable organization
   /// public key to check it against — not installed, unreadable, malformed,
@@ -485,22 +535,12 @@ class CruxLicensePanelStringsEn extends CruxLicensePanelStrings {
       'covers all four products and renews annually.';
 
   @override
-  String get licenseEduEmailLabel => 'Institutional email address';
+  String get licenseEduHandOff =>
+      'The request is made on edacrux.app, in your browser. Your license '
+      'arrives by email.';
 
   @override
-  String get licenseEduRequestButton => 'Request a license';
-
-  @override
-  String get licenseEduCheckYourEmail =>
-      'Check your email — we have sent a link to confirm the address. The '
-      'license arrives once you follow it.';
-
-  @override
-  String get licenseEduUnderReview =>
-      'Thanks — that domain is not one we recognise automatically, so a '
-      'person is checking the request. There is no link to follow: the '
-      'license will arrive by email. If you have not heard within two '
-      'working days, write to edu@ferriteengineering.com.';
+  String get licenseEduOpenRequestPageButton => 'Request a license';
 
   @override
   String get licenseBuyButton => 'Buy a license';

@@ -53,7 +53,15 @@ final Map<String, bool Function(Object? value)> kSuiteAuditKeys = {
 ///
 /// **At once** is the point: an administrator fixing a policy file one error
 /// per run is an administrator who stops using the tool.
-List<PolicyDiagnostic> lintPolicySource(String source) {
+///
+/// [productKeys] is the product-key registry to lint against, [kProductKeys]
+/// unless given. Every caller but a test leaves it alone: it exists so the
+/// registered-but-unhonoured path stays tested in a release where every
+/// product key happens to be honoured.
+List<PolicyDiagnostic> lintPolicySource(
+  String source, {
+  Map<String, Map<String, bool>> productKeys = kProductKeys,
+}) {
   final out = <PolicyDiagnostic>[];
 
   final Object? decoded;
@@ -72,9 +80,7 @@ List<PolicyDiagnostic> lintPolicySource(String source) {
 
   final suite = decoded['suite'];
   if (suite != null && suite is! Map<String, Object?>) {
-    out.add(
-      const PolicyDiagnostic(key: 'suite', reason: 'must be an object'),
-    );
+    out.add(const PolicyDiagnostic(key: 'suite', reason: 'must be an object'));
   } else if (suite is Map<String, Object?>) {
     for (final entry in suite.entries) {
       final honoured = kSuiteKeys[entry.key];
@@ -198,7 +204,7 @@ List<PolicyDiagnostic> lintPolicySource(String source) {
       // correctly-spelled product linted clean — a misspelled key and a key
       // this build does not honour were both answered with silence, which is
       // the one answer an administrator cannot act on.
-      final known = kProductKeys[entry.key];
+      final known = productKeys[entry.key];
       if (known == null) continue; // unknown product, already reported above
       final block = entry.value! as Map<String, Object?>;
       for (final key in block.keys) {

@@ -34,6 +34,7 @@ abstract class CruxLicenseActions
   get supportsOfflineActivation -> bool
   get supportsPurchaseLinks -> bool
   importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openEducationalRequestPage() -> Future<CruxLicenseActionResult>
   openManagePage() -> Future<CruxLicenseActionResult>
   openPurchasePage() -> Future<CruxLicenseActionResult>
   refresh() -> Future<CruxLicenseActionResult>
@@ -61,6 +62,7 @@ class CruxLicenseController implements CruxLicenseActions
   get supportsOfflineActivation -> bool
   get supportsPurchaseLinks -> bool
   importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openEducationalRequestPage() -> Future<CruxLicenseActionResult>
   openManagePage() -> Future<CruxLicenseActionResult>
   openPurchasePage() -> Future<CruxLicenseActionResult>
   refresh() -> Future<CruxLicenseActionResult>
@@ -96,6 +98,7 @@ enum CruxProduct
   const CruxProduct(String entitlementCode, String displayName)
   final displayName: String
   final entitlementCode: String
+  get slug -> String
   static const lintCrux: CruxProduct
   static const netCrux: CruxProduct
   static const simCrux: CruxProduct
@@ -372,12 +375,14 @@ class UnsupportedLicenseActions implements CruxLicenseActions
   get supportsOfflineActivation -> bool
   get supportsPurchaseLinks -> bool
   importOfflineToken(String token) -> Future<CruxLicenseActionResult>
+  openEducationalRequestPage() -> Future<CruxLicenseActionResult>
   openManagePage() -> Future<CruxLicenseActionResult>
   openPurchasePage() -> Future<CruxLicenseActionResult>
   refresh() -> Future<CruxLicenseActionResult>
   requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
 applyLicenseTierOverride(LicenseTier resolved) -> LicenseTier
 betaExpiryStatusFor(DateTime now, {DateTime? expiry, int? warningDays}) -> BetaExpiryStatus
+cruxEducationalRequestPage(CruxProduct product) -> Uri
 cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 cruxSeePricingAction(CruxLicenseActions actions) -> Future<void> Function()?
 daysUntilBetaExpiry(DateTime now, {DateTime? expiry}) -> int?
@@ -386,6 +391,7 @@ get kAiExperimental -> bool
 get kBetaExpiry -> DateTime?
 get kBetaExpiryWarningDays -> int
 get kBetaPeriod -> bool
+get kCruxEducationalRequestPageUrl -> String
 get kKeygenAccountId -> String
 get kKeygenPolicies -> Map<String, KeygenPolicy>
 get kKeygenVerifyKeyHex -> String

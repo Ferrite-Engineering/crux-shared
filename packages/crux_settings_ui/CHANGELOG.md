@@ -4,6 +4,17 @@ This file was backfilled during the CS documentation sweep, so the entry below
 describes the package's surface as of 0.1.0 rather than reconstructing the
 increments that built it. Changes from here on get their own entries.
 
+## Unreleased
+
+- **`CruxPolicyLock`**: the suite's one mount of `CruxPolicyLockNote`. A
+  product wraps a policy-backed control in it with the resolved
+  `PolicySource`; while that is `policyLocked` the control is dimmed, takes
+  no pointer and no focus, and the lock note says why (above the control or
+  below it, with an optional detail line). Every other source renders the
+  control untouched. The sentence comes from `CruxPolicyLockScope`, mounted
+  once per app, and is `kCruxPolicyLockNoteEn` without one. New dependency on
+  `crux_policy` (pure Dart) for `PolicySource`.
+
 ## 0.2.0
 
 - Settings opens with keyboard focus on the selected category, so a screen

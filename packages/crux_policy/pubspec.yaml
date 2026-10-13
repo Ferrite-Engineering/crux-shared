@@ -18,9 +18,9 @@ resolution: workspace
 # exists, so a route from here to the licence machinery would let a
 # tier lookup creep into the one path that cannot have one.
 #
-# The Settings-side "show this value as locked" UI is NOT here. It lands per
-# product; if it turns out to want sharing it becomes crux_policy_ui, following
-# crux_settings / crux_settings_ui.
+# The Settings-side "show this value as locked" UI is NOT here: it is
+# crux_settings_ui's CruxPolicyLock, which depends on this package and not the
+# other way round.
 dependencies:
   crux_signing:
     path: ../crux_signing
