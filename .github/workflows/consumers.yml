@@ -99,7 +99,7 @@ jobs:
       # The product repo, WITHOUT submodules: we are about to supply the
       # crux-shared submodule contents ourselves.
       - name: Checkout consumer (${{ matrix.product }})
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Ferrite-Engineering/${{ matrix.product }}
           ref: main
@@ -108,7 +108,7 @@ jobs:
 
       # THIS commit of crux-shared, dropped in where the submodule would be.
       - name: Checkout crux-shared under test into the consumer
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: consumer/crux-shared
 
