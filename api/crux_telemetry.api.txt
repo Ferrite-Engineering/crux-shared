@@ -46,6 +46,7 @@ abstract class CruxTelemetryStrings
   get settingsInstallationIdCopy -> String
   get settingsInstallationIdDescription -> String
   get settingsInstallationIdLabel -> String
+  get settingsInstallationIdNone -> String
   get settingsToggleDescription -> String
   get settingsToggleLabel -> String
 class CruxTelemetryStringsEn extends CruxTelemetryStrings
@@ -290,6 +291,7 @@ telemetryRequiresOptIn(Iterable<Locale> locales, {String? timeZone}) -> bool
 get telemetryServiceProvider -> Provider<TelemetryService>
 get telemetrySessionStartProvider -> Provider<DateTime>
 get telemetryStorageProvider -> Provider<TelemetryStorage>
+get telemetryStoredInstallationIdProvider -> FutureProvider<String?>
 telemetryTimeZoneRequiresOptIn(String? timeZone) -> bool
 get telemetryUncaughtErrorCounterProvider -> Provider<TelemetryUncaughtErrorCounter>
 get telemetryUncleanShutdownDetectorProvider -> Provider<TelemetryUncleanShutdownDetector>

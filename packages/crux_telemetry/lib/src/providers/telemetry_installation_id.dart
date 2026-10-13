@@ -33,9 +33,18 @@ String mintTelemetryInstallationId() => const Uuid().v4();
 /// daily-actives metric — countable at all. Two fresh installs necessarily get
 /// two different ids, because the id is drawn from a CSPRNG rather than
 /// computed from the host.
+///
+/// **Reading this provider creates the id.** In the EEA, the UK, Switzerland
+/// and South Korea that write is storage on the user's device which needs
+/// consent first, so the only reader is the live service's envelope resolver,
+/// which exists only while the gate is open. Anything that merely *displays*
+/// the id reads [telemetryStoredInstallationIdProvider] instead, which never
+/// writes. After minting, this invalidates that provider so a display already
+/// on screen picks the new id up.
 final FutureProvider<String> telemetryInstallationIdProvider =
     FutureProvider<String>((ref) async {
       final storage = ref.read(telemetryStorageProvider);
+      final container = ref.container;
 
       final stored = await storage.read(kTelemetryInstallationIdKey);
       if (stored != null && kTelemetryInstallationIdPattern.hasMatch(stored)) {
@@ -44,5 +53,30 @@ final FutureProvider<String> telemetryInstallationIdProvider =
 
       final minted = mintTelemetryInstallationId();
       await storage.write(kTelemetryInstallationIdKey, minted);
+      container.invalidate(telemetryStoredInstallationIdProvider);
       return minted;
     }, name: 'telemetryInstallationIdProvider');
+
+/// The installation id already stored on this installation, or `null` when
+/// there is none.
+///
+/// **Never mints and never writes.** This is the provider for every surface
+/// that shows the id rather than sends it, such as the Settings row a user
+/// copies it from to request deletion. Reading
+/// [telemetryInstallationIdProvider] there instead would create the id on an
+/// installation that never opted in.
+///
+/// A stored value that does not match [kTelemetryInstallationIdPattern] reads
+/// as `null` here, because it is not an id the Worker would accept and so not
+/// one any collected row could carry. It is left in storage untouched: the
+/// live path replaces it when, and only when, collection is on.
+final FutureProvider<String?> telemetryStoredInstallationIdProvider =
+    FutureProvider<String?>((ref) async {
+      final stored = await ref
+          .read(telemetryStorageProvider)
+          .read(kTelemetryInstallationIdKey);
+      if (stored != null && kTelemetryInstallationIdPattern.hasMatch(stored)) {
+        return stored;
+      }
+      return null;
+    }, name: 'telemetryStoredInstallationIdProvider');

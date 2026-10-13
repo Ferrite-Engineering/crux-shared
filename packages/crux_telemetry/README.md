@@ -57,7 +57,8 @@ transmitting.
 | `TelemetryConsentState`, `TelemetryConsentStore` | The tri-state decision and its persisted store. `unset` is not `disabled`. |
 | `TelemetryPolicy` | The Enterprise administrator's org-wide decision — `allow`, `deny`, `absent`. `absent` is every non-Enterprise installation and the default. This package never reads the policy *file*; see "The Enterprise policy seam". |
 | `TelemetryStorage`, `InMemoryTelemetryStorage`, `kTelemetryConsentKey`, `kTelemetryInstallationIdKey` | The two-method persistence seam and the suite-fixed keys. |
-| `telemetryInstallationIdProvider`, `mintTelemetryInstallationId` | A random v4 UUID per installation, never a host fingerprint. |
+| `telemetryInstallationIdProvider`, `mintTelemetryInstallationId` | A random v4 UUID per installation, never a host fingerprint. Reading the provider creates the id, so its only reader is the live service's envelope resolver, which runs only while the gate is open. |
+| `telemetryStoredInstallationIdProvider` | The stored id or `null`, for display. Never mints or writes, so opening Settings → Privacy creates nothing on an installation that has not opted in. |
 | `telemetryEnumToken` | `Enum` → `[a-z0-9_]` token. Takes an `Enum`, not a `String`, on purpose. |
 | `TelemetryUncaughtErrorCounter`, `telemetryUncaughtErrorCounterProvider`, `kTelemetryUncaughtErrorSessionCap` | The `app.uncaught_error` counter the global error handlers report to, and the seam `telemetryServiceProvider` attaches it through. See [The uncaught-error counter](#the-uncaught-error-counter). |
 | `kTelemetryUncaughtErrorEvent`, `kTelemetryUncaughtErrorSources` / `Kinds` / `Libraries`, `kTelemetryFlutterLibraryTokens`, `telemetryErrorKindOf`, `telemetryErrorLibraryOf` | That event's name and closed vocabulary, and the two classifiers that land every error inside it. |
@@ -376,6 +377,12 @@ derived from anything the machine knows about itself. The point is not
 that a fingerprint would be unreadable; it is that a fingerprint would be
 stable across reinstalls and correlatable with other data, and a random
 UUID is neither.
+
+The id is created only on the live path: the envelope resolver mints it on
+the first flush after the gate opens. Until then nothing is stored, and
+Settings → Privacy says so rather than creating one to display
+(`telemetryStoredInstallationIdProvider`). An id from an earlier opt-in stays
+visible after opting out, because it is what a deletion request needs.
 
 `telemetryEnumToken` takes an `Enum` rather than a `String` for the same
 reason: a `String → String` sanitizer would accept a file name and wash

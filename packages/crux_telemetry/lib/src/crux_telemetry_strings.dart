@@ -85,6 +85,20 @@ abstract class CruxTelemetryStrings {
 
   /// Confirmation shown after the id is copied.
   String get settingsInstallationIdCopied;
+
+  /// Shown in place of the id when this installation has none, e.g. "No
+  /// installation ID. One is created only when usage measurement is turned
+  /// on."
+  ///
+  /// The id is created by the collection pipeline, never by opening this
+  /// screen, so an installation that has not opted in has nothing to show.
+  ///
+  /// Concrete, with the English default, so an adapter written before this
+  /// string existed still compiles; a localized product overrides it with its
+  /// own generated string like every other member.
+  String get settingsInstallationIdNone =>
+      'No installation ID. One is created only when usage measurement is '
+      'turned on.';
 }
 
 /// Default English [CruxTelemetryStrings] used by tests, prototypes and

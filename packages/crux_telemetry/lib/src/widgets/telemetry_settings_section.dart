@@ -39,6 +39,8 @@ class TelemetrySettingsSection extends ConsumerWidget {
     final strings = ref.watch(cruxTelemetryStringsProvider);
     final consent = ref.watch(telemetryConsentStoreProvider);
     final notifier = ref.read(telemetryConsentStoreProvider.notifier);
+    final storedId = ref.watch(telemetryStoredInstallationIdProvider);
+    final copyableId = storedId.value;
 
     return CruxSettingsCard(
       children: [
@@ -72,20 +74,34 @@ class TelemetrySettingsSection extends ConsumerWidget {
         //
         // Rendered even before the id resolves, so the row never appears late
         // and never shifts the layout under a reader.
+        //
+        // Reads the STORED id and never mints one: opening this screen must
+        // not create an identifier on an installation that has not opted in.
+        // An id left by an earlier opt-in is still shown with measurement
+        // off, because it is what a deletion request needs. The live service
+        // mints on its first flush and invalidates the stored provider, so
+        // turning measurement on here fills the row in without a reopen.
         CruxSettingsControlTile(
           title: strings.settingsInstallationIdLabel,
           description: strings.settingsInstallationIdDescription,
           control: Row(
             children: [
               Expanded(
-                child: switch (ref.watch(telemetryInstallationIdProvider)) {
-                  AsyncData(:final value) => SelectableText(
+                // Matched on the value rather than the state class, so a
+                // refresh after minting keeps showing what it had rather than
+                // flashing the spinner.
+                child: switch (storedId) {
+                  AsyncValue(value: final value?) => SelectableText(
                     value,
                     key: const Key('settingsTelemetryInstallationId'),
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 12,
                     ),
+                  ),
+                  AsyncValue(hasValue: true) => Text(
+                    strings.settingsInstallationIdNone,
+                    key: const Key('settingsTelemetryInstallationIdNone'),
                   ),
                   AsyncError() => Text(strings.settingsInstallationIdLabel),
                   _ => const SizedBox(
@@ -96,9 +112,13 @@ class TelemetrySettingsSection extends ConsumerWidget {
                 },
               ),
               const SizedBox(width: 8),
+              // Disabled rather than removed when there is nothing to copy,
+              // so the row keeps its shape when an id arrives.
               OutlinedButton.icon(
                 key: const Key('settingsTelemetryInstallationIdCopy'),
-                onPressed: () => unawaited(_copyId(context, ref, strings)),
+                onPressed: copyableId == null
+                    ? null
+                    : () => unawaited(_copyId(context, copyableId, strings)),
                 icon: const Icon(Icons.copy_outlined, size: 16),
                 label: Text(strings.settingsInstallationIdCopy),
               ),
@@ -113,10 +133,9 @@ class TelemetrySettingsSection extends ConsumerWidget {
   /// value they will paste wrong into a support email.
   Future<void> _copyId(
     BuildContext context,
-    WidgetRef ref,
+    String id,
     CruxTelemetryStrings strings,
   ) async {
-    final id = await ref.read(telemetryInstallationIdProvider.future);
     await Clipboard.setData(ClipboardData(text: id));
     if (!context.mounted) return;
     final messenger = ScaffoldMessenger.maybeOf(context);

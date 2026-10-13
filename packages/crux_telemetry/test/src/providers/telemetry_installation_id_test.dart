@@ -1,6 +1,8 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:io';
+
 import 'package:crux_telemetry/crux_telemetry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,6 +68,102 @@ void main() {
 
       expect(id, isNot('martins-macbook-pro.local'));
       expect(kTelemetryInstallationIdPattern.hasMatch(id), isTrue);
+    });
+  });
+
+  group('telemetryStoredInstallationIdProvider', () {
+    ProviderContainer containerOver(InMemoryTelemetryStorage storage) {
+      final container = ProviderContainer(
+        overrides: [telemetryStorageProvider.overrideWithValue(storage)],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('is null on an installation with no id, and writes nothing', () async {
+      final container = containerOver(storage);
+
+      final id = await container.read(
+        telemetryStoredInstallationIdProvider.future,
+      );
+
+      expect(id, isNull);
+      expect(storage.values.containsKey(kTelemetryInstallationIdKey), isFalse);
+    });
+
+    test('returns the stored id without changing it', () async {
+      const stored = '00000000-0000-4000-8000-0000000000aa';
+      storage = InMemoryTelemetryStorage(<String, String>{
+        kTelemetryInstallationIdKey: stored,
+      });
+
+      final id = await containerOver(
+        storage,
+      ).read(telemetryStoredInstallationIdProvider.future);
+
+      expect(id, stored);
+      expect(storage.values[kTelemetryInstallationIdKey], stored);
+    });
+
+    test('reads a malformed value as null and leaves it in place', () async {
+      storage = InMemoryTelemetryStorage(<String, String>{
+        kTelemetryInstallationIdKey: 'martins-macbook-pro.local',
+      });
+
+      final id = await containerOver(
+        storage,
+      ).read(telemetryStoredInstallationIdProvider.future);
+
+      expect(id, isNull);
+      expect(
+        storage.values[kTelemetryInstallationIdKey],
+        'martins-macbook-pro.local',
+      );
+    });
+
+    test('picks up the id once the minting provider creates it', () async {
+      final container = containerOver(storage);
+      final seen = <String?>[];
+      container.listen<AsyncValue<String?>>(
+        telemetryStoredInstallationIdProvider,
+        (_, next) => seen.add(next.value),
+        fireImmediately: true,
+      );
+      expect(
+        await container.read(telemetryStoredInstallationIdProvider.future),
+        isNull,
+      );
+
+      final minted = await container.read(
+        telemetryInstallationIdProvider.future,
+      );
+
+      expect(
+        await container.read(telemetryStoredInstallationIdProvider.future),
+        minted,
+      );
+      expect(seen.last, minted);
+    });
+  });
+
+  group('who may mint', () {
+    test('only the live envelope resolver reads the minting provider', () {
+      // Reading `telemetryInstallationIdProvider` creates the id, and in the
+      // consent-first regions that write needs consent. The envelope resolver
+      // runs only inside the live service, which exists only while the gate
+      // is open. Any new reader has to make the same argument, so it fails
+      // here first.
+      final readers = <String>[];
+      for (final entity in Directory('lib').listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        if (entity.path.endsWith('telemetry_installation_id.dart')) continue;
+        if (entity.readAsStringSync().contains(
+          'telemetryInstallationIdProvider',
+        )) {
+          readers.add(entity.uri.pathSegments.last);
+        }
+      }
+      expect(readers, ['telemetry_service_provider.dart']);
     });
   });
 

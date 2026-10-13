@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+- **Opening Settings no longer creates an installation ID.**
+  `TelemetrySettingsSection` watched `telemetryInstallationIdProvider` to
+  display the id, and that provider mints and stores one on first read, so
+  opening Settings → Privacy created an id on an installation that had never
+  opted in. In the EEA, the UK, Switzerland and South Korea that is storage on
+  the device which needs consent first.
+
+  New `telemetryStoredInstallationIdProvider` returns the stored, valid id or
+  `null`, and never mints or writes; a stored value that fails
+  `kTelemetryInstallationIdPattern` reads as `null` and is left in place. The
+  section reads it: an id from an earlier opt-in is shown with Copy whether
+  measurement is on or off (it is what a deletion request needs), and an
+  installation without one shows `settingsInstallationIdNone` with Copy
+  disabled. `telemetryInstallationIdProvider` invalidates the stored provider
+  after minting, so the row fills in once the live service creates the id.
+  Its only reader is the live service's envelope resolver, which runs only
+  while the gate is open; a test pins that.
+
+  `CruxTelemetryStrings.settingsInstallationIdNone` is new and concrete, with
+  the English default, so existing adapters compile; localized products
+  override it.
+
 - **`TelemetryUncleanShutdownDetector` and `app.unclean_shutdown`, shipped
   dark.** Each desktop release session holds a locked
   `session.<pid>.running` marker in the application-support directory and
