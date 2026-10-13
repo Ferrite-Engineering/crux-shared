@@ -48,19 +48,6 @@ abstract class CruxAboutStrings
   get operatingSystemLabel -> String
   get sectionPlatform -> String
   get sectionVersion -> String
-class CruxAboutStringsEn extends CruxAboutStrings
-  const CruxAboutStringsEn()
-  get architectureLabel -> String
-  get betaChip -> String
-  get buildNumberLabel -> String
-  get copiedConfirmation -> String
-  get dartVersionLabel -> String
-  get flutterVersionLabel -> String
-  get gitShaLabel -> String
-  get licenseBadgeStrings -> LicenseBadgeStrings
-  get operatingSystemLabel -> String
-  get sectionPlatform -> String
-  get sectionVersion -> String
 class CruxVendoredLicense
   const CruxVendoredLicense({required String licenseAssetPath, required String packageName})
   final licenseAssetPath: String

@@ -25,9 +25,8 @@ reads only the genuinely cross-suite state itself:
   third-party `AboutAttributionSection`s, and the ordered `AboutAction` buttons.
 
 Localization follows the same caller-supplied-strings pattern as
-`crux_license`'s `LicenseBadgeStrings`: the package ships an English
-`CruxAboutStringsEn` default; each product provides an `AppLocalizations`-backed
-subclass. Product-specific copy (app name, tagline, attribution text, button
+`crux_license`'s `LicenseBadgeStrings`: the package ships no English
+default; each product provides an `AppLocalizations`-backed subclass. Product-specific copy (app name, tagline, attribution text, button
 labels) is passed as data, sourced from each product's own ARB files.
 
 ## Usage

@@ -116,7 +116,6 @@ class PaneId
   get value -> String
   static const primary: PaneId
   toString() -> String
-typedef PaneOverridesFactory = List<Override> Function(PaneId)
 typedef PaneSplitLayoutBuilder = Widget Function(BuildContext, List<Widget>)
 typedef PaneStackBuilder = Widget Function(int, List<Widget>)
 typedef PaneTrailingActionsBuilder = Widget Function(BuildContext, PaneId)

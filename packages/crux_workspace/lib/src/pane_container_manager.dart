@@ -6,22 +6,13 @@ import 'package:crux_workspace/src/pane_id.dart';
 import 'package:crux_workspace/src/scoped_container_manager.dart';
 import 'package:crux_workspace/src/tab_container_manager.dart';
 import 'package:crux_workspace/src/workspace_scopes.dart';
-import 'package:flutter_riverpod/misc.dart' show Override;
-
-/// Function that produces the per-pane override list applied on top of
-/// [paneIdProvider] for a freshly-created pane `ProviderContainer`.
-///
-/// Products implement this to register their per-pane providers (render
-/// stats, focus, etc.) inside the container. The supplied [PaneId] is the
-/// same value used to override [paneIdProvider].
-typedef PaneOverridesFactory = List<Override> Function(PaneId paneId);
 
 /// Manages the lifecycle of per-pane `ProviderContainer` instances.
 ///
 /// Each pane gets its own container parented to the supplied root
 /// container. The container carries the pane's [PaneId] (via
 /// [paneIdProvider]) plus any per-pane providers contributed by the
-/// supplied [PaneOverridesFactory].
+/// supplied overrides factory.
 ///
 /// Containers are cached by pane id. Eviction is **structural**: the manager
 /// implements [WorkspaceScopeReconciler], so once it is registered with the
@@ -40,9 +31,9 @@ class PaneContainerManager extends ScopedContainerManager<PaneId> {
   /// the supplied root container, optionally extended with per-pane
   /// overrides supplied by the factory.
   ///
-  /// [overridesFactory] is a [PaneOverridesFactory] — the alias is retained as
-  /// the documented product-facing name; structurally it is the base class's
-  /// `ScopeOverridesFactory<PaneId>`.
+  /// [overridesFactory] is the base class's `ScopeOverridesFactory<PaneId>`:
+  /// it returns the per-pane overrides (render stats, focus, …) for a fresh
+  /// pane container.
   PaneContainerManager({
     required super.rootContainer,
     super.overridesFactory,

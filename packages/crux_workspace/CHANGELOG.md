@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Removed the `PaneOverridesFactory` typedef, which no product named.
+  `PaneContainerManager.overridesFactory` takes the same function, typed
+  `ScopeOverridesFactory<PaneId>`.
 - **`splitPaneRight` never opens an empty pane.** With one tab (or none) it
   changes nothing and returns the active pane id, as it already did when the
   workspace was split; with two or more it moves the active tab into the new

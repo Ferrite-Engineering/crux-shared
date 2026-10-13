@@ -1,8 +1,6 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
-import 'dart:ui' show PlatformDispatcher;
-
 import 'package:crux_app_info/crux_app_info.dart';
 import 'package:crux_issue_reporter/src/crux_issue_reporter_strings.dart';
 import 'package:crux_issue_reporter/src/interfaces/crux_issue_reporter_data_provider.dart';
@@ -113,12 +111,6 @@ final cruxIssueReporterServiceProvider = Provider<CruxIssueReporterService>(
     config: ref.watch(cruxIssueReporterConfigProvider),
   ),
 );
-
-/// The OS locale tag, used as a fallback when no `Localizations` locale is in
-/// scope. Returns the tag the suite uses elsewhere (`en`, `zh_CN`, `ja`,
-/// `ko`).
-String cruxPlatformLocaleTag() =>
-    cruxLocaleTag(PlatformDispatcher.instance.locale);
 
 /// Renders [locale] as the underscore-joined tag the suite uses
 /// (`zh_CN`, `en`, `ja`, `ko`).

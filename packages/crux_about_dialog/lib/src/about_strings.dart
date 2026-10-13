@@ -9,9 +9,7 @@ import 'package:meta/meta.dart';
 /// The widget never bakes in English text. Each product supplies an
 /// `AppLocalizations`-backed subclass mapping every getter to the matching
 /// ARB-generated string, mirroring the [LicenseBadgeStrings] pattern that
-/// `crux_license` already establishes. The English-only [CruxAboutStringsEn]
-/// default lets prototypes, tests, and demos render the dialog without wiring
-/// localization first.
+/// `crux_license` already establishes.
 ///
 /// Strings here cover only the *chrome* of the dialog (section headers, info
 /// row labels, the beta chip, the banner tagline). Product-specific copy — the
@@ -62,43 +60,4 @@ abstract class CruxAboutStrings {
   /// That chip is EDU, PRO *or* ENT, so the adapter must supply the three
   /// `editionBadge*Semantic` phrases as well as the feature-tier ones.
   LicenseBadgeStrings get licenseBadgeStrings;
-}
-
-/// Default English [CruxAboutStrings] used by tests, prototypes, and demos.
-class CruxAboutStringsEn extends CruxAboutStrings {
-  /// Creates the default English string set.
-  const CruxAboutStringsEn();
-
-  @override
-  String get betaChip => 'Public Beta';
-
-  @override
-  String get sectionVersion => 'Version';
-
-  @override
-  String get buildNumberLabel => 'Build';
-
-  @override
-  String get gitShaLabel => 'Commit';
-
-  @override
-  String get sectionPlatform => 'Platform';
-
-  @override
-  String get operatingSystemLabel => 'OS';
-
-  @override
-  String get architectureLabel => 'Architecture';
-
-  @override
-  String get flutterVersionLabel => 'Flutter';
-
-  @override
-  String get dartVersionLabel => 'Dart';
-
-  @override
-  String get copiedConfirmation => 'Version info copied';
-
-  @override
-  LicenseBadgeStrings get licenseBadgeStrings => const LicenseBadgeStringsEn();
 }

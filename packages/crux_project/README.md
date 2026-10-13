@@ -43,7 +43,6 @@ if (path != null) {
 | `CruxProjectFormatException` | The file is not a manifest, or cannot be read. |
 | `CruxProjectAmbiguousException` | A directory holds more than one manifest; carries every candidate. |
 | `kCruxProjectExtension`, `kCruxProjectSchemaVersion` | The extension a picker filter or document type takes (`crux-project`, no dot), and the schema version this build authors. |
-| `kCruxProjectFileName` | Deprecated: the legacy bare name. Removed in 0.2.0. |
 
 ## The file name
 

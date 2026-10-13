@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Removed the deprecated `kCruxProjectFileName`. Recognise a manifest with
+  `CruxProjectParser.isManifestPath` and filter pickers with
+  `kCruxProjectExtension`. Reading the legacy `.crux-project` is unchanged.
+
 ## 0.1.1
 
 - The manifest is named `<design>.crux-project` — any non-empty stem with the

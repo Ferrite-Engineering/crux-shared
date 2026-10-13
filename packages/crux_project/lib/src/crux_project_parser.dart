@@ -15,15 +15,6 @@ import 'package:yaml/yaml.dart';
 /// case-insensitive; see [CruxProjectParser.isManifestPath].
 const String kCruxProjectExtension = 'crux-project';
 
-/// The legacy manifest file name: a bare dotfile with no stem.
-@Deprecated(
-  'Manifests are named <design>.crux-project. Recognise one with '
-  'CruxProjectParser.isManifestPath and filter file pickers with '
-  'kCruxProjectExtension. Removed in crux_project 0.2.0, together with '
-  'reading the legacy name.',
-)
-const String kCruxProjectFileName = _legacyFileName;
-
 /// The schema version this build authors and fully understands.
 const int kCruxProjectSchemaVersion = 1;
 

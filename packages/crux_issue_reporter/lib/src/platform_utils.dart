@@ -14,10 +14,3 @@ bool get isCruxDesktopPlatform =>
     defaultTargetPlatform == TargetPlatform.linux ||
     defaultTargetPlatform == TargetPlatform.macOS ||
     defaultTargetPlatform == TargetPlatform.windows;
-
-/// True when running on a mobile host OS (iOS or Android) and not in a mobile
-/// *browser*, which is web and reports the underlying OS.
-bool get isCruxMobilePlatform =>
-    !kIsWeb &&
-    (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.android);

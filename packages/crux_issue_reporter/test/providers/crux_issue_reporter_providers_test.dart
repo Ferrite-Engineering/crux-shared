@@ -205,9 +205,5 @@ void main() {
         'ko',
       );
     });
-
-    test('cruxPlatformLocaleTag returns a non-empty tag', () {
-      expect(cruxPlatformLocaleTag(), isNotEmpty);
-    });
   });
 }

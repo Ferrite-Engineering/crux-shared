@@ -1,3 +1,7 @@
+## Unreleased
+
+- Removed `CruxTopMenu`, which nothing referenced.
+
 ## 0.1.0
 
 - Initial extraction of the desktop menu bar from the four product

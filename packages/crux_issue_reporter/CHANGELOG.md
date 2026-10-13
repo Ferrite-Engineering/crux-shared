@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Removed `cruxPlatformLocaleTag` and `isCruxMobilePlatform`, which only the
+  package's own tests used. `cruxLocaleTag` and `isCruxDesktopPlatform` stay.
 - **The screenshot reveal is `crux_io`'s `revealInFileManager`.** The service
   carried its own copy, which spawned `open`, `explorer` and `xdg-open` by bare
   name and passed Explorer's `/select,` switch and the path as two arguments,

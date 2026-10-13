@@ -65,7 +65,7 @@ Future<void> _pumpDialog(
           branding: _branding,
           buildInfo: buildInfo,
           editionLabel: editionLabel,
-          strings: const CruxAboutStringsEn(),
+          strings: const _AboutStringsEn(),
           actions: actions,
           attributions: attributions,
           betaChipVisible: betaChipVisible,
@@ -98,7 +98,7 @@ Future<void> _pumpShowHarness(WidgetTester tester) async {
               branding: _branding,
               buildInfo: const AsyncData(_buildInfo),
               editionLabel: '',
-              strings: const CruxAboutStringsEn(),
+              strings: const _AboutStringsEn(),
               actions: const [],
             ),
             child: const Text('open-about'),
@@ -346,4 +346,43 @@ void main() {
       }
     });
   });
+}
+
+/// English [CruxAboutStrings] for these tests.
+class _AboutStringsEn extends CruxAboutStrings {
+  /// Creates the default English string set.
+  const _AboutStringsEn();
+
+  @override
+  String get betaChip => 'Public Beta';
+
+  @override
+  String get sectionVersion => 'Version';
+
+  @override
+  String get buildNumberLabel => 'Build';
+
+  @override
+  String get gitShaLabel => 'Commit';
+
+  @override
+  String get sectionPlatform => 'Platform';
+
+  @override
+  String get operatingSystemLabel => 'OS';
+
+  @override
+  String get architectureLabel => 'Architecture';
+
+  @override
+  String get flutterVersionLabel => 'Flutter';
+
+  @override
+  String get dartVersionLabel => 'Dart';
+
+  @override
+  String get copiedConfirmation => 'Version info copied';
+
+  @override
+  LicenseBadgeStrings get licenseBadgeStrings => const LicenseBadgeStringsEn();
 }

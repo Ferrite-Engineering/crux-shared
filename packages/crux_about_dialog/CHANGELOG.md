@@ -4,6 +4,11 @@ This file was backfilled during the CS documentation sweep, so the entry below
 describes the package's surface as of 0.1.0 rather than reconstructing the
 increments that built it. Changes from here on get their own entries.
 
+## Unreleased
+
+- Removed `CruxAboutStringsEn`. No product used it; every product passes its
+  own localized `CruxAboutStrings`.
+
 ## 0.1.0
 
 - Initial release. `CruxAboutDialog` — one About dialog for the whole suite,

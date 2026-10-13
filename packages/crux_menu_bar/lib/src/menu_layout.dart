@@ -97,27 +97,6 @@ final class CruxSeparatorEntry<A extends Object> extends CruxMenuEntry<A> {
   const CruxSeparatorEntry();
 }
 
-/// A single top-level menu (File, View, …) and its ordered entries.
-@immutable
-class CruxTopMenu<A extends Object> {
-  /// Creates a top-level menu.
-  const CruxTopMenu({
-    required this.label,
-    required this.acceleratorLabel,
-    required this.entries,
-  });
-
-  /// Plain localized title, used by the macOS native `PlatformMenu`.
-  final String label;
-
-  /// Localized title carrying the `&` Alt-accelerator marker, used by the
-  /// Windows/Linux `MnemonicMenuBar`.
-  final String acceleratorLabel;
-
-  /// The ordered entries, separators included.
-  final List<CruxMenuEntry<A>> entries;
-}
-
 /// Every action named anywhere in [layout], flattened.
 ///
 /// Products use this in a conformance test: the union of this set and

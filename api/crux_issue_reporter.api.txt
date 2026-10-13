@@ -187,9 +187,7 @@ get cruxIssueReporterStringsProvider -> Provider<CruxIssueReporterStrings>
 get cruxIssueSessionContextProvider -> Provider<CruxIssueSessionContext>
 cruxIssueTileKey(String categoryId) -> Key
 cruxLocaleTag(Locale locale) -> String
-cruxPlatformLocaleTag() -> String
 get isCruxDesktopPlatform -> bool
-get isCruxMobilePlatform -> bool
 get kCruxIssuePreviewBodyKey -> Key
 get kCruxIssuePreviewToggleKey -> Key
 get kCruxIssueReporterMinTouchTarget -> double

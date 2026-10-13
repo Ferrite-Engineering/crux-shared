@@ -65,7 +65,7 @@ contributor, because the package cannot see what a product chooses to put in a
 | `cruxIssueReporterServiceProvider` | The service, built from the config. Override in tests to inject clipboard/launcher fakes. |
 | `CruxIssueReporterDialog` | The adaptive reporter UI, with `openAdaptive(context)`. |
 | `cruxIssueTileKey`, `kCruxIssuePreviewBodyKey`, `kCruxIssuePreviewToggleKey`, `kCruxIssueTitleFieldKey` | Stable widget keys, so a product's (and an overlay's) own widget tests can drive the dialog. |
-| `isCruxDesktopPlatform` / `isCruxMobilePlatform` | Host-platform predicates the reporter uses for presentation and screenshot availability. |
+| `isCruxDesktopPlatform` | Host-platform predicate the reporter uses for presentation and screenshot availability. |
 
 ## Wiring it in (per product)
 

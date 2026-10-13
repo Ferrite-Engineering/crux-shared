@@ -16,7 +16,6 @@ void main() {
     ]) {
       debugDefaultTargetPlatformOverride = platform;
       expect(isCruxDesktopPlatform, isTrue, reason: '$platform');
-      expect(isCruxMobilePlatform, isFalse, reason: '$platform');
     }
   });
 
@@ -27,13 +26,11 @@ void main() {
     ]) {
       debugDefaultTargetPlatformOverride = platform;
       expect(isCruxDesktopPlatform, isFalse, reason: '$platform');
-      expect(isCruxMobilePlatform, isTrue, reason: '$platform');
     }
   });
 
-  test('fuchsia is neither', () {
+  test('fuchsia is not desktop', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
     expect(isCruxDesktopPlatform, isFalse);
-    expect(isCruxMobilePlatform, isFalse);
   });
 }
