@@ -1,0 +1,20 @@
+name: crux_guards
+description: Shared static-guard scanners the four products run from their own test/static/ tests — the outline-token text guard, unused localisation keys, and WidgetRef use after an await without a mounted check.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  # `parseString` only: the scanners read syntax, never resolve a library, so
+  # a product's guard test needs no analysis context. Same window as
+  # crux_workspace's dev dependency, held below 13 with the rest of the suite.
+  analyzer: '>=12.1.0 <13.0.0'
+  meta: ^1.15.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^11.0.0

@@ -1,0 +1,45 @@
+# Public API surface of package:crux_guards/crux_guards.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+final class CruxGuardFinding
+  const CruxGuardFinding({required String detail, required String path, required int line})
+  final detail: String
+  final line: int
+  final path: String
+  toString() -> String
+final class CruxGuardResult
+  const CruxGuardResult({required List<CruxGuardFinding> findings, required int filesScanned, required int matchesSeen})
+  describe() -> String
+  final filesScanned: int
+  final findings: List<CruxGuardFinding>
+  final matchesSeen: int
+  get isClean -> bool
+final class CruxGuardSource
+  const CruxGuardSource({required String path, required String source})
+  final path: String
+  final source: String
+final class CruxL10nRetention
+  const CruxL10nRetention({required String key, required String reason})
+  final key: String
+  final reason: String
+final class CruxOutlineExemption
+  const CruxOutlineExemption({required String expectedTrimmed, required String file, required String reason, required int line})
+  final expectedTrimmed: String
+  final file: String
+  final line: int
+  final reason: String
+final class CruxRefAfterAwaitExemption
+  const CruxRefAfterAwaitExemption({required String file, required String function, required String reason})
+  final file: String
+  final function: String
+  final reason: String
+cruxArbMessageKeys(String arbJson) -> Set<String>
+cruxAuditOutlineText({Iterable<CruxOutlineExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
+cruxAuditRefAfterAwait({Iterable<CruxRefAfterAwaitExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
+cruxAuditUnusedL10nKeys({Iterable<CruxL10nRetention> retained, String arbPath, required Iterable<CruxGuardSource> sources, required Set<String> keys}) -> CruxGuardResult
