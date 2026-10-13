@@ -1,0 +1,20 @@
+# Public API surface of package:crux_eula/crux_eula_guards.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+final class CruxEulaGuardSource
+  const CruxEulaGuardSource({required String path, required String source})
+  final path: String
+  final source: String
+final class CruxEulaSeedFinding
+  const CruxEulaSeedFinding({required String call, required String path, required int line})
+  final call: String
+  final line: int
+  final path: String
+  toString() -> String
+cruxAuditEulaSeededBoots({Set<String> bootCalls, Set<String> seedCalls, required Iterable<CruxEulaGuardSource> sources}) -> List<CruxEulaSeedFinding>

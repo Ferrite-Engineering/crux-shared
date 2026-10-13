@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **`crux_eula_guards.dart`**, a second entry point holding
+  `cruxAuditEulaSeededBoots`: the static guard that fails when an
+  integration test boots the app (`bootstrap(` or a product's own
+  non-seeding boot helper) with no EULA acceptance seeded earlier in the
+  same function, or in a `setUp`. A boot that passes `acceptEula: false` is
+  the agreement's own test and is not flagged. Comments and strings are
+  blanked first. Each product wires it from a thin `test/static/` test with
+  its own seed and boot helper names; run over today's eight integration
+  test trees with those names it reports nothing.
+
 - **The agreement is reachable and operable from the keyboard and a screen
   reader.** It was stacked over the app with only a barrier, so on a first
   launch focus stayed on the hidden app: Tab walked its controls (each one
