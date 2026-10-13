@@ -75,6 +75,11 @@ class TelemetryUncleanShutdownDetector {
   /// Creates a detector.
   ///
   /// Every argument defaults to the production value; tests pass their own.
+  ///
+  /// Construction reads nothing from `dart:io`: the default instance is built
+  /// on the first recorded event in every edition, the web included, where
+  /// `pid` and every file API throw. The process id is read only when [start]
+  /// claims a marker, which an unsupported host never reaches.
   TelemetryUncleanShutdownDetector({
     Future<Directory> Function()? directoryFactory,
     TelemetrySessionMarkerProbe? markerHeld,
@@ -88,7 +93,7 @@ class TelemetryUncleanShutdownDetector {
        eventEnabled = eventEnabled ?? kCruxUncleanShutdownEventEnabled,
        supported = supported ?? _desktopReleaseBuild(),
        inert = inert ?? (kBetaPeriod && !kTelemetryDev),
-       _processId = processId ?? pid;
+       _processIdOverride = processId;
 
   /// The process-wide detector `telemetryServiceProvider` attaches and
   /// starts. A session is a process, so there is one.
@@ -103,7 +108,10 @@ class TelemetryUncleanShutdownDetector {
 
   final Future<Directory> Function() _directoryFactory;
   final TelemetrySessionMarkerProbe _markerHeld;
-  final int _processId;
+  final int? _processIdOverride;
+
+  /// Read lazily: `pid` throws in a browser.
+  int get _processId => _processIdOverride ?? pid;
 
   /// Whether the event may be recorded. See
   /// [kCruxUncleanShutdownEventEnabled].
@@ -138,7 +146,9 @@ class TelemetryUncleanShutdownDetector {
   Future<bool> start() => _started ??= _start();
 
   Future<bool> _start() async {
-    if (!supported) return false;
+    // The web has no file and no process id, whatever a caller passed as
+    // [supported]: inert there, with no file access and no listener.
+    if (kIsWeb || !supported) return false;
     try {
       final dir = await _directoryFactory();
       final unclean = _sweepStaleMarkers(dir);

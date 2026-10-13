@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Web editions no longer throw on their first telemetry event.**
+  `TelemetryUncleanShutdownDetector` read `dart:io`'s `pid` in its
+  constructor, and `telemetryServiceProvider` builds the default instance on
+  the first recorded event, so every web build failed that read with
+  `Unsupported operation: ProcessUtils._pid`. The process id is now read only
+  when `start()` claims a marker, and `start()` returns `false` on the web
+  before any file access or lifecycle listener, whatever `supported` says.
+  `test/src/services/telemetry_unclean_shutdown_detector_web_test.dart` builds
+  the default instance and resolves `telemetryServiceProvider` in Chrome, as
+  its own CI step.
+
 - **Opening Settings no longer creates an installation ID.**
   `TelemetrySettingsSection` watched `telemetryInstallationIdProvider` to
   display the id, and that provider mints and stores one on first read, so

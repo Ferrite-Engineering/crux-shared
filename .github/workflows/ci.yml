@@ -264,9 +264,14 @@ jobs:
       # zone through JS interop to decide the telemetry consent default, and
       # the VM suite only ever sees the stub. `flutter test`, not `dart test`:
       # crux_telemetry is a Flutter package and its tests use flutter_test.
+      # The unclean-shutdown detector is built on every web edition's first
+      # event and must construct without touching dart:io.
       - name: crux_telemetry on the web (Chrome)
         working-directory: packages/crux_telemetry
-        run: flutter test --platform chrome test/src/telemetry_time_zone_web_test.dart
+        run: >-
+          flutter test --platform chrome
+          test/src/telemetry_time_zone_web_test.dart
+          test/src/services/telemetry_unclean_shutdown_detector_web_test.dart
 
       # The committed api/*.api.txt goldens are the reviewable record of the
       # public surface eight repos consume. A diff here is not necessarily a
