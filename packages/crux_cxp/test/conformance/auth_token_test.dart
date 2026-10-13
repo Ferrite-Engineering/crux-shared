@@ -464,7 +464,7 @@ void main() {
   /// nothing it can use and is refused for proving nothing.
   group('mutual authentication (wire 1.3)', () {
     test('a proof is HMAC-SHA256 hex, bound to token, nonce and label', () {
-      const token = '00112233445566778899aabbccddeeff';
+      const token = '00112233445566778899aabbccddeeff'; // gitleaks:allow
       const nonce = 'ffeeddccbbaa99887766554433221100';
       final hello = cxpAuthProof(
         token: token,
