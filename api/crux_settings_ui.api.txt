@@ -76,12 +76,6 @@ class CruxSettingsControlTile extends StatelessWidget
   final control: Widget
   final description: String?
   final title: String
-class CruxSettingsDialogShell extends StatelessWidget
-  const CruxSettingsDialogShell({Key? key, required String closeTooltip, required String title, required Widget body})
-  build(BuildContext context) -> Widget
-  final body: Widget
-  final closeTooltip: String
-  final title: String
 class CruxSettingsExtraCategory
   const CruxSettingsExtraCategory({required IconData icon, required String Function(BuildContext) labelBuilder, required String id, required Widget Function(BuildContext) bodyBuilder})
   final bodyBuilder: Widget Function(BuildContext)

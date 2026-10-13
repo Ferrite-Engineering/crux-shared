@@ -75,13 +75,6 @@ abstract class CruxEditionLineStrings
   get editionNameEdu -> String
   get editionNameEnterprise -> String
   get editionNamePro -> String
-class CruxEditionLineStringsEn extends CruxEditionLineStrings
-  const CruxEditionLineStringsEn()
-  editionLicensedByOrganization(String edition) -> String
-  editionWithIdentity(String edition, String identity) -> String
-  get editionNameEdu -> String
-  get editionNameEnterprise -> String
-  get editionNamePro -> String
 class CruxGatedSettingsBody extends ConsumerWidget
   const CruxGatedSettingsBody({CruxUpgradeDialogStrings strings, Key? key, LicenseBadgeStrings badgeStrings, required LicenseTier requiredTier, required String featureName, required Widget child})
   build(BuildContext context, WidgetRef ref) -> Widget

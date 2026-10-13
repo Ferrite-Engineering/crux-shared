@@ -6,6 +6,9 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **`CruxSettingsDialogShell` is no longer public.** No product built it
+  directly; `openCruxSettings(asDialog: true)` is the way in, and the shell
+  stays as its private implementation.
 - **`CruxPolicyLock`**: the suite's one mount of `CruxPolicyLockNote`. A
   product wraps a policy-backed control in it with the resolved
   `PolicySource`; while that is `policyLocked` the control is dimmed, takes

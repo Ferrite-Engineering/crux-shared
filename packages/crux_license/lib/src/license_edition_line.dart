@@ -36,29 +36,6 @@ abstract class CruxEditionLineStrings {
   String get editionNameEnterprise;
 }
 
-/// English defaults, so a prototype or a test renders without wiring l10n.
-class CruxEditionLineStringsEn extends CruxEditionLineStrings {
-  /// Creates the default English strings.
-  const CruxEditionLineStringsEn();
-
-  @override
-  String editionWithIdentity(String edition, String identity) =>
-      '$edition edition — $identity';
-
-  @override
-  String editionLicensedByOrganization(String edition) =>
-      '$edition edition — licensed by your organization';
-
-  @override
-  String get editionNameEdu => 'Educational';
-
-  @override
-  String get editionNamePro => 'Pro';
-
-  @override
-  String get editionNameEnterprise => 'Enterprise';
-}
-
 /// The edition line for [status], or `null` when there is nothing to say.
 ///
 /// Returns `null` at Open Core — there is no edition to state, and a menu item

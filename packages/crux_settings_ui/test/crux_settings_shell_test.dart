@@ -33,19 +33,19 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(CruxSettingsDialogShell), findsOneWidget);
+      expect(find.byType(Dialog), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('BODY'), findsOneWidget);
 
       // Barrier tap must NOT dismiss.
       await tester.tapAt(const Offset(5, 5));
       await tester.pumpAndSettle();
-      expect(find.byType(CruxSettingsDialogShell), findsOneWidget);
+      expect(find.byType(Dialog), findsOneWidget);
 
       // The close × does.
       await tester.tap(find.byKey(const ValueKey('cruxSettingsClose')));
       await tester.pumpAndSettle();
-      expect(find.byType(CruxSettingsDialogShell), findsNothing);
+      expect(find.byType(Dialog), findsNothing);
     });
 
     testWidgets('asDialog: false pushes the route shell with an arrow_back '
@@ -108,7 +108,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('wrapped')),
-          matching: find.byType(CruxSettingsDialogShell),
+          matching: find.byType(Dialog),
         ),
         findsOneWidget,
       );
@@ -145,7 +145,7 @@ void main() {
       await tester.pumpAndSettle();
       final size = tester.getSize(
         find.descendant(
-          of: find.byType(CruxSettingsDialogShell),
+          of: find.byType(Dialog),
           matching: find.byType(SizedBox).first,
         ),
       );

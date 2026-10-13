@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Removed `CruxEditionLineStringsEn`.** No product used it: each
+  supplies its own `CruxEditionLineStrings` from its ARB files.
 - **The licence panel's educational section is a browser hand-off.** It no
   longer collects an address: it says the request is made on the web and
   opens `https://edacrux.app/edu/request?product=<slug>` through the

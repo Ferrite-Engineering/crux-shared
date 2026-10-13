@@ -39,7 +39,7 @@ Future<void> openCruxSettings(
       barrierDismissible: false,
       builder: (ctx) => shellOf(
         ctx,
-        CruxSettingsDialogShell(
+        _CruxSettingsDialogShell(
           title: title,
           closeTooltip: closeTooltip,
           body: bodyBuilder(ctx),
@@ -64,13 +64,11 @@ Future<void> openCruxSettings(
 
 /// The desktop presentation: a size-clamped [Dialog] with a title row,
 /// close ×, divider, and the settings [body] below.
-class CruxSettingsDialogShell extends StatelessWidget {
-  /// Creates the dialog shell.
-  const CruxSettingsDialogShell({
+class _CruxSettingsDialogShell extends StatelessWidget {
+  const _CruxSettingsDialogShell({
     required this.title,
     required this.closeTooltip,
     required this.body,
-    super.key,
   });
 
   /// Localized dialog title.

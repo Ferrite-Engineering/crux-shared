@@ -169,11 +169,11 @@ void main() {
     tester,
   ) async {
     await _open(tester);
-    expect(find.byType(CruxSettingsDialogShell), findsOneWidget);
+    expect(find.byType(Dialog), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
 
-    expect(find.byType(CruxSettingsDialogShell), findsNothing);
+    expect(find.byType(Dialog), findsNothing);
   });
 }

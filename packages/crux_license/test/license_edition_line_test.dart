@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// file: it has no user email BY CONSTRUCTION, so the obvious implementation
 /// renders an empty string or the word "null" into a menu nobody can dismiss.
 void main() {
-  const strings = CruxEditionLineStringsEn();
+  const strings = _EnglishEditionLine();
 
   CruxLicenseStatus statusFor(LicenseTier tier, {String? email}) =>
       CruxLicenseStatus(
@@ -102,4 +102,26 @@ void main() {
       }
     });
   });
+}
+
+/// The English wording the products' ARBs carry, for these tests only.
+class _EnglishEditionLine extends CruxEditionLineStrings {
+  const _EnglishEditionLine();
+
+  @override
+  String editionWithIdentity(String edition, String identity) =>
+      '$edition edition — $identity';
+
+  @override
+  String editionLicensedByOrganization(String edition) =>
+      '$edition edition — licensed by your organization';
+
+  @override
+  String get editionNameEdu => 'Educational';
+
+  @override
+  String get editionNamePro => 'Pro';
+
+  @override
+  String get editionNameEnterprise => 'Enterprise';
 }
