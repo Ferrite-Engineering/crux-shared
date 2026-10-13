@@ -31,12 +31,34 @@ import 'package:flutter_test/flutter_test.dart';
 // the identical colour.
 //
 // A deliberate departure is listed in `_changedOnPurpose` with the colour it
-// paints now, and is checked against that instead. There is one: Solarized
-// Dark's status bar text, which painted 3.76:1 against WCAG AA's 4.5:1 and
-// now paints its declared opaque #93A1A1 (5.61:1). `preset_contrast_test.dart`
-// is where that ratio is measured.
+// paints now, and is checked against that instead:
+//
+// - Solarized Dark's status bar text, which painted 3.76:1 against WCAG AA's
+//   4.5:1 and now paints its declared opaque #93A1A1 (5.61:1).
+// - The branded presets' active toolbar glyph, splitter and splitter hover,
+//   which now come from each preset's own palette instead of the product's
+//   `primary` and `outlineVariant`.
+// - High Contrast Dark, which used to declare nothing and now declares the
+//   whole chrome set: black surfaces, white text and icons, yellow active.
+//
+// `builtin_presets_test.dart` pins those values and their contrast.
 const _changedOnPurpose = <(String, String), Color>{
   ('solarized-dark', 'statusBar.foreground'): Color(0xFF93A1A1),
+  ('solarized-dark', 'toolbar.iconActive'): Color(0xFFB58900),
+  ('solarized-dark', 'splitter'): Color(0xFF657F87),
+  ('solarized-dark', 'splitter.hover'): Color(0xFFB58900),
+  ('oscilloscope', 'toolbar.iconActive'): Color(0xFF00FF41),
+  ('oscilloscope', 'splitter'): Color(0xFF256A25),
+  ('oscilloscope', 'splitter.hover'): Color(0xFF00FF41),
+  ('oled-xr', 'toolbar.iconActive'): Color(0xFFFFD400),
+  ('oled-xr', 'splitter'): Color(0xFF5C5C5C),
+  ('oled-xr', 'splitter.hover'): Color(0xFFFFD400),
+  ('high-contrast-dark', 'toolbar.iconActive'): Color(0xFFFFFF00),
+  ('high-contrast-dark', 'statusBar.foreground'): Color(0xFFFFFFFF),
+  ('high-contrast-dark', 'splitter'): Color(0xFF666666),
+  ('high-contrast-dark', 'splitter.hover'): Color(0xFFFFFF00),
+  ('high-contrast-dark', 'tabBar.background'): Color(0xFF000000),
+  ('high-contrast-dark', 'tabBar.label'): Color(0xFFFFFFFF),
 };
 
 final _bases = <String, ThemeData>{
@@ -78,16 +100,25 @@ void main() {
           final scheme = theme.colorScheme;
           final c = theme.extension<CruxChromeColors>()!;
 
-          void surface(String token, Color? resolved, Color before) {
+          void surface(String token, Color? resolved, Color? before) {
+            final now = _changedOnPurpose[(preset.id, token)];
+            if (now != null) {
+              expect(
+                resolved?.toARGB32(),
+                now.toARGB32(),
+                reason: '$token over ${base.key}',
+              );
+              return;
+            }
             if (resolved == null) return;
             expect(resolved, before, reason: '$token over ${base.key}');
           }
 
           void text(String token, Color? resolved, Color? before) {
-            if (resolved == null) return;
             final now = _changedOnPurpose[(preset.id, token)];
+            if (resolved == null && now == null) return;
             expect(
-              resolved.toARGB32(),
+              resolved?.toARGB32(),
               (now ?? before)?.toARGB32(),
               reason: '$token over ${base.key}',
             );
@@ -115,9 +146,9 @@ void main() {
             c.tabBarLabel,
             theme.textTheme.bodyMedium?.color,
           );
-          text('toolbar.iconActive', c.toolbarIconActive, scheme.primary);
+          surface('toolbar.iconActive', c.toolbarIconActive, scheme.primary);
           // The strip had no fill at all, so any value would add one.
-          expect(c.tabBarBackground, isNull, reason: 'tabBar.background');
+          surface('tabBar.background', c.tabBarBackground, null);
         });
       }
     });

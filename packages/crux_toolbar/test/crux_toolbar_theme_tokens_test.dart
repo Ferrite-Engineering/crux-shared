@@ -283,8 +283,10 @@ void main() {
   });
 
   // Before the token was wired a toggled-on glyph was tinted `primary`, from
-  // whatever theme the product built with `applyChromeTokens`. Every preset,
-  // over each kind of base a product uses, must still tint it exactly that.
+  // whatever theme the product built with `applyChromeTokens`. A preset that
+  // declares `toolbar.iconActive` from its own palette tints it that instead;
+  // every other preset, over each kind of base a product uses, must still
+  // tint it exactly `primary`.
   group('an unedited preset tints what the toolbar always tinted', () {
     final bases = <String, ThemeData Function(Brightness)>{
       'seeded': _seeded,
@@ -301,8 +303,11 @@ void main() {
           final scheme = Theme.of(
             tester.element(find.byKey(const ValueKey<_A>(_A.crossProbe))),
           ).colorScheme;
-          expect(_glyphColor(tester, _A.crossProbe), scheme.primary);
-          expect(_glyphColor(tester, _A.zoomIn), scheme.primary);
+          final active =
+              preset.color(chromeCategoryId, ChromeTokens.toolbarIconActive) ??
+              scheme.primary;
+          expect(_glyphColor(tester, _A.crossProbe), active);
+          expect(_glyphColor(tester, _A.zoomIn), active);
           expect(_glyphColor(tester, _A.open), isNull);
         });
       }

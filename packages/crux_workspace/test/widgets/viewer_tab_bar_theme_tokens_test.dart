@@ -253,7 +253,8 @@ void main() {
   // `surfaceContainerHighest` and every title took `bodyMedium`'s colour, all
   // from whatever theme the product built with `applyChromeTokens`. Every
   // preset, over each kind of base a product uses, must still paint exactly
-  // that.
+  // that, except High Contrast Dark, which declares its own tab bar (black
+  // strip, black active tab, white titles) and is checked for that instead.
   group('an unedited preset paints what the bar always painted', () {
     final bases = <String, ThemeData Function(Brightness)>{
       'seeded': _seeded,
@@ -268,6 +269,17 @@ void main() {
         testWidgets('${preset.id} over a ${base.key} base', (tester) async {
           await pump(tester, preset: preset, base: base.value);
           final theme = Theme.of(tester.element(find.text('beta')));
+
+          if (preset.id == 'high-contrast-dark') {
+            const black = Color(0xFF000000);
+            const white = Color(0xFFFFFFFF);
+            expect(stripColor(tester)?.toARGB32(), black.toARGB32());
+            expect(chipColor(tester, 'beta')?.toARGB32(), black.toARGB32());
+            expect(chipColor(tester, 'alpha'), isNull);
+            expect(titleStyle(tester, 'beta')?.color, white);
+            expect(titleStyle(tester, 'alpha')?.color, white);
+            return;
+          }
 
           expect(stripColor(tester), isNull);
           expect(

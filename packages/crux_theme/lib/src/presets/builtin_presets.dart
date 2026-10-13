@@ -11,7 +11,8 @@ import 'package:flutter/material.dart' show Brightness, Color;
 /// - `crux-light` — light variant of the default.
 /// - `solarized-dark` — Ethan Schoonover's Solarized Dark, with the
 ///   warm amber accent set.
-/// - `high-contrast-dark` — WCAG AA, maximum contrast.
+/// - `high-contrast-dark` — black surfaces, white text and icons, yellow
+///   for everything active.
 /// - `oscilloscope` — phosphor-green-on-black, single-hue accents.
 /// - `oled-xr` — true-black, high-luminance palette tuned for
 ///   Micro-OLED XR / AR glasses (e.g. birdbath displays such as the
@@ -120,28 +121,31 @@ CruxColorTheme _compose(CruxColorTheme base, ThemeRegistry registry) {
 // ---------------------------------------------------------------------------
 // Base preset bodies — brand-neutral chrome only.
 //
-// The status bar, splitter, document tab bar and active toolbar glyph tokens
-// were declared here before any widget painted with them. Wiring them to
-// their widgets must not recolor a preset, so each value below is the colour
-// that surface already showed, and a token whose surface showed a colour of
-// the host product's own Material theme (which differs per product and per
-// contrast mode) is left out, so it keeps inheriting:
+// Each branded preset's chrome comes from its own designed palette, the same
+// one its waveform canvas overlay is drawn from:
 //
-// - `statusBar.background`: the status bar showed `surfaceContainerHighest`,
-//   which is `panel.header.background` here.
-// - `statusBar.foreground`: its text showed `onSurface` at 75 % opacity,
-//   which is `panel.header.foreground` at alpha 0xBF. Solarized Dark is the
-//   one exception: that blend is 3.76:1 on its status bar, below WCAG AA's
-//   4.5:1 for text, so it paints the declared `#93A1A1` opaque (5.61:1).
-// - `tabBar.selected`: the active document tab showed
-//   `surfaceContainerHighest`, again `panel.header.background`.
-// - `toolbar.iconActive`, `splitter`, `splitter.hover`, `tabBar.background`
-//   and `tabBar.label` are omitted: those surfaces showed the product's
-//   `primary`, `outlineVariant`, nothing, and its body text colour.
+// - `toolbar.iconActive` and `splitter.hover` take the palette's primary
+//   accent, so a toggled toolbar glyph and a grabbed resizer light up in the
+//   preset's colour rather than the host product's Material `primary`.
+// - `splitter` takes the palette's minor-tick colour, raised by scaling its
+//   channels (hue kept) only as far as WCAG 2.1's 3:1 for user interface
+//   components against both `panel.background` and `scaffold.background`.
+//   Solarized Dark's #586E75 becomes #657F87, Oscilloscope's #1A4A1A becomes
+//   #256A25 and OLED XR's #5A5A5A becomes #5C5C5C; High Contrast Dark's
+//   #666666 already clears it.
+// - `statusBar.background`, `statusBar.foreground` and `tabBar.selected` keep
+//   the values the presets painted before their widgets read them (the status
+//   bar showed `panel.header.background` behind `panel.header.foreground` at
+//   75 %, opaque on Solarized Dark for AA; the active tab showed
+//   `panel.header.background`).
+// - `tabBar.background` and `tabBar.label` stay unset on the three accent
+//   presets, so the strip keeps no fill and titles keep the body text colour.
 //
-// `builtin_presets_test.dart` pins every value, with the colour each preset
-// declared before, so adopting a declared colour (as Solarized Dark's status
-// bar text did) is a visible, deliberate change rather than a refactor.
+// High Contrast Dark declares the full set: black surfaces, white text and
+// icons, and yellow (#FFFF00) for everything active.
+//
+// `builtin_presets_test.dart` pins every value and its contrast, so a change
+// here is a visible, deliberate change to a shipped preset.
 // ---------------------------------------------------------------------------
 
 final List<CruxColorTheme> _basePresets = <CruxColorTheme>[
@@ -180,8 +184,11 @@ final CruxColorTheme _solarizedDark = CruxColorTheme(
       'panel.header.foreground': Color(0xFF93A1A1),
       'toolbar.background': Color(0xFF002B36),
       'toolbar.icon': Color(0xFF839496),
+      'toolbar.iconActive': Color(0xFFB58900),
       'statusBar.background': Color(0xFF002B36),
       'statusBar.foreground': Color(0xFF93A1A1),
+      'splitter': Color(0xFF657F87),
+      'splitter.hover': Color(0xFFB58900),
       'tabBar.selected': Color(0xFF002B36),
     },
   },
@@ -191,7 +198,24 @@ final CruxColorTheme _highContrastDark = CruxColorTheme(
   id: 'high-contrast-dark',
   displayName: 'High Contrast Dark',
   brightness: Brightness.dark,
-  tokens: const <String, Map<String, Color>>{},
+  tokens: const <String, Map<String, Color>>{
+    'chrome': <String, Color>{
+      'scaffold.background': Color(0xFF000000),
+      'panel.background': Color(0xFF000000),
+      'panel.header.background': Color(0xFF000000),
+      'panel.header.foreground': Color(0xFFFFFFFF),
+      'toolbar.background': Color(0xFF000000),
+      'toolbar.icon': Color(0xFFFFFFFF),
+      'toolbar.iconActive': Color(0xFFFFFF00),
+      'statusBar.background': Color(0xFF000000),
+      'statusBar.foreground': Color(0xFFFFFFFF),
+      'splitter': Color(0xFF666666),
+      'splitter.hover': Color(0xFFFFFF00),
+      'tabBar.background': Color(0xFF000000),
+      'tabBar.selected': Color(0xFF000000),
+      'tabBar.label': Color(0xFFFFFFFF),
+    },
+  },
 );
 
 final CruxColorTheme _oscilloscope = CruxColorTheme(
@@ -206,8 +230,11 @@ final CruxColorTheme _oscilloscope = CruxColorTheme(
       'panel.header.foreground': Color(0xFF00FF41),
       'toolbar.background': Color(0xFF000000),
       'toolbar.icon': Color(0xFF00CC33),
+      'toolbar.iconActive': Color(0xFF00FF41),
       'statusBar.background': Color(0xFF000000),
       'statusBar.foreground': Color(0xBF00FF41),
+      'splitter': Color(0xFF256A25),
+      'splitter.hover': Color(0xFF00FF41),
       'tabBar.selected': Color(0xFF000000),
     },
   },
@@ -237,8 +264,11 @@ final CruxColorTheme _oledXr = CruxColorTheme(
       'panel.header.foreground': Color(0xFFF2F2F2),
       'toolbar.background': Color(0xFF000000),
       'toolbar.icon': Color(0xFF9AA0A6),
+      'toolbar.iconActive': Color(0xFFFFD400),
       'statusBar.background': Color(0xFF000000),
       'statusBar.foreground': Color(0xBFF2F2F2),
+      'splitter': Color(0xFF5C5C5C),
+      'splitter.hover': Color(0xFFFFD400),
       'tabBar.selected': Color(0xFF000000),
     },
   },

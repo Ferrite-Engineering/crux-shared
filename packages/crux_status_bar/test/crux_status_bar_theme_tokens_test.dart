@@ -257,11 +257,13 @@ void main() {
   // uses, must still paint exactly that. Text reaches the engine as 32-bit
   // ARGB, so its colour is compared that way.
   //
-  // One text colour changed on purpose: Solarized Dark's, whose 75 % blend
+  // Two text colours changed on purpose: Solarized Dark's, whose 75 % blend
   // was 3.76:1 against WCAG AA's 4.5:1, now paints its declared opaque
-  // #93A1A1 (5.61:1). It is checked against that value instead.
+  // #93A1A1 (5.61:1), and High Contrast Dark's, which declares opaque white.
+  // Each is checked against that value instead.
   const textChangedOnPurpose = <String, Color>{
     'solarized-dark': Color(0xFF93A1A1),
+    'high-contrast-dark': Color(0xFFFFFFFF),
   };
   group('an unedited preset paints what the bar always painted', () {
     final bases = <String, ThemeData Function(Brightness)>{

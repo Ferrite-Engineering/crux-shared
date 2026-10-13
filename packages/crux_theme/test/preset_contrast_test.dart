@@ -31,24 +31,18 @@ import 'package:flutter_test/flutter_test.dart';
 /// either direction is how a contrast suite becomes theatre: too strict and it
 /// is disabled, too loose and it passes a status bar nobody can read.
 ///
-/// ## Three presets ship no chrome tokens, and they are checked differently
+/// ## Two presets ship no chrome tokens, and they are checked differently
 ///
-/// `crux-dark`, `crux-light` and `high-contrast-dark` declare an empty token
-/// map: their chrome comes from Material 3's derivation of the seed colour.
-/// Those are covered by the seed-derivation group below, which measures the
-/// `ColorScheme` pairs directly. They are also asserted to *be* empty, so a
-/// token added to one later cannot slip past the token group unchecked.
+/// `crux-dark` and `crux-light` declare an empty token map: their chrome comes
+/// from Material 3's derivation of the seed colour. Those are covered by the
+/// seed-derivation group below, which measures the `ColorScheme` pairs
+/// directly. They are also asserted to *be* empty, so a token added to one
+/// later cannot slip past the token group unchecked.
 ///
-/// **`high-contrast-dark` is worth knowing about.** Its chrome is identical to
-/// `crux-dark` — 14.33:1 on the primary text pair, comfortably AA, but no more
-/// contrasty than the ordinary dark preset. What it actually raises is the
-/// *canvas*: WaveCrux maps the preset id to a high-contrast waveform overlay
-/// (`wavecrux_canvas_preset_overlay.dart`). That is a defensible design — the
-/// canvas is where WaveCrux's contrast problems live — but a user selecting a
-/// preset called "High Contrast Dark" for accessibility reasons may reasonably
-/// expect the chrome to change too, and today it does not. Flutter's own
-/// `ColorScheme.highContrastDark()` would give 18.73:1. Recorded rather than
-/// changed, because picking new chrome colours is a design decision.
+/// `high-contrast-dark` used to be the third: its chrome was identical to
+/// `crux-dark`, and only WaveCrux's canvas overlay raised anything. It now
+/// declares the whole chrome set (black surfaces, white text and icons, yellow
+/// active), so it is checked by the token group with the branded presets.
 void main() {
   final presets = builtinPresets();
 
@@ -72,7 +66,7 @@ void main() {
   });
 
   group('seed-derived presets declare no chrome tokens', () {
-    for (final id in const ['crux-dark', 'crux-light', 'high-contrast-dark']) {
+    for (final id in const ['crux-dark', 'crux-light']) {
       test(id, () {
         expect(
           presets[id]!.tokens,
@@ -89,7 +83,12 @@ void main() {
   _seedDerivedGroup();
 
   group('chrome token contrast (WCAG 2.1 AA)', () {
-    for (final id in const ['solarized-dark', 'oscilloscope', 'oled-xr']) {
+    for (final id in const [
+      'solarized-dark',
+      'high-contrast-dark',
+      'oscilloscope',
+      'oled-xr',
+    ]) {
       group(id, () {
         final chrome = presets[id]!.tokens['chrome'] ?? const {};
 
@@ -227,8 +226,8 @@ void _seedDerivedGroup() {
             reason:
                 'Seed-derived ${pair.name} is ${ratio.toStringAsFixed(2)}:1 in '
                 '${brightness.name}, below ${pair.min}:1. This affects '
-                'crux-dark, crux-light and high-contrast-dark, which ship no '
-                'chrome tokens of their own — so it is three presets, not one.',
+                'crux-dark and crux-light, which ship no chrome tokens of '
+                'their own — so it is two presets, not one.',
           );
         });
       }
@@ -256,16 +255,11 @@ class _Pair {
   final String why;
 }
 
-// Four pairs this file used to check are gone because the presets no longer
-// declare their tokens: `tabBar.label` on `tabBar.background`,
-// `toolbar.iconActive` on `toolbar.background`, `tabBar.selected` on
-// `tabBar.background`, and `splitter.hover` on `panel.background`. Nothing
-// painted with those tokens while the presets declared them, so the numbers
-// measured colours no user saw. When the tokens reached their widgets each
-// preset was pinned to what it already showed, and those surfaces showed the
-// host product's own Material colours (`primary`, `outlineVariant`, the body
-// text colour, and no strip fill at all), which differ per product and are
-// covered by each product's own guideline sweeps, not by a token table.
+// `tabBar.label` on `tabBar.background` and `tabBar.selected` on
+// `tabBar.background` are not checked here: only High Contrast Dark declares
+// `tabBar.background`, and `builtin_presets_test.dart` pins its label pair.
+// The active tab is marked by a `primary` underline as well as its fill, so
+// the fill is not the only cue.
 const _pairs = <_Pair>[
   _Pair(
     foreground: 'panel.header.foreground',
@@ -291,6 +285,38 @@ const _pairs = <_Pair>[
     why:
         'Toolbar icons are user interface components under SC 1.4.11: they '
         'must be perceivable to be operable, but they are not text.',
+  ),
+  _Pair(
+    foreground: 'toolbar.iconActive',
+    background: 'toolbar.background',
+    minimum: 3,
+    why:
+        'A toggled-on toolbar glyph is a user interface component, and its '
+        'colour is the only thing saying the toggle is on.',
+  ),
+  _Pair(
+    foreground: 'splitter',
+    background: 'panel.background',
+    minimum: 3,
+    why:
+        'The resizer between panels is a user interface component: a user '
+        'who cannot see it cannot find where to drag.',
+  ),
+  _Pair(
+    foreground: 'splitter',
+    background: 'scaffold.background',
+    minimum: 3,
+    why:
+        'The resizer also borders the scaffold where a panel is collapsed, '
+        'so it must clear 3:1 on that side too.',
+  ),
+  _Pair(
+    foreground: 'splitter.hover',
+    background: 'panel.background',
+    minimum: 3,
+    why:
+        'The hovered or dragged resizer is the feedback that a drag will '
+        'take; it must stand out from the panels it divides.',
   ),
 ];
 

@@ -1,5 +1,18 @@
 ## Unreleased
 
+- The branded presets complete their chrome from their own palettes. In
+  Solarized Dark, Oscilloscope and OLED XR, `toolbar.iconActive` and
+  `splitter.hover` take the palette's primary (#B58900, #00FF41, #FFD400), and
+  `splitter` takes its minor-tick colour, raised to 3:1 against the panel and
+  scaffold surfaces (#657F87, #256A25, #5C5C5C). A toggled toolbar glyph and
+  the pane resizers therefore stop following the host product's `primary` and
+  `outlineVariant` under these presets. High Contrast Dark, which declared no
+  chrome, now declares all fourteen tokens: black surfaces, white text and
+  icons, yellow (#FFFF00) for the active glyph and the hovered resizer, and a
+  #666666 resizer at rest. Its chrome changes visibly in every product. The
+  declared toolbar and status bar values are unchanged. Every value and its
+  contrast is pinned in `builtin_presets_test.dart`.
+
 - `CruxChromeColors` gains `toolbarBackground` and `toolbarIcon`, which
   `applyChromeTokens` fills from `toolbar.background` and `toolbar.icon`, so
   the two tokens reach the application toolbar as well as the `AppBar`s they

@@ -213,8 +213,10 @@ void main() {
 
   // Before the tokens were wired the resizers painted `outlineVariant` at rest
   // and `primary` on hover, drag and focus, from whatever theme the product
-  // built with `applyChromeTokens`. Every preset, over each kind of base a
-  // product uses, must still paint exactly that.
+  // built with `applyChromeTokens`. A preset that declares `splitter` and
+  // `splitter.hover` from its own palette paints those instead; every other
+  // preset, over each kind of base a product uses, must still paint exactly
+  // what it did.
   group('an unedited preset paints what the resizers always painted', () {
     final bases = <String, ThemeData Function(Brightness)>{
       'seeded': _seeded,
@@ -229,12 +231,18 @@ void main() {
         testWidgets('${preset.id} over a ${base.key} base', (tester) async {
           await _pump(tester, preset: preset, base: base.value);
           final scheme = Theme.of(tester.element(_resizer)).colorScheme;
+          final rest =
+              preset.color(chromeCategoryId, ChromeTokens.splitter) ??
+              scheme.outlineVariant;
+          final active =
+              preset.color(chromeCategoryId, ChromeTokens.splitterHover) ??
+              scheme.primary;
 
-          expect(_barColor(tester), scheme.outlineVariant);
-          expect(_paneTheme(tester).resizerHoverColor, scheme.primary);
-          expect(_paneTheme(tester).resizerFocusedColor, scheme.primary);
+          expect(_barColor(tester), rest);
+          expect(_paneTheme(tester).resizerHoverColor, active);
+          expect(_paneTheme(tester).resizerFocusedColor, active);
           await _hover(tester);
-          expect(_barColor(tester), scheme.primary);
+          expect(_barColor(tester), active);
         });
       }
     }
