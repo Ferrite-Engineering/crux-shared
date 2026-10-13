@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_theme/crux_theme.dart' show CruxChromeColors;
 import 'package:crux_toolbar/src/toolbar_button.dart';
 import 'package:crux_toolbar/src/toolbar_item.dart';
 import 'package:crux_toolbar/src/toolbar_metrics.dart';
@@ -164,6 +165,11 @@ class _CruxToolbarState<A extends Object> extends State<CruxToolbar<A>> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // `toolbar.background`, when the theme sets it; the Material surface
+    // otherwise.
+    final surface =
+        CruxChromeColors.of(context)?.toolbarBackground ??
+        scheme.surfaceContainerHigh;
 
     final strip = Row(
       mainAxisSize: MainAxisSize.min,
@@ -185,7 +191,7 @@ class _CruxToolbarState<A extends Object> extends State<CruxToolbar<A>> {
       container: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerHigh,
+          color: surface,
           border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
         ),
         child: SizedBox(
@@ -218,10 +224,8 @@ class _CruxToolbarState<A extends Object> extends State<CruxToolbar<A>> {
                                     begin: AlignmentDirectional.centerStart,
                                     end: AlignmentDirectional.centerEnd,
                                     colors: [
-                                      scheme.surfaceContainerHigh.withValues(
-                                        alpha: 0,
-                                      ),
-                                      scheme.surfaceContainerHigh,
+                                      surface.withValues(alpha: 0),
+                                      surface,
                                     ],
                                   ),
                                 ),

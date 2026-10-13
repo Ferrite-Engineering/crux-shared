@@ -3,6 +3,7 @@
 
 import 'package:crux_keybindings/crux_keybindings.dart'
     show formatShortcutLabel;
+import 'package:crux_theme/crux_theme.dart' show CruxChromeColors;
 import 'package:crux_toolbar/src/toolbar_metrics.dart';
 import 'package:flutter/material.dart';
 
@@ -178,6 +179,7 @@ class CruxToolbarOverflowMenu<A extends Object> extends StatelessWidget {
     width: metrics.buttonSize,
     height: metrics.buttonSize,
     child: IconButton(
+      color: CruxChromeColors.of(context)?.toolbarIcon,
       icon: Icon(Icons.more_vert, size: metrics.iconSize),
       tooltip: tooltip,
       padding: EdgeInsets.zero,

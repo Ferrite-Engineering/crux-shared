@@ -1,5 +1,11 @@
 ## Unreleased
 
+- The toolbar surface takes the theme's `toolbar.background` chrome token
+  and an enabled button's resting glyph takes `toolbar.icon`, both read from
+  `CruxChromeColors`; unset, they keep `surfaceContainerHigh` and the
+  `IconButton`'s own colour. A disabled button keeps its disabled colour, and
+  a toggled-on glyph still takes `toolbar.iconActive`.
+
 - A toggled-on button's glyph takes the theme's `toolbar.iconActive` chrome
   token, read from `crux_theme`'s `CruxChromeColors`, and `primary` when the
   theme leaves it unset (as before). Depends on `crux_theme`.

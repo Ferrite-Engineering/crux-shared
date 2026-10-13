@@ -28,9 +28,9 @@ class ColorPickerPaletteSection
   final label: String
   final swatchSize: double
 class CruxChromeColors extends ThemeExtension<CruxChromeColors>
-  const CruxChromeColors({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarIconActive})
+  const CruxChromeColors({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarBackground, Color? toolbarIcon, Color? toolbarIconActive})
   ==(Object other) -> bool
-  copyWith({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarIconActive}) -> CruxChromeColors
+  copyWith({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarBackground, Color? toolbarIcon, Color? toolbarIconActive}) -> CruxChromeColors
   final splitter: Color?
   final splitterHover: Color?
   final statusBarBackground: Color?
@@ -38,6 +38,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors>
   final tabBarBackground: Color?
   final tabBarLabel: Color?
   final tabBarSelected: Color?
+  final toolbarBackground: Color?
+  final toolbarIcon: Color?
   final toolbarIconActive: Color?
   get hashCode -> int
   get isEmpty -> bool

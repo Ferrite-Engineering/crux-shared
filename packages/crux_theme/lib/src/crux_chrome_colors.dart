@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 
 /// The suite chrome colours Material's `ThemeData` has no slot for.
 ///
-/// `applyChromeTokens` resolves eight of the shared `chrome` tokens into this
+/// `applyChromeTokens` resolves ten of the shared `chrome` tokens into this
 /// extension and installs it on the `ThemeData` it returns. The shared chrome
 /// widgets read it back through [of], so a preset switch, a theme pack or a
 /// token edit in Settings → Appearance repaints them the way the other six
 /// chrome tokens repaint the Material surfaces:
 ///
+/// - [toolbarBackground] (`toolbar.background`): the `CruxToolbar` surface.
+/// - [toolbarIcon] (`toolbar.icon`): the glyph of an enabled toolbar button
+///   at rest.
 /// - [toolbarIconActive] (`toolbar.iconActive`): the glyph of a toggled-on
 ///   `CruxToolbarButton`.
 /// - [statusBarBackground] (`statusBar.background`): the `CruxStatusBar`
@@ -32,6 +35,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
   /// Creates the resolved chrome colours. Every field is optional; null
   /// means "use the widget's own default".
   const CruxChromeColors({
+    this.toolbarBackground,
+    this.toolbarIcon,
     this.toolbarIconActive,
     this.statusBarBackground,
     this.statusBarForeground,
@@ -46,6 +51,15 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
   /// theme was not built through `applyChromeTokens`.
   static CruxChromeColors? of(BuildContext context) =>
       Theme.of(context).extension<CruxChromeColors>();
+
+  /// The application toolbar's surface. Default:
+  /// `ColorScheme.surfaceContainerHigh`.
+  final Color? toolbarBackground;
+
+  /// Glyph tint of an enabled toolbar button at rest. Default: the
+  /// `IconButton`'s own Material colour. A disabled button keeps its
+  /// disabled colour whatever this says.
+  final Color? toolbarIcon;
 
   /// Glyph tint of a toggled-on toolbar button. Default: `ColorScheme.primary`.
   final Color? toolbarIconActive;
@@ -77,6 +91,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
 
   /// Whether no field is set, so every widget keeps its own default.
   bool get isEmpty =>
+      toolbarBackground == null &&
+      toolbarIcon == null &&
       toolbarIconActive == null &&
       statusBarBackground == null &&
       statusBarForeground == null &&
@@ -88,6 +104,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
 
   @override
   CruxChromeColors copyWith({
+    Color? toolbarBackground,
+    Color? toolbarIcon,
     Color? toolbarIconActive,
     Color? statusBarBackground,
     Color? statusBarForeground,
@@ -97,6 +115,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
     Color? tabBarSelected,
     Color? tabBarLabel,
   }) => CruxChromeColors(
+    toolbarBackground: toolbarBackground ?? this.toolbarBackground,
+    toolbarIcon: toolbarIcon ?? this.toolbarIcon,
     toolbarIconActive: toolbarIconActive ?? this.toolbarIconActive,
     statusBarBackground: statusBarBackground ?? this.statusBarBackground,
     statusBarForeground: statusBarForeground ?? this.statusBarForeground,
@@ -118,6 +138,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
   ) {
     if (other is! CruxChromeColors) return this;
     return CruxChromeColors(
+      toolbarBackground: _lerp(toolbarBackground, other.toolbarBackground, t),
+      toolbarIcon: _lerp(toolbarIcon, other.toolbarIcon, t),
       toolbarIconActive: _lerp(toolbarIconActive, other.toolbarIconActive, t),
       statusBarBackground: _lerp(
         statusBarBackground,
@@ -146,6 +168,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is CruxChromeColors &&
+        other.toolbarBackground == toolbarBackground &&
+        other.toolbarIcon == toolbarIcon &&
         other.toolbarIconActive == toolbarIconActive &&
         other.statusBarBackground == statusBarBackground &&
         other.statusBarForeground == statusBarForeground &&
@@ -158,6 +182,8 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors> {
 
   @override
   int get hashCode => Object.hash(
+    toolbarBackground,
+    toolbarIcon,
     toolbarIconActive,
     statusBarBackground,
     statusBarForeground,

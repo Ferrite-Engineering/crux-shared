@@ -22,8 +22,10 @@ const String chromeCategoryId = 'chrome';
 /// widget through [applyChromeTokens].
 ///
 /// The first six become Material `ColorScheme` / `AppBarTheme` / `CardTheme`
-/// overrides. Material has no slot for the other eight, so they become a
-/// [CruxChromeColors] extension that the shared chrome widgets read.
+/// overrides; `toolbar.background` and `toolbar.icon` also reach the
+/// application toolbar through [CruxChromeColors]. Material has no slot for
+/// the other eight, so they become that extension only, which the shared
+/// chrome widgets read.
 abstract final class ChromeTokens {
   /// Background colour of the root `Scaffold`.
   static const String scaffoldBackground = 'scaffold.background';
@@ -37,10 +39,12 @@ abstract final class ChromeTokens {
   /// Foreground (title + icon) colour of panel header strips.
   static const String panelHeaderForeground = 'panel.header.foreground';
 
-  /// Background colour of the primary `AppBar` / toolbar.
+  /// Background colour of the `AppBar`s and of the application toolbar
+  /// ([CruxChromeColors.toolbarBackground]).
   static const String toolbarBackground = 'toolbar.background';
 
-  /// Default colour of toolbar icons in their resting state.
+  /// Colour of `AppBar` foregrounds and of the application toolbar's icons
+  /// at rest ([CruxChromeColors.toolbarIcon]).
   static const String toolbarIcon = 'toolbar.icon';
 
   /// Glyph tint of a toggled-on toolbar button
@@ -135,6 +139,8 @@ ThemeData applyChromeTokens(ThemeData base, CruxThemeExtension chrome) {
   Color? widgetToken(String tokenId, Color? fallback) =>
       _chromeToken(chrome, tokenId) ?? fallback;
   final chromeColors = CruxChromeColors(
+    toolbarBackground: toolbarBg ?? inherited?.toolbarBackground,
+    toolbarIcon: toolbarIcon ?? inherited?.toolbarIcon,
     toolbarIconActive: widgetToken(
       ChromeTokens.toolbarIconActive,
       inherited?.toolbarIconActive,

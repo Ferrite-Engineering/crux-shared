@@ -75,9 +75,11 @@ class CruxToolbarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final activeTint =
-        CruxChromeColors.of(context)?.toolbarIconActive ?? scheme.primary;
+    final chrome = CruxChromeColors.of(context);
+    final activeTint = chrome?.toolbarIconActive ?? scheme.primary;
     final iconButton = IconButton(
+      // `toolbar.icon` at rest; IconButton keeps its disabled colour.
+      color: chrome?.toolbarIcon,
       icon: Icon(
         icon,
         size: metrics.iconSize,

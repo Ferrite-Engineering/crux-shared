@@ -221,6 +221,67 @@ void main() {
     });
   });
 
+  // `toolbar.background` and `toolbar.icon` used to reach only the AppBars of
+  // the Settings, About and issue-reporter screens; the main toolbar ignored
+  // both.
+  group('toolbar.background and toolbar.icon reach the main toolbar', () {
+    const surface = Color(0xFF1B6B3A);
+    const glyph = Color(0xFFB0127C);
+
+    Color? toolbarSurface(WidgetTester tester) {
+      final box = tester.widget<DecoratedBox>(
+        find
+            .descendant(
+              of: find.byType(CruxToolbar<_A>),
+              matching: find.byType(DecoratedBox),
+            )
+            .first,
+      );
+      return (box.decoration as BoxDecoration).color;
+    }
+
+    Color? restingColor(WidgetTester tester, _A action) => tester
+        .widget<IconButton>(
+          find.descendant(
+            of: find.byKey(ValueKey<_A>(action)),
+            matching: find.byType(IconButton),
+          ),
+        )
+        .color;
+
+    testWidgets('unset, the toolbar keeps its Material surface', (
+      tester,
+    ) async {
+      await _pump(tester);
+      final scheme = Theme.of(
+        tester.element(find.byType(CruxToolbar<_A>)),
+      ).colorScheme;
+      expect(toolbarSurface(tester), scheme.surfaceContainerHigh);
+      expect(restingColor(tester, _A.open), isNull);
+    });
+
+    testWidgets('set, they paint the surface and the resting glyphs', (
+      tester,
+    ) async {
+      final container = await _pump(tester);
+      await _edit(tester, container, {
+        'chrome.${ChromeTokens.toolbarBackground}': surface,
+        'chrome.${ChromeTokens.toolbarIcon}': glyph,
+      });
+
+      expect(toolbarSurface(tester), surface);
+      expect(restingColor(tester, _A.open), glyph);
+      final rendered = await _renderedColors(tester);
+      expect(rendered, contains(surface.toARGB32()));
+      expect(rendered, contains(glyph.toARGB32()));
+      // A toggled-on glyph still takes its own token, or primary.
+      final scheme = Theme.of(
+        tester.element(find.byKey(const ValueKey<_A>(_A.crossProbe))),
+      ).colorScheme;
+      expect(_glyphColor(tester, _A.crossProbe), scheme.primary);
+    });
+  });
+
   // Before the token was wired a toggled-on glyph was tinted `primary`, from
   // whatever theme the product built with `applyChromeTokens`. Every preset,
   // over each kind of base a product uses, must still tint it exactly that.

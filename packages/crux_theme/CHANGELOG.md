@@ -1,5 +1,14 @@
 ## Unreleased
 
+- `CruxChromeColors` gains `toolbarBackground` and `toolbarIcon`, which
+  `applyChromeTokens` fills from `toolbar.background` and `toolbar.icon`, so
+  the two tokens reach the application toolbar as well as the `AppBar`s they
+  already coloured. Unset, the toolbar keeps its Material colours. The three
+  branded presets that declare these tokens (Solarized Dark, Oscilloscope,
+  OLED XR) now paint their main toolbar with the values their app bars
+  already showed; whether those values are the right ones is a separate
+  design decision.
+
 - Fix: eight shared chrome tokens — `toolbar.iconActive`,
   `statusBar.background`, `statusBar.foreground`, `splitter`, `splitter.hover`,
   `tabBar.background`, `tabBar.selected`, `tabBar.label` — were registered,
