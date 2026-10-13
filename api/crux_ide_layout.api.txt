@@ -137,13 +137,18 @@ class PlatformContextMenu extends StatelessWidget
   final onContextMenu: void Function(Offset)
 announceCrux(BuildContext context, String message, {bool assertive}) -> void
 confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirmKey, Key? dialogKey, required String body, required String cancelLabel, required String confirmLabel, required String title}) -> Future<bool>
+hideCruxReloadPrompt(BuildContext context) -> void
 get kCruxErrorSnackDuration -> Duration
 get kCruxInfoSnackDuration -> Duration
 get kCruxPaneResizeStep -> double
 get kCruxRegionShortcuts -> Map<ShortcutActivator, Intent>
+get kCruxReloadPromptIgnoreKey -> Key
+get kCruxReloadPromptKey -> Key
+get kCruxReloadPromptReloadKey -> Key
 get kCruxSearchDebounceInterval -> Duration
 get kCruxSearchDialogRowExtent -> double
 get kCruxSearchDialogSize -> Size
 shouldEnableLongPressContextMenu({required TargetPlatform platform, required bool isTouchLayout}) -> bool
 showCruxErrorSnack(BuildContext context, String message) -> void
 showCruxInfoSnack(BuildContext context, String message) -> void
+showCruxReloadPrompt(BuildContext context, {required String ignoreLabel, required String message, required String reloadLabel, required void Function() onIgnore, required void Function() onReload}) -> void

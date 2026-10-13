@@ -6,6 +6,14 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `showCruxReloadPrompt` / `hideCruxReloadPrompt`: the source-changed prompt
+  every product shows when a watched file changes and auto-reload is set to
+  prompt. A `MaterialBanner` with the product's message, Ignore, then the
+  reload action; it stays until the user chooses, a second call while it is
+  up does nothing, and the message is announced to screen readers. Three
+  products had shown a snackbar whose only button was the reload, which
+  never timed out and could not be declined (crux-shared#35).
+
 - `CruxPanelEmptyState` describes its region. A named `CruxFocusRegion` is
   now a `CruxRegionHintHost`, and the empty state mounts a `CruxRegionHint`
   with its message, so while a panel is empty its region keeps its title as

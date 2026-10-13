@@ -33,6 +33,9 @@
 /// - `CruxFocusRegion` / `CruxFocusRegionScope` — keyboard regions: Tab
 ///   stays inside a region until it is exhausted, and F6 / Shift+F6 jump
 ///   between regions. `CruxIdeLayout` makes each of its four panes a region.
+/// - `showCruxReloadPrompt` / `hideCruxReloadPrompt` — the source-changed
+///   prompt every product shows when a watched file changes: a banner with
+///   Ignore and a reload action, which stays until the user chooses.
 /// - `announceCrux` — speaks a status message through the screen reader.
 ///   The feedback snack bars call it, because the desktop accessibility
 ///   bridges do not announce live regions.
@@ -56,3 +59,4 @@ export 'src/ide_panel_layout.dart';
 export 'src/modal_guard.dart';
 export 'src/panel_empty_state.dart';
 export 'src/platform_context_menu.dart';
+export 'src/reload_prompt.dart';
