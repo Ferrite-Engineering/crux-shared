@@ -99,6 +99,7 @@ crux_signing:98
 crux_sqlite:91
 crux_stats_strip:90
 crux_status_bar:98
+crux_table:96
 crux_telemetry:92
 crux_theme:92
 crux_toolbar:71

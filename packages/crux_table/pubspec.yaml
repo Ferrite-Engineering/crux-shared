@@ -1,0 +1,31 @@
+name: crux_table
+description: >-
+  Cross-suite table model for the EDACrux suite: weighted, drag-resizable
+  columns whose widths persist, a sortable header, and hover-tooltip body
+  cells, generic over the host's column enum. Lifted from two products' copies
+  so a third table adopts one implementation.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  crux_settings:
+    path: ../crux_settings
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  crux_a11y:
+    path: ../crux_a11y
+  flutter_localizations:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0

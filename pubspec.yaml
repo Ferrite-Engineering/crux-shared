@@ -46,6 +46,7 @@ workspace:
   - packages/crux_projects_ui
   - packages/crux_stats_strip
   - packages/crux_a11y
+  - packages/crux_table
 
 dev_dependencies:
   melos: ^8.6.0

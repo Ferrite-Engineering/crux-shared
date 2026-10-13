@@ -1,0 +1,97 @@
+# Public API surface of package:crux_table/crux_table.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CruxColumnLayout<C extends Enum>
+  CruxColumnLayout(CruxTableColumns<C> columns, Map<C, double> weights)
+  ==(Object other) -> bool
+  final columns: CruxTableColumns<C>
+  final weights: Map<C, double>
+  flexOf(C column) -> int
+  get hashCode -> int
+  get isDefault -> bool
+  get totalWeight -> double
+  resize(C column, double dx, double tableWidth) -> CruxColumnLayout<C>
+  toString() -> String
+class CruxColumnLayoutCodec<C extends Enum> implements SettingsCodec<CruxColumnLayout<C>>
+  const CruxColumnLayoutCodec({required CruxTableColumns<C> columns, required String prefsKey})
+  final columns: CruxTableColumns<C>
+  final prefsKey: String
+  load(SharedPreferences prefs) -> Future<CruxColumnLayout<C>>
+  save(SharedPreferences prefs, CruxColumnLayout<C> settings) -> Future<void>
+class CruxColumnLayoutNotifier<C extends Enum> extends Notifier<CruxColumnLayout<C>> implements CruxColumnResizeController<C>
+  CruxColumnLayoutNotifier(CruxColumnLayoutProviders<C> _providers)
+  build() -> CruxColumnLayout<C>
+  commit() -> void
+  reset() -> void
+  resize(C column, double dx, double tableWidth) -> void
+class CruxColumnLayoutProviders<C extends Enum>
+  CruxColumnLayoutProviders({required CruxTableColumns<C> columns, required String name, required String prefsKey})
+  final codec: CruxColumnLayoutCodec<C>
+  final columns: CruxTableColumns<C>
+  final launch: Provider<CruxColumnLayout<C>>
+  final layout: NotifierProvider<CruxColumnLayoutNotifier<C>, CruxColumnLayout<C>>
+  final settingsService: Provider<SettingsService<CruxColumnLayout<C>>>
+  launchOverride(CruxColumnLayout<C> loaded) -> Override
+  load({SettingsService<CruxColumnLayout<C>>? service}) -> Future<CruxColumnLayout<C>>
+interface abstract class CruxColumnResizeController<C extends Enum>
+  commit() -> void
+  reset() -> void
+  resize(C column, double dx, double tableWidth) -> void
+class CruxColumnResizeHandle<C extends Enum> extends StatelessWidget
+  const CruxColumnResizeHandle({Key? key, double height, required C column, required CruxColumnResizeController<C> controller, required double tableWidth})
+  build(BuildContext context) -> Widget
+  final column: C
+  final controller: CruxColumnResizeController<C>
+  final height: double
+  final tableWidth: double
+class CruxSortableHeaderCell extends StatelessWidget
+  const CruxSortableHeaderCell({Key? key, bool ascending, bool sorted, required String label, required void Function() onTap})
+  build(BuildContext context) -> Widget
+  final ascending: bool
+  final label: String
+  final onTap: void Function()
+  final sorted: bool
+class CruxTableCell extends StatelessWidget
+  const CruxTableCell({Key? key, String? tooltip, TextStyle? style, Widget? annotation, required String text, required int flex})
+  build(BuildContext context) -> Widget
+  final annotation: Widget?
+  final flex: int
+  final style: TextStyle?
+  final text: String
+  final tooltip: String?
+  static const annotationGap: double
+  static const minTextWidth: double
+class CruxTableColumns<C extends Enum>
+  const CruxTableColumns({double minColumnWidth, required List<C> columns, required Map<C, double> defaultWeights})
+  ==(Object other) -> bool
+  final columns: List<C>
+  final defaultWeights: Map<C, double>
+  final minColumnWidth: double
+  get defaults -> CruxColumnLayout<C>
+  get hashCode -> int
+  isLast(C column) -> bool
+  isResizable(C column) -> bool
+  toString() -> String
+class CruxTableHeader<C extends Enum> extends StatelessWidget
+  const CruxTableHeader({CruxColumnResizeController<C>? controller, Key? key, List<Widget> leading, double height, required CruxColumnLayout<C> layout, required String tableId, required Widget Function(BuildContext, C) cellBuilder})
+  build(BuildContext context) -> Widget
+  final cellBuilder: Widget Function(BuildContext, C)
+  final controller: CruxColumnResizeController<C>?
+  final height: double
+  final layout: CruxColumnLayout<C>
+  final leading: List<Widget>
+  final tableId: String
+typedef CruxTableHeaderCellBuilder<C extends Enum> = Widget Function(BuildContext, C)
+cruxTableHeaderKey(String tableId, Enum column) -> Key
+cruxTableResizeKey(String tableId, Enum column) -> Key
+get kCruxTableCellPadding -> double
+get kCruxTableMinColumnWidth -> double
+get kCruxTableResizeHandleWidth -> double
+get kCruxTableRowHeight -> double
+get kCruxTableSortArrowSize -> double
