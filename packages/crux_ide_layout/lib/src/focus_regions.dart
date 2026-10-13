@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:crux_a11y/crux_a11y.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -276,7 +277,9 @@ class _CruxFocusRegionScopeMarker extends InheritedWidget {
 ///
 /// [semanticLabel] names the region for a screen reader, which announces it
 /// when focus enters. Leave it null when the child already carries a region
-/// label, or the name is announced twice.
+/// label, or the name is announced twice. A named region is also a
+/// [CruxRegionHintHost]: a [CruxRegionHint] inside it, such as the one a
+/// `CruxPanelEmptyState` mounts, becomes the region's description.
 class CruxFocusRegion extends StatefulWidget {
   /// Creates a region.
   const CruxFocusRegion({
@@ -370,10 +373,15 @@ class CruxFocusRegionState extends State<CruxFocusRegion> {
     );
     final label = widget.semanticLabel;
     if (label != null) {
-      child = Semantics(
-        container: true,
-        explicitChildNodes: true,
-        label: label,
+      // A [CruxRegionHint] inside (the panel empty state) describes the
+      // region while it is mounted; the name stays [label].
+      child = CruxRegionHintHost(
+        builder: (context, hint, child) => cruxRegionHintSemantics(
+          label: label,
+          hint: hint,
+          explicitChildNodes: true,
+          child: child,
+        ),
         child: child,
       );
     }

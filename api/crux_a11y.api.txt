@@ -17,6 +17,17 @@ class CruxModalSurface extends StatelessWidget
   build(BuildContext context) -> Widget
   final child: Widget
   final label: String
+class CruxRegionHint extends StatefulWidget
+  const CruxRegionHint({Key? key, required String hint, required Widget child})
+  createState() -> State<CruxRegionHint>
+  final child: Widget
+  final hint: String
+typedef CruxRegionHintBuilder = Widget Function(BuildContext, String?, Widget)
+class CruxRegionHintHost extends StatefulWidget
+  const CruxRegionHintHost({Key? key, required Widget Function(BuildContext, String?, Widget) builder, required Widget child})
+  createState() -> State<CruxRegionHintHost>
+  final builder: Widget Function(BuildContext, String?, Widget)
+  final child: Widget
 class CruxScrollRegion extends StatefulWidget
   const CruxScrollRegion({Key? key, bool autofocus, bool excludeContentSemantics, required String semanticLabel, required Widget Function(BuildContext, ScrollController) builder})
   createState() -> State<CruxScrollRegion>
@@ -42,3 +53,4 @@ class CruxSlider extends StatelessWidget
   final semanticFormatterCallback: String Function(double)?
   final thumbColor: Color?
   final value: double
+cruxRegionHintSemantics({bool container, bool explicitChildNodes, required String? hint, required String? label, required Widget child}) -> Widget

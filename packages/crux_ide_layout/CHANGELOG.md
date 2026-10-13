@@ -6,6 +6,13 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `CruxPanelEmptyState` describes its region. A named `CruxFocusRegion` is
+  now a `CruxRegionHintHost`, and the empty state mounts a `CruxRegionHint`
+  with its message, so while a panel is empty its region keeps its title as
+  its name and gains the message as its description (semantics hint and
+  tooltip). The visible message keeps its own node for browse mode.
+  `crux_a11y` moves from a dev dependency to a dependency.
+
 - `CruxDockRestoreFrame`: the fixed frame that places up to three
   collapsed-region restore bars around the IDE layout, always as
   `Row(leftBar?, Expanded(Column(Expanded(child), bottomBar?)), rightBar?)`

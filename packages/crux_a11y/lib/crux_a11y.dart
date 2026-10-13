@@ -19,12 +19,22 @@
 /// the surface and hands focus back when it closes, [CruxModalSurface] traps
 /// focus in the dialog and names it, and [CruxScrollRegion] makes a block of
 /// scrolling text a Tab stop the keyboard can scroll.
+///
+/// [CruxRegionHintHost] and [CruxRegionHint] let a region's content describe
+/// the region without renaming it: an empty dock keeps its title as its name
+/// and gains its empty message as its description.
 library;
 
 import 'package:crux_a11y/crux_a11y.dart'
-    show CruxModalGate, CruxModalSurface, CruxScrollRegion;
+    show
+        CruxModalGate,
+        CruxModalSurface,
+        CruxRegionHint,
+        CruxRegionHintHost,
+        CruxScrollRegion;
 import 'package:flutter/material.dart' show Slider;
 
 export 'src/crux_slider.dart';
 export 'src/modal_gate.dart';
+export 'src/region_hint.dart';
 export 'src/scroll_region.dart';

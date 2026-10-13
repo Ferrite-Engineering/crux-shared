@@ -115,4 +115,37 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Nothing here'), findsOneWidget);
   });
+
+  // The region's name stays its title; while the empty state is mounted its
+  // message is the region's description (hint, and tooltip for the desktop
+  // bridge), and the message keeps its own node for browse mode.
+  testWidgets('describes its named region while mounted', (tester) async {
+    final handle = tester.ensureSemantics();
+    Widget region({required bool empty}) => CruxFocusRegion(
+      semanticLabel: 'Details dock',
+      child: empty
+          ? const CruxPanelEmptyState(message: 'Select a test to inspect.')
+          : const Text('Inspector'),
+    );
+    await _pump(tester, region(empty: true));
+    await tester.pump();
+
+    var data = tester
+        .getSemantics(find.bySemanticsLabel('Details dock'))
+        .getSemanticsData();
+    expect(data.label, 'Details dock');
+    expect(data.hint, 'Select a test to inspect.');
+    expect(data.tooltip, 'Select a test to inspect.');
+    expect(find.bySemanticsLabel('Select a test to inspect.'), findsOneWidget);
+
+    await _pump(tester, region(empty: false));
+    await tester.pump();
+    data = tester
+        .getSemantics(find.bySemanticsLabel('Details dock'))
+        .getSemanticsData();
+    expect(data.label, 'Details dock');
+    expect(data.hint, isEmpty);
+    expect(data.tooltip, isEmpty);
+    handle.dispose();
+  });
 }

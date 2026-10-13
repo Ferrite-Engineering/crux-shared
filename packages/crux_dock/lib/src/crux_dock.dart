@@ -3,6 +3,7 @@
 
 import 'dart:math' as math;
 
+import 'package:crux_a11y/crux_a11y.dart';
 import 'package:crux_dock/src/dock_entry.dart';
 import 'package:flutter/material.dart';
 
@@ -308,9 +309,13 @@ class _CruxDockState extends State<CruxDock> {
     final headerMode =
         widget.entries.length == 1 && !widget.entries.single.closable;
 
-    return Semantics(
-      label: widget.semanticsLabel,
-      container: true,
+    return CruxRegionHintHost(
+      // An empty panel inside describes the dock; the name stays the label.
+      builder: (context, hint, child) => cruxRegionHintSemantics(
+        label: widget.semanticsLabel,
+        hint: hint,
+        child: child,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

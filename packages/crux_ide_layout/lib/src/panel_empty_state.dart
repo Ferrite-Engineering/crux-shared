@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_a11y/crux_a11y.dart';
 import 'package:flutter/material.dart';
 
 /// The suite-standard empty state for a dock panel (or any panel-like
@@ -12,6 +13,12 @@ import 'package:flutter/material.dart';
 /// button) — both are optional so the plain-text form stays the default.
 ///
 /// The [message] is caller-supplied and already localized.
+///
+/// While mounted, the [message] is also the description of the enclosing
+/// named region (a [CruxRegionHint] for the nearest [CruxRegionHintHost]:
+/// a named `CruxFocusRegion` or a `CruxDock`). The region's name stays its
+/// title, and a screen reader entering it hears the message after the name
+/// and role. The visible text keeps its own node for browse mode.
 class CruxPanelEmptyState extends StatelessWidget {
   /// Creates a panel empty state.
   const CruxPanelEmptyState({
@@ -71,16 +78,19 @@ class CruxPanelEmptyState extends StatelessWidget {
     // The scroll view keeps everything reachable at any height without a
     // magic-number breakpoint. `minHeight` makes it inert at normal sizes:
     // content exactly fills the viewport, so there is nothing to scroll.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (!constraints.hasBoundedHeight) return Center(child: content);
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(child: content),
-          ),
-        );
-      },
+    return CruxRegionHint(
+      hint: message,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (!constraints.hasBoundedHeight) return Center(child: content);
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(child: content),
+            ),
+          );
+        },
+      ),
     );
   }
 }

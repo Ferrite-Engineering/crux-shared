@@ -17,12 +17,13 @@ environment:
 resolution: workspace
 
 dependencies:
+  # The region hint an empty panel inside the dock describes it with.
+  crux_a11y:
+    path: ../crux_a11y
   flutter:
     sdk: flutter
 
 dev_dependencies:
-  crux_a11y:
-    path: ../crux_a11y
   flutter_test:
     sdk: flutter
   very_good_analysis: ^11.0.0

@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_a11y/crux_a11y.dart';
 import 'package:crux_dock/crux_dock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -809,5 +810,39 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('label-a'), findsOneWidget);
     });
+  });
+
+  testWidgets('an empty panel describes the dock without renaming it', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      _host(
+        CruxDock(
+          semanticsLabel: 'Details dock',
+          entries: [
+            CruxDockEntry(
+              id: 'details',
+              icon: Icons.info_outline,
+              label: 'Details',
+              builder: (_) => const CruxRegionHint(
+                hint: 'Select a test to inspect.',
+                child: Text('Select a test to inspect.'),
+              ),
+            ),
+          ],
+          onSelect: (_) {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final data = tester
+        .getSemantics(find.bySemanticsLabel(RegExp('^Details dock')))
+        .getSemanticsData();
+    expect(data.label, startsWith('Details dock'));
+    expect(data.hint, 'Select a test to inspect.');
+    expect(data.tooltip, 'Select a test to inspect.');
+    handle.dispose();
   });
 }

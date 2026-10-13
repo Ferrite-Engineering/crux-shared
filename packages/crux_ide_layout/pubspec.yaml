@@ -13,6 +13,9 @@ environment:
 resolution: workspace
 
 dependencies:
+  # The region hint a panel empty state uses to describe its region.
+  crux_a11y:
+    path: ../crux_a11y
   crux_theme:
     path: ../crux_theme
   flutter:
@@ -21,8 +24,6 @@ dependencies:
   url_launcher: ^6.3.0
 
 dev_dependencies:
-  crux_a11y:
-    path: ../crux_a11y
   flutter_localizations:
     sdk: flutter
   # Drives the token editor's own write path (`applyOverrides`) in the theme

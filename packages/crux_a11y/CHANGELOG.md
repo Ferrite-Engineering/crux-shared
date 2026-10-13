@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **`CruxRegionHintHost` and `CruxRegionHint`: a region's content can
+  describe the region without renaming it.** A host builds its region
+  semantics with `cruxRegionHintSemantics`; a `CruxRegionHint` below it
+  supplies the description while mounted (the most recently mounted wins),
+  one frame after it mounts. The description is set as the semantics hint
+  and as the tooltip, because the desktop accessibility bridge drops the
+  hint and exposes the tooltip as the accessible description.
+- **The focus walk reports a container's description on entry.** An entered
+  container with a semantics tooltip renders as `<name> <role> —
+  <description>` instead of `<name> <role>`, so a transcript records what a
+  screen reader reads on entering it. Transcripts that enter a region holding
+  a `CruxPanelEmptyState` change.
+
 - **`CruxScrollRegion`'s focus ring clears the text.** It sat flush against
   the content with square corners, and since it paints in front of the
   content the stroke landed on the glyphs, so the first-launch dialogs' text

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `CruxDock` is a `CruxRegionHintHost`: an empty panel inside it (a
+  `CruxPanelEmptyState`) becomes the dock's description while the dock's name
+  stays `semanticsLabel`. `crux_a11y` moves from a dev dependency to a
+  dependency.
+
 ## 0.1.1
 
 - `CruxDockRestoreBar` buttons are named buttons. An icon `InkWell` with only

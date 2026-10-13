@@ -54,7 +54,8 @@ class FocusStop {
   final List<String> states;
 
   /// Named containers focus moved into on the way to this stop, outermost
-  /// first, each rendered as `<name> <role>`.
+  /// first, each rendered as `<name> <role>`, followed by ` — <description>`
+  /// when the container carries a description (its semantics tooltip).
   final List<String> entered;
 
   /// The focused widget and its focus node, for diagnosing a bad stop.
@@ -217,7 +218,10 @@ class FocusWalk {
       // Exact repetition only: a row-specific name that contains its
       // container's name ("Close sample.vcd" inside "sample.vcd") is good
       // practice, not a defect.
-      for (final container in s.entered) {
+      for (final entry in s.entered) {
+        // Drop a trailing description, then the role.
+        final dash = entry.indexOf(' — ');
+        final container = dash == -1 ? entry : entry.substring(0, dash);
         final label = _norm(container.substring(0, container.lastIndexOf(' ')));
         if (own.contains(label)) {
           add(FocusWalkRule.containerRepeatsName, n, '$s');
@@ -403,14 +407,24 @@ FocusStop describeFocus(
     states: _statesOf(d),
     entered: <String>[
       for (final a in ancestors)
-        if (!previous.contains(a))
-          [
-            _collapse(a.getSemanticsData().label),
-            _roleOf(a, a.getSemanticsData()),
-          ].join(' '),
+        if (!previous.contains(a)) _enteredContainer(a),
     ],
     focusTarget: focusTarget,
   );
+}
+
+/// One named container as it is announced on entry: its name and role, then
+/// its description (the semantics tooltip) when it has one that differs from
+/// the name. An empty dock is the common case: `Details dock grouping — Select
+/// a test to inspect.`
+String _enteredContainer(SemanticsNode node) {
+  final d = node.getSemanticsData();
+  final name = _collapse(d.label);
+  final description = _collapse(d.tooltip);
+  final head = '$name ${_roleOf(node, d)}';
+  return description.isEmpty || description == name
+      ? head
+      : '$head — $description';
 }
 
 Future<void> _pressTab(WidgetTester tester, {required bool reverse}) async {
