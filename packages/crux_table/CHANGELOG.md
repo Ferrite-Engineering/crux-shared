@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **A sorted column narrower than its arrow no longer overflows.**
+  `CruxSortableHeaderCell` drew the arrow in a fixed 18 dp slot, so a
+  squeezed pane that lays a sorted column out below 18 dp of content (9 px
+  in LintCrux's 450 px test) overflowed the row. The slot is now bounded by
+  the cell (`LayoutBuilder`) and the arrow scales down inside it; the label
+  is `Expanded`, so with room it still gets everything the arrow does not
+  take.
+
 ## 0.1.0
 
 - Initial extraction, from two products' copies of the same table model: a

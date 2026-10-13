@@ -9,11 +9,12 @@ import 'package:flutter/material.dart';
 /// Announced as a button: a bare `InkWell` carries the tap action but no
 /// role, and a screen reader called each header plain "text". The label
 /// ellipsizes; the sort arrow, drawn on the sorted column only, sits in a
-/// fixed [kCruxTableSortArrowSize] slot after it. Two `Flexible`s split the
-/// cell and capped the label at half of it, so a column with room for the
-/// whole word showed "Sever…"; a fixed slot gives the label everything the
-/// arrow does not take, and the unsorted columns keep those pixels for their
-/// label.
+/// [kCruxTableSortArrowSize] slot after it, bounded by the cell so a column
+/// narrower than the arrow scales it down rather than overflowing. Two
+/// `Flexible`s split the cell and capped the label at half of it, so a
+/// column with room for the whole word showed "Sever…"; an `Expanded` label
+/// beside the slot gets everything the arrow does not take, and the unsorted
+/// columns keep those pixels for their label.
 ///
 /// Give it `cruxTableHeaderKey(tableId, column)` as its key so the host's
 /// widget tests find it.
@@ -53,25 +54,45 @@ class CruxSortableHeaderCell extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: kCruxTableCellPadding,
           ),
-          child: Row(
-            children: <Widget>[
-              Flexible(
-                child: Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
+          // The arrow's slot is bounded by the cell: a sorted column
+          // narrower than the arrow (a squeezed pane lays columns out
+          // proportionally, below their drag minimum) scales the arrow down
+          // instead of overflowing the row. The label is `Expanded`, so it
+          // keeps everything the arrow does not take.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final arrowSlot = sorted
+                  ? kCruxTableSortArrowSize.clamp(0.0, constraints.maxWidth)
+                  : 0.0;
+              return Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (sorted)
-                Icon(
-                  ascending ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                  size: kCruxTableSortArrowSize,
-                  color: color,
-                ),
-            ],
+                  if (sorted)
+                    SizedBox(
+                      width: arrowSlot,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Icon(
+                          ascending
+                              ? Icons.arrow_drop_up
+                              : Icons.arrow_drop_down,
+                          size: kCruxTableSortArrowSize,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),
