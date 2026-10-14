@@ -1,5 +1,13 @@
 ## Unreleased
 
+- **`ViewerTabBar` tells same-named tabs apart.** When two or more open tabs,
+  in any pane, show the same label, each of them also shows the shortest run
+  of trailing parent folders of its `tabFilePath` that sets it apart, muted
+  after the name (`simcrux.yaml · soc_sampler`, `simcrux.yaml · alu_core`).
+  Unique labels and tabs without a path are unchanged; the folder is
+  ellipsized before the name, is part of the chip's screen-reader label and
+  close-button tooltip, and follows tabs opening, closing and moving. No
+  product change is needed beyond passing `tabFilePath`.
 - Removed the `PaneOverridesFactory` typedef, which no product named.
   `PaneContainerManager.overridesFactory` takes the same function, typed
   `ScopeOverridesFactory<PaneId>`.

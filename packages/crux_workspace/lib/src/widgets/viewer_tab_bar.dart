@@ -7,6 +7,7 @@ import 'package:crux_theme/crux_theme.dart' show CruxChromeColors;
 import 'package:crux_workspace/src/multi_window.dart';
 import 'package:crux_workspace/src/pane_id.dart';
 import 'package:crux_workspace/src/tab_id.dart';
+import 'package:crux_workspace/src/widgets/tab_label_disambiguation.dart';
 import 'package:crux_workspace/src/widgets/viewer_tab_bar_strings.dart';
 import 'package:crux_workspace/src/workspace.dart';
 import 'package:crux_workspace/src/workspace_notifier.dart';
@@ -380,6 +381,16 @@ class _ViewerTabBarBodyState<P> extends State<_ViewerTabBarBody<P>> {
     final activeTabId = _pane.activeTabId;
     final tabs = _tabs;
 
+    // Recomputed on every build, from the whole workspace, so opening,
+    // closing or moving a tab (in any pane) updates every chip's folder.
+    final folderSuffixes = tabFolderSuffixes<P>(
+      widget.workspace.tabs,
+      labelOf: (t) => t.displayName.isEmpty
+          ? widget.strings.unnamedTabFallback
+          : t.displayName,
+      pathOf: (t) => widget.tabFilePath?.call(t),
+    );
+
     final accent = widget.isActivePane
         ? colorScheme.primary
         : colorScheme.outlineVariant;
@@ -424,7 +435,12 @@ class _ViewerTabBarBodyState<P> extends State<_ViewerTabBarBody<P>> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: _buildRowChildren(tabs, activeTabId, iconSize),
+                    children: _buildRowChildren(
+                      tabs,
+                      activeTabId,
+                      iconSize,
+                      folderSuffixes,
+                    ),
                   ),
                 ),
               ),
@@ -481,10 +497,12 @@ class _ViewerTabBarBodyState<P> extends State<_ViewerTabBarBody<P>> {
     List<WorkspaceTab<P>> tabs,
     TabId? activeTabId,
     double? iconSize,
+    Map<TabId, String> folderSuffixes,
   ) {
     _TabChip<P> chip(int i) => _TabChip<P>(
       key: widget.useDragHandle ? null : ValueKey(tabs[i].id),
       tab: tabs[i],
+      folderSuffix: folderSuffixes[tabs[i].id],
       index: i,
       active: tabs[i].id == activeTabId,
       notifier: widget.notifier,
@@ -607,6 +625,7 @@ class _Chevron extends StatelessWidget {
 class _TabChip<P> extends StatelessWidget {
   const _TabChip({
     required this.tab,
+    required this.folderSuffix,
     required this.index,
     required this.active,
     required this.notifier,
@@ -624,6 +643,10 @@ class _TabChip<P> extends StatelessWidget {
   });
 
   final WorkspaceTab<P> tab;
+
+  /// The folder that tells this tab from others with the same label, or null
+  /// when its label is unique (or it has no path).
+  final String? folderSuffix;
   final int index;
   final bool active;
   final WorkspaceNotifier<P> notifier;
@@ -735,6 +758,10 @@ class _TabChip<P> extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final dragPayload = _TabDragPayload(tabId: tab.id, sourcePane: paneId);
+    // The name plus its folder, so a screen reader tells same-named tabs apart.
+    final semanticLabel = folderSuffix == null
+        ? displayLabel
+        : '$displayLabel, $folderSuffix';
 
     // One node for the chip: a button named after the tab, with its selected
     // state, and the full path as the description when it says more than the
@@ -744,8 +771,8 @@ class _TabChip<P> extends StatelessWidget {
       container: true,
       button: true,
       selected: active,
-      label: displayLabel,
-      tooltip: tooltipMessage == displayLabel ? null : tooltipMessage,
+      label: semanticLabel,
+      tooltip: tooltipMessage == semanticLabel ? null : tooltipMessage,
       child: _chipInk(
         context,
         theme: theme,
@@ -817,8 +844,21 @@ class _TabChip<P> extends StatelessWidget {
                 triggerMode: TooltipTriggerMode.manual,
                 excludeFromSemantics: true,
                 child: ExcludeSemantics(
-                  child: Text(
-                    displayLabel,
+                  // One run of text, so when the chip is too narrow the
+                  // ellipsis eats the folder before it reaches the name.
+                  child: Text.rich(
+                    TextSpan(
+                      text: displayLabel,
+                      children: [
+                        if (folderSuffix != null)
+                          TextSpan(
+                            text: ' \u00B7 $folderSuffix',
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: labelColor == null
@@ -833,7 +873,11 @@ class _TabChip<P> extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.close, size: iconSize ?? 14),
               visualDensity: VisualDensity.compact,
-              tooltip: strings.closeTabTooltipFor(displayLabel),
+              tooltip: strings.closeTabTooltipFor(
+                folderSuffix == null
+                    ? displayLabel
+                    : '$displayLabel \u00B7 $folderSuffix',
+              ),
               onPressed: () => notifier.closeTab(tab.id),
             ),
           ],
