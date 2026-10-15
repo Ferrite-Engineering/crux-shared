@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
+import 'dart:io';
 
+import 'package:crux_window_chrome/src/exit_on_window_close.dart';
 import 'package:crux_window_chrome/src/widgets/window_title_bar.dart';
 import 'package:crux_window_chrome/src/window_bounds.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,7 @@ import 'package:window_manager/window_manager.dart';
 /// disabled) opens at the default 1280×720, centered.
 Future<void> initWindowChrome({WindowBounds? restore}) async {
   await windowManager.ensureInitialized();
+  if (Platform.isLinux) await routeWindowCloseThroughExitRequest();
   final bounds = restore?.sanitizedForRestore();
   final windowOptions = WindowOptions(
     titleBarStyle: TitleBarStyle.hidden,

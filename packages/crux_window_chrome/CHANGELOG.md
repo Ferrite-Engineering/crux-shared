@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Closing the window on Linux asks the app first.** `window_manager`
+  replaces the engine's `delete-event` handler, which turns a window close into
+  `System.requestAppExit`, with one that lets GTK destroy the window. No
+  `AppLifecycleListener` ran, so the unclean-shutdown marker was left behind and
+  every window close counted as a crash at the next launch. `initWindowChrome`
+  now holds the window open on close and asks the engine to exit through
+  `ServicesBinding.exitApplication(AppExitType.cancelable)`. If that request
+  fails, the window is closed anyway.
+
 ## 0.2.0
 
 - Add the portable **request-attention** primitive, for an actionable
