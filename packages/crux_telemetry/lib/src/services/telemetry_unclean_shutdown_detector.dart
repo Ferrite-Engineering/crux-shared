@@ -25,12 +25,13 @@ const String kTelemetryUncleanShutdownEvent = 'app.unclean_shutdown';
 
 /// Whether [kTelemetryUncleanShutdownEvent] may be recorded at all.
 ///
-/// **Off until the privacy policy names the event.** While this is `false`
-/// the detector still keeps its session marker (so the logic and its tests
-/// run in every build), but no event is ever constructed, buffered or handed
-/// to a telemetry service. Turning it on is this one line, in the release
-/// whose privacy policy lists the event.
-const bool kCruxUncleanShutdownEventEnabled = false;
+/// **On, because the privacy policy names the event.** It ships through the
+/// same gate as every other event: consent, the Enterprise policy and the
+/// beta condition still decide whether it is kept. Setting this to `false`
+/// holds the event back in every build while the detector keeps its session
+/// marker (so the logic and its tests still run): no event is then
+/// constructed, buffered or handed to a telemetry service.
+const bool kCruxUncleanShutdownEventEnabled = true;
 
 /// Signature of the probe that says whether another live process still holds
 /// a session marker file's lock.

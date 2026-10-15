@@ -55,8 +55,8 @@ void main() {
   Iterable<TelemetryEvent> unclean(Iterable<TelemetryEvent> events) =>
       events.where((e) => e.name == kTelemetryUncleanShutdownEvent);
 
-  test('the event ships switched off', () {
-    expect(kCruxUncleanShutdownEventEnabled, isFalse);
+  test('the event ships switched on', () {
+    expect(kCruxUncleanShutdownEventEnabled, isTrue);
     expect(kTelemetryUncleanShutdownEvent, 'app.unclean_shutdown');
   });
 

@@ -15,10 +15,12 @@ overridable provider — the product slug, the `User-Agent` name, the
 localized copy, the `form_factor` derivation, the persistence adapter —
 so the package itself knows nothing about any one product. It contains
 **no event catalog**: the catalog and the call sites that record against
-it are the one part of telemetry that is genuinely per-product. The one
-event it records itself is `app.uncaught_error` — see
-[The uncaught-error counter](#the-uncaught-error-counter) — and each
-product still lists that in its own catalog.
+it are the one part of telemetry that is genuinely per-product. The two
+events it records itself are `app.uncaught_error` — see
+[The uncaught-error counter](#the-uncaught-error-counter) — and
+`app.unclean_shutdown` — see
+[The unclean-shutdown detector](#the-unclean-shutdown-detector) — and each
+product still lists both in its own catalog.
 
 Extracted from the shipped WaveCrux implementation, which is its first
 consumer.
@@ -62,6 +64,7 @@ transmitting.
 | `telemetryEnumToken` | `Enum` → `[a-z0-9_]` token. Takes an `Enum`, not a `String`, on purpose. |
 | `TelemetryUncaughtErrorCounter`, `telemetryUncaughtErrorCounterProvider`, `kTelemetryUncaughtErrorSessionCap` | The `app.uncaught_error` counter the global error handlers report to, and the seam `telemetryServiceProvider` attaches it through. See [The uncaught-error counter](#the-uncaught-error-counter). |
 | `kTelemetryUncaughtErrorEvent`, `kTelemetryUncaughtErrorSources` / `Kinds` / `Libraries`, `kTelemetryFlutterLibraryTokens`, `telemetryErrorKindOf`, `telemetryErrorLibraryOf` | That event's name and closed vocabulary, and the two classifiers that land every error inside it. |
+| `TelemetryUncleanShutdownDetector`, `telemetryUncleanShutdownDetectorProvider`, `kTelemetryUncleanShutdownEvent`, `kCruxUncleanShutdownEventEnabled` | The `app.unclean_shutdown` detector, its test seam, the event's name and the switch that allows it. See [The unclean-shutdown detector](#the-unclean-shutdown-detector). |
 | `telemetryOsSlug` / `telemetryOsSlugFor`, `kTelemetryOperatingSystems`, `kTelemetryFormFactors`, `kTelemetryLicenseTiers` | The closed envelope vocabularies the Worker enforces. |
 | `TelemetryConsentGate`, `TelemetryConsentDisclosure`, `TelemetrySettingsSection`, `CruxTelemetryConsentMetrics`, `kTelemetryConsentMinTarget` | The two consent surfaces and their sizing. |
 | `kTelemetryDev`, `telemetryEndpointFor`, `kTelemetryProductionEndpoint`, `kTelemetryStagingEndpoint`, `kTelemetryDocumentationUri` | The dark-launch flag and the suite endpoints. |
@@ -259,6 +262,37 @@ is this package's copy of the Worker's vocabulary contract, and a test holds
 the constants to it — so change the Worker first, then the copy, then the
 constants.
 
+## The unclean-shutdown detector
+
+A native crash kills the process before any Dart handler runs, so the
+uncaught-error counter never sees it. `TelemetryUncleanShutdownDetector`
+counts those sessions instead, as one event with no properties:
+
+```json
+{ "name": "app.unclean_shutdown", "properties": {} }
+```
+
+- **How.** Each desktop release session holds an exclusive lock on a
+  `session.<pid>.running` marker in the application-support directory and
+  deletes it on a clean exit (`onExitRequested` or `detached`). At the next
+  launch, a marker no live process holds means that session never reached
+  its exit path: one event is recorded, however many such markers there
+  are, and they are deleted. A marker another running instance still holds
+  is left alone.
+- **What it cannot tell apart.** A native crash, an out-of-memory kill, a
+  force quit, a kill from a terminal, a power loss and an operating system
+  that shut down without asking all look the same. The event counts
+  sessions that did not end cleanly, not crashes, and its error is always
+  an under-count.
+- **Where.** Desktop release builds only. Never on mobile (which ends
+  backgrounded apps routinely), on the web (no file) or in a debug build.
+- **The same gate as every other event.** `telemetryServiceProvider` starts
+  the process-wide detector on its first resolution and attaches it to
+  whichever service it resolves. The marker is rotated whether or not
+  telemetry is on, so the next launch always has an accurate answer.
+- **The switch.** `kCruxUncleanShutdownEventEnabled` is `true`. Set to
+  `false`, the detector keeps its marker but never constructs the event.
+
 ## Payload contract
 
 `test/fixtures/valid-batch.json` carries the same data as the ingestion
@@ -405,7 +439,8 @@ Stable as of 0.1.0. `crux_telemetry` deliberately does **not** contain:
   test that scans its source for recorded names and checks every name,
   key and value against the Worker's grammar. That test cannot live here
   — it is the one thing that is genuinely per-product. (`app.uncaught_error`
-  is recorded here, but it is listed in each product's catalog all the same.)
+  and `app.unclean_shutdown` are recorded here, but they are listed in each
+  product's catalog all the same.)
 - **The `form_factor` derivation.** A provider seam; see above.
 - **Any Enterprise policy-file parsing.** Reading, locating and
   signature-checking `.crux-policy.json` is an overlay concern that lands

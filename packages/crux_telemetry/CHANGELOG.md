@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **`app.unclean_shutdown` is on.** `kCruxUncleanShutdownEventEnabled` is
+  now `true`, so a desktop release session that did not reach its exit path
+  is counted at the next launch, through the same consent, Enterprise-policy
+  and beta gate as every other event. The privacy policy names the event.
+  The detector's behaviour is unchanged; only the switch moved.
+
 - **Web editions no longer throw on their first telemetry event.**
   `TelemetryUncleanShutdownDetector` read `dart:io`'s `pid` in its
   constructor, and `telemetryServiceProvider` builds the default instance on
