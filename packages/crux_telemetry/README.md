@@ -65,6 +65,7 @@ transmitting.
 | `TelemetryUncaughtErrorCounter`, `telemetryUncaughtErrorCounterProvider`, `kTelemetryUncaughtErrorSessionCap` | The `app.uncaught_error` counter the global error handlers report to, and the seam `telemetryServiceProvider` attaches it through. See [The uncaught-error counter](#the-uncaught-error-counter). |
 | `kTelemetryUncaughtErrorEvent`, `kTelemetryUncaughtErrorSources` / `Kinds` / `Libraries`, `kTelemetryFlutterLibraryTokens`, `telemetryErrorKindOf`, `telemetryErrorLibraryOf` | That event's name and closed vocabulary, and the two classifiers that land every error inside it. |
 | `TelemetryUncleanShutdownDetector`, `telemetryUncleanShutdownDetectorProvider`, `kTelemetryUncleanShutdownEvent`, `kCruxUncleanShutdownEventEnabled` | The `app.unclean_shutdown` detector, its test seam, the event's name and the switch that allows it. See [The unclean-shutdown detector](#the-unclean-shutdown-detector). |
+| `cruxExit`, `debugCruxExitOverride` | The one way a product ends its own process: marks the session's exit clean, then exits. The override lets a test watch a quit. |
 | `telemetryOsSlug` / `telemetryOsSlugFor`, `kTelemetryOperatingSystems`, `kTelemetryFormFactors`, `kTelemetryLicenseTiers` | The closed envelope vocabularies the Worker enforces. |
 | `TelemetryConsentGate`, `TelemetryConsentDisclosure`, `TelemetrySettingsSection`, `CruxTelemetryConsentMetrics`, `kTelemetryConsentMinTarget` | The two consent surfaces and their sizing. |
 | `kTelemetryDev`, `telemetryEndpointFor`, `kTelemetryProductionEndpoint`, `kTelemetryStagingEndpoint`, `kTelemetryDocumentationUri` | The dark-launch flag and the suite endpoints. |
@@ -274,11 +275,23 @@ counts those sessions instead, as one event with no properties:
 
 - **How.** Each desktop release session holds an exclusive lock on a
   `session.<pid>.running` marker in the application-support directory and
-  deletes it on a clean exit (`onExitRequested` or `detached`). At the next
+  deletes it on a clean exit. At the next
   launch, a marker no live process holds means that session never reached
   its exit path: one event is recorded, however many such markers there
   are, and they are deleted. A marker another running instance still holds
   is left alone.
+- **Every orderly exit removes the marker.** A quit the system asks for
+  (the Dock, an Apple Event, logout, closing the last window, `WM_CLOSE`)
+  reaches Dart as an exit request, which the detector answers itself; it
+  listens before its first `await`, so a quit right after launch is seen
+  too. A quit the product performs itself (a Quit or Exit item, a quit
+  shortcut, a declined EULA, an expired build, a finished headless run)
+  calls `cruxExit(code)`, which removes the marker and then exits.
+  `dart:io`'s `exit` ends the process without running any Dart and would
+  leave the marker for the next launch to count as a crash;
+  `crux_guards`' `cruxAuditProcessExit` keeps it out of a product.
+  `markCleanExit()` is idempotent, for a quit path that must mark the exit
+  before work a second quit could cut short.
 - **What it cannot tell apart.** A native crash, an out-of-memory kill, a
   force quit, a kill from a terminal, a power loss and an operating system
   that shut down without asking all look the same. The event counts

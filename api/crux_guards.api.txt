@@ -70,6 +70,11 @@ final class CruxOutlineExemption
   final file: String
   final line: int
   final reason: String
+final class CruxProcessExitExemption
+  const CruxProcessExitExemption({required String file, required String member, required String reason})
+  final file: String
+  final member: String
+  final reason: String
 final class CruxRefAfterAwaitExemption
   const CruxRefAfterAwaitExemption({required String file, required String function, required String reason})
   final file: String
@@ -80,6 +85,7 @@ cruxAuditDismissibleFormDialogs({Iterable<CruxDismissibleFormAllowance> allowanc
 cruxAuditModalGuard({Iterable<CruxModalGuardAllowance> allowances, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditOutlineText({Iterable<CruxOutlineExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditPrivateEmptyStates({Iterable<CruxEmptyStateExemption> exemptions, bool includePublic, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
+cruxAuditProcessExit({Iterable<CruxProcessExitExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditRefAfterAwait({Iterable<CruxRefAfterAwaitExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditUnusedL10nKeys({Iterable<CruxL10nRetention> retained, String arbPath, required Iterable<CruxGuardSource> sources, required Set<String> keys}) -> CruxGuardResult
 cruxFindDialogSites(Iterable<CruxGuardSource> sources) -> List<CruxDialogSite>

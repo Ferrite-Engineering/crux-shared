@@ -217,8 +217,11 @@ class TelemetryUncleanShutdownDetector
 buildTelemetryBatches(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> List<TelemetryBatch>
 canonicalTelemetryProperties(Map<String, Object?> properties) -> Map<String, Object?>
 coalesceTelemetryEvents(Iterable<TelemetryEvent> events) -> List<TelemetryBatchEntry>
+cruxExit([int code]) -> Never
 get cruxTelemetryConfigProvider -> Provider<CruxTelemetryConfig>
 get cruxTelemetryStringsProvider -> Provider<CruxTelemetryStrings>
+get debugCruxExitOverride -> Never Function(int)?
+set debugCruxExitOverride=(Never Function(int)? value)
 encodeTelemetryBatch(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> String
 get kCruxUncleanShutdownEventEnabled -> bool
 get kTelemetryConsentKey -> String

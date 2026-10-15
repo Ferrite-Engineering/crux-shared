@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- **A normal quit is no longer counted as an unclean shutdown.** Every
+  product's Quit menu item and quit shortcut ended the process with
+  `dart:io`'s `exit(0)`, which runs no Dart, so the session marker was left
+  on disk and the next launch recorded `app.unclean_shutdown` for a clean
+  quit. Only a quit the system asked for (the Dock, an Apple Event, logout,
+  closing the last window) reached the detector's exit listener.
+
+  New `cruxExit([code])` removes the marker of every started detector and
+  then exits; products call it wherever they called `exit`.
+  `debugCruxExitOverride` lets a test watch the quit.
+
+  The detector also installs its exit listener before its first `await`,
+  and a clean exit seen before the marker is claimed keeps `start()` from
+  claiming one, so an exit request that reaches Dart while `start()` is
+  still finding the directory no longer leaves a marker behind.
+  `markCleanExit()` attempts each step on its own and keeps a marker whose
+  delete failed for a later call to retry.
+
 - **`app.unclean_shutdown` is on.** `kCruxUncleanShutdownEventEnabled` is
   now `true`, so a desktop release session that did not reach its exit path
   is counted at the next launch, through the same consent, Enterprise-policy

@@ -1,14 +1,28 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show AppLifecycleState;
+import 'dart:isolate';
+import 'dart:ui' show AppExitResponse, AppLifecycleState;
 
 import 'package:crux_telemetry/crux_telemetry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../harness.dart';
+
+/// Stands in for the process ending, so `cruxExit` can return to the test.
+class _Exited implements Exception {
+  const _Exited();
+}
+
+/// A decoder plugin's isolate that is still busy when the user quits.
+Future<void> _spin(Object? _) async {
+  while (true) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
 
 class _Capturing implements TelemetryService {
   final List<TelemetryEvent> events = <TelemetryEvent>[];
@@ -234,6 +248,97 @@ void main() {
     ].forEach(tester.binding.handleAppLifecycleStateChanged);
     expect(markerFor(4242).existsSync(), isFalse);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets('an exit request removes the marker', (tester) async {
+    final d = TelemetryUncleanShutdownDetector(
+      directoryFactory: () async => dir,
+      markerHeld: (_) => false,
+      eventEnabled: true,
+      supported: true,
+      inert: false,
+      processId: 4242,
+    );
+    await tester.runAsync(d.start);
+    expect(markerFor(4242).existsSync(), isTrue);
+
+    // What the desktop embedders send for Cmd+Q from the system, an Apple
+    // Event quit, the Dock, logout, closing the last window, and WM_CLOSE.
+    expect(await tester.binding.handleRequestAppExit(), AppExitResponse.exit);
+    expect(markerFor(4242).existsSync(), isFalse);
+  });
+
+  testWidgets('an exit request that arrives while start is still finding the '
+      'directory leaves no marker behind', (tester) async {
+    // macOS answers the quit with NSTerminateCancel and terminates once Dart
+    // replies, so a quit right after launch can reach Dart before start has
+    // found the application-support directory. The session ends anyway; a
+    // marker claimed after that is one the next launch counts as a crash.
+    final directory = Completer<Directory>();
+    final d = TelemetryUncleanShutdownDetector(
+      directoryFactory: () => directory.future,
+      markerHeld: (_) => false,
+      eventEnabled: true,
+      supported: true,
+      inert: false,
+      processId: 4242,
+    );
+    final started = d.start();
+
+    expect(await tester.binding.handleRequestAppExit(), AppExitResponse.exit);
+    directory.complete(dir);
+    await tester.runAsync(() => started);
+
+    expect(markerFor(4242).existsSync(), isFalse);
+    expect(d.marker, isNull);
+  });
+
+  test(
+    'a clean exit before start keeps start from claiming a marker',
+    () async {
+      final d = detector()..markCleanExit();
+      expect(await d.start(), isFalse);
+      expect(markerFor(4242).existsSync(), isFalse);
+    },
+  );
+
+  test('markCleanExit is idempotent', () async {
+    final d = detector();
+    await d.start();
+    d
+      ..markCleanExit()
+      ..markCleanExit();
+    expect(markerFor(4242).existsSync(), isFalse);
+  });
+
+  test('cruxExit removes the marker before the process ends, whatever is '
+      'still open', () async {
+    final d = detector();
+    await d.start();
+    expect(markerFor(4242).existsSync(), isTrue);
+
+    // A busy session: a waveform open, a decoder plugin's
+    // isolate running, and a dialog still waiting for an answer.
+    final document = File('${dir.path}${Platform.pathSeparator}trace.vcd')
+      ..writeAsStringSync(r'$timescale 1ns $end');
+    final handle = document.openSync();
+    addTearDown(handle.closeSync);
+    final plugin = await Isolate.spawn(_spin, null);
+    addTearDown(() => plugin.kill(priority: Isolate.immediate));
+    final dialog = Completer<void>();
+    addTearDown(dialog.complete);
+
+    final codes = <int>[];
+    debugCruxExitOverride = (code) {
+      codes.add(code);
+      throw const _Exited();
+    };
+    addTearDown(() => debugCruxExitOverride = null);
+
+    expect(() => cruxExit(3), throwsA(isA<_Exited>()));
+    expect(codes, <int>[3]);
+    expect(markerFor(4242).existsSync(), isFalse);
+    expect(document.existsSync(), isTrue);
   });
 
   test('telemetryServiceProvider starts the detector and attaches the service '

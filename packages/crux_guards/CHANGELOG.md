@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `cruxAuditProcessExit` + `CruxProcessExitExemption`: no product ends its
+  own process with `dart:io`'s `exit` (a call, a tear-off, or either through
+  a prefix), because that skips the unclean-shutdown detector's clean-exit
+  path and the next launch counts a normal quit as a crash. Products call
+  `crux_telemetry`'s `cruxExit`. Shadowing declarations and member accesses
+  on other objects do not match; an exemption that matches nothing is a
+  finding.
+
 - Three guards lifted from the Pro overlays' copies, each with exact
   accounting (an entry that matches nothing is a finding):
   - `cruxAuditModalGuard` + `CruxModalGuardAllowance`: every `showDialog`,

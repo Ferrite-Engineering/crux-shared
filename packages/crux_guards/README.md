@@ -13,6 +13,7 @@ list and its own exemptions.
 | `cruxAuditModalGuard` | Every `showDialog` / `showModalBottomSheet` / `showGeneralDialog` runs inside `ModalGuard.run(...)`, or its enclosing member is allowed with the reason it cannot be re-fired. |
 | `cruxAuditDismissibleFormDialogs` | A dialog that holds typed input passes `barrierDismissible: false`; forms the scan cannot infer are declared as known forms. |
 | `cruxAuditPrivateEmptyStates` | No private `*Empty*` / `*Placeholder*` class duplicates `CruxPanelEmptyState`, unless exempted with a reason. |
+| `cruxAuditProcessExit` | No call or tear-off of `dart:io`'s `exit`: a product ends its own process with `crux_telemetry`'s `cruxExit`, which marks the session's exit clean first, unless the enclosing member is exempted with a reason. |
 
 ## Shape
 

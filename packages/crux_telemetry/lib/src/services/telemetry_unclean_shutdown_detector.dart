@@ -33,6 +33,33 @@ const String kTelemetryUncleanShutdownEvent = 'app.unclean_shutdown';
 /// constructed, buffered or handed to a telemetry service.
 const bool kCruxUncleanShutdownEventEnabled = true;
 
+/// Ends the process with exit [code], after marking this session's exit
+/// clean.
+///
+/// The one way a product ends its own process: a Quit or Exit menu item, a
+/// quit shortcut, a declined EULA, an expired build, a headless run that has
+/// finished. `dart:io`'s `exit` ends the process without running any Dart, so
+/// a session that quit through it left its marker behind and the next launch
+/// recorded [kTelemetryUncleanShutdownEvent] for a normal quit. This removes
+/// the marker of every started [TelemetryUncleanShutdownDetector] first, then
+/// exits. `cruxAuditProcessExit` in `crux_guards` finds any direct `exit`
+/// left in a product.
+///
+/// Quitting from the system (the Dock, an Apple Event, logout, closing the
+/// last window) does not come here: it reaches Dart as an exit request,
+/// which the detector answers on its own.
+Never cruxExit([int code = 0]) {
+  TelemetryUncleanShutdownDetector._markEveryCleanExit();
+  (debugCruxExitOverride ?? exit)(code);
+}
+
+/// Replaces the process exit [cruxExit] ends with, so a test can watch a quit
+/// without ending the test runner. It must throw (the type is `Never`); the
+/// marker is already removed by the time it is called. Reset it to `null` in
+/// the test's tear-down.
+@visibleForTesting
+Never Function(int code)? debugCruxExitOverride;
+
 /// Signature of the probe that says whether another live process still holds
 /// a session marker file's lock.
 typedef TelemetrySessionMarkerProbe = bool Function(File marker);
@@ -42,15 +69,37 @@ typedef TelemetrySessionMarkerProbe = bool Function(File marker);
 ///
 /// **How.** Each running session keeps a marker file,
 /// `session.<pid>.running` in the application-support directory, and holds an
-/// exclusive lock on it for its whole life. A clean exit (the desktop quit
-/// path, `AppLifecycleListener.onExitRequested`, or the `detached` state)
-/// releases and deletes it. At the next launch, a marker that is still on
-/// disk and that no live process holds belonged to a session that never
-/// reached its exit path: one event is recorded, however many such markers
-/// there are, and they are deleted. A marker another running instance still
-/// holds is left alone, so a second window of the same product is not read as
-/// a crash of the first. The operating system drops a dead process's lock, so
-/// no process id is ever compared.
+/// exclusive lock on it for its whole life. A clean exit releases and deletes
+/// it. At the next launch, a marker that is still on disk and that no live
+/// process holds belonged to a session that never reached its exit path: one
+/// event is recorded, however many such markers there are, and they are
+/// deleted. A marker another running instance still holds is left alone, so
+/// a second window of the same product is not read as a crash of the first.
+/// The operating system drops a dead process's lock, so no process id is ever
+/// compared.
+///
+/// **Every orderly exit removes it.** There are two kinds, and both end in
+/// [markCleanExit]:
+///
+/// - **The embedder asks.** Quitting from the system (an Apple Event, the
+///   Dock, logout, closing the last window, `WM_CLOSE`, a GTK delete event)
+///   reaches Dart as an exit request, which the listener [start] installs
+///   answers, and as the `detached` state. On macOS the request is
+///   asynchronous: the app answers the system's quit with "cancel" and
+///   terminates itself once Dart replies, so the request can arrive before
+///   [start] has found the directory. The listener is installed before that
+///   lookup, and a clean exit seen first keeps [start] from claiming a
+///   marker at all.
+/// - **The product ends the process itself.** A Quit or Exit item, a quit
+///   shortcut, a declined EULA, an expired build or a finished headless run
+///   calls `cruxExit`, never `dart:io`'s `exit`, which ends the process
+///   without running any Dart. `cruxExit` removes the marker of every
+///   detector in the process first. `cruxAuditProcessExit` in `crux_guards`
+///   keeps a direct `exit` out of a product.
+///
+/// [markCleanExit] is idempotent and never throws, so a product may also call
+/// it on a quit path of its own, before work that a second quit could cut
+/// short.
 ///
 /// **What it cannot tell apart.** A native crash, an out-of-memory kill, a
 /// force quit, a kill from a terminal, a power loss and an operating system
@@ -131,7 +180,21 @@ class TelemetryUncleanShutdownDetector {
   /// it off.
   final bool installLifecycleListener;
 
+  /// Every detector that has started and not yet seen a clean exit.
+  /// `cruxExit` ends them all; in production that is [instance] alone.
+  static final Set<TelemetryUncleanShutdownDetector> _running =
+      <TelemetryUncleanShutdownDetector>{};
+
+  /// Calls [markCleanExit] on every detector that has started and not yet
+  /// seen a clean exit. For [cruxExit], just before the process ends.
+  static void _markEveryCleanExit() {
+    for (final detector in List.of(_running)) {
+      detector.markCleanExit();
+    }
+  }
+
   Future<bool>? _started;
+  bool _exited = false;
   File? _marker;
   RandomAccessFile? _lock;
   AppLifecycleListener? _listener;
@@ -149,11 +212,12 @@ class TelemetryUncleanShutdownDetector {
   Future<bool> _start() async {
     // The web has no file and no process id, whatever a caller passed as
     // [supported]: inert there, with no file access and no listener.
-    if (kIsWeb || !supported) return false;
+    if (kIsWeb || !supported || _exited) return false;
+    _running.add(this);
     try {
-      final dir = await _directoryFactory();
-      final unclean = _sweepStaleMarkers(dir);
-      _claimMarker(dir);
+      // Listening comes before the directory lookup: an exit request that
+      // lands while it is in flight must still be seen, or the marker claimed
+      // below would outlive a session that ended cleanly.
       if (installLifecycleListener) {
         _listener = AppLifecycleListener(
           onExitRequested: () async {
@@ -165,6 +229,11 @@ class TelemetryUncleanShutdownDetector {
           },
         );
       }
+      final dir = await _directoryFactory();
+      final unclean = _sweepStaleMarkers(dir);
+      // A clean exit while the directory was being found means this session
+      // is already over: it is never marked as running.
+      if (!_exited) _claimMarker(dir);
       if (unclean && eventEnabled && !inert) {
         _record(TelemetryEvent(kTelemetryUncleanShutdownEvent));
       }
@@ -177,18 +246,40 @@ class TelemetryUncleanShutdownDetector {
 
   /// Removes this session's marker: the session ended cleanly.
   ///
-  /// Called from the exit paths [start] listens to; safe to call more than
-  /// once, before [start], and from a product's own quit path.
+  /// Called from the exit paths [start] listens to and by `cruxExit`; safe to
+  /// call more than once, before [start] (which then claims nothing), and
+  /// from a product's own quit path. Never throws.
+  ///
+  /// Each step is attempted on its own, so a listener that fails to dispose
+  /// or a lock that fails to close still leaves the marker deleted. The lock
+  /// is released before the delete because Windows refuses to delete a file
+  /// that is open. A marker whose delete fails is kept for a later call to
+  /// retry.
   void markCleanExit() {
+    _exited = true;
+    final listener = _listener;
+    _listener = null;
     try {
-      _listener?.dispose();
-      _listener = null;
-      final lock = _lock;
-      _lock = null;
+      listener?.dispose();
+    } on Object catch (_) {
+      // The marker below matters more than the listener.
+    }
+    final lock = _lock;
+    _lock = null;
+    try {
       lock?.closeSync();
-      final marker = _marker;
+    } on Object catch (_) {
+      // Closing is only what lets Windows delete the file; try anyway.
+    }
+    final marker = _marker;
+    if (marker == null) {
+      _running.remove(this);
+      return;
+    }
+    try {
+      if (marker.existsSync()) marker.deleteSync();
       _marker = null;
-      if (marker != null && marker.existsSync()) marker.deleteSync();
+      _running.remove(this);
     } on Object catch (_) {
       // A marker that cannot be removed reads as one unclean session next
       // launch; there is nothing better to do with the failure here.

@@ -1,5 +1,5 @@
 name: crux_guards
-description: Shared static-guard scanners the four products run from their own test/static/ tests — the outline-token text guard, unused localisation keys, WidgetRef use after an await without a mounted check, ModalGuard coverage of modal openers, non-dismissible form dialogs, and hand-rolled empty states.
+description: Shared static-guard scanners the four products run from their own test/static/ tests — the outline-token text guard, unused localisation keys, WidgetRef use after an await without a mounted check, ModalGuard coverage of modal openers, non-dismissible form dialogs, hand-rolled empty states, and direct dart:io exit calls.
 version: 0.1.0
 publish_to: 'none'
 

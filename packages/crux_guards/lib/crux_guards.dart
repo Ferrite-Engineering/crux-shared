@@ -33,6 +33,9 @@
 ///   sets `barrierDismissible: false`.
 /// - `cruxAuditPrivateEmptyStates`: no hand-rolled copy of
 ///   `CruxPanelEmptyState`.
+/// - `cruxAuditProcessExit`: no product ends its own process with
+///   `dart:io`'s `exit`; it calls `crux_telemetry`'s `cruxExit`, which marks
+///   the session's exit clean first.
 /// - `cruxFindDialogSites` and `CruxClassIndex`: the dialog-site scan the
 ///   first two share, for a host's own canaries.
 ///
@@ -54,5 +57,6 @@ export 'src/guard_types.dart'
 export 'src/modal_guard_guard.dart';
 export 'src/outline_text_guard.dart';
 export 'src/private_empty_state_guard.dart';
+export 'src/process_exit_guard.dart';
 export 'src/ref_after_await_guard.dart';
 export 'src/unused_l10n_keys_guard.dart';
