@@ -48,6 +48,8 @@ final class CruxProcessExitExemption {
 /// `exitProcess = exit`), and either one through a prefix (`io.exit`), when
 /// the file imports `dart:io` in a way that makes `exit` visible: without a
 /// combinator, with `show exit`, or with a `hide` list that leaves it. A
+/// `part of` file sees its library's imports, when the library is among
+/// [sources]. A
 /// parameter, local, member or top-level declaration named `exit` in scope
 /// shadows it, and a member access on some other object (`process.exit`) is
 /// not a use. Comments and strings never match.
@@ -64,13 +66,19 @@ CruxGuardResult cruxAuditProcessExit({
   final findings = <CruxGuardFinding>[];
   var files = 0;
   var seen = 0;
-  for (final file in sources) {
+  final parsed = <(CruxGuardSource, CompilationUnit)>[
+    for (final file in sources)
+      (
+        file,
+        parseString(content: file.source, throwIfDiagnostics: false).unit,
+      ),
+  ];
+  final byPath = <String, CompilationUnit>{
+    for (final (file, unit) in parsed) file.path: unit,
+  };
+  for (final (file, unit) in parsed) {
     files++;
-    final unit = parseString(
-      content: file.source,
-      throwIfDiagnostics: false,
-    ).unit;
-    final visibility = _ExitVisibility.of(unit);
+    final visibility = _ExitVisibility.of(_libraryOf(file.path, unit, byPath));
     if (!visibility.any) continue;
     final finder = _ExitUseFinder(visibility);
     unit.accept(finder);
@@ -115,6 +123,33 @@ CruxGuardResult cruxAuditProcessExit({
     matchesSeen: seen,
   );
 }
+
+/// The unit whose imports [unit] sees: its own, or for a `part of` file the
+/// library it belongs to, when that library is among the sources.
+CompilationUnit _libraryOf(
+  String path,
+  CompilationUnit unit,
+  Map<String, CompilationUnit> byPath,
+) {
+  final partOf = unit.directives.whereType<PartOfDirective>().firstOrNull;
+  if (partOf == null) return unit;
+  final uri = partOf.uri?.stringValue;
+  if (uri != null) {
+    final library = Uri(path: path).resolve(uri).path;
+    return byPath[library] ?? unit;
+  }
+  final name = _dotted(partOf.libraryName);
+  for (final candidate in byPath.values) {
+    final library = candidate.directives
+        .whereType<LibraryDirective>()
+        .firstOrNull;
+    if (name != null && _dotted(library?.name) == name) return candidate;
+  }
+  return unit;
+}
+
+String? _dotted(DottedName? name) =>
+    name?.tokens.map((t) => t.lexeme).join('.');
 
 /// How a file can name `dart:io`'s `exit`.
 final class _ExitVisibility {

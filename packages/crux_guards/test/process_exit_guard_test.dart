@@ -75,6 +75,33 @@ final exitWith = io.exit;
       expect(result.matchesSeen, 2);
     });
 
+    test("a part file, through its library's import", () {
+      final result = cruxAuditProcessExit(
+        sources: const [
+          CruxGuardSource(
+            path: 'lib/screens/viewer.dart',
+            source: '''
+import 'dart:io' show exit;
+
+part 'viewer_shortcuts.dart';
+''',
+          ),
+          CruxGuardSource(
+            path: 'lib/screens/viewer_shortcuts.dart',
+            source: '''
+part of 'viewer.dart';
+
+void handle(int action) {
+  if (action == 0) exit(0);
+}
+''',
+          ),
+        ],
+      );
+      expect(result.findings.single.path, 'lib/screens/viewer_shortcuts.dart');
+      expect(result.findings.single.line, 4);
+    });
+
     test('a hide list that leaves exit visible', () {
       final result = _audit('''
 import 'dart:io' hide stdout;
