@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:crux_io/src/spawn_guards.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 
 /// Directories to append to a spawned engine's `PATH` so that a GUI-launched
 /// product finds the EDA toolchains an interactive shell would resolve.
@@ -145,6 +146,102 @@ String? appendMissingPathDirs(
   final missing = extraDirs.where((d) => !present(d)).toList(growable: false);
   if (missing.isEmpty) return null;
   return <String>[...segments, ...missing].join(separator);
+}
+
+/// The environment to spawn [executable] with so that an OSS CAD Suite tool
+/// loads its own DLLs, or [environment] unchanged when no adjustment applies.
+///
+/// On Windows the suite keeps `yosys.exe` and its siblings in `bin` and the
+/// DLLs they load in `lib`; its `environment.bat` puts both at the **front**
+/// of `PATH`. A user who adds them to `PATH` by hand usually adds them after
+/// other entries, and a toolchain earlier on `PATH` that ships a same-named
+/// DLL (a MinGW runtime, say) is then loaded instead. The tool starts, prints
+/// nothing and exits, and the product reports it as unusable although the
+/// install is fine.
+///
+/// So when [executable] is an absolute path inside an install's `bin`,
+/// recognised by `environment.bat` beside it, the child's `PATH` gets that
+/// `bin` and `lib` first, as `environment.bat` would set them. Only this child
+/// is affected; [parentEnvironment] (the variables the child would otherwise
+/// inherit) is copied, never changed. Off Windows, or for any other binary,
+/// [environment] is returned as given, `null` included.
+///
+/// [isFile] and [isDirectory] are seams so the rule is testable on any host.
+Map<String, String>? ossCadSuiteSpawnEnvironment(
+  String executable,
+  Map<String, String>? environment, {
+  required bool windows,
+  required Map<String, String> parentEnvironment,
+  bool Function(String path)? isFile,
+  bool Function(String path)? isDirectory,
+}) {
+  if (!windows) return environment;
+  final ctx = p.windows;
+  if (!ctx.isAbsolute(executable)) return environment;
+  final bin = ctx.dirname(ctx.normalize(executable));
+  if (ctx.basename(bin).toLowerCase() != 'bin') return environment;
+  final root = ctx.dirname(bin);
+  final lib = ctx.join(root, 'lib');
+  final fileExists = isFile ?? (path) => File(path).existsSync();
+  final dirExists = isDirectory ?? (path) => Directory(path).existsSync();
+  try {
+    if (!fileExists(ctx.join(root, 'environment.bat')) || !dirExists(lib)) {
+      return environment;
+    }
+  } on Object {
+    return environment;
+  }
+  final base = environment ?? parentEnvironment;
+  final pathKey = base.keys.firstWhere(
+    (k) => k.toUpperCase() == 'PATH',
+    orElse: () => parentEnvironment.keys.firstWhere(
+      (k) => k.toUpperCase() == 'PATH',
+      orElse: () => 'Path',
+    ),
+  );
+  final current =
+      base[pathKey] ??
+      parentEnvironment.entries
+          .where((e) => e.key.toUpperCase() == 'PATH')
+          .map((e) => e.value)
+          .firstOrNull ??
+      '';
+  final reordered = prependPathDirs(
+    current,
+    <String>[bin, lib],
+    separator: ';',
+    caseInsensitive: true,
+  );
+  if (reordered == null) return environment;
+  return <String, String>{...base, pathKey: reordered};
+}
+
+/// Puts [dirs] at the front of [currentPath], in order, removing their other
+/// occurrences (compared case-insensitively when [caseInsensitive]). Returns
+/// `null` when [currentPath] already starts with exactly [dirs].
+String? prependPathDirs(
+  String currentPath,
+  List<String> dirs, {
+  required String separator,
+  required bool caseInsensitive,
+}) {
+  String key(String s) => caseInsensitive ? s.toLowerCase() : s;
+  final segments = currentPath
+      .split(separator)
+      .where((s) => s.isNotEmpty)
+      .toList();
+  final wanted = dirs.map(key).toSet();
+  final alreadyFirst =
+      segments.length >= dirs.length &&
+      List<int>.generate(
+        dirs.length,
+        (i) => i,
+      ).every((i) => key(segments[i]) == key(dirs[i]));
+  if (alreadyFirst) return null;
+  return <String>[
+    ...dirs,
+    ...segments.where((s) => !wanted.contains(key(s))),
+  ].join(separator);
 }
 
 /// Test seam: clears the cached Windows registry read so a test can force a

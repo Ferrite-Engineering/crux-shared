@@ -140,6 +140,110 @@ void main() {
     });
   });
 
+  group('prependPathDirs', () {
+    test('moves the dirs to the front, dropping their later copies', () {
+      expect(
+        prependPathDirs(
+          r'C:\Git\mingw64\bin;c:\oss\BIN;C:\Windows;C:\oss\lib',
+          const <String>[r'C:\oss\bin', r'C:\oss\lib'],
+          separator: ';',
+          caseInsensitive: true,
+        ),
+        r'C:\oss\bin;C:\oss\lib;C:\Git\mingw64\bin;C:\Windows',
+      );
+    });
+
+    test('returns null when the path already starts with the dirs', () {
+      expect(
+        prependPathDirs(
+          r'C:\oss\bin;C:\oss\lib;C:\Windows',
+          const <String>[r'C:\oss\bin', r'C:\oss\lib'],
+          separator: ';',
+          caseInsensitive: true,
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('ossCadSuiteSpawnEnvironment', () {
+    // A fake Windows filesystem: one OSS CAD Suite install, and an unrelated
+    // bin/lib pair without environment.bat.
+    const files = <String>{
+      r'C:\Users\me\oss-cad-suite\environment.bat',
+      r'C:\Users\me\oss-cad-suite\bin\yosys.exe',
+      r'C:\tools\bin\yosys.exe',
+    };
+    const dirs = <String>{r'C:\Users\me\oss-cad-suite\lib', r'C:\tools\lib'};
+    // The user's PATH has the suite's bin and lib, but after a toolchain
+    // that ships same-named DLLs.
+    const parent = <String, String>{
+      'Path':
+          r'C:\Git\mingw64\bin;C:\Users\me\oss-cad-suite\bin;'
+          r'C:\Users\me\oss-cad-suite\lib',
+      'USERPROFILE': r'C:\Users\me',
+    };
+
+    Map<String, String>? envFor(
+      String exe, {
+      Map<String, String>? environment,
+      bool windows = true,
+    }) => ossCadSuiteSpawnEnvironment(
+      exe,
+      environment,
+      windows: windows,
+      parentEnvironment: parent,
+      isFile: files.contains,
+      isDirectory: dirs.contains,
+    );
+
+    test('puts the install bin and lib first for its own binary', () {
+      final env = envFor(r'C:\Users\me\oss-cad-suite\bin\yosys.exe');
+      expect(
+        env!['Path'],
+        r'C:\Users\me\oss-cad-suite\bin;C:\Users\me\oss-cad-suite\lib;'
+        r'C:\Git\mingw64\bin',
+      );
+      expect(env['USERPROFILE'], r'C:\Users\me');
+    });
+
+    test('adjusts a caller-built environment rather than the parent', () {
+      final env = envFor(
+        r'C:\Users\me\oss-cad-suite\bin\yosys.exe',
+        environment: const <String, String>{
+          'PATH': r'C:\elsewhere',
+          'NO_COLOR': '1',
+        },
+      );
+      expect(env, <String, String>{
+        'PATH':
+            r'C:\Users\me\oss-cad-suite\bin;C:\Users\me\oss-cad-suite\lib;'
+            r'C:\elsewhere',
+        'NO_COLOR': '1',
+      });
+    });
+
+    test('leaves a binary outside an OSS CAD Suite install alone', () {
+      expect(envFor(r'C:\tools\bin\yosys.exe'), isNull);
+      const given = <String, String>{'PATH': r'C:\x'};
+      expect(
+        identical(envFor(r'C:\tools\bin\yosys.exe', environment: given), given),
+        isTrue,
+      );
+    });
+
+    test('does nothing off Windows', () {
+      expect(
+        envFor(r'C:\Users\me\oss-cad-suite\bin\yosys.exe', windows: false),
+        isNull,
+      );
+    });
+
+    test('does nothing for a bare name', () {
+      expect(envFor('yosys.exe'), isNull);
+    });
+  });
+
   group('engineSearchDirs', () {
     test('platform-appropriate search dirs', () {
       resetEngineSearchDirsCacheForTesting();

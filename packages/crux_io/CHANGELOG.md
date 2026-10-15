@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Added `ossCadSuiteSpawnEnvironment` and `prependPathDirs`.** On Windows
+  an OSS CAD Suite binary loads its DLLs from the suite's `lib` directory,
+  which the suite's `environment.bat` puts at the front of `PATH`. With
+  `bin` and `lib` added to `PATH` by hand after another toolchain that ships
+  same-named DLLs, `yosys.exe -V` printed nothing and the products reported
+  Yosys as unusable. `ossCadSuiteSpawnEnvironment` returns the child
+  environment with that install's `bin` and `lib` first when the resolved
+  binary lives in an install's `bin`, and the given environment unchanged
+  otherwise.
 - **Added reading a child process to its end: `collectProcessOutput`,
   `CapturedProcessOutput`, `ProcessStreamDrain`, `drainProcessOutput`,
   `ProcessOutputIncompleteException` / `ProcessOutputLoss`,

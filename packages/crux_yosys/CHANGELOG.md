@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Fixed
+
+- **`DefaultProcessRunner` starts an OSS CAD Suite Yosys with the suite's own
+  `bin` and `lib` first on its `PATH`** (Windows), through
+  `ossCadSuiteSpawnEnvironment`. Yosys from the suite failed the availability
+  probe as `exec_failed` whenever an earlier `PATH` entry shipped a DLL of the
+  same name.
+
 ### Security
 
 - **`extraCommands` entries must each be one statement.** They were joined

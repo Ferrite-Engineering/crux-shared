@@ -56,7 +56,9 @@ isSamePath(String a, String b, {bool resolveSymlinks, bool? caseInsensitive}) ->
 get kDefaultWindowsPathExt -> String
 get kProcessOutputDrainGrace -> Duration
 get kProcessOutputExcerptLines -> int
+ossCadSuiteSpawnEnvironment(String executable, Map<String, String>? environment, {bool Function(String)? isDirectory, bool Function(String)? isFile, required Map<String, String> parentEnvironment, required bool windows}) -> Map<String, String>?
 parseWindowsPersistentPath(String regQueryOutput, {required Map<String, String> environment}) -> List<String>
+prependPathDirs(String currentPath, List<String> dirs, {required String separator, required bool caseInsensitive}) -> String?
 processOutputExcerpt(Iterable<String> lines) -> List<String>
 requireSpawnExecutable(String executable, {String? pathExt, bool Function(String)? exists, required String? pathEnvironment, required bool windows}) -> String
 requireSpawnExecutableForHost(String executable, {Map<String, String>? environment}) -> String

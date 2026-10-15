@@ -292,15 +292,23 @@ class DefaultProcessRunner implements ProcessRunner {
     // otherwise run in place of the installed one. A name nothing on PATH
     // answers to throws the not-found ProcessException here, before anything
     // is spawned, which callers already report as "not installed".
-    final resolved = (spawnHost ?? SpawnHost.current()).requireExecutable(
+    final host = spawnHost ?? SpawnHost.current();
+    final resolved = host.requireExecutable(
       executable,
       childEnvironment: environment,
     );
+    // An OSS CAD Suite binary needs its own lib DLLs ahead of anything
+    // else on PATH; see ossCadSuiteSpawnEnvironment.
     final process = await Process.start(
       resolved,
       arguments,
       workingDirectory: workingDirectory,
-      environment: environment,
+      environment: ossCadSuiteSpawnEnvironment(
+        resolved,
+        environment,
+        windows: host.windows,
+        parentEnvironment: host.environment,
+      ),
     );
     target.register(process);
 
