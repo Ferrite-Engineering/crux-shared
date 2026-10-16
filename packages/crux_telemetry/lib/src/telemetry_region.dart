@@ -79,48 +79,102 @@ bool telemetryTimeZoneRequiresOptIn(String? timeZone) =>
     (timeZone.startsWith(kTelemetryOptInTimeZonePrefix) ||
         kTelemetryOptInTimeZones.contains(timeZone));
 
+/// Matches a Unicode region override, the `rg` key, in either spelling: the
+/// POSIX-style keyword `@rg=gbzzzz` Apple platforms write into a locale
+/// identifier, and the BCP 47 extension `-u-rg-gbzzzz`. The value is a region
+/// subtag followed by a subdivision suffix, `zzzz` for "the whole region".
+final RegExp _regionOverride = RegExp(
+  r'(?:^|[@;\-_])rg[=\-]([a-z]{2})[a-z0-9]{1,4}',
+  caseSensitive: false,
+);
+
+/// The countries a platform locale identifier names, upper-cased.
+///
+/// Accepts every spelling the platforms hand over: BCP 47 (`en-GB`,
+/// `zh-Hans-CN`), POSIX (`en_GB.UTF-8`, `sr_RS@latin`), Apple identifiers
+/// with a region override (`en_US@rg=gbzzzz`, which is how macOS and iOS
+/// write "language US English, region United Kingdom"), and the BCP 47 form
+/// of that override (`en-US-u-rg-gbzzzz`). An override contributes its
+/// region **in addition to** the base country rather than instead of it: both
+/// are settings the user made, and either is enough for
+/// [telemetryRequiresOptIn].
+///
+/// A numeric region (`es-419`), a script, a variant, and the `C` and `POSIX`
+/// locales name no country and contribute nothing.
+Set<String> telemetryCountriesInLocaleId(String localeId) {
+  final countries = <String>{};
+  for (final match in _regionOverride.allMatches(localeId)) {
+    countries.add(match.group(1)!.toUpperCase());
+  }
+  final base = localeId.split(RegExp('[.@]')).first;
+  final subtags = base.split(RegExp('[-_]'));
+  for (final subtag in subtags.skip(1)) {
+    if (subtag.length == 4) continue;
+    if (subtag.length == 2 && RegExp(r'^[A-Za-z]{2}$').hasMatch(subtag)) {
+      countries.add(subtag.toUpperCase());
+    }
+    break;
+  }
+  return countries;
+}
+
 /// Whether the first-launch toggle must default to off, given the platform's
-/// preferred [locales] and, where the platform can name one, its IANA
-/// [timeZone].
+/// preferred [locales], the countries its region settings name ([regions]),
+/// and, where the platform can name one, its IANA [timeZone].
 ///
 /// **Deliberately over-inclusive.** It reads the user's *whole* preferred
 /// locale list rather than only the first, and answers true if any entry names
 /// an opt-in country. Someone in Berlin whose first preference is `en-US` and
 /// whose second is `de-DE` gets the opt-in default, the error worth making:
 /// a false positive costs one measured installation, a false negative is
-/// collection without consent. Either signal is enough on its own; neither can
-/// veto the other.
+/// collection without consent. Every signal is enough on its own; none can
+/// veto another.
+///
+/// **The region setting is its own signal.** The locale list is the user's
+/// *languages*, and on macOS, iOS and Windows the region is set separately: a
+/// laptop set to US English with its region set to the United Kingdom reports
+/// `en-US` in the list and `GB` here. [regions] carries what
+/// `telemetryPlatformRegionsProvider` reads from the operating system on
+/// desktop and mobile, and is empty on the web, where a page cannot see it.
 ///
 /// **A locale with no country is not evidence of anything**, and is treated as
 /// such — `en` alone leaves the default on. Browsers commonly report a bare
-/// language tag, which is why the second signal exists: the browser's resolved
-/// time zone almost always carries a place, so a `de` or `en` locale paired
-/// with `Europe/Berlin` answers true. Off the web no zone is supplied — the VM
-/// exposes only an abbreviation, and `IST` is Dublin as well as Kolkata — so
-/// desktop and mobile builds are placed by locale alone. The alternative,
+/// language tag, which is why the time zone exists as a signal there: the
+/// browser's resolved time zone almost always carries a place, so a `de` or
+/// `en` locale paired with `Europe/Berlin` answers true. Off the web no zone is
+/// supplied — the VM exposes only an abbreviation, and `IST` is Dublin as well
+/// as Kolkata — and the region setting takes its place. The alternative,
 /// treating "unknown" as opt-in, would flip a large share of the world's web
 /// users off on the strength of no evidence, which is a much larger price than
 /// the remaining gap costs.
 ///
-/// Locale and time zone are the only local region signals that cost nothing
-/// and collect nothing. The Worker's `country` stamp is more accurate and
-/// cannot be used here: it is derived from an event that consent has not yet
-/// permitted, so it arrives strictly after the moment this decision has to be
-/// made.
-bool telemetryRequiresOptIn(Iterable<Locale> locales, {String? timeZone}) =>
+/// Locale, region setting and time zone are the only local region signals
+/// that cost nothing and collect nothing. The Worker's `country` stamp is more
+/// accurate and cannot be used here: it is derived from an event that consent
+/// has not yet permitted, so it arrives strictly after the moment this
+/// decision has to be made.
+bool telemetryRequiresOptIn(
+  Iterable<Locale> locales, {
+  String? timeZone,
+  Iterable<String> regions = const <String>[],
+}) =>
     telemetryTimeZoneRequiresOptIn(timeZone) ||
+    regions.any(
+      (country) => kTelemetryOptInCountries.contains(country.toUpperCase()),
+    ) ||
     locales.any((locale) {
       final country = locale.countryCode;
       return country != null &&
           kTelemetryOptInCountries.contains(country.toUpperCase());
     });
 
-/// The position the first-launch toggle should arrive in for [locales] and
-/// [timeZone].
+/// The position the first-launch toggle should arrive in for [locales],
+/// [regions] and [timeZone].
 ///
 /// The inverse of [telemetryRequiresOptIn], named for what the widget actually
 /// consumes so no call site has to remember which way round the negation goes.
 bool telemetryDefaultConsentFor(
   Iterable<Locale> locales, {
   String? timeZone,
-}) => !telemetryRequiresOptIn(locales, timeZone: timeZone);
+  Iterable<String> regions = const <String>[],
+}) => !telemetryRequiresOptIn(locales, timeZone: timeZone, regions: regions);

@@ -17,6 +17,7 @@ import 'package:crux_telemetry/src/services/noop_telemetry_service.dart';
 import 'package:crux_telemetry/src/services/pending_telemetry_service.dart';
 import 'package:crux_telemetry/src/services/telemetry_uncaught_error_counter.dart';
 import 'package:crux_telemetry/src/services/telemetry_unclean_shutdown_detector.dart';
+import 'package:crux_telemetry/src/storage/telemetry_storage.dart';
 import 'package:crux_telemetry/src/telemetry_platform.dart';
 import 'package:crux_telemetry/src/telemetry_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -320,6 +321,61 @@ final Provider<void> _gateOpenedWatcherProvider = Provider<void>(
   name: 'telemetryGateOpenedWatcherProvider',
 );
 
+/// Keeps what this installation stores on the device for measurement in step
+/// with the gate: the session marker exists only while it is open, and the
+/// installation id only once it has opened and never after it settles
+/// closed.
+///
+/// The privacy policy promises both. "While measurement is off, no identifier
+/// exists" covers an installation that turned measurement off after having it
+/// on, so a closed gate removes [kTelemetryInstallationIdKey]; turning
+/// measurement back on mints a new id on the first flush. The marker follows
+/// the same rule through [TelemetryUncleanShutdownDetector.setMeasuring].
+///
+/// [TelemetryGate.pending] changes nothing: it is the store still reading,
+/// not an answer. Every other value is applied, at launch and on every
+/// change, whichever way it came about: the disclosure, the Settings toggle,
+/// an Enterprise policy, the beta.
+///
+/// Dependency-free for the same reason as [_gateOpenedWatcherProvider]: a
+/// subscription on a provider that watches something is torn down at the
+/// moment that something changes, which is the moment this has to act.
+final Provider<void> _measurementStorageWatcherProvider = Provider<void>(
+  (ref) {
+    final container = ref.container;
+    final detector = container.read(telemetryUncleanShutdownDetectorProvider);
+    final subscription = container.listen<TelemetryGate>(
+      telemetryGateProvider,
+      (_, gate) {
+        if (gate == TelemetryGate.pending) return;
+        final measuring = gate == TelemetryGate.open;
+        unawaited(detector.setMeasuring(measuring: measuring));
+        if (!measuring) unawaited(_removeInstallationId(container));
+      },
+      fireImmediately: true,
+    );
+    ref.onDispose(subscription.close);
+  },
+  name: 'telemetryMeasurementStorageWatcherProvider',
+);
+
+/// Deletes the stored installation id, if there is one, and drops both id
+/// providers' cached values so nothing displays or sends the old one. Never
+/// throws.
+Future<void> _removeInstallationId(ProviderContainer container) async {
+  try {
+    final storage = container.read(telemetryStorageProvider);
+    if (await storage.read(kTelemetryInstallationIdKey) == null) return;
+    await storage.remove(kTelemetryInstallationIdKey);
+    container
+      ..invalidate(telemetryInstallationIdProvider)
+      ..invalidate(telemetryStoredInstallationIdProvider);
+  } on Object catch (_) {
+    // A store that cannot delete leaves the id; the next launch with the gate
+    // closed tries again.
+  }
+}
+
 /// The active [TelemetryService] — the single point at which the suite's
 /// anonymous usage statistics are switched on or off.
 ///
@@ -359,10 +415,12 @@ final Provider<void> _gateOpenedWatcherProvider = Provider<void>(
 /// Attaching the no-op is how a closed gate discards what the counter
 /// buffered before the container existed; attaching the pending service is
 /// how those events wait for the consent store like the launch counter does.
+/// The first resolution also arms [_measurementStorageWatcherProvider], which
+/// keeps the session marker and the installation id in step with the gate.
 /// A product that overrides this provider — an editor host relaying events to
 /// its own sender — attaches nothing and starts nothing: the counter's buffer
 /// stays at its cap, and the session marker is not kept unless the product
-/// calls `TelemetryUncleanShutdownDetector.instance.start()` itself.
+/// calls `TelemetryUncleanShutdownDetector.instance.setMeasuring` itself.
 final Provider<TelemetryService> telemetryServiceProvider =
     Provider<TelemetryService>(
       (ref) {
@@ -372,9 +430,10 @@ final Provider<TelemetryService> telemetryServiceProvider =
         final shutdownDetector = ref.read(
           telemetryUncleanShutdownDetectorProvider,
         );
-        // Idempotent: the first resolution of this provider in the process
-        // checks and rotates the session marker, whatever the gate says.
-        unawaited(shutdownDetector.start());
+        // Idempotent: the first resolution of this provider in the container
+        // arms the watcher that keeps the session marker and the
+        // installation id in step with the gate.
+        ref.read(_measurementStorageWatcherProvider);
 
         TelemetryService attachErrorCounter(TelemetryService service) {
           errorCounter.attach(service);

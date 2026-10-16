@@ -188,10 +188,10 @@ void main() {
       expect(storage.values[kTelemetryInstallationIdKey], 'not-an-id');
     });
 
-    testWidgets('an id left by an earlier opt-in still shows while off', (
-      tester,
-    ) async {
-      // Opted in, then out: the id is what a deletion request needs.
+    testWidgets('an id left by an earlier opt-in is removed once telemetry '
+        'starts with measurement off', (tester) async {
+      // Opted in, then out, on an earlier launch that ended before the
+      // removal landed. While measurement is off no identifier exists.
       storage = InMemoryTelemetryStorage(<String, String>{
         'telemetry.consent': 'disabled',
         kTelemetryInstallationIdKey: storedId,
@@ -200,10 +200,18 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(TelemetrySettingsSection)),
+      );
+      container
+          .read(telemetryServiceProvider)
+          .record(TelemetryEvent('workspace.restored'));
+      await tester.pumpAndSettle();
+
       expect(tester.widget<SwitchListTile>(_switch).value, isFalse);
-      expect(tester.widget<SelectableText>(idText).data, storedId);
-      expect(noneText, findsNothing);
-      expect(copyEnabled(tester), isTrue);
+      expect(storage.values.containsKey(kTelemetryInstallationIdKey), isFalse);
+      expect(noneText, findsOneWidget);
+      expect(idText, findsNothing);
     });
 
     testWidgets('Copy puts the id on the clipboard and says so', (
@@ -294,7 +302,15 @@ void main() {
       expect(noneText, findsNothing);
       expect(copyEnabled(tester), isTrue);
 
-      // Unmount so the live service's flush timer is cancelled.
+      // Turning it off again removes the id at once: while measurement is
+      // off, no identifier exists.
+      await tester.tap(_switch);
+      await tester.pumpAndSettle();
+      expect(storage.values.containsKey(kTelemetryInstallationIdKey), isFalse);
+      expect(noneText, findsOneWidget);
+      expect(idText, findsNothing);
+
+      // Unmount so any timer the live service left is cancelled.
       await tester.pumpWidget(const SizedBox.shrink());
     });
   });

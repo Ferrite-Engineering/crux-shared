@@ -8,6 +8,7 @@ import 'package:crux_telemetry/src/crux_telemetry_config.dart';
 import 'package:crux_telemetry/src/crux_telemetry_strings.dart';
 import 'package:crux_telemetry/src/models/telemetry_policy.dart';
 import 'package:crux_telemetry/src/storage/telemetry_storage.dart';
+import 'package:crux_telemetry/src/telemetry_device_region.dart';
 import 'package:crux_telemetry/src/telemetry_endpoint.dart';
 import 'package:crux_telemetry/src/telemetry_region.dart';
 import 'package:crux_telemetry/src/telemetry_time_zone.dart';
@@ -334,7 +335,8 @@ final Provider<List<Locale>> telemetryPlatformLocalesProvider =
 /// quiet exactly there: browsers commonly report a bare language tag with no
 /// country, and a zone almost always carries a place. Off the web the VM can
 /// only name an abbreviation, which is ambiguous, so desktop and mobile builds
-/// are placed by locale alone. See `telemetry_time_zone.dart`.
+/// read the region setting instead ([telemetryPlatformRegionsProvider]). See
+/// `telemetry_time_zone.dart`.
 ///
 /// Like the locales, this is read once at the moment the disclosure needs a
 /// default, never stored and never transmitted.
@@ -342,6 +344,24 @@ final Provider<String?> telemetryPlatformTimeZoneProvider = Provider<String?>(
   (_) => platformIanaTimeZone(),
   name: 'telemetryPlatformTimeZoneProvider',
 );
+
+/// The countries the operating system's region settings name, as the region
+/// signal behind the first-launch default on desktop and mobile.
+///
+/// Separate from [telemetryPlatformLocalesProvider] because on macOS, iOS and
+/// Windows the region is not part of the language list: a laptop set to US
+/// English with its region set to the United Kingdom reports `en-US` there
+/// and `GB` here. Empty on the web and on Android, where the locale list
+/// already says everything a process can learn. See
+/// `telemetry_device_region.dart`.
+///
+/// Like the locales, this is read once at the moment the disclosure needs a
+/// default, never stored and never transmitted.
+final Provider<List<String>> telemetryPlatformRegionsProvider =
+    Provider<List<String>>(
+      (_) => platformRegionCountries(),
+      name: 'telemetryPlatformRegionsProvider',
+    );
 
 /// The position the first-launch toggle arrives in on this installation.
 ///
@@ -357,6 +377,7 @@ final Provider<bool> telemetryDefaultConsentProvider = Provider<bool>(
   (ref) => telemetryDefaultConsentFor(
     ref.watch(telemetryPlatformLocalesProvider),
     timeZone: ref.watch(telemetryPlatformTimeZoneProvider),
+    regions: ref.watch(telemetryPlatformRegionsProvider),
   ),
   name: 'telemetryDefaultConsentProvider',
 );

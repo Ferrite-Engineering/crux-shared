@@ -249,6 +249,63 @@ void main() {
     });
   });
 
+  group('the region setting', () {
+    test('an opt-in region is enough on its own', () {
+      expect(
+        telemetryRequiresOptIn(const [Locale('en', 'US')], regions: ['GB']),
+        isTrue,
+      );
+      expect(
+        telemetryRequiresOptIn(const [Locale('en')], regions: ['de']),
+        isTrue,
+      );
+    });
+
+    test('a region outside the set changes nothing', () {
+      expect(
+        telemetryRequiresOptIn(const [Locale('en', 'US')], regions: ['US']),
+        isFalse,
+      );
+      expect(
+        telemetryRequiresOptIn(const [Locale('de', 'DE')], regions: ['US']),
+        isTrue,
+      );
+    });
+  });
+
+  group('telemetryCountriesInLocaleId', () {
+    test('reads the country from every platform spelling', () {
+      expect(telemetryCountriesInLocaleId('en-GB'), {'GB'});
+      expect(telemetryCountriesInLocaleId('en_GB'), {'GB'});
+      expect(telemetryCountriesInLocaleId('en_GB.UTF-8'), {'GB'});
+      expect(telemetryCountriesInLocaleId('de_DE@euro'), {'DE'});
+      expect(telemetryCountriesInLocaleId('sr_RS@latin'), {'RS'});
+      expect(telemetryCountriesInLocaleId('zh-Hans-CN'), {'CN'});
+      expect(telemetryCountriesInLocaleId('zh_Hant_TW'), {'TW'});
+    });
+
+    test('a region override counts as well as the base country', () {
+      // macOS and iOS write "language US English, region United Kingdom" this
+      // way.
+      expect(telemetryCountriesInLocaleId('en_US@rg=gbzzzz'), {'US', 'GB'});
+      expect(telemetryCountriesInLocaleId('en-US-u-rg-gbzzzz'), {'US', 'GB'});
+      expect(
+        telemetryCountriesInLocaleId('en_US@calendar=gregorian;rg=dezzzz'),
+        {'US', 'DE'},
+      );
+    });
+
+    test('nothing that is not a country is read as one', () {
+      expect(telemetryCountriesInLocaleId('en'), isEmpty);
+      expect(telemetryCountriesInLocaleId('es-419'), isEmpty);
+      expect(telemetryCountriesInLocaleId('C'), isEmpty);
+      expect(telemetryCountriesInLocaleId('C.UTF-8'), isEmpty);
+      expect(telemetryCountriesInLocaleId('POSIX'), isEmpty);
+      expect(telemetryCountriesInLocaleId(''), isEmpty);
+      expect(telemetryCountriesInLocaleId('en-US-u-ca-gregory'), {'US'});
+    });
+  });
+
   group('telemetryDefaultConsentFor', () {
     test('is the inverse of the opt-in question', () {
       expect(telemetryDefaultConsentFor(const [Locale('de', 'DE')]), isFalse);

@@ -210,6 +210,7 @@ class TelemetryUncleanShutdownDetector
   get marker -> File?
   get unattached -> TelemetryEvent?
   markCleanExit() -> void
+  setMeasuring({required bool measuring}) -> Future<void>
   start() -> Future<bool>
   static const markerPrefix: String
   static const markerSuffix: String
@@ -266,7 +267,8 @@ get telemetryConsentPromptVisibleProvider -> Provider<bool>
 get telemetryConsentReadyProvider -> FutureProvider<void>
 get telemetryConsentStoreProvider -> NotifierProvider<TelemetryConsentStore, TelemetryConsentState>
 get telemetryConsentUiVisibleProvider -> Provider<bool>
-telemetryDefaultConsentFor(Iterable<Locale> locales, {String? timeZone}) -> bool
+telemetryCountriesInLocaleId(String localeId) -> Set<String>
+telemetryDefaultConsentFor(Iterable<Locale> locales, {Iterable<String> regions, String? timeZone}) -> bool
 get telemetryDefaultConsentProvider -> Provider<bool>
 get telemetryDevModeProvider -> Provider<bool>
 get telemetryEffectivePolicyProvider -> Provider<TelemetryPolicy>
@@ -288,9 +290,10 @@ telemetryOsSlug() -> String
 telemetryOsSlugFor({required TargetPlatform platform, required bool isWeb}) -> String
 get telemetryPendingBufferProvider -> Provider<List<TelemetryEvent>>
 get telemetryPlatformLocalesProvider -> Provider<List<Locale>>
+get telemetryPlatformRegionsProvider -> Provider<List<String>>
 get telemetryPlatformTimeZoneProvider -> Provider<String?>
 get telemetryPolicyProvider -> Provider<TelemetryPolicy>
-telemetryRequiresOptIn(Iterable<Locale> locales, {String? timeZone}) -> bool
+telemetryRequiresOptIn(Iterable<Locale> locales, {Iterable<String> regions, String? timeZone}) -> bool
 get telemetryServiceProvider -> Provider<TelemetryService>
 get telemetrySessionStartProvider -> Provider<DateTime>
 get telemetryStorageProvider -> Provider<TelemetryStorage>

@@ -8,7 +8,10 @@ import 'dart:ui' show AppExitResponse, AppLifecycleState;
 
 import 'package:crux_telemetry/crux_telemetry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../harness.dart';
 
@@ -341,28 +344,178 @@ void main() {
     expect(document.existsSync(), isTrue);
   });
 
-  test('telemetryServiceProvider starts the detector and attaches the service '
-      'it resolved', () async {
-    markerFor(100).createSync();
-    final d = detector();
-    final container = ProviderContainer(
-      overrides: [
-        cruxTelemetryConfigProvider.overrideWithValue(testTelemetryConfig),
-        telemetryBetaPeriodProvider.overrideWithValue(true),
-        telemetryUncleanShutdownDetectorProvider.overrideWithValue(d),
-      ],
-    );
-    addTearDown(container.dispose);
+  group('the marker exists only while measurement is on', () {
+    test('a launch with measurement off deletes a stale marker, records '
+        'nothing and claims none', () async {
+      markerFor(100).createSync();
+      final d = detector();
+      final service = _Capturing();
+      d.attach(service);
 
-    // During the beta the gate is closed for good: the no-op is attached, so
-    // the event the detector found is discarded rather than left waiting.
-    expect(
-      container.read(telemetryServiceProvider),
-      isA<NoopTelemetryService>(),
-    );
-    expect(await d.start(), isTrue);
-    expect(d.unattached, isNull);
-    expect(markerFor(4242).existsSync(), isTrue);
-    d.markCleanExit();
+      await d.setMeasuring(measuring: false);
+
+      expect(service.events, isEmpty);
+      expect(d.unattached, isNull);
+      expect(markerFor(100).existsSync(), isFalse);
+      expect(markerFor(4242).existsSync(), isFalse);
+      expect(d.marker, isNull);
+      d.markCleanExit();
+    });
+
+    test('turning measurement off deletes the marker, and on claims it '
+        'again', () async {
+      final d = detector();
+      await d.setMeasuring(measuring: true);
+      expect(markerFor(4242).existsSync(), isTrue);
+
+      await d.setMeasuring(measuring: false);
+      expect(markerFor(4242).existsSync(), isFalse);
+      expect(d.marker, isNull);
+
+      await d.setMeasuring(measuring: true);
+      expect(markerFor(4242).existsSync(), isTrue);
+      d.markCleanExit();
+      expect(markerFor(4242).existsSync(), isFalse);
+    });
+
+    test('turning measurement on later records nothing for a marker the '
+        'launch already cleared', () async {
+      markerFor(100).createSync();
+      final d = detector();
+      final service = _Capturing();
+      d.attach(service);
+
+      await d.setMeasuring(measuring: false);
+      await d.setMeasuring(measuring: true);
+
+      expect(service.events, isEmpty);
+      expect(markerFor(4242).existsSync(), isTrue);
+      d.markCleanExit();
+    });
+
+    test('calls are applied in order', () async {
+      final d = detector();
+      final first = d.setMeasuring(measuring: true);
+      final second = d.setMeasuring(measuring: false);
+      await Future.wait(<Future<void>>[first, second]);
+      expect(markerFor(4242).existsSync(), isFalse);
+      d.markCleanExit();
+    });
+
+    test('nothing after a clean exit', () async {
+      final d = detector()..markCleanExit();
+      await d.setMeasuring(measuring: true);
+      expect(markerFor(4242).existsSync(), isFalse);
+    });
+  });
+
+  group('telemetryServiceProvider keeps the marker in step with the gate', () {
+    ProviderContainer containerFor(
+      TelemetryUncleanShutdownDetector d, {
+      required InMemoryTelemetryStorage storage,
+      bool betaPeriod = false,
+      List<Override> extraOverrides = const <Override>[],
+    }) {
+      final container = ProviderContainer(
+        overrides: [
+          ...extraOverrides,
+          cruxTelemetryConfigProvider.overrideWithValue(testTelemetryConfig),
+          telemetryBetaPeriodProvider.overrideWithValue(betaPeriod),
+          telemetryDevModeProvider.overrideWithValue(false),
+          telemetryStorageProvider.overrideWithValue(storage),
+          telemetryUncleanShutdownDetectorProvider.overrideWithValue(d),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    /// Resolves the service, as a product's first recorded event does, and
+    /// lets the consent store's read and the detector's file work finish.
+    Future<void> settle(ProviderContainer container) async {
+      container.read(telemetryServiceProvider);
+      await container.read(telemetryConsentReadyProvider.future);
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    test('the beta: the stale marker is deleted, nothing is recorded, and no '
+        'marker is claimed', () async {
+      markerFor(100).createSync();
+      final d = detector();
+      final container = containerFor(
+        d,
+        storage: InMemoryTelemetryStorage(),
+        betaPeriod: true,
+      );
+
+      await settle(container);
+      expect(
+        container.read(telemetryServiceProvider),
+        isA<NoopTelemetryService>(),
+      );
+      expect(d.unattached, isNull);
+      expect(markerFor(100).existsSync(), isFalse);
+      expect(markerFor(4242).existsSync(), isFalse);
+      d.markCleanExit();
+    });
+
+    test('measurement off: no marker', () async {
+      markerFor(100).createSync();
+      final d = detector();
+      final container = containerFor(
+        d,
+        storage: InMemoryTelemetryStorage(<String, String>{
+          kTelemetryConsentKey: 'disabled',
+        }),
+      );
+
+      await settle(container);
+
+      expect(d.unattached, isNull);
+      expect(markerFor(100).existsSync(), isFalse);
+      expect(markerFor(4242).existsSync(), isFalse);
+      d.markCleanExit();
+    });
+
+    test('measurement on: the stale marker counts and this session is '
+        'marked; turning it off removes the marker', () async {
+      markerFor(100).createSync();
+      final d = detector();
+      final container = containerFor(
+        d,
+        storage: InMemoryTelemetryStorage(<String, String>{
+          kTelemetryConsentKey: 'enabled',
+        }),
+        extraOverrides: [
+          telemetryAppVersionProvider.overrideWith((_) async => '0.6.0'),
+          telemetryHttpClientProvider.overrideWithValue(
+            MockClient(
+              (_) async => http.Response('{"accepted":1,"dropped":0}', 202),
+            ),
+          ),
+        ],
+      );
+
+      await settle(container);
+      expect(
+        container.read(telemetryServiceProvider),
+        isA<LiveTelemetryService>(),
+      );
+      // The launch the gate opened on found the stale marker, so the event
+      // went to the live service rather than waiting unattached.
+      expect(await d.start(), isTrue);
+      expect(d.unattached, isNull);
+      expect(markerFor(100).existsSync(), isFalse);
+      expect(markerFor(4242).existsSync(), isTrue);
+
+      await container
+          .read(telemetryConsentStoreProvider.notifier)
+          .set(TelemetryConsentState.disabled);
+      await settle(container);
+      expect(markerFor(4242).existsSync(), isFalse);
+      d.markCleanExit();
+    });
   });
 }

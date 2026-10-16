@@ -30,6 +30,9 @@ dependencies:
   # ships here so the four products' telemetry toggles cannot drift apart.
   crux_settings_ui:
     path: ../crux_settings_ui
+  # The UTF-16 buffer the Windows region read fills. See
+  # `telemetry_device_region_ffi.dart`.
+  ffi: ^2.1.0
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.1

@@ -35,6 +35,7 @@ Widget _wrap({
       telemetryPolicyProvider.overrideWithValue(policy),
       if (platformLocales != null)
         telemetryPlatformLocalesProvider.overrideWithValue(platformLocales),
+      telemetryPlatformRegionsProvider.overrideWithValue(const <String>[]),
       telemetryUrlLauncherProvider.overrideWithValue((uri) async {
         launched.add(uri);
         return true;

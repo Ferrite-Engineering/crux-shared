@@ -7,7 +7,8 @@
 /// an IANA name such as `Europe/Berlin`, through `Intl.DateTimeFormat`. The
 /// Dart VM exposes only an abbreviation, which is ambiguous — `IST` is Dublin
 /// as well as Kolkata — so every other platform answers `null` and the
-/// first-launch default there is placed by locale alone. See
+/// first-launch default there is placed by locale and region setting
+/// (`telemetry_device_region.dart`). See
 /// `telemetry_region.dart` for what the value is for and why the web build
 /// needs it.
 ///

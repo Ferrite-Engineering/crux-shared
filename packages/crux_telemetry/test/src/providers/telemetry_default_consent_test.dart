@@ -16,10 +16,12 @@ void main() {
   ProviderContainer containerFor({
     required List<Locale> locales,
     String? timeZone,
+    List<String> regions = const <String>[],
   }) {
     final container = ProviderContainer(
       overrides: [
         telemetryPlatformLocalesProvider.overrideWithValue(locales),
+        telemetryPlatformRegionsProvider.overrideWithValue(regions),
         telemetryPlatformTimeZoneProvider.overrideWithValue(timeZone),
       ],
     );
@@ -61,6 +63,35 @@ void main() {
         timeZone: 'America/Denver',
       );
       expect(c.read(telemetryDefaultConsentProvider), isFalse);
+    });
+
+    test('a US English laptop with its region set to the United Kingdom '
+        'arrives off', () {
+      final c = containerFor(
+        locales: const [Locale('en', 'US')],
+        regions: const ['GB'],
+      );
+      expect(c.read(telemetryDefaultConsentProvider), isFalse);
+    });
+
+    test('a US English laptop with a US region arrives on', () {
+      final c = containerFor(
+        locales: const [Locale('en', 'US')],
+        regions: const ['US'],
+      );
+      expect(c.read(telemetryDefaultConsentProvider), isTrue);
+    });
+  });
+
+  group('telemetryPlatformRegionsProvider', () {
+    test('names only upper-case two-letter countries', () {
+      // Reads this machine's real settings, so the values are not known in
+      // advance; their shape is.
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      for (final country in container.read(telemetryPlatformRegionsProvider)) {
+        expect(country, matches(RegExp(r'^[A-Z]{2}$')));
+      }
     });
   });
 }

@@ -29,8 +29,8 @@ const String kTelemetryUncleanShutdownEvent = 'app.unclean_shutdown';
 /// same gate as every other event: consent, the Enterprise policy and the
 /// beta condition still decide whether it is kept. Setting this to `false`
 /// holds the event back in every build while the detector keeps its session
-/// marker (so the logic and its tests still run): no event is then
-/// constructed, buffered or handed to a telemetry service.
+/// marker whenever measurement is on (so the logic and its tests still run):
+/// no event is then constructed, buffered or handed to a telemetry service.
 const bool kCruxUncleanShutdownEventEnabled = true;
 
 /// Ends the process with exit [code], after marking this session's exit
@@ -83,13 +83,13 @@ typedef TelemetrySessionMarkerProbe = bool Function(File marker);
 ///
 /// - **The embedder asks.** Quitting from the system (an Apple Event, the
 ///   Dock, logout, closing the last window, `WM_CLOSE`, a GTK delete event)
-///   reaches Dart as an exit request, which the listener [start] installs
-///   answers, and as the `detached` state. On macOS the request is
+///   reaches Dart as an exit request, which the listener [setMeasuring]
+///   installs answers, and as the `detached` state. On macOS the request is
 ///   asynchronous: the app answers the system's quit with "cancel" and
 ///   terminates itself once Dart replies, so the request can arrive before
-///   [start] has found the directory. The listener is installed before that
-///   lookup, and a clean exit seen first keeps [start] from claiming a
-///   marker at all.
+///   [setMeasuring] has found the directory. The listener is installed before
+///   that lookup, and a clean exit seen first keeps [setMeasuring] from
+///   claiming a marker at all.
 /// - **The product ends the process itself.** A Quit or Exit item, a quit
 ///   shortcut, a declined EULA, an expired build or a finished headless run
 ///   calls `cruxExit`, never `dart:io`'s `exit`, which ends the process
@@ -114,11 +114,27 @@ typedef TelemetrySessionMarkerProbe = bool Function(File marker);
 /// a debug build, where every hot restart and every stop from the IDE would
 /// count.
 ///
+/// **The marker exists only while usage measurement is on.** The marker is a
+/// file on the user's device, and in the EEA, the UK, Switzerland and South
+/// Korea storage on the device for measurement needs consent first, so the
+/// detector keeps it only while the telemetry gate is open. The privacy
+/// policy says so. `telemetryServiceProvider` tells the detector through
+/// [setMeasuring] whenever the gate settles:
+///
+/// - **On**: the first call sweeps stale markers and records the event if
+///   there were any; every call claims this session's marker if it has none.
+/// - **Off**: the first call sweeps stale markers and records nothing; every
+///   call deletes this session's marker if it has one. Turning measurement off
+///   mid-session therefore removes the file at once, and turning it back on
+///   claims a new one.
+///
+/// A stale marker can only exist if the session that left it had measurement
+/// on, so the sweep at an "off" launch is clearing what an earlier "on"
+/// session left behind, not recording anything about it.
+///
 /// **Gating.** The event goes to whichever `TelemetryService`
-/// `telemetryServiceProvider` resolved, exactly like `app.uncaught_error`: the
-/// live service records it, the pending one holds it until consent is known,
-/// the no-op discards it. The marker is rotated either way, so a session with
-/// telemetry off still leaves the next launch an accurate answer. In a build
+/// `telemetryServiceProvider` resolved, exactly like `app.uncaught_error`, and
+/// is only ever constructed at a launch where measurement is on. In a build
 /// that can never transmit (`kBetaPeriod` on, `TELEMETRY_DEV` off) no event is
 /// constructed, and none is while [kCruxUncleanShutdownEventEnabled] is off.
 class TelemetryUncleanShutdownDetector {
@@ -128,8 +144,8 @@ class TelemetryUncleanShutdownDetector {
   ///
   /// Construction reads nothing from `dart:io`: the default instance is built
   /// on the first recorded event in every edition, the web included, where
-  /// `pid` and every file API throw. The process id is read only when [start]
-  /// claims a marker, which an unsupported host never reaches.
+  /// `pid` and every file API throw. The process id is read only when
+  /// [setMeasuring] claims a marker, which an unsupported host never reaches.
   TelemetryUncleanShutdownDetector({
     Future<Directory> Function()? directoryFactory,
     TelemetrySessionMarkerProbe? markerHeld,
@@ -168,16 +184,16 @@ class TelemetryUncleanShutdownDetector {
   final bool eventEnabled;
 
   /// Whether this host and build run the detector at all: a desktop platform
-  /// and not a debug build. When `false`, [start] does nothing.
+  /// and not a debug build. When `false`, [setMeasuring] does nothing.
   final bool supported;
 
   /// Whether this build can never transmit, so no event is constructed. The
-  /// marker is still kept.
+  /// marker still follows [setMeasuring].
   final bool inert;
 
-  /// Whether [start] installs the `AppLifecycleListener` that removes the
-  /// marker on a clean exit. Tests that drive [markCleanExit] directly turn
-  /// it off.
+  /// Whether [setMeasuring] installs the `AppLifecycleListener` that removes
+  /// the marker on a clean exit. Tests that drive [markCleanExit] directly
+  /// turn it off.
   final bool installLifecycleListener;
 
   /// Every detector that has started and not yet seen a clean exit.
@@ -194,6 +210,11 @@ class TelemetryUncleanShutdownDetector {
   }
 
   Future<bool>? _started;
+  Future<void> _work = Future<void>.value();
+  bool _began = false;
+  bool _swept = false;
+  bool _unclean = false;
+  Directory? _directory;
   bool _exited = false;
   File? _marker;
   RandomAccessFile? _lock;
@@ -201,60 +222,91 @@ class TelemetryUncleanShutdownDetector {
   TelemetryService? _service;
   TelemetryEvent? _unattached;
 
-  /// Checks for an unclean previous session, records the event if there was
-  /// one and recording is allowed, and marks this session as running.
+  /// Starts the detector for a session whose usage measurement is on:
+  /// [setMeasuring] with `measuring: true`.
   ///
-  /// Idempotent: every call after the first returns the first call's result.
-  /// Completes with whether a previous session ended uncleanly, whether or
-  /// not an event was recorded for it. Never throws.
-  Future<bool> start() => _started ??= _start();
+  /// For a host that keeps the marker itself, outside
+  /// `telemetryServiceProvider`. Idempotent: every call after the first
+  /// returns the first call's result. Completes with whether a previous
+  /// session ended uncleanly, whether or not an event was recorded for it.
+  /// Never throws.
+  Future<bool> start() =>
+      _started ??= setMeasuring(measuring: true).then((_) => _unclean);
 
-  Future<bool> _start() async {
+  /// Tells the detector whether usage measurement is on, which is whether
+  /// this session may keep a marker on the device.
+  ///
+  /// The first call checks for an unclean previous session: it deletes every
+  /// stale marker, and records the event for them only when [measuring] is
+  /// `true` and recording is allowed. Every call then claims this session's
+  /// marker when [measuring] is `true` and it has none, or deletes it when
+  /// [measuring] is `false` and it has one.
+  ///
+  /// Calls are applied in order, each after the previous one finishes. Does
+  /// nothing on the web, off the desktop, in a debug build, or after a clean
+  /// exit. Never throws.
+  Future<void> setMeasuring({required bool measuring}) {
     // The web has no file and no process id, whatever a caller passed as
     // [supported]: inert there, with no file access and no listener.
-    if (kIsWeb || !supported || _exited) return false;
-    _running.add(this);
-    try {
-      // Listening comes before the directory lookup: an exit request that
-      // lands while it is in flight must still be seen, or the marker claimed
-      // below would outlive a session that ended cleanly.
-      if (installLifecycleListener) {
-        _listener = AppLifecycleListener(
-          onExitRequested: () async {
-            markCleanExit();
-            return AppExitResponse.exit;
-          },
-          onStateChange: (state) {
-            if (state == AppLifecycleState.detached) markCleanExit();
-          },
-        );
+    if (kIsWeb || !supported || _exited) return Future<void>.value();
+    if (!_began) {
+      _began = true;
+      _running.add(this);
+      // Listening comes first, and synchronously: an exit request that lands
+      // while the directory lookup is in flight must still be seen, or the
+      // marker claimed after it would outlive a session that ended cleanly.
+      try {
+        if (installLifecycleListener) {
+          _listener = AppLifecycleListener(
+            onExitRequested: () async {
+              markCleanExit();
+              return AppExitResponse.exit;
+            },
+            onStateChange: (state) {
+              if (state == AppLifecycleState.detached) markCleanExit();
+            },
+          );
+        }
+      } on Object catch (_) {
+        // Without a listener, `cruxExit` still removes the marker.
       }
-      final dir = await _directoryFactory();
-      final unclean = _sweepStaleMarkers(dir);
+    }
+    return _work = _work.then((_) => _apply(measuring));
+  }
+
+  Future<void> _apply(bool measuring) async {
+    if (_exited) return;
+    try {
+      final dir = _directory ??= await _directoryFactory();
+      if (!_swept) {
+        _swept = true;
+        _unclean = _sweepStaleMarkers(dir);
+        if (_unclean && measuring && eventEnabled && !inert) {
+          _record(TelemetryEvent(kTelemetryUncleanShutdownEvent));
+        }
+      }
       // A clean exit while the directory was being found means this session
       // is already over: it is never marked as running.
-      if (!_exited) _claimMarker(dir);
-      if (unclean && eventEnabled && !inert) {
-        _record(TelemetryEvent(kTelemetryUncleanShutdownEvent));
+      if (_exited) return;
+      if (measuring) {
+        if (_marker == null) _claimMarker(dir);
+      } else {
+        _releaseMarker();
       }
-      return unclean;
     } on Object catch (_) {
       // Swallowed by design: telemetry never throws into a launch.
-      return false;
     }
   }
 
   /// Removes this session's marker: the session ended cleanly.
   ///
-  /// Called from the exit paths [start] listens to and by `cruxExit`; safe to
-  /// call more than once, before [start] (which then claims nothing), and
-  /// from a product's own quit path. Never throws.
+  /// Called from the exit paths the detector listens to and by `cruxExit`;
+  /// safe to call more than once, before [setMeasuring] (which then claims
+  /// nothing), and from a product's own quit path. Never throws.
   ///
   /// Each step is attempted on its own, so a listener that fails to dispose
-  /// or a lock that fails to close still leaves the marker deleted. The lock
-  /// is released before the delete because Windows refuses to delete a file
-  /// that is open. A marker whose delete fails is kept for a later call to
-  /// retry.
+  /// still leaves the marker deleted. A marker whose delete fails is kept for
+  /// a later call to retry.
   void markCleanExit() {
     _exited = true;
     final listener = _listener;
@@ -264,6 +316,16 @@ class TelemetryUncleanShutdownDetector {
     } on Object catch (_) {
       // The marker below matters more than the listener.
     }
+    if (_releaseMarker()) _running.remove(this);
+  }
+
+  /// Releases and deletes this session's marker, if it has one. Returns
+  /// whether no marker is left. Never throws.
+  ///
+  /// The lock is released before the delete because Windows refuses to
+  /// delete a file that is open, and a lock that fails to close still leaves
+  /// the delete attempted.
+  bool _releaseMarker() {
     final lock = _lock;
     _lock = null;
     try {
@@ -272,17 +334,15 @@ class TelemetryUncleanShutdownDetector {
       // Closing is only what lets Windows delete the file; try anyway.
     }
     final marker = _marker;
-    if (marker == null) {
-      _running.remove(this);
-      return;
-    }
+    if (marker == null) return true;
     try {
       if (marker.existsSync()) marker.deleteSync();
       _marker = null;
-      _running.remove(this);
+      return true;
     } on Object catch (_) {
       // A marker that cannot be removed reads as one unclean session next
       // launch; there is nothing better to do with the failure here.
+      return false;
     }
   }
 
@@ -309,8 +369,8 @@ class TelemetryUncleanShutdownDetector {
   @visibleForTesting
   TelemetryEvent? get unattached => _unattached;
 
-  /// This session's marker file, once [start] has claimed it. Exposed for
-  /// tests.
+  /// This session's marker file, once [setMeasuring] has claimed it. Exposed
+  /// for tests.
   @visibleForTesting
   File? get marker => _marker;
 

@@ -64,12 +64,10 @@ abstract class TelemetryStorage {
 /// re-prompt path, which makes the surface everyone most needs to eyeball the
 /// surface hardest to see twice.
 ///
-/// Deletes the consent decision and **nothing else** — the installation id
-/// survives on purpose. Re-minting it would make every reset look like a new
-/// installation to the dataset, which is both a worse test (real first runs
-/// are rare) and a slow leak of junk ids into whichever dataset the build
-/// points at. A tester who genuinely wants a fresh identity can delete
-/// [kTelemetryInstallationIdKey] as a separate, deliberate act.
+/// Deletes the consent decision and nothing else. The installation id goes
+/// too, but not from here: an unanswered installation has measurement off,
+/// and `telemetryServiceProvider` removes the id whenever the gate settles
+/// closed, so the next answer of "yes" mints a fresh one.
 Future<void> resetTelemetryConsent(TelemetryStorage storage) =>
     storage.remove(kTelemetryConsentKey);
 

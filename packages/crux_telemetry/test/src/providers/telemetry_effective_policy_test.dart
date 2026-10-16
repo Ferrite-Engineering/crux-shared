@@ -24,6 +24,7 @@ void main() {
       overrides: [
         telemetryPolicyProvider.overrideWithValue(policy),
         telemetryPlatformLocalesProvider.overrideWithValue(locales),
+        telemetryPlatformRegionsProvider.overrideWithValue(const <String>[]),
         telemetryBetaPeriodProvider.overrideWithValue(false),
       ],
     );

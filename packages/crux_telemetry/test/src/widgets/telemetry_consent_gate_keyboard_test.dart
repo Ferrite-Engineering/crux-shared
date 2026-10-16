@@ -38,6 +38,7 @@ Widget _app() {
       telemetryStorageProvider.overrideWithValue(_storage),
       telemetryBetaPeriodProvider.overrideWithValue(false),
       telemetryDevModeProvider.overrideWithValue(false),
+      telemetryPlatformRegionsProvider.overrideWithValue(const <String>[]),
       telemetryPlatformLocalesProvider.overrideWithValue(const [
         Locale('en', 'US'),
       ]),
