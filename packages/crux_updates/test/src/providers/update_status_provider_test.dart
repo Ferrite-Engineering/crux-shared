@@ -161,7 +161,13 @@ void main() {
         ),
       ).read(updateStatusProvider);
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      // Polled against a generous deadline rather than one fixed wait: under
+      // a full workspace run the launch check alone can take longer than a
+      // short sleep.
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (fake.calls <= 1 && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
 
       expect(fake.calls, greaterThan(1)); // launch check plus timer ticks
     });
