@@ -37,7 +37,7 @@ class _FakeDispatcher extends CrossProbeDispatcher {
   }
 }
 
-class _SeededLog extends CxpEventLog {
+class _SeededLog extends CruxCxpEventLog {
   @override
   List<CrossProbeEvent> build() => <CrossProbeEvent>[
     CrossProbeEvent.peerConnected(peerLabel: 'WaveCrux'),
@@ -80,15 +80,15 @@ void main() {
   }) {
     return ProviderScope(
       overrides: [
-        cxpProductBindingProvider.overrideWithValue(
-          const CxpProductBinding(
+        cruxCxpProductBindingProvider.overrideWithValue(
+          const CruxCxpProductBinding(
             productName: 'lintcrux',
             defaultPort: 54324,
             prefsPrefix: 'settings.',
           ),
         ),
-        cxpPeersProvider.overrideWithValue(peers),
-        cxpServerStatusProvider.overrideWithValue((
+        cruxCxpPeersProvider.overrideWithValue(peers),
+        cruxCxpServerStatusProvider.overrideWithValue((
           running: serverRunning,
           port: serverRunning ? 54324 : null,
           problem: null,
@@ -96,7 +96,7 @@ void main() {
         crossProbeDispatcherProvider.overrideWith((ref) {
           return _FakeDispatcher((p) => result(p));
         }),
-        cxpRuntimeProvider.overrideWith((_) async => null),
+        cruxCxpRuntimeProvider.overrideWith((_) async => null),
         ...extra,
       ],
       child: MaterialApp(
@@ -370,27 +370,27 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          cxpProductBindingProvider.overrideWithValue(
-            const CxpProductBinding(
+          cruxCxpProductBindingProvider.overrideWithValue(
+            const CruxCxpProductBinding(
               productName: 'simcrux',
               defaultPort: 54325,
               prefsPrefix: 'simcrux.',
             ),
           ),
-          cxpPeersProvider.overrideWithValue([_peer('wavecrux', 1)]),
-          cxpServerStatusProvider.overrideWithValue((
+          cruxCxpPeersProvider.overrideWithValue([_peer('wavecrux', 1)]),
+          cruxCxpServerStatusProvider.overrideWithValue((
             running: true,
             port: 54325,
             problem: null,
           )),
-          cxpUnreachablePeersProvider.overrideWith(
+          cruxCxpUnreachablePeersProvider.overrideWith(
             (_) => Stream<List<CxpDialFailure>>.value(const []),
           ),
           crossProbeDispatcherProvider.overrideWith(
             (ref) => _FakeDispatcher((p) => result(p)),
           ),
-          cxpRuntimeProvider.overrideWith((_) async => null),
-          cxpEventLogProvider.overrideWith(_SeededLog.new),
+          cruxCxpRuntimeProvider.overrideWith((_) async => null),
+          cruxCxpEventLogProvider.overrideWith(_SeededLog.new),
         ],
         child: MaterialApp(
           locale: const Locale('ja'),

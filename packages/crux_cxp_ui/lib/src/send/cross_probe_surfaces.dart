@@ -17,22 +17,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// help that names its other protocol, the "nothing selected" noun). The
 /// default changes nothing.
 final Provider<CruxCxpStrings Function(CruxCxpStrings base)>
-cxpStringsCustomizerProvider =
+cruxCxpStringsCustomizerProvider =
     Provider<CruxCxpStrings Function(CruxCxpStrings base)>(
       (_) => _unchanged,
-      name: 'cxpStringsCustomizerProvider',
+      name: 'cruxCxpStringsCustomizerProvider',
     );
 
 CruxCxpStrings _unchanged(CruxCxpStrings base) => base;
 
 /// The shared CXP strings for [context]'s locale, naming this product and
 /// with its customizations applied.
-CruxCxpStrings cxpStringsOf(BuildContext context, CxpProviderReader read) {
-  final product = cxpProductDisplayName(
-    read(cxpProductBindingProvider).productName,
+CruxCxpStrings cruxCxpStringsOf(BuildContext context, CruxCxpReader read) {
+  final product = cruxCxpDisplayName(
+    read(cruxCxpProductBindingProvider).productName,
   );
   final base = CruxCxpStrings.of(context, product: product);
-  return read(cxpStringsCustomizerProvider)(base);
+  return read(cruxCxpStringsCustomizerProvider)(base);
 }
 
 /// Tells the user how [outcome] ended: a failure is an error toast (which
@@ -66,13 +66,13 @@ Future<CrossProbeOutcome> sendCrossProbe(
   String? label,
 }) async {
   // Read before any await: the surface that started the send may close.
-  final strings = cxpStringsOf(context, ref.read);
+  final strings = cruxCxpStringsOf(context, ref.read);
   final dispatcher = ref.read(crossProbeDispatcherProvider);
   final gate = ref.read(crossProbeGateProvider);
   if (gate != null && !await gate.admit(context, peer)) {
     return CrossProbeOutcome(
       CrossProbeOutcomeKind.denied,
-      target: label ?? cxpProductDisplayName(peer.productName),
+      target: label ?? cruxCxpDisplayName(peer.productName),
     );
   }
   final outcome = await dispatcher.send(peer, selection, label: label);
@@ -135,7 +135,7 @@ CruxMenuEntry crossProbeMenuEntry(
   required CrossProbeSelection? Function() selection,
   IconData icon = Icons.sensors,
 }) {
-  final strings = cxpStringsOf(context, ref.read);
+  final strings = cruxCxpStringsOf(context, ref.read);
   final targets = ref.read(crossProbeTargetsProvider);
   if (targets.isEmpty) {
     return CruxSubmenu(
@@ -172,14 +172,14 @@ Future<void> runCrossProbeSelection(
   required CrossProbeSelection? selection,
   Offset? anchor,
 }) async {
-  final strings = cxpStringsOf(context, ref.read);
+  final strings = cruxCxpStringsOf(context, ref.read);
   void report(CrossProbeOutcomeKind kind) =>
       reportCrossProbeOutcome(context, CrossProbeOutcome(kind), strings);
   if (selection == null || selection.isEmpty) {
     report(CrossProbeOutcomeKind.nothingSelected);
     return;
   }
-  if (!ref.read(cxpServerStatusProvider).running) {
+  if (!ref.read(cruxCxpServerStatusProvider).running) {
     report(CrossProbeOutcomeKind.serverOff);
     return;
   }
@@ -241,13 +241,13 @@ class CrossProbeToButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final strings = cxpStringsOf(context, ref.read);
+    final strings = cruxCxpStringsOf(context, ref.read);
     final target = ref
         .watch(crossProbeTargetsProvider)
         .where((t) => t.productName == productName.toLowerCase())
         .firstOrNull;
     final label = strings.crossProbeToProduct(
-      cxpProductDisplayName(productName),
+      cruxCxpDisplayName(productName),
     );
     return IconButton(
       key: ValueKey('crossProbeTo:$productName'),

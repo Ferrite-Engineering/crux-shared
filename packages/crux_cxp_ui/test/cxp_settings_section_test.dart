@@ -15,23 +15,23 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final container = ProviderContainer(
       overrides: [
-        cxpProductBindingProvider.overrideWithValue(
-          const CxpProductBinding(
+        cruxCxpProductBindingProvider.overrideWithValue(
+          const CruxCxpProductBinding(
             productName: 'wavecrux',
             defaultPort: 54322,
             prefsPrefix: 'settings.',
           ),
         ),
-        cxpLaunchSettingsProvider.overrideWithValue(
-          const CxpSettings(enabled: true, port: 54322),
+        cruxCxpLaunchSettingsProvider.overrideWithValue(
+          const CruxCxpSettings(enabled: true, port: 54322),
         ),
-        cxpServerStatusProvider.overrideWithValue((
+        cruxCxpServerStatusProvider.overrideWithValue((
           running: true,
           port: 54322,
           problem: null,
         )),
-        cxpPeersProvider.overrideWithValue(const []),
-        cxpRuntimeProvider.overrideWith((_) async => null),
+        cruxCxpPeersProvider.overrideWithValue(const []),
+        cruxCxpRuntimeProvider.overrideWith((_) async => null),
       ],
     );
     addTearDown(container.dispose);
@@ -62,7 +62,7 @@ void main() {
 
     await tester.tap(find.text('Broadcast selection automatically'));
     await tester.pumpAndSettle();
-    expect(container.read(cxpSettingsProvider).broadcastSelection, isFalse);
+    expect(container.read(cruxCxpSettingsProvider).broadcastSelection, isFalse);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('settings.broadcastSelectionOnCrossProbe'), isFalse);
 
@@ -70,6 +70,6 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(find.text('Enter a port between 1 and 65535.'), findsOneWidget);
-    expect(container.read(cxpSettingsProvider).port, 54322);
+    expect(container.read(cruxCxpSettingsProvider).port, 54322);
   });
 }

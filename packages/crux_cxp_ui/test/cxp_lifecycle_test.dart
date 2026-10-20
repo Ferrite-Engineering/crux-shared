@@ -14,7 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class _Handler extends CxpRequestHandler {
+class _Handler extends CruxCxpRequestHandler {
   _Handler({this.hang = false});
 
   final bool hang;
@@ -23,16 +23,16 @@ class _Handler extends CxpRequestHandler {
   final List<NotifySelection> selections = <NotifySelection>[];
 
   @override
-  Future<CxpHandlerResult> openSource(
+  Future<CruxCxpHandlerResult> openSource(
     RequestOpenSource request,
     PeerIdentity from,
   ) async {
     opened.add('${request.filePath}:${request.line}');
-    return CxpHandlerResult.ok;
+    return CruxCxpHandlerResult.ok;
   }
 
   @override
-  Future<CxpHandlerResult> openArtifact(
+  Future<CruxCxpHandlerResult> openArtifact(
     RequestOpenArtifact request,
     PeerIdentity from,
   ) async {
@@ -44,19 +44,19 @@ class _Handler extends CxpRequestHandler {
       selections.add(message);
 
   @override
-  Future<CxpHandlerResult> highlight(
+  Future<CruxCxpHandlerResult> highlight(
     RequestHighlight request,
     PeerIdentity from,
   ) async {
     if (hang) await Completer<void>().future;
     if (request.element.kind != ElementKind.net) {
-      return const CxpHandlerResult(
+      return const CruxCxpHandlerResult(
         honored: false,
         reason: 'nothing named that',
       );
     }
     highlighted.add(request.element);
-    return CxpHandlerResult.ok;
+    return CruxCxpHandlerResult.ok;
   }
 }
 
@@ -95,44 +95,46 @@ void main() {
 
   ProviderContainer product(
     String name, {
-    CxpSettings? launch = const CxpSettings(enabled: true, port: 0),
-    CxpRequestHandler handler = const CxpRequestHandler(),
+    CruxCxpSettings? launch = const CruxCxpSettings(enabled: true, port: 0),
+    CruxCxpRequestHandler handler = const CruxCxpRequestHandler(),
     void Function()? attention,
     bool transport = true,
   }) {
     final container =
         ProviderContainer(
             overrides: [
-              cxpProductBindingProvider.overrideWithValue(
-                CxpProductBinding(
+              cruxCxpProductBindingProvider.overrideWithValue(
+                CruxCxpProductBinding(
                   productName: name,
                   defaultPort: 54329,
                   prefsPrefix: '$name.',
                 ),
               ),
-              cxpManifestDirectoryProvider.overrideWith((_) async => dir.path),
-              cxpTransportAvailableProvider.overrideWithValue(transport),
-              cxpRequestHandlerProvider.overrideWithValue(handler),
-              cxpAttentionRequesterProvider.overrideWithValue(attention),
+              cruxCxpManifestDirectoryProvider.overrideWith(
+                (_) async => dir.path,
+              ),
+              cruxCxpTransportAvailableProvider.overrideWithValue(transport),
+              cruxCxpRequestHandlerProvider.overrideWithValue(handler),
+              cruxCxpAttentionRequesterProvider.overrideWithValue(attention),
               if (launch != null)
-                cxpLaunchSettingsProvider.overrideWithValue(launch),
+                cruxCxpLaunchSettingsProvider.overrideWithValue(launch),
             ],
           )
           // Keep the peer and unreachable streams subscribed, as the panel and
           // the toolbar badge do.
-          ..listen(cxpPeersProvider, (_, _) {})
-          ..listen(cxpUnreachablePeersProvider, (_, _) {})
-          ..listen(cxpEventLogProvider, (_, _) {});
+          ..listen(cruxCxpPeersProvider, (_, _) {})
+          ..listen(cruxCxpUnreachablePeersProvider, (_, _) {})
+          ..listen(cruxCxpEventLogProvider, (_, _) {});
     addTearDown(container.dispose);
     return container;
   }
 
-  Future<CxpRuntime?> runtimeOf(ProviderContainer c) =>
-      c.read(cxpRuntimeProvider.future);
+  Future<CruxCxpRuntime?> runtimeOf(ProviderContainer c) =>
+      c.read(cruxCxpRuntimeProvider.future);
 
   test('settings survive a relaunch, under the product keys', () async {
     final first = product('netcrux', launch: null, transport: false);
-    final settings = first.read(cxpSettingsProvider.notifier);
+    final settings = first.read(cruxCxpSettingsProvider.notifier);
     await settings.loaded;
     await settings.setEnabled(enabled: false);
     await settings.setPort(50123);
@@ -144,15 +146,21 @@ void main() {
     expect(prefs.getInt('netcrux.cxpServerPort'), 50123);
 
     final again = product('netcrux', launch: null, transport: false);
-    await again.read(cxpSettingsProvider.notifier).loaded;
+    await again.read(cruxCxpSettingsProvider.notifier).loaded;
     expect(
-      again.read(cxpSettingsProvider),
-      const CxpSettings(enabled: false, port: 50123, broadcastSelection: false),
+      again.read(cruxCxpSettingsProvider),
+      const CruxCxpSettings(
+        enabled: false,
+        port: 50123,
+        broadcastSelection: false,
+      ),
     );
     // The launch loader reads the same thing for main() to hand in.
     expect(
-      await loadCxpLaunchSettings(again.read(cxpProductBindingProvider)),
-      again.read(cxpSettingsProvider),
+      await loadCruxCxpLaunchSettings(
+        again.read(cruxCxpProductBindingProvider),
+      ),
+      again.read(cruxCxpSettingsProvider),
     );
   });
 
@@ -161,10 +169,10 @@ void main() {
     () async {
       final off = product(
         'wavecrux',
-        launch: const CxpSettings(enabled: false, port: 0),
+        launch: const CruxCxpSettings(enabled: false, port: 0),
       );
       expect(await runtimeOf(off), isNull);
-      expect(off.read(cxpServerStatusProvider).running, isFalse);
+      expect(off.read(cruxCxpServerStatusProvider).running, isFalse);
       expect(manifests(), isEmpty);
     },
   );
@@ -175,9 +183,9 @@ void main() {
       'lintcrux.cxpServerEnabled': false,
     });
     final c = product('lintcrux', launch: null);
-    expect(c.read(cxpSettingsProvider).enabled, isFalse);
+    expect(c.read(cruxCxpSettingsProvider).enabled, isFalse);
     expect(await runtimeOf(c), isNull);
-    await c.read(cxpSettingsProvider.notifier).loaded;
+    await c.read(cruxCxpSettingsProvider.notifier).loaded;
     expect(await runtimeOf(c), isNull);
     expect(manifests(), isEmpty);
   });
@@ -190,20 +198,22 @@ void main() {
     final net = product('netcrux');
     await runtimeOf(net);
     await _until(
-      () => wave.read(cxpPeersProvider).isNotEmpty,
+      () => wave.read(cruxCxpPeersProvider).isNotEmpty,
       reason: 'WaveCrux to see NetCrux',
     );
     await _until(
-      () => net.read(cxpPeersProvider).isNotEmpty,
+      () => net.read(cruxCxpPeersProvider).isNotEmpty,
       reason: 'NetCrux to see WaveCrux',
     );
-    expect(wave.read(cxpConnectedPeerCountProvider), 1);
+    expect(wave.read(cruxCxpConnectedPeerCountProvider), 1);
     expect(wave.read(crossProbeTargetsProvider).single.label, 'NetCrux');
 
-    await wave.read(cxpSettingsProvider.notifier).setEnabled(enabled: false);
+    await wave
+        .read(cruxCxpSettingsProvider.notifier)
+        .setEnabled(enabled: false);
     expect(await runtimeOf(wave), isNull);
-    await _until(() => wave.read(cxpPeersProvider).isEmpty);
-    expect(wave.read(cxpConnectedPeerCountProvider), 0);
+    await _until(() => wave.read(cruxCxpPeersProvider).isEmpty);
+    expect(wave.read(cruxCxpConnectedPeerCountProvider), 0);
     expect(wave.read(crossProbeTargetsProvider), isEmpty);
     // The manifest went with the server.
     await _until(() => manifests().length == 1, reason: 'manifest removal');
@@ -214,7 +224,7 @@ void main() {
     final before = await runtimeOf(c);
     expect(before!.isAvailable, isTrue);
     final port = await _freePort();
-    await c.read(cxpSettingsProvider.notifier).setPort(port);
+    await c.read(cruxCxpSettingsProvider.notifier).setPort(port);
     final after = await runtimeOf(c);
     expect(after, isNot(same(before)));
     expect(after!.boundPort, port);
@@ -226,12 +236,12 @@ void main() {
     () async {
       final c = product(
         'simcrux',
-        launch: const CxpSettings(enabled: false, port: 0),
+        launch: const CruxCxpSettings(enabled: false, port: 0),
       );
       final port = await _freePort();
-      await c.read(cxpSettingsProvider.notifier).setPort(port);
+      await c.read(cruxCxpSettingsProvider.notifier).setPort(port);
       expect(await runtimeOf(c), isNull);
-      await c.read(cxpSettingsProvider.notifier).setEnabled(enabled: true);
+      await c.read(cruxCxpSettingsProvider.notifier).setEnabled(enabled: true);
       expect((await runtimeOf(c))!.boundPort, port);
     },
   );
@@ -250,9 +260,9 @@ void main() {
       await runtimeOf(wave);
       net = product('netcrux', handler: handler, attention: () => attention++);
       await runtimeOf(net);
-      await _until(() => wave.read(cxpPeersProvider).isNotEmpty);
-      await _until(() => net.read(cxpPeersProvider).isNotEmpty);
-      netPeer = wave.read(cxpPeersProvider).single;
+      await _until(() => wave.read(cruxCxpPeersProvider).isNotEmpty);
+      await _until(() => net.read(cruxCxpPeersProvider).isNotEmpty);
+      netPeer = wave.read(cruxCxpPeersProvider).single;
     });
 
     CrossProbeSelection selection(ElementKind kind) => CrossProbeSelection(
@@ -269,12 +279,12 @@ void main() {
       expect(handler.highlighted.single.path, 'top.clk');
       expect(attention, 1);
       expect(
-        wave.read(cxpEventLogProvider).map((e) => e.kind),
+        wave.read(cruxCxpEventLogProvider).map((e) => e.kind),
         contains(CrossProbeEventKind.highlightSent),
       );
       await _until(
         () => net
-            .read(cxpEventLogProvider)
+            .read(cruxCxpEventLogProvider)
             .any((e) => e.kind == CrossProbeEventKind.highlightReceived),
       );
     });
@@ -301,11 +311,11 @@ void main() {
       expect(attention, 1, reason: 'an honoured open asks for attention');
       await _until(
         () => net
-            .read(cxpEventLogProvider)
+            .read(cruxCxpEventLogProvider)
             .any((e) => e.kind == CrossProbeEventKind.openArtifact),
       );
 
-      broadcastCxpSelection(
+      broadcastCruxCxpSelection(
         wave.read,
         const NotifySelection(
           elements: <ElementId>[ElementId(kind: ElementKind.net, path: 'a')],
@@ -313,9 +323,9 @@ void main() {
       );
       await _until(() => handler.selections.isNotEmpty);
       await wave
-          .read(cxpSettingsProvider.notifier)
+          .read(cruxCxpSettingsProvider.notifier)
           .setBroadcastSelection(broadcastSelection: false);
-      broadcastCxpSelection(
+      broadcastCruxCxpSelection(
         wave.read,
         const NotifySelection(
           elements: <ElementId>[ElementId(kind: ElementKind.net, path: 'b')],
@@ -324,14 +334,14 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 200));
       expect(handler.selections, hasLength(1));
       expect(
-        wave.read(cxpEventLogProvider).map((e) => e.kind),
+        wave.read(cruxCxpEventLogProvider).map((e) => e.kind),
         contains(CrossProbeEventKind.selectionSent),
       );
     });
 
     test('the attention request follows its setting', () async {
       await net
-          .read(cxpSettingsProvider.notifier)
+          .read(cruxCxpSettingsProvider.notifier)
           .setRequestAttention(requestAttention: false);
       await wave
           .read(crossProbeDispatcherProvider)
@@ -376,7 +386,7 @@ void main() {
           CrossProbeOutcomeKind.peerGone,
         );
         await wave
-            .read(cxpSettingsProvider.notifier)
+            .read(cruxCxpSettingsProvider.notifier)
             .setEnabled(enabled: false);
         await runtimeOf(wave);
         expect(
@@ -392,13 +402,13 @@ void main() {
     await runtimeOf(wave);
     final net = product('netcrux', handler: _Handler(hang: true));
     await runtimeOf(net);
-    await _until(() => wave.read(cxpPeersProvider).isNotEmpty);
+    await _until(() => wave.read(cruxCxpPeersProvider).isNotEmpty);
     final outcome =
         await CrossProbeDispatcher(
           wave.read,
           timeout: const Duration(milliseconds: 300),
         ).send(
-          wave.read(cxpPeersProvider).single,
+          wave.read(cruxCxpPeersProvider).single,
           const CrossProbeSelection(
             candidates: <ElementId>[
               ElementId(kind: ElementKind.net, path: 'n'),
@@ -421,8 +431,8 @@ void main() {
       host: '127.0.0.1',
       port: dead,
     );
-    final runtime = CxpRuntime(
-      binding: const CxpProductBinding(
+    final runtime = CruxCxpRuntime(
+      binding: const CruxCxpProductBinding(
         productName: 'wavecrux',
         defaultPort: 54322,
         prefsPrefix: 'settings.',
@@ -430,7 +440,7 @@ void main() {
       productVersion: 'test',
       manifestDirectory: dir.path,
       port: 0,
-      handler: () => const CxpRequestHandler(),
+      handler: () => const CruxCxpRequestHandler(),
       discoveryFactory: (directory, self) => CxpDiscovery(
         manifestDirectory: directory,
         selfPeerId: self,

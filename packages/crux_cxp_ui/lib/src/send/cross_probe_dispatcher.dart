@@ -116,9 +116,9 @@ final Provider<CrossProbeGate?> crossProbeGateProvider =
 /// acknowledged `request_highlight`, one timeout, one outcome vocabulary.
 class CrossProbeDispatcher {
   /// Creates a dispatcher reading providers through the given reader.
-  CrossProbeDispatcher(this._read, {this.timeout = kCxpAckTimeout});
+  CrossProbeDispatcher(this._read, {this.timeout = kCruxCxpAckTimeout});
 
-  final CxpProviderReader _read;
+  final CruxCxpReader _read;
 
   /// How long a send waits for the acknowledgement.
   final Duration timeout;
@@ -130,11 +130,11 @@ class CrossProbeDispatcher {
     CrossProbeSelection? selection, {
     String? label,
   }) async {
-    final who = label ?? cxpProductDisplayName(peer.productName);
+    final who = label ?? cruxCxpDisplayName(peer.productName);
     if (selection == null || selection.isEmpty) {
       return const CrossProbeOutcome(CrossProbeOutcomeKind.nothingSelected);
     }
-    final runtime = _read(cxpRuntimeProvider).value;
+    final runtime = _read(cruxCxpRuntimeProvider).value;
     if (runtime == null || !runtime.isAvailable) {
       return const CrossProbeOutcome(CrossProbeOutcomeKind.serverOff);
     }

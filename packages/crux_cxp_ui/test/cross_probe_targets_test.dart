@@ -116,7 +116,7 @@ void main() {
     });
 
     test('the binding advertises its accepted kinds', () {
-      const binding = CxpProductBinding(
+      const binding = CruxCxpProductBinding(
         productName: 'netcrux',
         defaultPort: 54323,
         prefsPrefix: 'netcrux.',
@@ -183,15 +183,18 @@ void main() {
     });
 
     test('settings value equality', () {
-      const a = CxpSettings(enabled: true, port: 1);
-      expect(a, const CxpSettings(enabled: true, port: 1));
-      expect(a.hashCode, const CxpSettings(enabled: true, port: 1).hashCode);
+      const a = CruxCxpSettings(enabled: true, port: 1);
+      expect(a, const CruxCxpSettings(enabled: true, port: 1));
+      expect(
+        a.hashCode,
+        const CruxCxpSettings(enabled: true, port: 1).hashCode,
+      );
       expect(a.copyWith(port: 2), isNot(a));
       expect(a.toString(), contains('port: 1'));
     });
 
     test('the default handler handles nothing', () async {
-      const handler = CxpRequestHandler();
+      const handler = CruxCxpRequestHandler();
       const from = PeerIdentity(
         peerId: 'x-1-1',
         productName: 'x',

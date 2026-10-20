@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  const codec = CxpSettingsCodec(prefix: 'netcrux.', defaultPort: 54323);
+  const codec = CruxCxpSettingsCodec(prefix: 'netcrux.', defaultPort: 54323);
 
   test('reads the keys every product has saved since its first release', () {
     expect(codec.enabledKey, 'netcrux.cxpServerEnabled');
@@ -28,7 +28,7 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(
       await codec.load(prefs),
-      const CxpSettings(
+      const CruxCxpSettings(
         enabled: false,
         port: 60001,
         requestAttention: false,
@@ -41,7 +41,7 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final prefs = await SharedPreferences.getInstance();
     expect(await codec.load(prefs), codec.defaults);
-    expect(codec.defaults, const CxpSettings(enabled: true, port: 54323));
+    expect(codec.defaults, const CruxCxpSettings(enabled: true, port: 54323));
   });
 
   test(
@@ -61,7 +61,7 @@ void main() {
   test('save and load round-trip', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final prefs = await SharedPreferences.getInstance();
-    const value = CxpSettings(
+    const value = CruxCxpSettings(
       enabled: false,
       port: 50000,
       broadcastSelection: false,

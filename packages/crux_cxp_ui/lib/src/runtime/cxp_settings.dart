@@ -8,9 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// The four CXP settings every product exposes under Settings > CXP
 /// Cross-Probe.
 @immutable
-class CxpSettings {
+class CruxCxpSettings {
   /// Creates a settings value.
-  const CxpSettings({
+  const CruxCxpSettings({
     required this.enabled,
     required this.port,
     this.requestAttention = true,
@@ -36,12 +36,12 @@ class CxpSettings {
   static bool isValidPort(int port) => port >= 1 && port <= 65535;
 
   /// A copy with the given fields replaced.
-  CxpSettings copyWith({
+  CruxCxpSettings copyWith({
     bool? enabled,
     int? port,
     bool? requestAttention,
     bool? broadcastSelection,
-  }) => CxpSettings(
+  }) => CruxCxpSettings(
     enabled: enabled ?? this.enabled,
     port: port ?? this.port,
     requestAttention: requestAttention ?? this.requestAttention,
@@ -51,7 +51,7 @@ class CxpSettings {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CxpSettings &&
+      (other is CruxCxpSettings &&
           other.enabled == enabled &&
           other.port == port &&
           other.requestAttention == requestAttention &&
@@ -63,12 +63,12 @@ class CxpSettings {
 
   @override
   String toString() =>
-      'CxpSettings(enabled: $enabled, port: $port, '
+      'CruxCxpSettings(enabled: $enabled, port: $port, '
       'requestAttention: $requestAttention, '
       'broadcastSelection: $broadcastSelection)';
 }
 
-/// Reads and writes [CxpSettings] under the keys every product has used
+/// Reads and writes [CruxCxpSettings] under the keys every product has used
 /// since the first release: `<prefix>cxpServerEnabled`,
 /// `<prefix>cxpServerPort`, `<prefix>requestAttentionOnCrossProbe` and
 /// `<prefix>broadcastSelectionOnCrossProbe`.
@@ -77,9 +77,9 @@ class CxpSettings {
 /// `netcrux.` and `simcrux.` in the other two), so a choice saved by an
 /// earlier release is read unchanged. A missing or wrong-typed value reads
 /// as its default; an out-of-range port reads as [defaultPort].
-class CxpSettingsCodec implements SettingsCodec<CxpSettings> {
+class CruxCxpSettingsCodec implements SettingsCodec<CruxCxpSettings> {
   /// Creates a codec for one product.
-  const CxpSettingsCodec({
+  const CruxCxpSettingsCodec({
     required this.prefix,
     required this.defaultPort,
     this.defaultEnabled = true,
@@ -107,8 +107,8 @@ class CxpSettingsCodec implements SettingsCodec<CxpSettings> {
   String get broadcastSelectionKey => '${prefix}broadcastSelectionOnCrossProbe';
 
   /// The value a product starts with before anything is saved.
-  CxpSettings get defaults =>
-      CxpSettings(enabled: defaultEnabled, port: defaultPort);
+  CruxCxpSettings get defaults =>
+      CruxCxpSettings(enabled: defaultEnabled, port: defaultPort);
 
   T _read<T>(SharedPreferences prefs, String key, T fallback) {
     try {
@@ -120,18 +120,18 @@ class CxpSettingsCodec implements SettingsCodec<CxpSettings> {
   }
 
   @override
-  Future<CxpSettings> load(SharedPreferences prefs) async {
+  Future<CruxCxpSettings> load(SharedPreferences prefs) async {
     final port = _read<int>(prefs, portKey, defaultPort);
-    return CxpSettings(
+    return CruxCxpSettings(
       enabled: _read<bool>(prefs, enabledKey, defaultEnabled),
-      port: CxpSettings.isValidPort(port) ? port : defaultPort,
+      port: CruxCxpSettings.isValidPort(port) ? port : defaultPort,
       requestAttention: _read<bool>(prefs, requestAttentionKey, true),
       broadcastSelection: _read<bool>(prefs, broadcastSelectionKey, true),
     );
   }
 
   @override
-  Future<void> save(SharedPreferences prefs, CxpSettings settings) async {
+  Future<void> save(SharedPreferences prefs, CruxCxpSettings settings) async {
     await prefs.setBool(enabledKey, settings.enabled);
     await prefs.setInt(portKey, settings.port);
     await prefs.setBool(requestAttentionKey, settings.requestAttention);

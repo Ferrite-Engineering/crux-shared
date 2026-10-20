@@ -9,17 +9,17 @@ import 'package:crux_cxp_ui/src/cross_probe_event.dart';
 import 'package:crux_cxp_ui/src/runtime/cxp_product_binding.dart';
 
 /// How long a directed send waits for the peer's acknowledgement.
-const Duration kCxpAckTimeout = Duration(seconds: 5);
+const Duration kCruxCxpAckTimeout = Duration(seconds: 5);
 
 /// The outcome of a directed `request_highlight`.
-typedef CxpHighlightDelivery = ({bool delivered, RequestHighlightAck? ack});
+typedef CruxCxpHighlightDelivery = ({bool delivered, RequestHighlightAck? ack});
 
 /// One product's running CXP presence: the server, its discovery manifest,
 /// the discovery watcher and the connector that dials every peer.
 ///
 /// The shared form of the four products' own server wrappers. It owns the
 /// whole lifecycle, routes what peers send to the product's
-/// [CxpRequestHandler] and acknowledges it, and reports everything that
+/// [CruxCxpRequestHandler] and acknowledges it, and reports everything that
 /// happens as [CrossProbeEvent]s and peer snapshots for the panel, the
 /// toolbar badge and the cross-probe menus.
 ///
@@ -28,13 +28,13 @@ typedef CxpHighlightDelivery = ({bool delivered, RequestHighlightAck? ack});
 /// dialling connector nothing will close. Neither throws: a bind failure or
 /// an unwritable manifest directory leaves the runtime not available, with
 /// [unavailableReason] saying why.
-class CxpRuntime {
+class CruxCxpRuntime {
   /// Creates a runtime for [binding]. Nothing runs until [start].
   ///
   /// `handler` is called at each request, so a product can swap the handler a
   /// provider gives without restarting the server. The factories exist for
   /// tests.
-  CxpRuntime({
+  CruxCxpRuntime({
     required this.binding,
     required this.productVersion,
     required this.manifestDirectory,
@@ -59,7 +59,7 @@ class CxpRuntime {
        _clock = clock ?? DateTime.now;
 
   /// What is this product's own.
-  final CxpProductBinding binding;
+  final CruxCxpProductBinding binding;
 
   /// The version this build reports to peers.
   final String productVersion;
@@ -70,7 +70,7 @@ class CxpRuntime {
   /// The requested listening port.
   final int port;
 
-  final CxpRequestHandler Function() _handler;
+  final CruxCxpRequestHandler Function() _handler;
   final void Function()? _onAttention;
   final bool Function()? _attentionEnabled;
   final LocalCxpServer Function(PeerIdentity self)? _serverFactory;
@@ -328,10 +328,10 @@ class CxpRuntime {
   /// Sends [request] to [peerId] and waits up to [timeout] for its
   /// acknowledgement. `delivered` is false when the peer was not reachable;
   /// `ack` is null when no acknowledgement came back in time.
-  Future<CxpHighlightDelivery> requestHighlight(
+  Future<CruxCxpHighlightDelivery> requestHighlight(
     String peerId,
     RequestHighlight request, {
-    Duration timeout = kCxpAckTimeout,
+    Duration timeout = kCruxCxpAckTimeout,
     String? summary,
   }) async {
     final server = _server;
@@ -380,13 +380,13 @@ class CxpRuntime {
 
   String _labelOf(String peerId) {
     for (final peer in peers) {
-      if (peer.peerId == peerId) return cxpProductDisplayName(peer.productName);
+      if (peer.peerId == peerId) return cruxCxpDisplayName(peer.productName);
     }
     return peerId;
   }
 
   void _onPresence(PeerPresenceEvent event) {
-    final label = cxpProductDisplayName(event.peer.productName);
+    final label = cruxCxpDisplayName(event.peer.productName);
     _emit(
       event.connected
           ? CrossProbeEvent.peerConnected(peerLabel: label, timestamp: _clock())
@@ -412,7 +412,7 @@ class CxpRuntime {
         direction: CrossProbeEventDirection.inbound,
         peerLabel: inbound.from.productName.isEmpty
             ? inbound.from.peerId
-            : cxpProductDisplayName(inbound.from.productName),
+            : cruxCxpDisplayName(inbound.from.productName),
         timestamp: _clock(),
         summary: _summarize(message),
         messageKind: message.kind,
@@ -482,13 +482,13 @@ class CxpRuntime {
     }
   }
 
-  static Future<CxpHandlerResult> _invoke(
-    Future<CxpHandlerResult> Function() body,
+  static Future<CruxCxpHandlerResult> _invoke(
+    Future<CruxCxpHandlerResult> Function() body,
   ) async {
     try {
       return await body();
     } on Object catch (e) {
-      return CxpHandlerResult(honored: false, reason: '$e');
+      return CruxCxpHandlerResult(honored: false, reason: '$e');
     }
   }
 
@@ -523,7 +523,7 @@ class CxpRuntime {
 /// The suite's display name for a wire product name: `wavecrux` is
 /// WaveCrux. A product outside the suite shows its own name with the first
 /// letter capitalized.
-String cxpProductDisplayName(String productName) {
+String cruxCxpDisplayName(String productName) {
   switch (productName.toLowerCase()) {
     case 'wavecrux':
       return 'WaveCrux';

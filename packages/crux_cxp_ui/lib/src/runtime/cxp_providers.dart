@@ -17,124 +17,129 @@ import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 //
 // A product overrides two, in its root ProviderScope:
 //
-//   cxpProductBindingProvider   who it is (required)
-//   cxpLaunchSettingsProvider   the settings it loaded before runApp
+//   cruxCxpProductBindingProvider   who it is (required)
+//   cruxCxpLaunchSettingsProvider   the settings it loaded before runApp
 //
-// and, where it has them, cxpRequestHandlerProvider (what it does when a peer
-// asks), cxpProductVersionProvider, cxpAttentionRequesterProvider and
-// cxpPeerFilterProvider. Everything else is shared.
+// and, where it has them, cruxCxpRequestHandlerProvider (what it does when a
+// peer asks), cruxCxpProductVersionProvider, cruxCxpAttentionRequesterProvider
+// and cruxCxpPeerFilterProvider. Everything else is shared.
 
 /// Who this product is on CXP. Every product overrides it; reading it
 /// without an override is a wiring error.
-final Provider<CxpProductBinding> cxpProductBindingProvider =
-    Provider<CxpProductBinding>(
-      (_) => throw StateError(
-        'cxpProductBindingProvider is not overridden: the product must bind '
-        'its CxpProductBinding in its root ProviderScope.',
-      ),
-      name: 'cxpProductBindingProvider',
-    );
+final Provider<CruxCxpProductBinding>
+cruxCxpProductBindingProvider = Provider<CruxCxpProductBinding>(
+  (_) => throw StateError(
+    'cruxCxpProductBindingProvider is not overridden: the product must bind '
+    'its CruxCxpProductBinding in its root ProviderScope.',
+  ),
+  name: 'cruxCxpProductBindingProvider',
+);
 
 /// The product's handlers for what peers send. Defaults to handling
 /// nothing (every request is acknowledged as unsupported).
-final Provider<CxpRequestHandler> cxpRequestHandlerProvider =
-    Provider<CxpRequestHandler>(
-      (_) => const CxpRequestHandler(),
-      name: 'cxpRequestHandlerProvider',
+final Provider<CruxCxpRequestHandler> cruxCxpRequestHandlerProvider =
+    Provider<CruxCxpRequestHandler>(
+      (_) => const CruxCxpRequestHandler(),
+      name: 'cruxCxpRequestHandlerProvider',
     );
 
 /// The version reported to peers; `dev` unless the product overrides it
 /// with its build information.
-final FutureProvider<String> cxpProductVersionProvider = FutureProvider<String>(
-  (_) async => 'dev',
-  name: 'cxpProductVersionProvider',
-);
+final FutureProvider<String> cruxCxpProductVersionProvider =
+    FutureProvider<String>(
+      (_) async => 'dev',
+      name: 'cruxCxpProductVersionProvider',
+    );
 
 /// Asks the window manager for the user's attention (a dock bounce, a
 /// taskbar flash) when a peer's request is honoured and the setting is on.
 /// Null (the default) asks for nothing.
-final Provider<void Function()?> cxpAttentionRequesterProvider =
+final Provider<void Function()?> cruxCxpAttentionRequesterProvider =
     Provider<void Function()?>(
       (_) => null,
-      name: 'cxpAttentionRequesterProvider',
+      name: 'cruxCxpAttentionRequesterProvider',
     );
 
 /// Which peers are offered anywhere: the panel, the badge and every
 /// cross-probe menu read the one filtered list. Defaults to every peer; a
 /// product applies an organization's allowlist here.
-final Provider<bool Function(PeerIdentity peer)> cxpPeerFilterProvider =
+final Provider<bool Function(PeerIdentity peer)> cruxCxpPeerFilterProvider =
     Provider<bool Function(PeerIdentity peer)>(
       (_) => _allowEveryPeer,
-      name: 'cxpPeerFilterProvider',
+      name: 'cruxCxpPeerFilterProvider',
     );
 
 bool _allowEveryPeer(PeerIdentity _) => true;
 
 /// Whether this build has a CXP transport: loopback sockets and the shared
 /// discovery directory. False in a browser, where nothing below runs.
-final Provider<bool> cxpTransportAvailableProvider = Provider<bool>(
+final Provider<bool> cruxCxpTransportAvailableProvider = Provider<bool>(
   (_) => !kIsWeb,
-  name: 'cxpTransportAvailableProvider',
+  name: 'cruxCxpTransportAvailableProvider',
 );
 
 /// The suite-shared discovery directory. Tests override it with a temp
 /// directory. Never an app-container path: no other product would scan it.
-final FutureProvider<String> cxpManifestDirectoryProvider =
+final FutureProvider<String> cruxCxpManifestDirectoryProvider =
     FutureProvider<String>(
       (_) async => sharedCxpManifestDirectory(),
-      name: 'cxpManifestDirectoryProvider',
+      name: 'cruxCxpManifestDirectoryProvider',
     );
 
-/// Where [CxpSettings] are saved, under the product's own keys.
-final Provider<SettingsService<CxpSettings>> cxpSettingsServiceProvider =
-    Provider<SettingsService<CxpSettings>>(
-      (ref) => SettingsService<CxpSettings>(
-        ref.watch(cxpProductBindingProvider).settingsCodec,
-      ),
-      name: 'cxpSettingsServiceProvider',
-    );
+/// Where [CruxCxpSettings] are saved, under the product's own keys.
+final Provider<SettingsService<CruxCxpSettings>>
+cruxCxpSettingsServiceProvider = Provider<SettingsService<CruxCxpSettings>>(
+  (ref) => SettingsService<CruxCxpSettings>(
+    ref.watch(cruxCxpProductBindingProvider).settingsCodec,
+  ),
+  name: 'cruxCxpSettingsServiceProvider',
+);
 
 /// Loads the saved CXP settings, for a product's `main` to await before
-/// `runApp` and hand to [cxpLaunchSettingsProvider].
-Future<CxpSettings> loadCxpLaunchSettings(CxpProductBinding binding) async {
+/// `runApp` and hand to [cruxCxpLaunchSettingsProvider].
+Future<CruxCxpSettings> loadCruxCxpLaunchSettings(
+  CruxCxpProductBinding binding,
+) async {
   try {
-    return await SettingsService<CxpSettings>(binding.settingsCodec).load();
+    return await SettingsService<CruxCxpSettings>(binding.settingsCodec).load();
   } on Object {
     return binding.settingsCodec.defaults;
   }
 }
 
 /// The settings the product loaded before `runApp`
-/// ([loadCxpLaunchSettings]). Null (not overridden) makes the settings load
+/// ([loadCruxCxpLaunchSettings]). Null (not overridden) makes the settings load
 /// in the background, during which the server stays off: a launch with CXP
 /// off never starts the server or writes a manifest, even briefly, either
 /// way.
-final Provider<CxpSettings?> cxpLaunchSettingsProvider = Provider<CxpSettings?>(
-  (_) => null,
-  name: 'cxpLaunchSettingsProvider',
-);
-
-/// The live CXP settings. Each setter saves at once.
-final NotifierProvider<CxpSettingsNotifier, CxpSettings> cxpSettingsProvider =
-    NotifierProvider<CxpSettingsNotifier, CxpSettings>(
-      CxpSettingsNotifier.new,
-      name: 'cxpSettingsProvider',
+final Provider<CruxCxpSettings?> cruxCxpLaunchSettingsProvider =
+    Provider<CruxCxpSettings?>(
+      (_) => null,
+      name: 'cruxCxpLaunchSettingsProvider',
     );
 
-/// Backs [cxpSettingsProvider].
+/// The live CXP settings. Each setter saves at once.
+final NotifierProvider<CruxCxpSettingsNotifier, CruxCxpSettings>
+cruxCxpSettingsProvider =
+    NotifierProvider<CruxCxpSettingsNotifier, CruxCxpSettings>(
+      CruxCxpSettingsNotifier.new,
+      name: 'cruxCxpSettingsProvider',
+    );
+
+/// Backs [cruxCxpSettingsProvider].
 ///
 /// The port rule, the same in every product: a valid new port restarts a
 /// running server on it at once; with the server off it is saved and used
 /// at the next start.
-class CxpSettingsNotifier extends Notifier<CxpSettings> {
+class CruxCxpSettingsNotifier extends Notifier<CruxCxpSettings> {
   final Completer<void> _loaded = Completer<void>();
 
   /// Completes once the saved settings are in [state].
   Future<void> get loaded => _loaded.future;
 
   @override
-  CxpSettings build() {
-    final launch = ref.read(cxpLaunchSettingsProvider);
+  CruxCxpSettings build() {
+    final launch = ref.read(cruxCxpLaunchSettingsProvider);
     if (launch != null) {
       _loaded.complete();
       return launch;
@@ -142,30 +147,30 @@ class CxpSettingsNotifier extends Notifier<CxpSettings> {
     unawaited(_load());
     // Off until the saved value is known.
     return ref
-        .read(cxpProductBindingProvider)
+        .read(cruxCxpProductBindingProvider)
         .settingsCodec
         .defaults
         .copyWith(enabled: false);
   }
 
   Future<void> _load() async {
-    CxpSettings value;
+    CruxCxpSettings value;
     try {
-      value = await ref.read(cxpSettingsServiceProvider).load();
+      value = await ref.read(cruxCxpSettingsServiceProvider).load();
     } on Object {
-      value = ref.read(cxpProductBindingProvider).settingsCodec.defaults;
+      value = ref.read(cruxCxpProductBindingProvider).settingsCodec.defaults;
     }
     if (!ref.mounted) return;
     state = value;
     if (!_loaded.isCompleted) _loaded.complete();
   }
 
-  Future<void> _update(CxpSettings next) async {
+  Future<void> _update(CruxCxpSettings next) async {
     await loaded;
     if (!ref.mounted || next == state) return;
     state = next;
     try {
-      await ref.read(cxpSettingsServiceProvider).save(next);
+      await ref.read(cruxCxpSettingsServiceProvider).save(next);
     } on Object {
       // No preferences backend: the change holds for this session.
     }
@@ -177,7 +182,7 @@ class CxpSettingsNotifier extends Notifier<CxpSettings> {
 
   /// Changes the port; an invalid port is ignored.
   Future<void> setPort(int port) async {
-    if (!CxpSettings.isValidPort(port)) return;
+    if (!CruxCxpSettings.isValidPort(port)) return;
     await _update(state.copyWith(port: port));
   }
 
@@ -196,129 +201,130 @@ class CxpSettingsNotifier extends Notifier<CxpSettings> {
 /// Rebuilt only when the enable flag or the port changes, never on the
 /// other two settings. The previous runtime is stopped (goodbye sent,
 /// manifest removed) before the next one binds.
-final FutureProvider<CxpRuntime?> cxpRuntimeProvider =
-    FutureProvider<CxpRuntime?>((ref) async {
-      if (!ref.watch(cxpTransportAvailableProvider)) return null;
-      final (:enabled, :port) = ref.watch(
-        cxpSettingsProvider.select((s) => (enabled: s.enabled, port: s.port)),
-      );
-      if (!enabled) return null;
-      final binding = ref.watch(cxpProductBindingProvider);
-      final directory = await ref.watch(cxpManifestDirectoryProvider.future);
-      final version = await ref.watch(cxpProductVersionProvider.future);
-      final runtime = CxpRuntime(
-        binding: binding,
-        productVersion: version,
-        manifestDirectory: directory,
-        port: port,
-        handler: () => ref.read(cxpRequestHandlerProvider),
-        onAttention: () => ref.read(cxpAttentionRequesterProvider)?.call(),
-        attentionEnabled: () => ref.read(cxpSettingsProvider).requestAttention,
-      );
-      // Registered before start(), so a superseded build stops a runtime whose
-      // start is still in flight instead of orphaning its socket.
-      ref.onDispose(() => unawaited(runtime.dispose()));
-      await runtime.start();
-      return runtime;
-    }, name: 'cxpRuntimeProvider');
+final FutureProvider<CruxCxpRuntime?>
+cruxCxpRuntimeProvider = FutureProvider<CruxCxpRuntime?>((ref) async {
+  if (!ref.watch(cruxCxpTransportAvailableProvider)) return null;
+  final (:enabled, :port) = ref.watch(
+    cruxCxpSettingsProvider.select((s) => (enabled: s.enabled, port: s.port)),
+  );
+  if (!enabled) return null;
+  final binding = ref.watch(cruxCxpProductBindingProvider);
+  final directory = await ref.watch(cruxCxpManifestDirectoryProvider.future);
+  final version = await ref.watch(cruxCxpProductVersionProvider.future);
+  final runtime = CruxCxpRuntime(
+    binding: binding,
+    productVersion: version,
+    manifestDirectory: directory,
+    port: port,
+    handler: () => ref.read(cruxCxpRequestHandlerProvider),
+    onAttention: () => ref.read(cruxCxpAttentionRequesterProvider)?.call(),
+    attentionEnabled: () => ref.read(cruxCxpSettingsProvider).requestAttention,
+  );
+  // Registered before start(), so a superseded build stops a runtime whose
+  // start is still in flight instead of orphaning its socket.
+  ref.onDispose(() => unawaited(runtime.dispose()));
+  await runtime.start();
+  return runtime;
+}, name: 'cruxCxpRuntimeProvider');
 
 /// What Settings shows under the CXP controls.
-typedef CxpServerStatus = ({bool running, int? port, String? problem});
+typedef CruxCxpServerStatus = ({bool running, int? port, String? problem});
 
 /// The server's state for the settings status row.
-final Provider<CxpServerStatus> cxpServerStatusProvider =
-    Provider<CxpServerStatus>((ref) {
-      final runtime = ref.watch(cxpRuntimeProvider).value;
+final Provider<CruxCxpServerStatus> cruxCxpServerStatusProvider =
+    Provider<CruxCxpServerStatus>((ref) {
+      final runtime = ref.watch(cruxCxpRuntimeProvider).value;
       if (runtime == null) return (running: false, port: null, problem: null);
       return (
         running: runtime.isAvailable,
         port: runtime.boundPort,
         problem: runtime.unavailableReason,
       );
-    }, name: 'cxpServerStatusProvider');
+    }, name: 'cruxCxpServerStatusProvider');
 
-/// The connected peers, filtered by [cxpPeerFilterProvider]. Empty whenever
+/// The connected peers, filtered by [cruxCxpPeerFilterProvider]. Empty whenever
 /// the server is off: the cross-probe panel, the toolbar badge and every
 /// cross-probe menu read this one list.
-final StreamProvider<List<PeerIdentity>> cxpPeersStreamProvider =
+final StreamProvider<List<PeerIdentity>> cruxCxpPeersStreamProvider =
     StreamProvider<List<PeerIdentity>>((ref) async* {
-      final runtime = ref.watch(cxpRuntimeProvider).value;
+      final runtime = ref.watch(cruxCxpRuntimeProvider).value;
       if (runtime == null) {
         yield const <PeerIdentity>[];
         return;
       }
-      final allowed = ref.watch(cxpPeerFilterProvider);
+      final allowed = ref.watch(cruxCxpPeerFilterProvider);
       List<PeerIdentity> filter(List<PeerIdentity> peers) =>
           List<PeerIdentity>.unmodifiable(peers.where(allowed));
       yield filter(runtime.peers);
       await for (final peers in runtime.peerChanges) {
         yield filter(peers);
       }
-    }, name: 'cxpPeersStreamProvider');
+    }, name: 'cruxCxpPeersStreamProvider');
 
-/// [cxpPeersStreamProvider]'s latest value, synchronously; empty until the
+/// [cruxCxpPeersStreamProvider]'s latest value, synchronously; empty until the
 /// first snapshot.
-final Provider<List<PeerIdentity>> cxpPeersProvider =
+final Provider<List<PeerIdentity>> cruxCxpPeersProvider =
     Provider<List<PeerIdentity>>(
       (ref) =>
-          ref.watch(cxpPeersStreamProvider).value ?? const <PeerIdentity>[],
-      name: 'cxpPeersProvider',
+          ref.watch(cruxCxpPeersStreamProvider).value ?? const <PeerIdentity>[],
+      name: 'cruxCxpPeersProvider',
     );
 
 /// The toolbar badge's number: connected peers.
-final Provider<int> cxpConnectedPeerCountProvider = Provider<int>(
-  (ref) => ref.watch(cxpPeersProvider).length,
-  name: 'cxpConnectedPeerCountProvider',
+final Provider<int> cruxCxpConnectedPeerCountProvider = Provider<int>(
+  (ref) => ref.watch(cruxCxpPeersProvider).length,
+  name: 'cruxCxpConnectedPeerCountProvider',
 );
 
 /// Peers discovered but not reachable. Empty when the server is off, and
 /// so cleared by every stop and restart; an entry leaves when its peer
 /// connects or goes away.
-final StreamProvider<List<CxpDialFailure>> cxpUnreachablePeersProvider =
+final StreamProvider<List<CxpDialFailure>> cruxCxpUnreachablePeersProvider =
     StreamProvider<List<CxpDialFailure>>((ref) async* {
-      final runtime = ref.watch(cxpRuntimeProvider).value;
+      final runtime = ref.watch(cruxCxpRuntimeProvider).value;
       if (runtime == null) {
         yield const <CxpDialFailure>[];
         return;
       }
       yield runtime.unreachablePeers;
       yield* runtime.unreachableChanges;
-    }, name: 'cxpUnreachablePeersProvider');
+    }, name: 'cruxCxpUnreachablePeersProvider');
 
 /// How many events the panel's log keeps.
-const int kCxpEventLogCapacity = 200;
+const int kCruxCxpEventLogCapacity = 200;
 
 /// The cross-probe event log, oldest first, across server restarts. Only
 /// the user's Clear empties it.
-final NotifierProvider<CxpEventLog, List<CrossProbeEvent>> cxpEventLogProvider =
-    NotifierProvider<CxpEventLog, List<CrossProbeEvent>>(
-      CxpEventLog.new,
-      name: 'cxpEventLogProvider',
+final NotifierProvider<CruxCxpEventLog, List<CrossProbeEvent>>
+cruxCxpEventLogProvider =
+    NotifierProvider<CruxCxpEventLog, List<CrossProbeEvent>>(
+      CruxCxpEventLog.new,
+      name: 'cruxCxpEventLogProvider',
     );
 
-/// Backs [cxpEventLogProvider].
-class CxpEventLog extends Notifier<List<CrossProbeEvent>> {
+/// Backs [cruxCxpEventLogProvider].
+class CruxCxpEventLog extends Notifier<List<CrossProbeEvent>> {
   StreamSubscription<CrossProbeEvent>? _subscription;
 
   @override
   List<CrossProbeEvent> build() {
     ref
-      ..listen<AsyncValue<CxpRuntime?>>(cxpRuntimeProvider, (_, next) {
+      ..listen<AsyncValue<CruxCxpRuntime?>>(cruxCxpRuntimeProvider, (_, next) {
         _follow(next.value);
       }, fireImmediately: true)
       ..onDispose(() => unawaited(_subscription?.cancel()));
     return const <CrossProbeEvent>[];
   }
 
-  void _follow(CxpRuntime? runtime) {
+  void _follow(CruxCxpRuntime? runtime) {
     unawaited(_subscription?.cancel());
     _subscription = runtime?.events.listen(add);
   }
 
-  /// Appends [event], dropping the oldest past [kCxpEventLogCapacity].
+  /// Appends [event], dropping the oldest past [kCruxCxpEventLogCapacity].
   void add(CrossProbeEvent event) {
     final next = <CrossProbeEvent>[...state, event];
-    final overflow = next.length - kCxpEventLogCapacity;
+    final overflow = next.length - kCruxCxpEventLogCapacity;
     state = List<CrossProbeEvent>.unmodifiable(
       overflow > 0 ? next.sublist(overflow) : next,
     );
@@ -329,12 +335,12 @@ class CxpEventLog extends Notifier<List<CrossProbeEvent>> {
 }
 
 /// Reads a provider: `ref.read` of a `Ref`, a `WidgetRef` or a container.
-typedef CxpProviderReader = T Function<T>(ProviderListenable<T> provider);
+typedef CruxCxpReader = T Function<T>(ProviderListenable<T> provider);
 
 /// Announces [message] to every peer when the user has automatic selection
 /// broadcast on; a no-op otherwise or when the server is off. Products call
 /// it from their selection listeners, passing `ref.read`.
-void broadcastCxpSelection(CxpProviderReader read, NotifySelection message) {
-  if (!read(cxpSettingsProvider).broadcastSelection) return;
-  read(cxpRuntimeProvider).value?.broadcast(message);
+void broadcastCruxCxpSelection(CruxCxpReader read, NotifySelection message) {
+  if (!read(cruxCxpSettingsProvider).broadcastSelection) return;
+  read(cruxCxpRuntimeProvider).value?.broadcast(message);
 }

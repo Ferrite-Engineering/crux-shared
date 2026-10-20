@@ -131,6 +131,80 @@ class CruxCrossProbePanel extends ConsumerStatefulWidget
   final selection: CrossProbeSelection? Function()
   final sendBadgeBuilder: Widget? Function(BuildContext, PeerIdentity)?
   final showHeader: bool
+class CruxCxpEventLog extends Notifier<List<CrossProbeEvent>>
+  add(CrossProbeEvent event) -> void
+  build() -> List<CrossProbeEvent>
+  clear() -> void
+class CruxCxpHandlerResult
+  const CruxCxpHandlerResult({String? reason, required bool honored})
+  final honored: bool
+  final reason: String?
+  static const ok: CruxCxpHandlerResult
+  static const unsupported: CruxCxpHandlerResult
+typedef CruxCxpHighlightDelivery = ({RequestHighlightAck? ack, bool delivered})
+class CruxCxpProductBinding
+  const CruxCxpProductBinding({CxpPathContainment containment, List<ElementKind> acceptedKinds, NameResolver nameResolver, Set<String> capabilities, required String prefsPrefix, required String productName, required int defaultPort})
+  final acceptedKinds: List<ElementKind>
+  final capabilities: Set<String>
+  final containment: CxpPathContainment
+  final defaultPort: int
+  final nameResolver: NameResolver
+  final prefsPrefix: String
+  final productName: String
+  get advertisedCapabilities -> Set<String>
+  get settingsCodec -> CruxCxpSettingsCodec
+typedef CruxCxpReader = T Function<T>(ProviderListenable<T>)
+class CruxCxpRequestHandler
+  const CruxCxpRequestHandler()
+  highlight(RequestHighlight request, PeerIdentity from) -> Future<CruxCxpHandlerResult>
+  openArtifact(RequestOpenArtifact request, PeerIdentity from) -> Future<CruxCxpHandlerResult>
+  openSource(RequestOpenSource request, PeerIdentity from) -> Future<CruxCxpHandlerResult>
+  selection(NotifySelection message, PeerIdentity from) -> void
+class CruxCxpRuntime
+  CruxCxpRuntime({CxpDiscovery Function(String, String)? discoveryFactory, CxpManifestWriter Function(String)? manifestWriterFactory, DateTime Function()? clock, LocalCxpServer Function(PeerIdentity)? _serverFactory, bool Function()? _attentionEnabled, int? processId, required CruxCxpProductBinding binding, required CruxCxpRequestHandler Function() _handler, required String manifestDirectory, required String productVersion, required int port, void Function()? _onAttention})
+  broadcast(CxpMessage message, {String? summary}) -> void
+  dispose() -> Future<void>
+  final binding: CruxCxpProductBinding
+  final manifestDirectory: String
+  final port: int
+  final productVersion: String
+  final selfIdentity: PeerIdentity
+  get boundPort -> int?
+  get events -> Stream<CrossProbeEvent>
+  get isAvailable -> bool
+  get peerChanges -> Stream<List<PeerIdentity>>
+  get peers -> List<PeerIdentity>
+  get unavailableReason -> String?
+  get unreachableChanges -> Stream<List<CxpDialFailure>>
+  get unreachablePeers -> List<CxpDialFailure>
+  requestHighlight(String peerId, RequestHighlight request, {Duration timeout, String? summary}) -> Future<({RequestHighlightAck? ack, bool delivered})>
+  sendTo(String peerId, CxpMessage message, {String? summary}) -> bool
+  start() -> Future<void>
+  stop() -> Future<void>
+typedef CruxCxpServerStatus = ({int? port, String? problem, bool running})
+class CruxCxpSettings
+  const CruxCxpSettings({bool broadcastSelection, bool requestAttention, required bool enabled, required int port})
+  ==(Object other) -> bool
+  copyWith({bool? broadcastSelection, bool? enabled, bool? requestAttention, int? port}) -> CruxCxpSettings
+  final broadcastSelection: bool
+  final enabled: bool
+  final port: int
+  final requestAttention: bool
+  get hashCode -> int
+  static isValidPort(int port) -> bool
+  toString() -> String
+class CruxCxpSettingsCodec implements SettingsCodec<CruxCxpSettings>
+  const CruxCxpSettingsCodec({bool defaultEnabled, required String prefix, required int defaultPort})
+  final defaultEnabled: bool
+  final defaultPort: int
+  final prefix: String
+  get broadcastSelectionKey -> String
+  get defaults -> CruxCxpSettings
+  get enabledKey -> String
+  get portKey -> String
+  get requestAttentionKey -> String
+  load(SharedPreferences prefs) -> Future<CruxCxpSettings>
+  save(SharedPreferences prefs, CruxCxpSettings settings) -> Future<void>
 class CruxCxpSettingsControls extends StatefulWidget
   const CruxCxpSettingsControls({Key? key, Widget? statusTile, required CruxCxpSettingsStrings strings, required bool broadcastSelection, required bool enabled, required bool requestAttention, required int port, required void Function(bool) onBroadcastSelectionChanged, required void Function(bool) onEnabledChanged, required void Function(bool) onRequestAttentionChanged, required void Function(int) onPortSubmitted})
   createState() -> State<CruxCxpSettingsControls>
@@ -144,6 +218,13 @@ class CruxCxpSettingsControls extends StatefulWidget
   final requestAttention: bool
   final statusTile: Widget?
   final strings: CruxCxpSettingsStrings
+class CruxCxpSettingsNotifier extends Notifier<CruxCxpSettings>
+  build() -> CruxCxpSettings
+  get loaded -> Future<void>
+  setBroadcastSelection({required bool broadcastSelection}) -> Future<void>
+  setEnabled({required bool enabled}) -> Future<void>
+  setPort(int port) -> Future<void>
+  setRequestAttention({required bool requestAttention}) -> Future<void>
 class CruxCxpSettingsSection extends ConsumerWidget
   const CruxCxpSettingsSection({Key? key})
   build(BuildContext context, WidgetRef ref) -> Widget
@@ -211,87 +292,6 @@ class CruxCxpStrings
   get enableHelp -> String
   get panel -> CrossProbePanelStrings
   get settings -> CruxCxpSettingsStrings
-class CxpEventLog extends Notifier<List<CrossProbeEvent>>
-  add(CrossProbeEvent event) -> void
-  build() -> List<CrossProbeEvent>
-  clear() -> void
-class CxpHandlerResult
-  const CxpHandlerResult({String? reason, required bool honored})
-  final honored: bool
-  final reason: String?
-  static const ok: CxpHandlerResult
-  static const unsupported: CxpHandlerResult
-typedef CxpHighlightDelivery = ({RequestHighlightAck? ack, bool delivered})
-class CxpProductBinding
-  const CxpProductBinding({CxpPathContainment containment, List<ElementKind> acceptedKinds, NameResolver nameResolver, Set<String> capabilities, required String prefsPrefix, required String productName, required int defaultPort})
-  final acceptedKinds: List<ElementKind>
-  final capabilities: Set<String>
-  final containment: CxpPathContainment
-  final defaultPort: int
-  final nameResolver: NameResolver
-  final prefsPrefix: String
-  final productName: String
-  get advertisedCapabilities -> Set<String>
-  get settingsCodec -> CxpSettingsCodec
-typedef CxpProviderReader = T Function<T>(ProviderListenable<T>)
-class CxpRequestHandler
-  const CxpRequestHandler()
-  highlight(RequestHighlight request, PeerIdentity from) -> Future<CxpHandlerResult>
-  openArtifact(RequestOpenArtifact request, PeerIdentity from) -> Future<CxpHandlerResult>
-  openSource(RequestOpenSource request, PeerIdentity from) -> Future<CxpHandlerResult>
-  selection(NotifySelection message, PeerIdentity from) -> void
-class CxpRuntime
-  CxpRuntime({CxpDiscovery Function(String, String)? discoveryFactory, CxpManifestWriter Function(String)? manifestWriterFactory, DateTime Function()? clock, LocalCxpServer Function(PeerIdentity)? _serverFactory, bool Function()? _attentionEnabled, int? processId, required CxpProductBinding binding, required CxpRequestHandler Function() _handler, required String manifestDirectory, required String productVersion, required int port, void Function()? _onAttention})
-  broadcast(CxpMessage message, {String? summary}) -> void
-  dispose() -> Future<void>
-  final binding: CxpProductBinding
-  final manifestDirectory: String
-  final port: int
-  final productVersion: String
-  final selfIdentity: PeerIdentity
-  get boundPort -> int?
-  get events -> Stream<CrossProbeEvent>
-  get isAvailable -> bool
-  get peerChanges -> Stream<List<PeerIdentity>>
-  get peers -> List<PeerIdentity>
-  get unavailableReason -> String?
-  get unreachableChanges -> Stream<List<CxpDialFailure>>
-  get unreachablePeers -> List<CxpDialFailure>
-  requestHighlight(String peerId, RequestHighlight request, {Duration timeout, String? summary}) -> Future<({RequestHighlightAck? ack, bool delivered})>
-  sendTo(String peerId, CxpMessage message, {String? summary}) -> bool
-  start() -> Future<void>
-  stop() -> Future<void>
-typedef CxpServerStatus = ({int? port, String? problem, bool running})
-class CxpSettings
-  const CxpSettings({bool broadcastSelection, bool requestAttention, required bool enabled, required int port})
-  ==(Object other) -> bool
-  copyWith({bool? broadcastSelection, bool? enabled, bool? requestAttention, int? port}) -> CxpSettings
-  final broadcastSelection: bool
-  final enabled: bool
-  final port: int
-  final requestAttention: bool
-  get hashCode -> int
-  static isValidPort(int port) -> bool
-  toString() -> String
-class CxpSettingsCodec implements SettingsCodec<CxpSettings>
-  const CxpSettingsCodec({bool defaultEnabled, required String prefix, required int defaultPort})
-  final defaultEnabled: bool
-  final defaultPort: int
-  final prefix: String
-  get broadcastSelectionKey -> String
-  get defaults -> CxpSettings
-  get enabledKey -> String
-  get portKey -> String
-  get requestAttentionKey -> String
-  load(SharedPreferences prefs) -> Future<CxpSettings>
-  save(SharedPreferences prefs, CxpSettings settings) -> Future<void>
-class CxpSettingsNotifier extends Notifier<CxpSettings>
-  build() -> CxpSettings
-  get loaded -> Future<void>
-  setBroadcastSelection({required bool broadcastSelection}) -> Future<void>
-  setEnabled({required bool enabled}) -> Future<void>
-  setPort(int port) -> Future<void>
-  setRequestAttention({required bool requestAttention}) -> Future<void>
 class DemoCrossProbePanelController implements CrossProbePanelController
   DemoCrossProbePanelController()
   factory DemoCrossProbePanelController.populated()
@@ -316,40 +316,40 @@ class DemoCrossProbePanelController implements CrossProbePanelController
   var onCloseCount: int
   var onOpenPanelCount: int
   var onSendToCount: int
-broadcastCxpSelection(T Function<T>(ProviderListenable<T>) read, NotifySelection message) -> void
+broadcastCruxCxpSelection(T Function<T>(ProviderListenable<T>) read, NotifySelection message) -> void
 get crossProbeDispatcherProvider -> Provider<CrossProbeDispatcher>
 crossProbeElementFor(CrossProbeSelection selection, PeerIdentity target) -> ElementId?
 get crossProbeGateProvider -> Provider<CrossProbeGate?>
 crossProbeMenuEntry(BuildContext context, WidgetRef ref, {IconData icon, required CrossProbeSelection? Function() selection}) -> CruxMenuEntry
 crossProbeTargetsFor(List<PeerIdentity> peers) -> List<CrossProbeTarget>
 get crossProbeTargetsProvider -> Provider<List<CrossProbeTarget>>
-get cxpAttentionRequesterProvider -> Provider<void Function()?>
-get cxpConnectedPeerCountProvider -> Provider<int>
-get cxpEventLogProvider -> NotifierProvider<CxpEventLog, List<CrossProbeEvent>>
-get cxpLaunchSettingsProvider -> Provider<CxpSettings?>
-get cxpManifestDirectoryProvider -> FutureProvider<String>
-get cxpPeerFilterProvider -> Provider<bool Function(PeerIdentity)>
-get cxpPeersProvider -> Provider<List<PeerIdentity>>
-get cxpPeersStreamProvider -> StreamProvider<List<PeerIdentity>>
-get cxpProductBindingProvider -> Provider<CxpProductBinding>
-cxpProductDisplayName(String productName) -> String
-get cxpProductVersionProvider -> FutureProvider<String>
-get cxpRequestHandlerProvider -> Provider<CxpRequestHandler>
-get cxpRuntimeProvider -> FutureProvider<CxpRuntime?>
-get cxpServerStatusProvider -> Provider<({int? port, String? problem, bool running})>
-get cxpSettingsProvider -> NotifierProvider<CxpSettingsNotifier, CxpSettings>
-get cxpSettingsServiceProvider -> Provider<SettingsService<CxpSettings>>
-get cxpStringsCustomizerProvider -> Provider<CruxCxpStrings Function(CruxCxpStrings)>
-cxpStringsOf(BuildContext context, T Function<T>(ProviderListenable<T>) read) -> CruxCxpStrings
-get cxpTransportAvailableProvider -> Provider<bool>
-get cxpUnreachablePeersProvider -> StreamProvider<List<CxpDialFailure>>
+get cruxCxpAttentionRequesterProvider -> Provider<void Function()?>
+get cruxCxpConnectedPeerCountProvider -> Provider<int>
+cruxCxpDisplayName(String productName) -> String
+get cruxCxpEventLogProvider -> NotifierProvider<CruxCxpEventLog, List<CrossProbeEvent>>
+get cruxCxpLaunchSettingsProvider -> Provider<CruxCxpSettings?>
+get cruxCxpManifestDirectoryProvider -> FutureProvider<String>
+get cruxCxpPeerFilterProvider -> Provider<bool Function(PeerIdentity)>
+get cruxCxpPeersProvider -> Provider<List<PeerIdentity>>
+get cruxCxpPeersStreamProvider -> StreamProvider<List<PeerIdentity>>
+get cruxCxpProductBindingProvider -> Provider<CruxCxpProductBinding>
+get cruxCxpProductVersionProvider -> FutureProvider<String>
+get cruxCxpRequestHandlerProvider -> Provider<CruxCxpRequestHandler>
+get cruxCxpRuntimeProvider -> FutureProvider<CruxCxpRuntime?>
+get cruxCxpServerStatusProvider -> Provider<({int? port, String? problem, bool running})>
+get cruxCxpSettingsProvider -> NotifierProvider<CruxCxpSettingsNotifier, CruxCxpSettings>
+get cruxCxpSettingsServiceProvider -> Provider<SettingsService<CruxCxpSettings>>
+get cruxCxpStringsCustomizerProvider -> Provider<CruxCxpStrings Function(CruxCxpStrings)>
+cruxCxpStringsOf(BuildContext context, T Function<T>(ProviderListenable<T>) read) -> CruxCxpStrings
+get cruxCxpTransportAvailableProvider -> Provider<bool>
+get cruxCxpUnreachablePeersProvider -> StreamProvider<List<CxpDialFailure>>
 get kCrossProbeFallbackKinds -> List<ElementKind>
 get kCrossProbeSuiteOrder -> List<String>
 get kCrossProbeTargetKinds -> Map<String, List<ElementKind>>
+get kCruxCxpAckTimeout -> Duration
+get kCruxCxpEventLogCapacity -> int
 get kCxpAcceptsCapabilityPrefix -> String
-get kCxpAckTimeout -> Duration
-get kCxpEventLogCapacity -> int
-loadCxpLaunchSettings(CxpProductBinding binding) -> Future<CxpSettings>
+loadCruxCxpLaunchSettings(CruxCxpProductBinding binding) -> Future<CruxCxpSettings>
 reportCrossProbeOutcome(BuildContext context, CrossProbeOutcome outcome, CruxCxpStrings strings) -> void
 runCrossProbeSelection(BuildContext context, WidgetRef ref, {Offset? anchor, required CrossProbeSelection? selection}) -> Future<void>
 sendCrossProbe(BuildContext context, WidgetRef ref, {String? label, required CrossProbeSelection? selection, required PeerIdentity peer}) -> Future<CrossProbeOutcome>

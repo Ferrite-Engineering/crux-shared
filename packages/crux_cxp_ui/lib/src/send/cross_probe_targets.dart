@@ -180,7 +180,7 @@ List<CrossProbeTarget> crossProbeTargetsFor(List<PeerIdentity> peers) {
     for (final product in products)
       CrossProbeTarget(
         productName: product,
-        label: cxpProductDisplayName(product),
+        label: cruxCxpDisplayName(product),
         instances: List<PeerIdentity>.unmodifiable(
           byProduct[product]!..sort(_byStartTime),
         ),
@@ -204,6 +204,6 @@ int _startedAt(String peerId) {
 /// is off or no peer runs.
 final Provider<List<CrossProbeTarget>> crossProbeTargetsProvider =
     Provider<List<CrossProbeTarget>>(
-      (ref) => crossProbeTargetsFor(ref.watch(cxpPeersProvider)),
+      (ref) => crossProbeTargetsFor(ref.watch(cruxCxpPeersProvider)),
       name: 'crossProbeTargetsProvider',
     );

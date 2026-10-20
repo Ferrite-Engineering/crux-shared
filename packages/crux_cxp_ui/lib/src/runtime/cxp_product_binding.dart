@@ -20,9 +20,9 @@ const String kCxpAcceptsCapabilityPrefix = 'cxp.accepts:';
 /// list, unreachable peers, settings persistence, acknowledgements) is the
 /// shared runtime's, and behaves the same in every product.
 @immutable
-class CxpProductBinding {
+class CruxCxpProductBinding {
   /// Creates a binding.
-  const CxpProductBinding({
+  const CruxCxpProductBinding({
     required this.productName,
     required this.defaultPort,
     required this.prefsPrefix,
@@ -39,7 +39,7 @@ class CxpProductBinding {
   /// The product's default CXP port.
   final int defaultPort;
 
-  /// The product's preference-key prefix (see [CxpSettingsCodec]).
+  /// The product's preference-key prefix (see [CruxCxpSettingsCodec]).
   final String prefsPrefix;
 
   /// Product capabilities advertised in the peer identity.
@@ -58,8 +58,8 @@ class CxpProductBinding {
   final NameResolver nameResolver;
 
   /// The settings codec for this product's keys and default port.
-  CxpSettingsCodec get settingsCodec =>
-      CxpSettingsCodec(prefix: prefsPrefix, defaultPort: defaultPort);
+  CruxCxpSettingsCodec get settingsCodec =>
+      CruxCxpSettingsCodec(prefix: prefsPrefix, defaultPort: defaultPort);
 
   /// Every capability the peer identity carries.
   Set<String> get advertisedCapabilities => <String>{
@@ -72,15 +72,15 @@ class CxpProductBinding {
 /// What a product did with a request a peer sent. Maps onto the `honored` /
 /// `reason` fields of the acknowledgement the runtime sends back.
 @immutable
-class CxpHandlerResult {
+class CruxCxpHandlerResult {
   /// Creates a result.
-  const CxpHandlerResult({required this.honored, this.reason});
+  const CruxCxpHandlerResult({required this.honored, this.reason});
 
   /// An honoured request.
-  static const CxpHandlerResult ok = CxpHandlerResult(honored: true);
+  static const CruxCxpHandlerResult ok = CruxCxpHandlerResult(honored: true);
 
   /// A request this product does not handle.
-  static const CxpHandlerResult unsupported = CxpHandlerResult(
+  static const CruxCxpHandlerResult unsupported = CruxCxpHandlerResult(
     honored: false,
     reason: 'unsupported',
   );
@@ -95,31 +95,31 @@ class CxpHandlerResult {
 /// The product's handlers for what peers send.
 ///
 /// The runtime calls these and sends the acknowledgement itself: a handler
-/// returns a [CxpHandlerResult] and never replies on the wire. A handler that
-/// throws is acknowledged as not honoured, with the error as the reason.
+/// returns a [CruxCxpHandlerResult] and never replies on the wire. A handler
+/// that throws is acknowledged as not honoured, with the error as the reason.
 /// Every method defaults to "not handled", so a product overrides only what
 /// it supports.
-class CxpRequestHandler {
+class CruxCxpRequestHandler {
   /// Creates a handler that handles nothing.
-  const CxpRequestHandler();
+  const CruxCxpRequestHandler();
 
   /// A peer asked this product to show [request]'s element.
-  Future<CxpHandlerResult> highlight(
+  Future<CruxCxpHandlerResult> highlight(
     RequestHighlight request,
     PeerIdentity from,
-  ) async => CxpHandlerResult.unsupported;
+  ) async => CruxCxpHandlerResult.unsupported;
 
   /// A peer asked this product to open a source location.
-  Future<CxpHandlerResult> openSource(
+  Future<CruxCxpHandlerResult> openSource(
     RequestOpenSource request,
     PeerIdentity from,
-  ) async => CxpHandlerResult.unsupported;
+  ) async => CruxCxpHandlerResult.unsupported;
 
   /// A peer asked this product to open a design artifact.
-  Future<CxpHandlerResult> openArtifact(
+  Future<CruxCxpHandlerResult> openArtifact(
     RequestOpenArtifact request,
     PeerIdentity from,
-  ) async => CxpHandlerResult.unsupported;
+  ) async => CruxCxpHandlerResult.unsupported;
 
   /// A peer announced its selection. No acknowledgement exists for this.
   void selection(NotifySelection message, PeerIdentity from) {}

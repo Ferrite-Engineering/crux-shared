@@ -7,13 +7,13 @@
 /// Riverpod provider cannot live there. This companion package holds
 /// everything between the protocol and a product:
 ///
-/// - **The lifecycle** (`cxpRuntimeProvider` and its siblings): settings
+/// - **The lifecycle** (`cruxCxpRuntimeProvider` and its siblings): settings
 ///   saved under each product's existing keys and loaded before `runApp`,
 ///   the server started, stopped and restarted from them under one port
 ///   rule, discovery, the peer list (empty whenever the server is off),
 ///   unreachable peers, the event log, and acknowledged replies to what peers
-///   send. A product supplies a `CxpProductBinding` (who it is) and a
-///   `CxpRequestHandler` (what it does when asked).
+///   send. A product supplies a `CruxCxpProductBinding` (who it is) and a
+///   `CruxCxpRequestHandler` (what it does when asked).
 /// - **Sending**: the target list (`crossProbeTargetsProvider`, one entry per
 ///   product in suite order, windows as sub-items), the element-kind table
 ///   (`crossProbeElementFor`), the one dispatcher (`CrossProbeDispatcher`,

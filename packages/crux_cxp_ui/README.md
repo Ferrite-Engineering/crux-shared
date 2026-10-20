@@ -98,7 +98,7 @@ Riverpod providers, and behaves the same in every product.
 A product binds who it is and what it does, in its root `ProviderScope`:
 
 ```dart
-const binding = CxpProductBinding(
+const binding = CruxCxpProductBinding(
   productName: 'netcrux',          // wire name and peer-id prefix
   defaultPort: 54323,
   prefsPrefix: 'netcrux.',         // keeps the keys saved by earlier releases
@@ -106,12 +106,12 @@ const binding = CxpProductBinding(
 );
 
 Future<void> main() async {
-  final cxp = await loadCxpLaunchSettings(binding);
+  final cxp = await loadCruxCxpLaunchSettings(binding);
   runApp(ProviderScope(
     overrides: [
-      cxpProductBindingProvider.overrideWithValue(binding),
-      cxpLaunchSettingsProvider.overrideWithValue(cxp),
-      cxpRequestHandlerProvider.overrideWith((ref) => MyHandler(ref)),
+      cruxCxpProductBindingProvider.overrideWithValue(binding),
+      cruxCxpLaunchSettingsProvider.overrideWithValue(cxp),
+      cruxCxpRequestHandlerProvider.overrideWith((ref) => MyHandler(ref)),
     ],
     child: const MyApp(),
   ));
@@ -122,18 +122,18 @@ Then it reads, rather than owns:
 
 | Provider | What it is |
 |---|---|
-| `cxpSettingsProvider` | the four settings; each setter saves at once |
-| `cxpRuntimeProvider` | the running `CxpRuntime`, or null when off |
-| `cxpPeersProvider` / `cxpConnectedPeerCountProvider` | connected peers and the toolbar badge's count; empty when off |
-| `cxpUnreachablePeersProvider` | discovered but unreachable peers; cleared by every stop and restart |
-| `cxpEventLogProvider` | the panel's event log |
-| `cxpServerStatusProvider` | running, port, why not |
+| `cruxCxpSettingsProvider` | the four settings; each setter saves at once |
+| `cruxCxpRuntimeProvider` | the running `CruxCxpRuntime`, or null when off |
+| `cruxCxpPeersProvider` / `cruxCxpConnectedPeerCountProvider` | connected peers and the toolbar badge's count; empty when off |
+| `cruxCxpUnreachablePeersProvider` | discovered but unreachable peers; cleared by every stop and restart |
+| `cruxCxpEventLogProvider` | the panel's event log |
+| `cruxCxpServerStatusProvider` | running, port, why not |
 
 The rules, once: a launch with CXP off never starts the server or writes a
 manifest; a valid new port restarts a running server on it at once and is
 kept for the next start otherwise; the runtime acknowledges every request a
-peer sends with the `CxpHandlerResult` the product's `CxpRequestHandler`
-returns, and asks for attention (`cxpAttentionRequesterProvider`) when one is
+peer sends with the `CruxCxpHandlerResult` the product's `CruxCxpRequestHandler`
+returns, and asks for attention (`cruxCxpAttentionRequesterProvider`) when one is
 honoured and the setting is on.
 
 ## Sending

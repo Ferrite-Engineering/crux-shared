@@ -67,22 +67,22 @@ class _CruxCrossProbePanelState extends ConsumerState<CruxCrossProbePanel>
     super.initState();
     ref
       ..listenManual<List<PeerIdentity>>(
-        cxpPeersProvider,
+        cruxCxpPeersProvider,
         (_, next) => _peers.value = next,
         fireImmediately: true,
       )
       ..listenManual<List<CrossProbeEvent>>(
-        cxpEventLogProvider,
+        cruxCxpEventLogProvider,
         (_, next) => _events.value = next,
         fireImmediately: true,
       )
       ..listenManual<AsyncValue<List<CxpDialFailure>>>(
-        cxpUnreachablePeersProvider,
+        cruxCxpUnreachablePeersProvider,
         (_, next) => _unreachable.value = next.value ?? const [],
         fireImmediately: true,
       )
-      ..listenManual<CxpServerStatus>(
-        cxpServerStatusProvider,
+      ..listenManual<CruxCxpServerStatus>(
+        cruxCxpServerStatusProvider,
         (_, next) => _serverRunning.value = next.running,
         fireImmediately: true,
       );
@@ -125,20 +125,20 @@ class _CruxCrossProbePanelState extends ConsumerState<CruxCrossProbePanel>
   void onClose() => widget.onClose();
 
   @override
-  void onClearEvents() => ref.read(cxpEventLogProvider.notifier).clear();
+  void onClearEvents() => ref.read(cruxCxpEventLogProvider.notifier).clear();
 
   @override
   Widget build(BuildContext context) {
     return CrossProbePanel(
       controller: this,
-      strings: cxpStringsOf(context, ref.read).panel,
+      strings: cruxCxpStringsOf(context, ref.read).panel,
       showHeader: widget.showHeader,
       sendBadgeBuilder: widget.sendBadgeBuilder,
     );
   }
 }
 
-/// Settings > CXP Cross-Probe, bound to [cxpSettingsProvider]: the four
+/// Settings > CXP Cross-Probe, bound to [cruxCxpSettingsProvider]: the four
 /// shared controls and a status line (running on which port, how many
 /// peers, and why the server is unavailable when it is).
 class CruxCxpSettingsSection extends ConsumerWidget {
@@ -147,11 +147,11 @@ class CruxCxpSettingsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final strings = cxpStringsOf(context, ref.read);
-    final settings = ref.watch(cxpSettingsProvider);
-    final notifier = ref.read(cxpSettingsProvider.notifier);
-    final status = ref.watch(cxpServerStatusProvider);
-    final peerCount = ref.watch(cxpConnectedPeerCountProvider);
+    final strings = cruxCxpStringsOf(context, ref.read);
+    final settings = ref.watch(cruxCxpSettingsProvider);
+    final notifier = ref.read(cruxCxpSettingsProvider.notifier);
+    final status = ref.watch(cruxCxpServerStatusProvider);
+    final peerCount = ref.watch(cruxCxpConnectedPeerCountProvider);
     final theme = Theme.of(context);
     final statusText = <String>[
       if (status.running && status.port != null)

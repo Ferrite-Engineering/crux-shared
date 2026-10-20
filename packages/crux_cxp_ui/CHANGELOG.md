@@ -2,21 +2,21 @@
 
 ## Unreleased
 
-- **The shared CXP lifecycle.** `cxpRuntimeProvider` runs one product's CXP
-  presence (`CxpRuntime`: server, manifest, discovery, connector) from
-  `cxpSettingsProvider`, which saves `CxpSettings` under the keys every
-  product already uses (`CxpSettingsCodec`, `<prefix>cxpServerEnabled` and
+- **The shared CXP lifecycle.** `cruxCxpRuntimeProvider` runs one product's CXP
+  presence (`CruxCxpRuntime`: server, manifest, discovery, connector) from
+  `cruxCxpSettingsProvider`, which saves `CruxCxpSettings` under the keys every
+  product already uses (`CruxCxpSettingsCodec`, `<prefix>cxpServerEnabled` and
   its three siblings) and is seeded before `runApp` through
-  `cxpLaunchSettingsProvider` / `loadCxpLaunchSettings`. A launch with CXP off
+  `cruxCxpLaunchSettingsProvider` / `loadCruxCxpLaunchSettings`. A launch with CXP off
   never starts the server or writes a manifest. One port rule: a valid new
-  port restarts a running server on it at once. `cxpPeersProvider` (empty
-  whenever the server is off), `cxpConnectedPeerCountProvider`,
-  `cxpUnreachablePeersProvider` (cleared on every stop and restart),
-  `cxpEventLogProvider`, `cxpServerStatusProvider` and
-  `broadcastCxpSelection`. A product supplies `cxpProductBindingProvider`
-  (`CxpProductBinding`: name, default port, key prefix, capabilities, the
+  port restarts a running server on it at once. `cruxCxpPeersProvider` (empty
+  whenever the server is off), `cruxCxpConnectedPeerCountProvider`,
+  `cruxCxpUnreachablePeersProvider` (cleared on every stop and restart),
+  `cruxCxpEventLogProvider`, `cruxCxpServerStatusProvider` and
+  `broadcastCruxCxpSelection`. A product supplies `cruxCxpProductBindingProvider`
+  (`CruxCxpProductBinding`: name, default port, key prefix, capabilities, the
   element kinds it accepts, containment, name resolver) and
-  `cxpRequestHandlerProvider` (`CxpRequestHandler`; the runtime sends every
+  `cruxCxpRequestHandlerProvider` (`CruxCxpRequestHandler`; the runtime sends every
   acknowledgement), plus optional version, attention and peer-filter
   providers.
 - **Sending a cross-probe, one way.** `crossProbeTargetsProvider` /
@@ -24,7 +24,7 @@
   several windows as instances), `CrossProbeSelection`, the element-kind
   table `kCrossProbeTargetKinds` / `crossProbeElementFor` (narrowed by a
   peer's `cxp.accepts:<kind>` capabilities), `CrossProbeDispatcher` (always
-  an acknowledged `request_highlight`, `kCxpAckTimeout`, one
+  an acknowledged `request_highlight`, `kCruxCxpAckTimeout`, one
   `CrossProbeOutcome` vocabulary), the optional `CrossProbeGate`, and the
   surfaces on them: `crossProbeMenuEntry` (the "Cross-probe to" submenu),
   `runCrossProbeSelection` (the Cross-probe Selection command: one target
@@ -32,10 +32,10 @@
   `sendCrossProbe` and `reportCrossProbeOutcome`.
 - **Bound widgets.** `CruxCrossProbePanel` (the panel on the lifecycle and
   the shared send) and `CruxCxpSettingsSection` (the settings controls on
-  `cxpSettingsProvider`, with a status line).
+  `cruxCxpSettingsProvider`, with a status line).
 - **`CruxCxpStrings`**: every string above in English, Simplified Chinese,
   Japanese and Korean, so no product keeps its own copy;
-  `cxpStringsCustomizerProvider` for a product's own line.
+  `cruxCxpStringsCustomizerProvider` for a product's own line.
 - `CrossProbePanelStrings` gains the event-log labels (English defaults);
   the panel no longer hard-codes them.
 - New dependencies: `crux_settings`, `flutter_riverpod`, `shared_preferences`.
