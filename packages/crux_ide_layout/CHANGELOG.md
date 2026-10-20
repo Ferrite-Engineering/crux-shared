@@ -6,6 +6,16 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `showCruxDialog` takes an optional `navigator:`: the dialog is pushed on
+  that navigator (a tab's own, from crux_workspace) instead of the one
+  `context` finds.
+- `CruxSubmenu`: a menu item that opens a second menu beside itself (click,
+  Enter or Right arrow). `CruxMenuItem` gains an optional `tooltip`.
+- `cruxTextInputFocused()`: whether a text field holds focus, for a
+  window-level shortcut that must leave the key to the field.
+- An error toast's close button is now a Tab stop from inside a modal
+  dialog too: the toast's focus follows the scope the user is tabbing in.
+
 - **Crux Desktop components.** `showCruxDialog` (showDialog's named
   parameters plus `modalGuardKey`; Escape always closes) and `CruxDialog` /
   `CruxDialogAction` (title, body, action row, Enter for the default action,

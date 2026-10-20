@@ -193,6 +193,41 @@ fill when unset), `tabBar.selected` fills the active tab
 (`surfaceContainerHighest` when unset), and `tabBar.label` colours every tab
 title (`bodyMedium`'s colour when unset).
 
+## Recent lists
+
+Every product's welcome screen keeps one or more Recent lists, and they
+behave the same way: `CruxRecentList` declares one (its store, its entries,
+its missing-file check), `CruxRecentListSection` renders it in an
+`EmptyCanvasState` slot (per-row remove, missing files greyed and still
+removable, Clear Recent), and `openCruxRecentEntry` / `clearCruxRecentList`
+are what the menu and palette entries call, so a failed open drops the entry
+and says so everywhere.
+
+```dart
+final recentFiles = CruxRecentList(
+  name: 'recentFiles',
+  store: (_) => const CruxPrefsRecentStore('recent_files'), // the 1.1 key
+  accepts: (path) => !isInternalSessionSidecarPath(path),
+);
+```
+
+The behaviour is unified, not the stores: a product whose list lives inside
+its settings model implements `CruxRecentStore` over that model. The words are
+`CruxRecentListStrings.of(context, CruxRecentKind.files)` (or `projects`,
+`workspaces`), in the suite's locales.
+
+## Per-tab navigators
+
+A dialog pushed on the root navigator mounts outside the active tab's
+provider scope, and wrapping its builder in a second scope over the tab's
+container lets Riverpod flush that container's rebuilds from two scopes in
+one frame. Passing `PaneHost(tabNavigators: CruxTabNavigators())` builds each
+tab's content on its own nested navigator instead; a dialog shown with
+`showCruxDialog(navigator: cruxTabNavigatorOf(context))` (or
+`navigators.navigatorFor(activeTabId)` from outside the tab) is built under
+the tab's one scope. It covers the tab's area rather than the window. Off by
+default.
+
 ## Multi-window
 
 `kMultiWindowAvailable` is `false` in this release. The two delegate

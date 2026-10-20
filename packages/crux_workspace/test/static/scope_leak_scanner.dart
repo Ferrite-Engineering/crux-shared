@@ -790,9 +790,14 @@ class _RouteVisitor extends RecursiveAstVisitor<void> {
     if (builders.isEmpty) return;
 
     final location = _locationOf(node.offset);
+    // A route pushed on a tab's own nested navigator is built under that
+    // tab's scope, so it needs no scope of its own. Recognized only when the
+    // navigator visibly comes from crux_workspace's tab navigators, never
+    // from an arbitrary `navigator:` expression.
+    final onTabNavigator = _pushesOnTabNavigator(node);
     for (final builder in builders) {
       final widgets = <InstanceCreationExpression>[];
-      var scoped = false;
+      var scoped = onTabNavigator;
       builder.body.accept(_WidgetCollector(widgets, () => scoped = true));
       // A builder may install the scope through a named helper —
       // `wrapInActiveTabScope(context, const FooDialog())` — rather than
@@ -821,6 +826,21 @@ class _RouteVisitor extends RecursiveAstVisitor<void> {
         out.add(_mountFor(api, location, w, scoped: false));
       }
     }
+  }
+
+  /// Whether [node] passes `navigator:` a tab navigator:
+  /// `cruxTabNavigatorOf(context)` or `<tabNavigators>.navigatorFor(id)`.
+  bool _pushesOnTabNavigator(MethodInvocation node) {
+    for (final argument in node.argumentList.arguments) {
+      if (argument is! NamedExpression) continue;
+      if (argument.name.label.name != 'navigator') continue;
+      var found = false;
+      argument.expression.accept(
+        _TabNavigatorCallFinder(() => found = true),
+      );
+      return found;
+    }
+    return false;
   }
 
   RouteMount _mountFor(
@@ -909,6 +929,20 @@ class _WidgetCollector extends RecursiveAstVisitor<void> {
       out.add(node);
     }
     super.visitInstanceCreationExpression(node);
+  }
+}
+
+/// Finds a call that yields a tab's nested navigator.
+class _TabNavigatorCallFinder extends RecursiveAstVisitor<void> {
+  _TabNavigatorCallFinder(this.onFound);
+
+  final void Function() onFound;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final name = node.methodName.name;
+    if (name == 'cruxTabNavigatorOf' || name == 'navigatorFor') onFound();
+    super.visitMethodInvocation(node);
   }
 }
 

@@ -56,7 +56,9 @@
 ///   until closed), `hideCruxSnack`, and `CruxToastCard`.
 /// - `CruxOverflowMenu` / `CruxContextMenuRegion` / `showCruxContextMenu`
 ///   — the "⋯" button and the same commands on right-click, Shift+F10 and
-///   the Menu key.
+///   the Menu key; `CruxSubmenu` cascades a second menu from one item.
+/// - `cruxTextInputFocused` — whether a text field holds focus, for a
+///   window-level shortcut that must leave the keystroke to the field.
 /// - `CruxDesktopTokens` — the layout tokens a Crux Desktop theme carries;
 ///   their presence is how the helpers above know they are on desktop.
 /// - `CruxChromeColors` — the chrome colours Material has no slot for,
@@ -83,3 +85,4 @@ export 'src/modal_guard.dart';
 export 'src/panel_empty_state.dart';
 export 'src/platform_context_menu.dart';
 export 'src/reload_prompt.dart';
+export 'src/text_input_focus.dart';

@@ -8,7 +8,8 @@ import 'package:crux_ide_layout/src/platform_context_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// One line of a Crux menu: a [CruxMenuItem] or a [CruxMenuDivider].
+/// One line of a Crux menu: a [CruxMenuItem], a [CruxSubmenu] or a
+/// [CruxMenuDivider].
 sealed class CruxMenuEntry {
   const CruxMenuEntry();
 }
@@ -23,6 +24,7 @@ final class CruxMenuItem extends CruxMenuEntry {
     this.icon,
     this.enabled = true,
     this.destructive = false,
+    this.tooltip,
     this.key,
   });
 
@@ -41,6 +43,49 @@ final class CruxMenuItem extends CruxMenuEntry {
   /// Whether the command destroys something; it is drawn in the error
   /// colour.
   final bool destructive;
+
+  /// An optional hover explanation, typically why a disabled command cannot
+  /// be chosen. Not part of the item's accessible name.
+  final String? tooltip;
+
+  /// A key for the rendered row, for tests.
+  final Key? key;
+}
+
+/// A command that opens a second menu of [entries] beside the first, such
+/// as "Cross-probe to" with one item per target.
+///
+/// Choosing it (click, Enter, or the Right arrow key) closes the menu it is
+/// in and opens [entries] at its right edge, so the pair reads as a cascade
+/// to the pointer and to the keyboard. With no [entries] it is disabled.
+@immutable
+final class CruxSubmenu extends CruxMenuEntry {
+  /// Creates a submenu.
+  const CruxSubmenu({
+    required this.label,
+    required this.entries,
+    this.icon,
+    this.enabled = true,
+    this.tooltip,
+    this.key,
+  });
+
+  /// The localized label. The submenu chevron is drawn, never written into
+  /// the label.
+  final String label;
+
+  /// The second menu's commands.
+  final List<CruxMenuEntry> entries;
+
+  /// An optional leading icon.
+  final IconData? icon;
+
+  /// Whether the submenu can be opened; false or empty [entries] shows it
+  /// greyed.
+  final bool enabled;
+
+  /// An optional hover explanation, typically why it is disabled.
+  final String? tooltip;
 
   /// A key for the rendered row, for tests.
   final Key? key;
@@ -84,6 +129,9 @@ Future<void> _openMenu(
   final theme = Theme.of(context);
   final height = CruxDesktopTokens.of(context)?.controlHeight;
   final items = <PopupMenuEntry<int>>[];
+  // Where each submenu row sat when it was chosen, so its menu opens beside
+  // it after the parent has closed.
+  final submenuRects = <int, Rect>{};
   for (var i = 0; i < entries.length; i++) {
     switch (entries[i]) {
       case CruxMenuDivider():
@@ -96,25 +144,44 @@ Future<void> _openMenu(
             value: i,
             enabled: item.enabled,
             height: height ?? kMinInteractiveDimension,
-            child: Row(
-              children: <Widget>[
-                if (item.icon case final IconData icon) ...<Widget>[
-                  Icon(icon, size: 16, color: color),
-                  const SizedBox(width: 10),
-                ],
-                Flexible(
-                  child: Text(
-                    item.label,
-                    overflow: TextOverflow.ellipsis,
-                    style: color == null ? null : TextStyle(color: color),
-                  ),
-                ),
-              ],
+            child: _withTooltip(
+              item.tooltip,
+              _MenuRow(icon: item.icon, label: item.label, color: color),
+            ),
+          ),
+        );
+      case final CruxSubmenu submenu:
+        final rowKey = GlobalKey();
+        void record() {
+          final box = rowKey.currentContext?.findRenderObject() as RenderBox?;
+          if (box == null || !box.hasSize) return;
+          submenuRects[i] = box.localToGlobal(Offset.zero) & box.size;
+        }
+
+        items.add(
+          _SubmenuItem(
+            key: submenu.key,
+            value: i,
+            enabled: submenu.enabled && submenu.entries.isNotEmpty,
+            height: height ?? kMinInteractiveDimension,
+            onTap: record,
+            child: _withTooltip(
+              submenu.tooltip,
+              _SubmenuRow(
+                rowKey: rowKey,
+                icon: submenu.icon,
+                label: submenu.label,
+              ),
             ),
           ),
         );
     }
   }
+  // Looked up before the menu opens: a submenu opens against the same
+  // overlay, and its state's context is not to be used across the await.
+  final overlayBox =
+      Overlay.of(context, rootOverlay: true).context.findRenderObject()
+          as RenderBox?;
   final chosen = await showMenu<int>(
     context: context,
     position: position,
@@ -122,7 +189,121 @@ Future<void> _openMenu(
   );
   if (chosen == null) return;
   final entry = entries[chosen];
-  if (entry is CruxMenuItem && entry.enabled) entry.onSelected();
+  if (entry is CruxMenuItem) {
+    if (entry.enabled) entry.onSelected();
+    return;
+  }
+  if (entry is! CruxSubmenu || !entry.enabled || entry.entries.isEmpty) {
+    return;
+  }
+  if (!context.mounted) return;
+  final overlay = overlayBox;
+  final rect = submenuRects[chosen];
+  final next = overlay != null && rect != null
+      ? RelativeRect.fromRect(
+          Rect.fromPoints(
+            overlay.globalToLocal(rect.topRight),
+            overlay.globalToLocal(rect.topRight),
+          ),
+          Offset.zero & overlay.size,
+        )
+      : position;
+  await _openMenu(context, next, entry.entries);
+}
+
+Widget _withTooltip(String? tooltip, Widget child) => tooltip == null
+    ? child
+    : Tooltip(message: tooltip, excludeFromSemantics: true, child: child);
+
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({required this.icon, required this.label, this.color});
+
+  final IconData? icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        if (icon case final IconData icon) ...<Widget>[
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 10),
+        ],
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: color == null ? null : TextStyle(color: color),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A submenu's menu item: Right arrow opens it as Enter does. The key
+/// handler sits above the item's own focus node, where a key event bubbles.
+class _SubmenuItem extends PopupMenuItem<int> {
+  const _SubmenuItem({
+    required super.value,
+    required super.child,
+    super.enabled,
+    super.height,
+    super.onTap,
+    super.key,
+  });
+
+  @override
+  PopupMenuItemState<int, _SubmenuItem> createState() => _SubmenuItemState();
+}
+
+class _SubmenuItemState extends PopupMenuItemState<int, _SubmenuItem> {
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      includeSemantics: false,
+      onKeyEvent: (_, event) {
+        if (!widget.enabled ||
+            event is! KeyDownEvent ||
+            event.logicalKey != LogicalKeyboardKey.arrowRight) {
+          return KeyEventResult.ignored;
+        }
+        handleTap();
+        return KeyEventResult.handled;
+      },
+      child: super.build(context),
+    );
+  }
+}
+
+/// A submenu row: the label and a drawn chevron.
+class _SubmenuRow extends StatelessWidget {
+  const _SubmenuRow({
+    required this.rowKey,
+    required this.icon,
+    required this.label,
+  });
+
+  final GlobalKey rowKey;
+  final IconData? icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      key: rowKey,
+      children: <Widget>[
+        Expanded(
+          child: _MenuRow(icon: icon, label: label),
+        ),
+        const SizedBox(width: 12),
+        const ExcludeSemantics(child: Icon(Icons.chevron_right, size: 16)),
+      ],
+    );
+  }
 }
 
 /// The visible overflow button: a "⋯" ([Icons.more_horiz]) that opens

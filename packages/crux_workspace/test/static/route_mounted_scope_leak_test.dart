@@ -49,7 +49,11 @@
 //     * a helper the builder calls whose body writes one — LintCrux's
 //       `wrapInActiveTabScope(context, child)`. Resolved one hop; a helper
 //       that delegates to a second helper is not followed.
-//   None of the three present is a violation.
+//   A fourth form needs no re-binding at all: the call passes `navigator:` a
+//   tab's own nested navigator, written as `cruxTabNavigatorOf(context)` or
+//   `<tab navigators>.navigatorFor(tabId)`, so the route is built under the
+//   tab's scope. Any other `navigator:` expression counts for nothing.
+//   None of the four present is a violation.
 //
 // WHAT IT DOES **NOT** CATCH — read this before trusting a green run
 //  1. DEPTH ONE ONLY. Only widgets the builder constructs directly are
@@ -69,7 +73,8 @@
 //     container it is given is the ACTIVE TAB's container — rather than a
 //     stale one, or the wrong tab's — is beyond a static scan. A site that
 //     passes here can still be wrong; a site that fails here is definitely
-//     wrong.
+//     wrong. The same holds for a tab navigator: `navigatorFor(id)` is
+//     trusted to be given the active tab's id.
 //  4. ROUTES DECLARED, NOT PUSHED. A `go_router` route table, a
 //     `MaterialApp.routes` map, or any other declaration whose builder is
 //     invoked by the framework rather than at a call site is not scanned. The
@@ -283,6 +288,22 @@ void main() {
 
     test('does not flag a dialog taking its data by constructor', () {
       expect(flagged(), isNot(contains('InertDialog')));
+    });
+
+    test("clears a dialog pushed on the tab's own navigator, by either "
+        'lookup', () {
+      expect(flagged(), isNot(contains('TabNavigatorDialog')));
+      expect(
+        shapes
+            .routeMounts()
+            .where((m) => m.widget == 'TabNavigatorDialog')
+            .map((m) => m.scoped),
+        <bool>[true, true],
+      );
+    });
+
+    test('still flags a dialog given some other navigator', () {
+      expect(flagged(), contains('ArbitraryNavigatorDialog'));
     });
 
     test('the corpus is actually being scanned', () {

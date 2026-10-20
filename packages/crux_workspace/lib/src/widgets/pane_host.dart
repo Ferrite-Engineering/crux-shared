@@ -7,6 +7,7 @@ import 'package:crux_workspace/src/pane_container_manager.dart';
 import 'package:crux_workspace/src/pane_id.dart';
 import 'package:crux_workspace/src/tab_container_manager.dart';
 import 'package:crux_workspace/src/tab_id.dart';
+import 'package:crux_workspace/src/widgets/crux_tab_navigators.dart';
 import 'package:crux_workspace/src/widgets/viewer_tab_bar.dart';
 import 'package:crux_workspace/src/widgets/viewer_tab_bar_strings.dart';
 import 'package:crux_workspace/src/workspace.dart';
@@ -109,6 +110,7 @@ class PaneHost<P> extends ConsumerWidget {
     this.showTabBars = true,
     this.strings = const ViewerTabBarStringsEn(),
     this.enableSplitPane = true,
+    this.tabNavigators,
     super.key,
   }) : assert(
          tabs != null || tabContainerFor != null,
@@ -212,6 +214,12 @@ class PaneHost<P> extends ConsumerWidget {
   /// workspace document into a single-pane shape.
   final bool enableSplitPane;
 
+  /// When given, each tab's content is built on its own nested [Navigator]
+  /// inside the tab's provider scope, so a dialog shown on it (see
+  /// [CruxTabNavigators]) needs no second scope over the tab's container.
+  /// Null (the default) builds the content directly, as before.
+  final CruxTabNavigators? tabNavigators;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncWs = ref.watch(provider);
@@ -223,6 +231,7 @@ class PaneHost<P> extends ConsumerWidget {
   }
 
   Widget _build(BuildContext context, WidgetRef ref, Workspace<P> ws) {
+    tabNavigators?.retainOnly(ws.tabs.map((tab) => tab.id));
     if (ws.tabs.isEmpty) return emptyCanvasContent;
 
     final notifier = ref.read(provider.notifier);
@@ -339,9 +348,7 @@ class PaneHost<P> extends ConsumerWidget {
                             // layer of a keep-alive sibling.
                             child: UncontrolledProviderScope(
                               container: _resolveTabContainer(tab.id),
-                              child: Builder(
-                                builder: (ctx) => tabContentBuilder(ctx, tab),
-                              ),
+                              child: _tabContent(tab),
                             ),
                           ),
                       ]),
@@ -350,6 +357,17 @@ class PaneHost<P> extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _tabContent(WorkspaceTab<P> tab) {
+    final navigators = tabNavigators;
+    if (navigators == null) {
+      return Builder(builder: (ctx) => tabContentBuilder(ctx, tab));
+    }
+    return CruxTabNavigatorHost(
+      navigatorKey: navigators.keyFor(tab.id),
+      builder: (ctx) => tabContentBuilder(ctx, tab),
     );
   }
 

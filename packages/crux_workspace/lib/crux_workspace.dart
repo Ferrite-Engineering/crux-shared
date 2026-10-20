@@ -19,12 +19,17 @@ export 'src/id_providers.dart';
 export 'src/multi_window.dart';
 export 'src/pane_container_manager.dart';
 export 'src/pane_id.dart';
+export 'src/recent/crux_recent_list.dart';
+export 'src/recent/crux_recent_list_section.dart';
+export 'src/recent/crux_recent_list_strings.dart';
 export 'src/scoped_container_manager.dart';
 export 'src/tab_container_manager.dart';
 export 'src/tab_id.dart';
 export 'src/widgets/crux_glowing_app_icon.dart';
 export 'src/widgets/crux_suite_footer.dart';
 export 'src/widgets/crux_suite_peers.dart';
+export 'src/widgets/crux_tab_navigators.dart'
+    show CruxTabNavigators, cruxTabNavigatorOf;
 export 'src/widgets/empty_canvas_state.dart';
 export 'src/widgets/pane_host.dart'
     show

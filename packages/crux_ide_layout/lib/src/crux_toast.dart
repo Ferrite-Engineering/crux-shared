@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:crux_ide_layout/src/crux_desktop_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// The desktop toast stack behind `showCruxInfoSnack` / `showCruxErrorSnack`.
 ///
@@ -90,25 +91,100 @@ class _ToastStack {
   }
 }
 
-class _ToastPositioned extends StatelessWidget {
+/// Places the toast and keeps its close button in the Tab order the user is
+/// walking.
+///
+/// The toast's overlay entry sits outside every route, so its focus node is
+/// a child of the navigator's own scope. A modal route traps Tab inside its
+/// scope, which left an error toast's close button unreachable from the
+/// keyboard while a dialog was open. The toast therefore re-parents its
+/// focus node under the scope that holds the primary focus, following it as
+/// dialogs open and close, so Tab reaches the close button from the page and
+/// from inside a modal alike.
+class _ToastPositioned extends StatefulWidget {
   const _ToastPositioned({required this.data, required this.onClose});
 
   final _ToastData data;
   final VoidCallback onClose;
 
   @override
+  State<_ToastPositioned> createState() => _ToastPositionedState();
+}
+
+class _ToastPositionedState extends State<_ToastPositioned> {
+  final FocusNode _anchor = FocusNode(
+    debugLabel: 'cruxToastAnchor',
+    canRequestFocus: false,
+    skipTraversal: true,
+  );
+  FocusScopeNode? _parent;
+
+  @override
+  void initState() {
+    super.initState();
+    _parent = _activeScope();
+    FocusManager.instance.addListener(_onFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_onFocusChanged);
+    _anchor.dispose();
+    super.dispose();
+  }
+
+  /// The scope the user is tabbing in, or null to keep the natural parent.
+  /// Focus on the toast itself keeps the current parent.
+  FocusScopeNode? _activeScope() {
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary == null) return _parent;
+    if (primary == _anchor || primary.ancestors.contains(_anchor)) {
+      return _parent;
+    }
+    final scope = primary.nearestScope;
+    if (scope == null || !_isLive(scope)) return _parent;
+    return scope;
+  }
+
+  static bool _isLive(FocusNode node) => node.context?.mounted ?? false;
+
+  void _onFocusChanged() {
+    if (!mounted) return;
+    final next = _activeScope();
+    if (identical(next, _parent)) return;
+    void apply() {
+      if (!mounted) return;
+      setState(() => _parent = next);
+    }
+
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => apply());
+    } else {
+      apply();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final data = widget.data;
     final tokens = data.tokens;
+    final parent = _parent;
     return Positioned(
       right: 16,
       bottom: tokens.toastBottomInset,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: tokens.toastMaxWidth),
-        child: CruxToastCard(
-          key: data.key,
-          message: data.message,
-          error: data.error,
-          onClose: data.error ? onClose : null,
+      child: Focus(
+        focusNode: _anchor,
+        parentNode: parent != null && _isLive(parent) ? parent : null,
+        includeSemantics: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: tokens.toastMaxWidth),
+          child: CruxToastCard(
+            key: data.key,
+            message: data.message,
+            error: data.error,
+            onClose: data.error ? widget.onClose : null,
+          ),
         ),
       ),
     );

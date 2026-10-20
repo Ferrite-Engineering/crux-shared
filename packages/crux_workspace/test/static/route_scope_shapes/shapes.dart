@@ -254,6 +254,7 @@ Future<T?> showCruxDialog<T>({
   required WidgetBuilder builder,
   bool barrierDismissible = true,
   String? modalGuardKey,
+  NavigatorState? navigator,
 }) => showDialog<T>(
   context: context,
   builder: builder,
@@ -287,5 +288,62 @@ Future<bool?> fixedCruxDialog(
       container: container,
       child: const LeakyCruxDialog(),
     ),
+  );
+}
+
+// --- Shape 9: the dialog goes on the tab's own navigator. ------------------
+// A route pushed on the tab's nested navigator is built under the tab's scope,
+// so it needs no second scope. Recognized only when the navigator visibly comes
+// from the tab navigators; any other `navigator:` stays a violation.
+
+/// Stands in for crux_workspace's `cruxTabNavigatorOf`.
+NavigatorState? cruxTabNavigatorOf(BuildContext context) =>
+    Navigator.maybeOf(context);
+
+/// Stands in for crux_workspace's `CruxTabNavigators`.
+class TabNavigators {
+  NavigatorState? navigatorFor(String tabId) => null;
+}
+
+class TabNavigatorDialog extends ConsumerWidget {
+  const TabNavigatorDialog({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      Text('${ref.watch(perTabProvider)}');
+}
+
+Future<void> tabNavigatorDialog(BuildContext context) {
+  return showCruxDialog<void>(
+    context: context,
+    navigator: cruxTabNavigatorOf(context),
+    builder: (_) => const TabNavigatorDialog(),
+  );
+}
+
+Future<void> activeTabNavigatorDialog(
+  BuildContext context,
+  TabNavigators navigators,
+) {
+  return showCruxDialog<void>(
+    context: context,
+    navigator: navigators.navigatorFor('tab-1'),
+    builder: (_) => const TabNavigatorDialog(),
+  );
+}
+
+class ArbitraryNavigatorDialog extends ConsumerWidget {
+  const ArbitraryNavigatorDialog({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      Text('${ref.watch(perTabProvider)}');
+}
+
+Future<void> arbitraryNavigatorDialog(BuildContext context) {
+  return showCruxDialog<void>(
+    context: context,
+    navigator: Navigator.of(context, rootNavigator: true),
+    builder: (_) => const ArbitraryNavigatorDialog(),
   );
 }

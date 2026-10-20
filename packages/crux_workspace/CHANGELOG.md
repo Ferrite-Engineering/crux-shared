@@ -1,5 +1,25 @@
 ## Unreleased
 
+- **One Recent list.** `CruxRecentList` (a list's store, entries and
+  missing-file check, declared once per list), `CruxRecentListNotifier`
+  (`markOpened` to the front with a cap, `remove`, `clear`, and `open`, which
+  drops an entry that does not open; the stored list is merged with anything
+  that happened before it was read), `CruxRecentStore` /
+  `CruxPrefsRecentStore` (a product keeps its own preference key), and the
+  welcome-screen `CruxRecentListSection` / `CruxRecentTile` (per-row remove,
+  missing files greyed and still removable, Clear Recent), with
+  `openCruxRecentEntry` and `clearCruxRecentList` for the menu and palette
+  entries. `CruxRecentListStrings` carries the words for files, projects and
+  workspaces in English, Simplified Chinese, Japanese and Korean. New
+  dependencies on `crux_ide_layout` and `shared_preferences`.
+- **Per-tab navigators.** `PaneHost.tabNavigators` (a `CruxTabNavigators`)
+  builds each tab's content on its own nested `Navigator` inside the tab's
+  provider scope, so a dialog shown on it (`cruxTabNavigatorOf(context)`, or
+  `navigatorFor(tabId)` from outside the tab, passed to `showCruxDialog`'s
+  `navigator:`) mounts no second scope over the tab's container. Off by
+  default. The route scope-leak guard clears a route given one of those two
+  navigators and nothing else.
+
 - **`ViewerTabBar` tells same-named tabs apart.** When two or more open tabs,
   in any pane, show the same label, each of them also shows the shortest run
   of trailing parent folders of its `tabFilePath` that sets it apart, muted

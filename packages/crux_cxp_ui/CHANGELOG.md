@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+- **The shared CXP lifecycle.** `cxpRuntimeProvider` runs one product's CXP
+  presence (`CxpRuntime`: server, manifest, discovery, connector) from
+  `cxpSettingsProvider`, which saves `CxpSettings` under the keys every
+  product already uses (`CxpSettingsCodec`, `<prefix>cxpServerEnabled` and
+  its three siblings) and is seeded before `runApp` through
+  `cxpLaunchSettingsProvider` / `loadCxpLaunchSettings`. A launch with CXP off
+  never starts the server or writes a manifest. One port rule: a valid new
+  port restarts a running server on it at once. `cxpPeersProvider` (empty
+  whenever the server is off), `cxpConnectedPeerCountProvider`,
+  `cxpUnreachablePeersProvider` (cleared on every stop and restart),
+  `cxpEventLogProvider`, `cxpServerStatusProvider` and
+  `broadcastCxpSelection`. A product supplies `cxpProductBindingProvider`
+  (`CxpProductBinding`: name, default port, key prefix, capabilities, the
+  element kinds it accepts, containment, name resolver) and
+  `cxpRequestHandlerProvider` (`CxpRequestHandler`; the runtime sends every
+  acknowledgement), plus optional version, attention and peer-filter
+  providers.
+- **Sending a cross-probe, one way.** `crossProbeTargetsProvider` /
+  `crossProbeTargetsFor` (one `CrossProbeTarget` per product in suite order,
+  several windows as instances), `CrossProbeSelection`, the element-kind
+  table `kCrossProbeTargetKinds` / `crossProbeElementFor` (narrowed by a
+  peer's `cxp.accepts:<kind>` capabilities), `CrossProbeDispatcher` (always
+  an acknowledged `request_highlight`, `kCxpAckTimeout`, one
+  `CrossProbeOutcome` vocabulary), the optional `CrossProbeGate`, and the
+  surfaces on them: `crossProbeMenuEntry` (the "Cross-probe to" submenu),
+  `runCrossProbeSelection` (the Cross-probe Selection command: one target
+  sends, several open a menu, never a dialog), `CrossProbeToButton`,
+  `sendCrossProbe` and `reportCrossProbeOutcome`.
+- **Bound widgets.** `CruxCrossProbePanel` (the panel on the lifecycle and
+  the shared send) and `CruxCxpSettingsSection` (the settings controls on
+  `cxpSettingsProvider`, with a status line).
+- **`CruxCxpStrings`**: every string above in English, Simplified Chinese,
+  Japanese and Korean, so no product keeps its own copy;
+  `cxpStringsCustomizerProvider` for a product's own line.
+- `CrossProbePanelStrings` gains the event-log labels (English defaults);
+  the panel no longer hard-codes them.
+- New dependencies: `crux_settings`, `flutter_riverpod`, `shared_preferences`.
+
 - **`CruxCxpSettingsControls` is built on `CruxFormRow`.** The three switches
   are `CruxFormRow.toggle` rows (a `CruxSwitch` on desktop, keys unchanged)
   and the port is a label-left row. The send-failure message is

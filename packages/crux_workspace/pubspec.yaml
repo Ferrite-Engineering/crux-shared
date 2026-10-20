@@ -10,6 +10,9 @@ environment:
 resolution: workspace
 
 dependencies:
+  # The Recent list's toasts (showCruxInfoSnack / showCruxErrorSnack).
+  crux_ide_layout:
+    path: ../crux_ide_layout
   crux_io:
     path: ../crux_io
   crux_theme:
@@ -20,6 +23,8 @@ dependencies:
   meta: ^1.15.0
   path: ^1.9.0
   path_provider: ^2.1.0
+  # CruxPrefsRecentStore, the Recent list's preference-backed store.
+  shared_preferences: ^2.2.0
   uuid: ^4.5.3
 
 dev_dependencies:

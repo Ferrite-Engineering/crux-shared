@@ -150,13 +150,14 @@ final class CruxMenuDivider extends CruxMenuEntry
 sealed class CruxMenuEntry
   const CruxMenuEntry()
 final class CruxMenuItem extends CruxMenuEntry
-  const CruxMenuItem({IconData? icon, Key? key, bool destructive, bool enabled, required String label, required void Function() onSelected})
+  const CruxMenuItem({IconData? icon, Key? key, String? tooltip, bool destructive, bool enabled, required String label, required void Function() onSelected})
   final destructive: bool
   final enabled: bool
   final icon: IconData?
   final key: Key?
   final label: String
   final onSelected: void Function()
+  final tooltip: String?
 class CruxNextRegionIntent extends Intent
   const CruxNextRegionIntent()
 class CruxOverflowMenu extends StatelessWidget
@@ -195,6 +196,14 @@ class CruxSearchResultTile extends StatelessWidget
   final title: String
   final trailingChipLabel: String?
 typedef CruxSearchRowBuilder<T> = Widget Function(BuildContext, T, {required bool highlighted, required void Function() onActivate})
+final class CruxSubmenu extends CruxMenuEntry
+  const CruxSubmenu({IconData? icon, Key? key, String? tooltip, bool enabled, required List<CruxMenuEntry> entries, required String label})
+  final enabled: bool
+  final entries: List<CruxMenuEntry>
+  final icon: IconData?
+  final key: Key?
+  final label: String
+  final tooltip: String?
 class CruxToastCard extends StatelessWidget
   const CruxToastCard({Key? key, required String message, required bool error, void Function()? onClose})
   build(BuildContext context) -> Widget
@@ -237,6 +246,7 @@ class PlatformContextMenu extends StatelessWidget
   final onContextMenu: void Function(Offset)
 announceCrux(BuildContext context, String message, {bool assertive}) -> void
 confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirmKey, Key? dialogKey, required String body, required String cancelLabel, required String confirmLabel, required String title}) -> Future<bool>
+cruxTextInputFocused() -> bool
 hideCruxReloadPrompt(BuildContext context) -> void
 hideCruxSnack(BuildContext context) -> void
 get kCruxDialogDefaultWidth -> double
@@ -253,7 +263,7 @@ get kCruxSearchDialogRowExtent -> double
 get kCruxSearchDialogSize -> Size
 shouldEnableLongPressContextMenu({required TargetPlatform platform, required bool isTouchLayout}) -> bool
 showCruxContextMenu(BuildContext context, {required List<CruxMenuEntry> entries, required Offset globalPosition}) -> Future<void>
-showCruxDialog<T>({RouteSettings? routeSettings, String? barrierLabel, String? modalGuardKey, bool barrierDismissible, bool useRootNavigator, required BuildContext context, required Widget Function(BuildContext) builder}) -> Future<T?>
+showCruxDialog<T>({NavigatorState? navigator, RouteSettings? routeSettings, String? barrierLabel, String? modalGuardKey, bool barrierDismissible, bool useRootNavigator, required BuildContext context, required Widget Function(BuildContext) builder}) -> Future<T?>
 showCruxErrorSnack(BuildContext context, String message, {Key? key}) -> void
 showCruxInfoSnack(BuildContext context, String message, {Key? key}) -> void
 showCruxReloadPrompt(BuildContext context, {required String ignoreLabel, required String message, required String reloadLabel, required void Function() onIgnore, required void Function() onReload}) -> void

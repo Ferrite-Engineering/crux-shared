@@ -37,6 +37,13 @@ const double kCruxDialogDefaultWidth = 440;
 ///   (`cruxDesktopTheme`'s dialog theme), so a product not yet on the desktop
 ///   theme keeps its current look.
 ///
+/// - **[navigator]**, when given, is the navigator the dialog is pushed on,
+///   in place of the one [context] and [useRootNavigator] would find. A
+///   product passes a tab's own nested navigator (crux_workspace's
+///   `CruxTabNavigators`) so the dialog mounts under that tab's provider
+///   scope instead of wrapping its builder in a second scope over the tab's
+///   container. The dialog then covers that navigator's area, not the window.
+///
 /// [builder] normally returns a [CruxDialog]. The EULA, which is mounted
 /// above the `Navigator` where no route can be pushed, uses [CruxDialog]
 /// directly instead.
@@ -48,16 +55,40 @@ Future<T?> showCruxDialog<T>({
   String? barrierLabel,
   bool useRootNavigator = true,
   RouteSettings? routeSettings,
+  NavigatorState? navigator,
 }) async {
-  Future<T?> open() => showDialog<T>(
-    context: context,
-    barrierDismissible: barrierDismissible,
-    barrierLabel: barrierLabel,
-    useRootNavigator: useRootNavigator,
-    routeSettings: routeSettings,
-    builder: (dialogContext) =>
-        _CruxDialogRouteScope(child: Builder(builder: builder)),
-  );
+  Widget build(BuildContext dialogContext) =>
+      _CruxDialogRouteScope(child: Builder(builder: builder));
+  Future<T?> open() {
+    final target = navigator;
+    if (target == null) {
+      return showDialog<T>(
+        context: context,
+        barrierDismissible: barrierDismissible,
+        barrierLabel: barrierLabel,
+        useRootNavigator: useRootNavigator,
+        routeSettings: routeSettings,
+        builder: build,
+      );
+    }
+    return target.push<T>(
+      DialogRoute<T>(
+        context: context,
+        builder: build,
+        barrierColor: DialogTheme.of(context).barrierColor ?? Colors.black54,
+        barrierDismissible: barrierDismissible,
+        barrierLabel: barrierLabel,
+        settings: routeSettings,
+        // Themes between the caller and the navigator travel with the
+        // dialog, as showDialog does; a caller outside the navigator (a menu
+        // bar opening a dialog on a tab's navigator) has none to carry.
+        themes: _isAncestor(target.context, context)
+            ? InheritedTheme.capture(from: context, to: target.context)
+            : null,
+      ),
+    );
+  }
+
   final key = modalGuardKey;
   if (key == null) return await open();
   T? result;
@@ -65,6 +96,18 @@ Future<T?> showCruxDialog<T>({
     result = await open();
   });
   return result;
+}
+
+bool _isAncestor(BuildContext ancestor, BuildContext of) {
+  var found = false;
+  of.visitAncestorElements((element) {
+    if (identical(element, ancestor)) {
+      found = true;
+      return false;
+    }
+    return true;
+  });
+  return found;
 }
 
 /// Lets Escape pop the dialog's route even when its barrier is not

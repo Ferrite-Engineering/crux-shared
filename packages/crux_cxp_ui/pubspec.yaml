@@ -19,15 +19,26 @@ dependencies:
   # The send-failure toast.
   crux_ide_layout:
     path: ../crux_ide_layout
+  # SettingsCodec / SettingsService, under which the CXP settings persist.
+  crux_settings:
+    path: ../crux_settings
   # CruxFormRow / CruxFormSection, which the settings controls are built on
   # (and, through it, CruxSwitch).
   crux_settings_ui:
     path: ../crux_settings_ui
   flutter:
     sdk: flutter
+  # The shared CXP lifecycle is a set of root-container providers.
+  flutter_riverpod: ^3.3.1
   meta: ^1.15.0
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
+  crux_a11y:
+    path: ../crux_a11y
+  # Renders the panel under a non-English locale in a test.
+  flutter_localizations:
+    sdk: flutter
   flutter_test:
     sdk: flutter
   very_good_analysis: ^11.0.0

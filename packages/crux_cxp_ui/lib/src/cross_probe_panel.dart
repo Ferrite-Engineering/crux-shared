@@ -435,21 +435,22 @@ class _EventsSection extends StatelessWidget {
         else
           // Newest-first: the buffer appends, so iterate in reverse.
           for (var i = events.length - 1; i >= 0; i--)
-            _EventRow(event: events[i]),
+            _EventRow(event: events[i], strings: strings),
       ],
     );
   }
 }
 
 class _EventRow extends StatelessWidget {
-  const _EventRow({required this.event});
+  const _EventRow({required this.event, required this.strings});
 
   final CrossProbeEvent event;
+  final CrossProbePanelStrings strings;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final descriptor = _EventDescriptor.of(event, scheme);
+    final descriptor = _EventDescriptor.of(event, scheme, strings);
     final subtitle = event.summary == null
         ? event.peerLabel
         : '${event.peerLabel} · ${event.summary}';
@@ -476,55 +477,63 @@ class _EventRow extends StatelessWidget {
 ///
 /// Kept as a small value so a widget test can assert on the same label the UI
 /// shows for each [CrossProbeEventKind], including selection received and
-/// open-artifact.
+/// open-artifact. The labels come from [CrossProbePanelStrings].
 class _EventDescriptor {
   const _EventDescriptor(this.icon, this.color, this.label);
 
-  factory _EventDescriptor.of(CrossProbeEvent event, ColorScheme scheme) {
+  factory _EventDescriptor.of(
+    CrossProbeEvent event,
+    ColorScheme scheme,
+    CrossProbePanelStrings strings,
+  ) {
     switch (event.kind) {
       case CrossProbeEventKind.peerConnected:
-        return _EventDescriptor(Icons.link, scheme.primary, 'Peer connected');
+        return _EventDescriptor(
+          Icons.link,
+          scheme.primary,
+          strings.eventPeerConnected,
+        );
       case CrossProbeEventKind.peerDisconnected:
         return _EventDescriptor(
           Icons.link_off,
           scheme.outline,
-          'Peer disconnected',
+          strings.eventPeerDisconnected,
         );
       case CrossProbeEventKind.selectionSent:
         return _EventDescriptor(
           Icons.north_east,
           scheme.primary,
-          'Selection sent',
+          strings.eventSelectionSent,
         );
       case CrossProbeEventKind.selectionReceived:
         return _EventDescriptor(
           Icons.south_west,
           scheme.tertiary,
-          'Selection received',
+          strings.eventSelectionReceived,
         );
       case CrossProbeEventKind.highlightSent:
         return _EventDescriptor(
           Icons.north_east,
           scheme.primary,
-          'Highlight sent',
+          strings.eventHighlightSent,
         );
       case CrossProbeEventKind.highlightReceived:
         return _EventDescriptor(
           Icons.south_west,
           scheme.tertiary,
-          'Highlight received',
+          strings.eventHighlightReceived,
         );
       case CrossProbeEventKind.openArtifact:
         return _EventDescriptor(
           Icons.file_open,
           scheme.secondary,
-          'Open artifact',
+          strings.eventOpenArtifact,
         );
       case CrossProbeEventKind.other:
         return _EventDescriptor(
           Icons.swap_horiz,
           scheme.outline,
-          event.messageKind ?? 'Event',
+          event.messageKind ?? strings.eventOther,
         );
     }
   }

@@ -1,0 +1,6 @@
+# Tab walk: 5 stops, cycles
+1. top.vcd /work/top.vcd button
+2. [top.vcd /work/top.vcd button] Remove from Recent Files button
+3. gone.vcd File not found button
+4. [gone.vcd File not found button] Remove from Recent Files button
+5. Clear Recent Files button

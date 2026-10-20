@@ -131,7 +131,39 @@ class CrossProbePanelStrings {
     this.noEvents = 'No recent events yet.',
     this.clearEventsLabel = 'Clear events',
     this.sendRejected = _defaultSendRejected,
+    this.eventPeerConnected = 'Peer connected',
+    this.eventPeerDisconnected = 'Peer disconnected',
+    this.eventSelectionSent = 'Selection sent',
+    this.eventSelectionReceived = 'Selection received',
+    this.eventHighlightSent = 'Highlight sent',
+    this.eventHighlightReceived = 'Highlight received',
+    this.eventOpenArtifact = 'Open artifact',
+    this.eventOther = 'Event',
   });
+
+  /// Event-log row label: a peer connected.
+  final String eventPeerConnected;
+
+  /// Event-log row label: a peer left.
+  final String eventPeerDisconnected;
+
+  /// Event-log row label: a selection was sent.
+  final String eventSelectionSent;
+
+  /// Event-log row label: a selection arrived.
+  final String eventSelectionReceived;
+
+  /// Event-log row label: a highlight request was sent.
+  final String eventHighlightSent;
+
+  /// Event-log row label: a highlight request arrived.
+  final String eventHighlightReceived;
+
+  /// Event-log row label: an open-artifact request.
+  final String eventOpenArtifact;
+
+  /// Event-log row label for other traffic without a wire kind.
+  final String eventOther;
 
   static String _defaultSendRejected(String peerLabel, String? reason) =>
       reason == null || reason.isEmpty

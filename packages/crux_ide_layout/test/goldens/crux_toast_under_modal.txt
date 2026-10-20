@@ -1,0 +1,4 @@
+# Tab walk: 3 stops, cycles
+1. Done button
+2. [Disk full grouping] Close button
+3. [Export grouping] Retry button

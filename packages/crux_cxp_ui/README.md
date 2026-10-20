@@ -1,7 +1,7 @@
 # crux_cxp_ui
 
-Shared CXP cross-probe **UI** for the EDACrux suite — the Flutter companion to
-the pure-Dart [`crux_cxp`](../crux_cxp) protocol package.
+Shared CXP cross-probe **UI and lifecycle** for the EDACrux suite — the
+Flutter companion to the pure-Dart [`crux_cxp`](../crux_cxp) protocol package.
 
 `crux_cxp` is pure Dart, so a Flutter widget cannot live there. This package
 holds the Flutter half of cross-probing: **one** docked
@@ -88,10 +88,86 @@ button and does not gate it: the decision, and the explanation of a denial,
 stay in the product's `onSendTo`. The badge widget is the product's choice;
 `crux_cxp_ui` deliberately takes no `crux_license` dependency.
 
+## The shared lifecycle
+
+Between the protocol and a product sits one layer every product used to
+write for itself: starting and stopping the server, discovery, the peer list,
+unreachable peers and the saved settings. It is here, as root-container
+Riverpod providers, and behaves the same in every product.
+
+A product binds who it is and what it does, in its root `ProviderScope`:
+
+```dart
+const binding = CxpProductBinding(
+  productName: 'netcrux',          // wire name and peer-id prefix
+  defaultPort: 54323,
+  prefsPrefix: 'netcrux.',         // keeps the keys saved by earlier releases
+  acceptedKinds: [ElementKind.net, ElementKind.port, ElementKind.instance],
+);
+
+Future<void> main() async {
+  final cxp = await loadCxpLaunchSettings(binding);
+  runApp(ProviderScope(
+    overrides: [
+      cxpProductBindingProvider.overrideWithValue(binding),
+      cxpLaunchSettingsProvider.overrideWithValue(cxp),
+      cxpRequestHandlerProvider.overrideWith((ref) => MyHandler(ref)),
+    ],
+    child: const MyApp(),
+  ));
+}
+```
+
+Then it reads, rather than owns:
+
+| Provider | What it is |
+|---|---|
+| `cxpSettingsProvider` | the four settings; each setter saves at once |
+| `cxpRuntimeProvider` | the running `CxpRuntime`, or null when off |
+| `cxpPeersProvider` / `cxpConnectedPeerCountProvider` | connected peers and the toolbar badge's count; empty when off |
+| `cxpUnreachablePeersProvider` | discovered but unreachable peers; cleared by every stop and restart |
+| `cxpEventLogProvider` | the panel's event log |
+| `cxpServerStatusProvider` | running, port, why not |
+
+The rules, once: a launch with CXP off never starts the server or writes a
+manifest; a valid new port restarts a running server on it at once and is
+kept for the next start otherwise; the runtime acknowledges every request a
+peer sends with the `CxpHandlerResult` the product's `CxpRequestHandler`
+returns, and asks for attention (`cxpAttentionRequesterProvider`) when one is
+honoured and the setting is on.
+
+## Sending
+
+Every way of sending a cross-probe goes through one dispatcher and reads one
+target list:
+
+- `crossProbeMenuEntry(context, ref, selection: ...)`: the "Cross-probe to"
+  submenu for any `CruxContextMenuRegion` / `CruxOverflowMenu`. One item per
+  product in suite order (WaveCrux, NetCrux, LintCrux, SimCrux), a product's
+  several windows as sub-items, and one disabled "(no peers running)" item
+  with no peers.
+- `runCrossProbeSelection(context, ref, selection: ..., anchor: ...)`: the
+  Cross-probe Selection command. One target sends at once; several open the
+  same list as a menu at the selection. The product binds it to
+  Cmd/Ctrl+Shift+Enter and must not fire it while `cruxTextInputFocused()`.
+- `CrossProbeToButton(productName: 'wavecrux', ...)`: a one-click button.
+- `CruxCrossProbePanel`: the panel's per-peer send.
+
+A product describes its selection as a `CrossProbeSelection` naming it in
+every element kind it can (a violation is a rule, a scope and a source line);
+`crossProbeElementFor` picks the kind the target shows, from
+`kCrossProbeTargetKinds`, narrowed by the peer's `cxp.accepts:<kind>`
+capabilities. Every send is an acknowledged `request_highlight` with one
+timeout and ends as a `CrossProbeOutcome`, reported the same way everywhere
+(`reportCrossProbeOutcome`): a failure is an error toast, a landed send is
+announced. Cross-probing is free; `crossProbeGateProvider` is the seam a
+pricing decision would use.
+
+All words come from `CruxCxpStrings` in the suite's locales.
+
 ## Status
 
-The four apps adopt it by: implementing a
-`CrossProbePanelController`, swapping their bespoke cross-probe panel for
-`CrossProbePanel`, and adding a toolbar toggle button that calls `onOpenPanel`.
-WaveCrux's old modal `Dialog` presentation is retired in favour of this docked
-panel.
+`CrossProbePanel` and `CrossProbePanelController` remain for a host that
+binds the panel itself. The four products move to the bound
+`CruxCrossProbePanel` and `CruxCxpSettingsSection` and delete their own
+lifecycle providers, panel controllers and cross-probe strings.
