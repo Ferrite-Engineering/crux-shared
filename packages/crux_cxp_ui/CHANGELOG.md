@@ -30,6 +30,15 @@
   `runCrossProbeSelection` (the Cross-probe Selection command: one target
   sends, several open a menu, never a dialog), `CrossProbeToButton`,
   `sendCrossProbe` and `reportCrossProbeOutcome`.
+- `cruxCxpServerPolicyProvider` (the organization's policy over the enable
+  flag; the server stays off when it says so) and
+  `CruxCxpSettingsSection.wrapControls` (a policy lock around the
+  controls). CXP runs on the desktop only: `cruxCxpTransportAvailableProvider`
+  defaults to `cruxCxpDesktopHost()`, false in a browser and on iOS and
+  Android.
+- `crossProbeSendObserverProvider` (`CrossProbeSendRecord`: peer, element
+  sent, outcome): told of every send from every surface, where a product
+  records its outbound telemetry and audit events.
 - **Bound widgets.** `CruxCrossProbePanel` (the panel on the lifecycle and
   the shared send) and `CruxCxpSettingsSection` (the settings controls on
   `cruxCxpSettingsProvider`, with a status line).

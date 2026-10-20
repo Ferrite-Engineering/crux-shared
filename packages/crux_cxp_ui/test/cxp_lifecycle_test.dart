@@ -10,6 +10,7 @@ import 'dart:io';
 
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:crux_cxp_ui/crux_cxp_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -99,6 +100,8 @@ void main() {
     CruxCxpRequestHandler handler = const CruxCxpRequestHandler(),
     void Function()? attention,
     bool transport = true,
+    void Function(CrossProbeSendRecord record)? observer,
+    bool Function({required bool userEnabled})? policy,
   }) {
     final container =
         ProviderContainer(
@@ -116,6 +119,9 @@ void main() {
               cruxCxpTransportAvailableProvider.overrideWithValue(transport),
               cruxCxpRequestHandlerProvider.overrideWithValue(handler),
               cruxCxpAttentionRequesterProvider.overrideWithValue(attention),
+              crossProbeSendObserverProvider.overrideWithValue(observer),
+              if (policy != null)
+                cruxCxpServerPolicyProvider.overrideWithValue(policy),
               if (launch != null)
                 cruxCxpLaunchSettingsProvider.overrideWithValue(launch),
             ],
@@ -176,6 +182,30 @@ void main() {
       expect(manifests(), isEmpty);
     },
   );
+
+  test("the organization's policy can hold the server off whatever the user "
+      'set', () async {
+    final c = product(
+      'wavecrux',
+      policy: ({required userEnabled}) => false,
+    );
+    expect(c.read(cruxCxpSettingsProvider).enabled, isTrue);
+    expect(await runtimeOf(c), isNull);
+    expect(manifests(), isEmpty);
+  });
+
+  test('CXP runs on the desktop only', () {
+    for (final platform in TargetPlatform.values) {
+      debugDefaultTargetPlatformOverride = platform;
+      final desktop = <TargetPlatform>{
+        TargetPlatform.macOS,
+        TargetPlatform.windows,
+        TargetPlatform.linux,
+      }.contains(platform);
+      expect(cruxCxpDesktopHost(), desktop, reason: '$platform');
+    }
+    debugDefaultTargetPlatformOverride = null;
+  });
 
   test('saved settings that say off keep the server off while they load, and '
       'after', () async {
@@ -252,11 +282,13 @@ void main() {
     late _Handler handler;
     late int attention;
     late PeerIdentity netPeer;
+    late List<CrossProbeSendRecord> observed;
 
     setUp(() async {
       handler = _Handler();
       attention = 0;
-      wave = product('wavecrux');
+      observed = <CrossProbeSendRecord>[];
+      wave = product('wavecrux', observer: observed.add);
       await runtimeOf(wave);
       net = product('netcrux', handler: handler, attention: () => attention++);
       await runtimeOf(net);
@@ -347,6 +379,19 @@ void main() {
           .read(crossProbeDispatcherProvider)
           .send(netPeer, selection(ElementKind.net));
       expect(attention, 0);
+    });
+
+    test('the send observer hears every outcome with what was sent', () async {
+      final dispatcher = wave.read(crossProbeDispatcherProvider);
+      await dispatcher.send(netPeer, selection(ElementKind.net));
+      await dispatcher.send(netPeer, selection(ElementKind.rule));
+      expect(observed.map((r) => r.outcome.kind), [
+        CrossProbeOutcomeKind.sent,
+        CrossProbeOutcomeKind.notShowable,
+      ]);
+      expect(observed.first.element?.kind, ElementKind.net);
+      expect(observed.first.peer, netPeer);
+      expect(observed.last.element, isNull);
     });
 
     test('a refusal carries the peer reason', () async {

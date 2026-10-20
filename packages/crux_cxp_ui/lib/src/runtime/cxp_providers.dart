@@ -9,7 +9,8 @@ import 'package:crux_cxp_ui/src/runtime/cxp_product_binding.dart';
 import 'package:crux_cxp_ui/src/runtime/cxp_runtime.dart';
 import 'package:crux_cxp_ui/src/runtime/cxp_settings.dart';
 import 'package:crux_settings/crux_settings.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
@@ -71,12 +72,38 @@ final Provider<bool Function(PeerIdentity peer)> cruxCxpPeerFilterProvider =
 
 bool _allowEveryPeer(PeerIdentity _) => true;
 
-/// Whether this build has a CXP transport: loopback sockets and the shared
-/// discovery directory. False in a browser, where nothing below runs.
+/// Whether this build runs CXP: loopback sockets and the shared discovery
+/// directory, on a desktop. False in a browser and on iOS and Android, where
+/// nothing below runs (no suite peer runs beside a phone app).
 final Provider<bool> cruxCxpTransportAvailableProvider = Provider<bool>(
-  (_) => !kIsWeb,
+  (_) => cruxCxpDesktopHost(),
   name: 'cruxCxpTransportAvailableProvider',
 );
+
+/// Whether this process is a desktop build (macOS, Windows or Linux, not the
+/// web): the platforms CXP runs on.
+bool cruxCxpDesktopHost() {
+  if (kIsWeb) return false;
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.macOS ||
+    TargetPlatform.windows ||
+    TargetPlatform.linux => true,
+    _ => false,
+  };
+}
+
+/// What the organization's policy file says about the server, given the
+/// user's own setting: returns the effective enable flag. The default
+/// returns the user's setting; a product with a server lock in its policy
+/// keys (WaveCrux's `resolveCxpServerPolicy`) overrides it.
+final Provider<bool Function({required bool userEnabled})>
+cruxCxpServerPolicyProvider =
+    Provider<bool Function({required bool userEnabled})>(
+      (_) => _userSettingWins,
+      name: 'cruxCxpServerPolicyProvider',
+    );
+
+bool _userSettingWins({required bool userEnabled}) => userEnabled;
 
 /// The suite-shared discovery directory. Tests override it with a temp
 /// directory. Never an app-container path: no other product would scan it.
@@ -195,8 +222,9 @@ class CruxCxpSettingsNotifier extends Notifier<CruxCxpSettings> {
       _update(state.copyWith(broadcastSelection: broadcastSelection));
 }
 
-/// The running CXP runtime, or null when CXP is off, there is no transport,
-/// or it has not started yet.
+/// The running CXP runtime, or null when CXP is off (by the user's setting
+/// or the organization's policy), there is no transport, or it has not
+/// started yet.
 ///
 /// Rebuilt only when the enable flag or the port changes, never on the
 /// other two settings. The previous runtime is stopped (goodbye sent,
@@ -207,7 +235,9 @@ cruxCxpRuntimeProvider = FutureProvider<CruxCxpRuntime?>((ref) async {
   final (:enabled, :port) = ref.watch(
     cruxCxpSettingsProvider.select((s) => (enabled: s.enabled, port: s.port)),
   );
-  if (!enabled) return null;
+  if (!ref.watch(cruxCxpServerPolicyProvider)(userEnabled: enabled)) {
+    return null;
+  }
   final binding = ref.watch(cruxCxpProductBindingProvider);
   final directory = await ref.watch(cruxCxpManifestDirectoryProvider.future);
   final version = await ref.watch(cruxCxpProductVersionProvider.future);

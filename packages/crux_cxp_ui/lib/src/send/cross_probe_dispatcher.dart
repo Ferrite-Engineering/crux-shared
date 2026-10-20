@@ -112,6 +112,27 @@ abstract interface class CrossProbeGate {
 final Provider<CrossProbeGate?> crossProbeGateProvider =
     Provider<CrossProbeGate?>((_) => null, name: 'crossProbeGateProvider');
 
+/// One send the dispatcher made, for a product's telemetry and audit.
+///
+/// `element` is what was sent (null when nothing left: nothing selected, the
+/// server off, nothing the target can show).
+typedef CrossProbeSendRecord = ({
+  PeerIdentity peer,
+  ElementId? element,
+  CrossProbeOutcome outcome,
+});
+
+/// Told of every send's outcome, from every surface. Null (the default)
+/// tells nobody; a product records its outbound `cxp.crossprobe` telemetry
+/// event and any audit event here, so no surface has to. Must not throw:
+/// an observer that does is ignored.
+final Provider<void Function(CrossProbeSendRecord record)?>
+crossProbeSendObserverProvider =
+    Provider<void Function(CrossProbeSendRecord record)?>(
+      (_) => null,
+      name: 'crossProbeSendObserverProvider',
+    );
+
 /// Sends cross-probes the one way every surface does: always an
 /// acknowledged `request_highlight`, one timeout, one outcome vocabulary.
 class CrossProbeDispatcher {
@@ -124,24 +145,58 @@ class CrossProbeDispatcher {
   final Duration timeout;
 
   /// Sends [selection] to [peer]. [label] names the target in the outcome
-  /// (defaults to the product's display name).
+  /// (defaults to the product's display name). Every outcome is reported to
+  /// [crossProbeSendObserverProvider].
   Future<CrossProbeOutcome> send(
+    PeerIdentity peer,
+    CrossProbeSelection? selection, {
+    String? label,
+  }) async {
+    final (element, outcome) = await _send(peer, selection, label: label);
+    final observer = _read(crossProbeSendObserverProvider);
+    if (observer != null) {
+      try {
+        observer((peer: peer, element: element, outcome: outcome));
+      } on Object {
+        // Telemetry and audit never change what the user is told.
+      }
+    }
+    return outcome;
+  }
+
+  Future<(ElementId?, CrossProbeOutcome)> _send(
     PeerIdentity peer,
     CrossProbeSelection? selection, {
     String? label,
   }) async {
     final who = label ?? cruxCxpDisplayName(peer.productName);
     if (selection == null || selection.isEmpty) {
-      return const CrossProbeOutcome(CrossProbeOutcomeKind.nothingSelected);
+      return (
+        null,
+        const CrossProbeOutcome(CrossProbeOutcomeKind.nothingSelected),
+      );
     }
     final runtime = _read(cruxCxpRuntimeProvider).value;
     if (runtime == null || !runtime.isAvailable) {
-      return const CrossProbeOutcome(CrossProbeOutcomeKind.serverOff);
+      return (null, const CrossProbeOutcome(CrossProbeOutcomeKind.serverOff));
     }
     final element = crossProbeElementFor(selection, peer);
     if (element == null) {
-      return CrossProbeOutcome(CrossProbeOutcomeKind.notShowable, target: who);
+      return (
+        null,
+        CrossProbeOutcome(CrossProbeOutcomeKind.notShowable, target: who),
+      );
     }
+    return (element, await _deliver(runtime, peer, selection, element, who));
+  }
+
+  Future<CrossProbeOutcome> _deliver(
+    CruxCxpRuntime runtime,
+    PeerIdentity peer,
+    CrossProbeSelection selection,
+    ElementId element,
+    String who,
+  ) async {
     final delivery = await runtime.requestHighlight(
       peer.peerId,
       RequestHighlight(

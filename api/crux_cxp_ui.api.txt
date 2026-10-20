@@ -111,6 +111,7 @@ class CrossProbeSendFailure
   final reason: String?
   get hashCode -> int
   toString() -> String
+typedef CrossProbeSendRecord = ({ElementId? element, CrossProbeOutcome outcome, PeerIdentity peer})
 class CrossProbeTarget
   const CrossProbeTarget({required List<PeerIdentity> instances, required String label, required String productName})
   final instances: List<PeerIdentity>
@@ -226,8 +227,9 @@ class CruxCxpSettingsNotifier extends Notifier<CruxCxpSettings>
   setPort(int port) -> Future<void>
   setRequestAttention({required bool requestAttention}) -> Future<void>
 class CruxCxpSettingsSection extends ConsumerWidget
-  const CruxCxpSettingsSection({Key? key})
+  const CruxCxpSettingsSection({Key? key, Widget Function(BuildContext, Widget)? wrapControls})
   build(BuildContext context, WidgetRef ref) -> Widget
+  final wrapControls: Widget Function(BuildContext, Widget)?
 class CruxCxpSettingsStrings
   const CruxCxpSettingsStrings({required String attentionHelp, required String attentionLabel, required String broadcastHelp, required String broadcastLabel, required String enableHelp, required String enableLabel, required String portError, required String portHelp, required String portLabel})
   final attentionHelp: String
@@ -321,10 +323,12 @@ get crossProbeDispatcherProvider -> Provider<CrossProbeDispatcher>
 crossProbeElementFor(CrossProbeSelection selection, PeerIdentity target) -> ElementId?
 get crossProbeGateProvider -> Provider<CrossProbeGate?>
 crossProbeMenuEntry(BuildContext context, WidgetRef ref, {IconData icon, required CrossProbeSelection? Function() selection}) -> CruxMenuEntry
+get crossProbeSendObserverProvider -> Provider<void Function(({ElementId? element, CrossProbeOutcome outcome, PeerIdentity peer}))?>
 crossProbeTargetsFor(List<PeerIdentity> peers) -> List<CrossProbeTarget>
 get crossProbeTargetsProvider -> Provider<List<CrossProbeTarget>>
 get cruxCxpAttentionRequesterProvider -> Provider<void Function()?>
 get cruxCxpConnectedPeerCountProvider -> Provider<int>
+cruxCxpDesktopHost() -> bool
 cruxCxpDisplayName(String productName) -> String
 get cruxCxpEventLogProvider -> NotifierProvider<CruxCxpEventLog, List<CrossProbeEvent>>
 get cruxCxpLaunchSettingsProvider -> Provider<CruxCxpSettings?>
@@ -336,6 +340,7 @@ get cruxCxpProductBindingProvider -> Provider<CruxCxpProductBinding>
 get cruxCxpProductVersionProvider -> FutureProvider<String>
 get cruxCxpRequestHandlerProvider -> Provider<CruxCxpRequestHandler>
 get cruxCxpRuntimeProvider -> FutureProvider<CruxCxpRuntime?>
+get cruxCxpServerPolicyProvider -> Provider<bool Function({required bool userEnabled})>
 get cruxCxpServerStatusProvider -> Provider<({int? port, String? problem, bool running})>
 get cruxCxpSettingsProvider -> NotifierProvider<CruxCxpSettingsNotifier, CruxCxpSettings>
 get cruxCxpSettingsServiceProvider -> Provider<SettingsService<CruxCxpSettings>>

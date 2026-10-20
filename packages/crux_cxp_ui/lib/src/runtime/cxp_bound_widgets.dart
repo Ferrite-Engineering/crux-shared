@@ -143,7 +143,11 @@ class _CruxCrossProbePanelState extends ConsumerState<CruxCrossProbePanel>
 /// peers, and why the server is unavailable when it is).
 class CruxCxpSettingsSection extends ConsumerWidget {
   /// Creates the section.
-  const CruxCxpSettingsSection({super.key});
+  const CruxCxpSettingsSection({this.wrapControls, super.key});
+
+  /// Wraps the controls, for a product that shows an organization's policy
+  /// lock around them (`CruxPolicyLock`). Null shows them as they are.
+  final Widget Function(BuildContext context, Widget controls)? wrapControls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -160,7 +164,7 @@ class CruxCxpSettingsSection extends ConsumerWidget {
         strings.statusStopped,
       if (status.running) strings.peersConnected(peerCount),
     ].join(', ');
-    return CruxCxpSettingsControls(
+    final controls = CruxCxpSettingsControls(
       // A new port from elsewhere re-seeds the field.
       key: ValueKey<int>(settings.port),
       strings: strings.settings,
@@ -193,5 +197,6 @@ class CruxCxpSettingsSection extends ConsumerWidget {
         ),
       ),
     );
+    return wrapControls?.call(context, controls) ?? controls;
   }
 }
