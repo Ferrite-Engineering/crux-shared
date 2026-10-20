@@ -150,7 +150,7 @@ final class CruxMenuDivider extends CruxMenuEntry
 sealed class CruxMenuEntry
   const CruxMenuEntry()
 final class CruxMenuItem extends CruxMenuEntry
-  const CruxMenuItem({IconData? icon, Key? key, String? tooltip, bool destructive, bool enabled, required String label, required void Function() onSelected})
+  const CruxMenuItem({IconData? icon, Key? key, String? tooltip, Widget Function(BuildContext)? trailingBuilder, bool destructive, bool enabled, required String label, required void Function() onSelected})
   final destructive: bool
   final enabled: bool
   final icon: IconData?
@@ -158,6 +158,7 @@ final class CruxMenuItem extends CruxMenuEntry
   final label: String
   final onSelected: void Function()
   final tooltip: String?
+  final trailingBuilder: Widget Function(BuildContext)?
 class CruxNextRegionIntent extends Intent
   const CruxNextRegionIntent()
 class CruxOverflowMenu extends StatelessWidget

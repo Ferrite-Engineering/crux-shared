@@ -79,9 +79,7 @@ void main() {
     expect(chosen, isEmpty);
   });
 
-  testWidgets('right-click on the row opens the same commands', (
-    tester,
-  ) async {
+  testWidgets('right-click on the row opens the same commands', (tester) async {
     await tester.pumpWidget(host());
     await tester.tap(find.text('Marker A'), buttons: kSecondaryButton);
     await tester.pumpAndSettle();
@@ -119,5 +117,94 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.f10);
     await tester.pumpAndSettle();
     expect(find.text('Rename'), findsNothing);
+  });
+
+  group('trailingBuilder', () {
+    late int builds;
+
+    Widget badgeHost() {
+      builds = 0;
+      final badged = <CruxMenuEntry>[
+        CruxMenuItem(
+          label: 'Export',
+          onSelected: () => chosen.add('export'),
+          trailingBuilder: (context) {
+            builds++;
+            return const Text('Pro', key: ValueKey('badge'));
+          },
+        ),
+      ];
+      return MaterialApp(
+        theme: ThemeData(
+          extensions: const <ThemeExtension<dynamic>>[CruxDesktopTokens()],
+        ),
+        home: Scaffold(
+          body: Center(
+            child: CruxContextMenuRegion(
+              entries: badged,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(width: 120, child: Text('Marker A')),
+                  CruxOverflowMenu(entries: badged, tooltip: 'More actions'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('is not built until the menu opens', (tester) async {
+      await tester.pumpWidget(badgeHost());
+      expect(builds, 0);
+      expect(find.byKey(const ValueKey('badge')), findsNothing);
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      expect(builds, greaterThan(0));
+      expect(find.byKey(const ValueKey('badge')), findsOneWidget);
+    });
+
+    testWidgets('renders in the right-click menu and stays enabled', (
+      tester,
+    ) async {
+      await tester.pumpWidget(badgeHost());
+      await tester.tap(find.text('Marker A'), buttons: kSecondaryButton);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('badge')), findsOneWidget);
+      await tester.tap(find.text('Export'));
+      await tester.pumpAndSettle();
+      expect(chosen, ['export']);
+    });
+
+    testWidgets('renders in the button menu at the same place', (tester) async {
+      await tester.pumpWidget(badgeHost());
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      final viaButton = tester.getRect(find.byKey(const ValueKey('badge')));
+      await tester.tap(find.text('Export'));
+      await tester.pumpAndSettle();
+      expect(chosen, ['export']);
+      expect(
+        viaButton.left,
+        greaterThan(tester.getRect(find.text('Marker A')).left),
+      );
+    });
+
+    testWidgets('semantics read the label, then the badge once', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(badgeHost());
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      final node = tester.getSemantics(find.text('Export'));
+      expect(node.label, 'Export\nPro');
+      final item = tester.widget<PopupMenuItem<int>>(
+        find.byType(PopupMenuItem<int>),
+      );
+      expect(item.enabled, isTrue);
+      handle.dispose();
+    });
   });
 }

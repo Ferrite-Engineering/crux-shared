@@ -79,6 +79,14 @@ holds a `CruxIdeLayout` or has shown a context toast; with several windows the
 most recently focused wins. With no host, or under a non-desktop theme, the
 call returns false and does nothing (a debug build writes a line to stderr).
 
+## Badges in menu rows
+
+`CruxMenuItem(trailingBuilder: (context) => badge)` draws a widget, typically
+a tier badge, at the row's trailing edge in both the "⋯" menu and the
+right-click menu. The builder runs only while the menu is open, so a badge that
+records an impression records it when shown. The item stays enabled; the badge
+is not part of the label and its own semantics are read once after it.
+
 ## Dependencies
 
 `flutter`, `panes`. No Riverpod dependency — the host drives rebuilds.

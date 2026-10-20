@@ -25,11 +25,23 @@ final class CruxMenuItem extends CruxMenuEntry {
     this.enabled = true,
     this.destructive = false,
     this.tooltip,
+    this.trailingBuilder,
     this.key,
   });
 
   /// The localized label.
   final String label;
+
+  /// An optional widget drawn at the row's trailing edge, typically a tier
+  /// badge.
+  ///
+  /// Called only while the menu is open, each time the row is built, so a
+  /// badge that records an impression in `initState` records one only when
+  /// the menu is actually shown. The item stays as enabled as [enabled] says;
+  /// the widget is not part of [label], and its own semantics (for example
+  /// "Pro") are read once, after the label. The "⋯" button and a right-click
+  /// open the same row.
+  final Widget Function(BuildContext context)? trailingBuilder;
 
   /// Runs after the menu has closed.
   final VoidCallback onSelected;
@@ -146,7 +158,12 @@ Future<void> _openMenu(
             height: height ?? kMinInteractiveDimension,
             child: _withTooltip(
               item.tooltip,
-              _MenuRow(icon: item.icon, label: item.label, color: color),
+              _MenuRow(
+                icon: item.icon,
+                label: item.label,
+                color: color,
+                trailingBuilder: item.trailingBuilder,
+              ),
             ),
           ),
         );
@@ -216,11 +233,17 @@ Widget _withTooltip(String? tooltip, Widget child) => tooltip == null
     : Tooltip(message: tooltip, excludeFromSemantics: true, child: child);
 
 class _MenuRow extends StatelessWidget {
-  const _MenuRow({required this.icon, required this.label, this.color});
+  const _MenuRow({
+    required this.icon,
+    required this.label,
+    this.color,
+    this.trailingBuilder,
+  });
 
   final IconData? icon;
   final String label;
   final Color? color;
+  final Widget Function(BuildContext context)? trailingBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +260,10 @@ class _MenuRow extends StatelessWidget {
             style: color == null ? null : TextStyle(color: color),
           ),
         ),
+        if (trailingBuilder case final builder?) ...<Widget>[
+          const SizedBox(width: 8),
+          Builder(builder: builder),
+        ],
       ],
     );
   }
@@ -423,11 +450,7 @@ class CruxContextMenuRegion extends StatelessWidget {
         focused?.bottomLeft ??
         (box == null ? Offset.zero : box.localToGlobal(Offset.zero));
     unawaited(
-      showCruxContextMenu(
-        context,
-        globalPosition: anchor,
-        entries: entries,
-      ),
+      showCruxContextMenu(context, globalPosition: anchor, entries: entries),
     );
     return KeyEventResult.handled;
   }

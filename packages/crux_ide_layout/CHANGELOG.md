@@ -6,6 +6,11 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `CruxMenuItem.trailingBuilder`: an optional trailing widget, typically a tier
+  badge. Built only while the menu is open, identical in the "⋯" and
+  right-click menus; the item stays enabled and the badge's own semantics are
+  read once after the label.
+
 - `CruxToasts.showInfo` / `CruxToasts.showError` (and `CruxToasts` itself is
   now exported): the desktop toast with no `BuildContext`, for feedback raised
   after the originating widget is gone. Returns whether it was shown; never
