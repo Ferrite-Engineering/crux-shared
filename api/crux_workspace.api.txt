@@ -114,9 +114,15 @@ enum CruxSuiteProduct
   static const netCrux: CruxSuiteProduct
   static const simCrux: CruxSuiteProduct
   static const waveCrux: CruxSuiteProduct
-class CruxTabNavigators
+class CruxTabNavigatorHost extends StatefulWidget
+  const CruxTabNavigatorHost({Key? key, required GlobalKey<NavigatorState> navigatorKey, required Widget Function(BuildContext) builder})
+  createState() -> State<CruxTabNavigatorHost>
+  final builder: Widget Function(BuildContext)
+  final navigatorKey: GlobalKey<NavigatorState>
+class CruxTabNavigators implements WorkspaceScopeReconciler
   keyFor(TabId tab) -> GlobalKey<NavigatorState>
   navigatorFor(TabId tab) -> NavigatorState?
+  reconcileScopes(WorkspaceScopeSnapshot live) -> void
   retainOnly(Iterable<TabId> tabs) -> void
 class EmptyCanvasState extends StatefulWidget
   const EmptyCanvasState({Key? key, List<Widget> primaryActions, List<Widget>? children, String? semanticLabel, String? subtitle, String? title, String? versionLabel, Widget? footer, Widget? header, Widget? peers, Widget? recentFilesSection, Widget? recentWorkspacesSection, bool claimInitialFocus, bool useCard, double maxContentWidth})

@@ -18,7 +18,12 @@
   `navigatorFor(tabId)` from outside the tab, passed to `showCruxDialog`'s
   `navigator:`) mounts no second scope over the tab's container. Off by
   default. The route scope-leak guard clears a route given one of those two
-  navigators and nothing else.
+  navigators and nothing else. `CruxTabNavigators` is also a
+  `WorkspaceScopeReconciler`: registered with the workspace notifier, it
+  closes a closing tab's dialogs before the tab's navigator is disposed, so
+  their futures complete with null instead of never. `CruxTabNavigatorHost`
+  is exported, so a product's widget test can build one tab's navigator
+  without a whole `PaneHost`.
 
 - **`ViewerTabBar` tells same-named tabs apart.** When two or more open tabs,
   in any pane, show the same label, each of them also shows the shortest run

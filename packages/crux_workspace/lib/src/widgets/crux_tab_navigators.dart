@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_workspace/src/tab_id.dart';
+import 'package:crux_workspace/src/workspace_scopes.dart';
 import 'package:flutter/material.dart';
 
 /// One nested [Navigator] per tab, inside that tab's provider scope.
@@ -25,7 +26,15 @@ import 'package:flutter/material.dart';
 /// Hand the result to `showCruxDialog(navigator: ...)` (crux_ide_layout).
 /// The dialog then covers the tab's area, not the window: the pane's tab bar
 /// and the docks beside it stay usable while it is open.
-class CruxTabNavigators {
+///
+/// Register the instance with `WorkspaceNotifier.addScopeReconciler` too.
+/// A closing tab's navigator is disposed with the tab, and a disposed
+/// navigator never completes the futures of the routes still on it, so a
+/// dialog open on a tab as it closes would leave its opener waiting forever
+/// (and a `ModalGuard` key taken for it held for the rest of the process).
+/// As a reconciler, this pops every route above the tab's content first, so
+/// each of those futures completes with null.
+class CruxTabNavigators implements WorkspaceScopeReconciler {
   final Map<TabId, GlobalKey<NavigatorState>> _keys =
       <TabId, GlobalKey<NavigatorState>>{};
 
@@ -44,6 +53,23 @@ class CruxTabNavigators {
   void retainOnly(Iterable<TabId> tabs) {
     final keep = tabs.toSet();
     _keys.removeWhere((id, _) => !keep.contains(id));
+  }
+
+  /// Closes what is open on the navigator of every tab not in [live] (its
+  /// dialogs resolve null) and forgets that tab, so a later tab that reuses
+  /// the id gets a navigator of its own.
+  @override
+  void reconcileScopes(WorkspaceScopeSnapshot live) {
+    final gone = [
+      for (final id in _keys.keys)
+        if (!live.tabIds.contains(id)) id,
+    ];
+    for (final id in gone) {
+      final navigator = _keys.remove(id)?.currentState;
+      if (navigator != null && navigator.mounted) {
+        navigator.popUntil((route) => route.isFirst);
+      }
+    }
   }
 }
 
@@ -79,6 +105,10 @@ class _TabContentBuilder extends InheritedWidget {
 }
 
 /// A tab's content on its own navigator.
+///
+/// `PaneHost` builds one per tab when given `tabNavigators`. Exported so a
+/// product's widget test can build the same shape around a single tab's
+/// content without a whole pane host.
 ///
 /// The navigator's single page has no transition. The navigator's own focus
 /// scope is set to hand Tab on to the enclosing scope at its edge, as a

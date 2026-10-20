@@ -21,8 +21,14 @@ import 'package:flutter/material.dart';
 /// [bodyBuilder] returns the app's settings body (typically a
 /// `CruxSettingsMasterDetail` over its category list). All user-visible
 /// strings arrive localized from the host ([title], [closeTooltip]).
-/// [wrap] optionally wraps the shell widget (LintCrux re-parents it into
-/// the active tab's provider scope).
+/// [wrap] optionally wraps the shell widget.
+///
+/// [navigator], when given, is the navigator Settings is pushed on instead of
+/// the root one: a product whose settings body reads a tab's providers passes
+/// that tab's own nested navigator (crux_workspace's `CruxTabNavigators`), so
+/// the body is built under the tab's provider scope and no second scope over
+/// the tab's container is needed. The dialog then sizes itself to that
+/// navigator's area.
 Future<void> openCruxSettings(
   BuildContext context, {
   required String title,
@@ -30,6 +36,7 @@ Future<void> openCruxSettings(
   required WidgetBuilder bodyBuilder,
   required bool asDialog,
   Widget Function(BuildContext context, Widget shell)? wrap,
+  NavigatorState? navigator,
 }) async {
   Widget shellOf(BuildContext ctx, Widget shell) =>
       wrap == null ? shell : wrap(ctx, shell);
@@ -38,6 +45,7 @@ Future<void> openCruxSettings(
     await showCruxDialog<void>(
       context: context,
       barrierDismissible: false,
+      navigator: navigator,
       builder: (ctx) => shellOf(
         ctx,
         _CruxSettingsDialogShell(
@@ -48,7 +56,7 @@ Future<void> openCruxSettings(
       ),
     );
   } else {
-    await Navigator.of(context).push<void>(
+    await (navigator ?? Navigator.of(context)).push<void>(
       MaterialPageRoute(
         builder: (ctx) => shellOf(
           ctx,
@@ -83,13 +91,34 @@ class _CruxSettingsDialogShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The dialog shrinks to fit the space its route has with a 48 dp gutter
+    // on every side (iPad split view, narrow desktop windows, a tab's area
+    // when shown on a tab's navigator), and is wide enough for the category
+    // rail + detail pane to sit side by side.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screen = MediaQuery.sizeOf(context);
+        final width = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : screen.width;
+        final height = constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : screen.height;
+        return _dialog(
+          context,
+          dialogWidth: math.min<double>(860, width - 48),
+          dialogHeight: math.min<double>(620, height - 48),
+        );
+      },
+    );
+  }
+
+  Widget _dialog(
+    BuildContext context, {
+    required double dialogWidth,
+    required double dialogHeight,
+  }) {
     final theme = Theme.of(context);
-    // The dialog shrinks to fit the available viewport with a 48 dp gutter
-    // on every side (iPad split view, narrow desktop windows), and is wide
-    // enough for the category rail + detail pane to sit side by side.
-    final screen = MediaQuery.sizeOf(context);
-    final dialogWidth = math.min<double>(860, screen.width - 48);
-    final dialogHeight = math.min<double>(620, screen.height - 48);
 
     // Escape closes Settings even though the barrier is not dismissible:
     // showCruxDialog puts an enabled dismiss action between the route and

@@ -6,6 +6,13 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **`openCruxSettings(navigator:)`.** Pushes Settings on the given navigator
+  instead of the root one, so a product whose settings body reads a tab's
+  providers can show it on that tab's own navigator (crux_workspace's
+  `CruxTabNavigators`) rather than wrapping it in a second scope over the
+  tab's container. The dialog's size clamp now measures the space its route
+  has, not the window.
+
 - **`CruxFormRow` / `CruxFormSection`: label-left desktop forms.** A row
   around any control, plus `CruxFormRow.toggle` (a `CruxSwitch`, for a
   setting that applies at once) and `CruxFormRow.checkbox` (for an option in

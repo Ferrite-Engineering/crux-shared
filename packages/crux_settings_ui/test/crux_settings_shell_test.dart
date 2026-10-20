@@ -78,9 +78,7 @@ void main() {
       expect(find.byType(CruxSettingsRouteShell), findsNothing);
     });
 
-    testWidgets('wrap re-parents the shell (LintCrux tab-scope seam)', (
-      tester,
-    ) async {
+    testWidgets('wrap re-parents the shell', (tester) async {
       await tester.pumpWidget(
         _app(
           Builder(
@@ -151,6 +149,74 @@ void main() {
       );
       expect(size.width, lessThanOrEqualTo(600 - 48));
       expect(size.height, lessThanOrEqualTo(500 - 48));
+    });
+
+    testWidgets('navigator: pushes Settings on that navigator and clamps the '
+        'dialog to its area, not the window', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final nested = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        _app(
+          Row(
+            children: [
+              Builder(
+                builder: (context) => SizedBox(
+                  width: 600,
+                  child: Center(
+                    child: FilledButton(
+                      onPressed: () => openCruxSettings(
+                        context,
+                        title: 'Settings',
+                        closeTooltip: 'Close',
+                        asDialog: true,
+                        navigator: nested.currentState,
+                        bodyBuilder: (_) => const SizedBox.expand(),
+                      ),
+                      child: const Text('open'),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Navigator(
+                  key: nested,
+                  onGenerateRoute: (_) => MaterialPageRoute<void>(
+                    builder: (_) => const Text('nested page'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(of: find.byKey(nested), matching: find.byType(Dialog)),
+        findsOneWidget,
+      );
+      final size = tester.getSize(
+        find
+            .descendant(
+              of: find.byType(Dialog),
+              matching: find.byType(SizedBox),
+            )
+            .first,
+      );
+      // The nested navigator is 600 wide: the window's 1200 would allow the
+      // full 860.
+      expect(size.width, lessThanOrEqualTo(600 - 48));
+
+      await tester.tap(find.byKey(const ValueKey('cruxSettingsClose')));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.text('nested page'), findsOneWidget);
     });
   });
 

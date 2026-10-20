@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:crux_a11y/crux_a11y_testing.dart';
@@ -198,6 +199,70 @@ void main() {
     await notifier.closeTab(a);
     await tester.pumpAndSettle();
     expect(navigators.navigatorFor(a), isNull);
+  });
+
+  testWidgets('closing a tab with a dialog open on it completes the '
+      "dialog's future when the navigators reconcile", (tester) async {
+    final navigators = CruxTabNavigators();
+    final (container, _) = await pumpHost(tester, navigators: navigators);
+    final notifier = container.read(provider.notifier)
+      ..addScopeReconciler(navigators);
+    addTearDown(() => notifier.removeScopeReconciler(navigators));
+    final a = await notifier.openTab(displayName: 'A', payload: 'a');
+    await notifier.openTab(displayName: 'B', payload: 'b');
+    await notifier.setActiveTab(a);
+    await tester.pumpAndSettle();
+
+    var completed = false;
+    unawaited(
+      navigators
+          .navigatorFor(a)!
+          .push<void>(
+            DialogRoute<void>(
+              context: tester.element(find.text('A content 0')),
+              builder: (_) => const _CountDialog(),
+            ),
+          )
+          .then((_) => completed = true),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(_CountDialog), findsOneWidget);
+
+    await notifier.closeTab(a);
+    await tester.pumpAndSettle();
+    expect(completed, isTrue);
+    expect(find.byType(_CountDialog), findsNothing);
+    expect(navigators.navigatorFor(a), isNull);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('without the reconciler a dialog left on a closed tab never '
+      'completes (why products register it)', (tester) async {
+    final navigators = CruxTabNavigators();
+    final (container, _) = await pumpHost(tester, navigators: navigators);
+    final notifier = container.read(provider.notifier);
+    final a = await notifier.openTab(displayName: 'A', payload: 'a');
+    await notifier.openTab(displayName: 'B', payload: 'b');
+    await notifier.setActiveTab(a);
+    await tester.pumpAndSettle();
+
+    var completed = false;
+    unawaited(
+      navigators
+          .navigatorFor(a)!
+          .push<void>(
+            DialogRoute<void>(
+              context: tester.element(find.text('A content 0')),
+              builder: (_) => const _CountDialog(),
+            ),
+          )
+          .then((_) => completed = true),
+    );
+    await tester.pumpAndSettle();
+    await notifier.closeTab(a);
+    await tester.pumpAndSettle();
+    expect(find.byType(_CountDialog), findsNothing);
+    expect(completed, isFalse);
   });
 
   testWidgets('Tab leaves the tab content for the tab bar: the nested '

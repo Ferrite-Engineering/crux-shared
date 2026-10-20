@@ -226,7 +226,10 @@ tab's content on its own nested navigator instead; a dialog shown with
 `showCruxDialog(navigator: cruxTabNavigatorOf(context))` (or
 `navigators.navigatorFor(activeTabId)` from outside the tab) is built under
 the tab's one scope. It covers the tab's area rather than the window. Off by
-default.
+default. Register the same instance with `addScopeReconciler`, beside the
+container managers: a disposed navigator never completes the futures of the
+routes left on it, so without that a dialog open on a tab as it closes leaves
+its opener (and any `ModalGuard` key it holds) waiting forever.
 
 ## Multi-window
 

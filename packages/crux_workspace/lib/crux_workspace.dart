@@ -29,7 +29,7 @@ export 'src/widgets/crux_glowing_app_icon.dart';
 export 'src/widgets/crux_suite_footer.dart';
 export 'src/widgets/crux_suite_peers.dart';
 export 'src/widgets/crux_tab_navigators.dart'
-    show CruxTabNavigators, cruxTabNavigatorOf;
+    show CruxTabNavigatorHost, CruxTabNavigators, cruxTabNavigatorOf;
 export 'src/widgets/empty_canvas_state.dart';
 export 'src/widgets/pane_host.dart'
     show
