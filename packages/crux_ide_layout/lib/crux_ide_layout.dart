@@ -74,7 +74,7 @@ export 'src/crux_ide_layout.dart';
 export 'src/crux_ide_layout_theme.dart';
 export 'src/crux_overflow_menu.dart';
 export 'src/crux_search_dialog.dart';
-export 'src/crux_toast.dart' show CruxToastCard;
+export 'src/crux_toast.dart' show CruxToastAction, CruxToastCard;
 export 'src/dock_restore_frame.dart';
 export 'src/escape_dismissible.dart';
 export 'src/feedback.dart';

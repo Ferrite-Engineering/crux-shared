@@ -17,6 +17,16 @@ const Duration kCruxInfoSnackDuration = Duration(seconds: 4);
 /// Longer than the info duration so the user has time to read a failure.
 const Duration kCruxErrorSnackDuration = Duration(seconds: 6);
 
+/// How long an informational message that carries an action stays: long
+/// enough to reach the action (it also never leaves while hovered or
+/// focused).
+const Duration kCruxActionSnackDuration = Duration(seconds: 8);
+
+/// The announcement for [message] with [action]: the message, then the
+/// action's label, so a screen-reader user knows there is something to do.
+String _spoken(String message, CruxToastAction? action) =>
+    action == null ? message : '$message ${action.label}';
+
 /// Speaks [message] through the platform screen reader.
 ///
 /// A [SnackBar] marks itself as a live region, but the desktop accessibility
@@ -58,34 +68,57 @@ void announceCrux(
 /// [ScaffoldMessenger] otherwise), so callers on bare test scaffolds degrade
 /// silently instead of throwing. The caller supplies an already-localized
 /// [message]. [key] lands on the toast or the snack bar, for tests.
-void showCruxInfoSnack(BuildContext context, String message, {Key? key}) {
+///
+/// [action] adds one button ("Undo"): reachable with Tab, announced with the
+/// message, and closing the message when chosen. A message with an action
+/// stays for [kCruxActionSnackDuration], and on desktop never leaves while
+/// the pointer is over it or focus is in it. On phone and tablet it is the
+/// snack bar's `SnackBarAction`.
+void showCruxInfoSnack(
+  BuildContext context,
+  String message, {
+  Key? key,
+  CruxToastAction? action,
+}) {
+  final duration = action == null
+      ? kCruxInfoSnackDuration
+      : kCruxActionSnackDuration;
   if (CruxDesktopTokens.isDesktop(context)) {
     if (CruxToasts.show(
       context,
       message,
       error: false,
-      infoDuration: kCruxInfoSnackDuration,
+      infoDuration: duration,
       key: key,
+      action: action,
     )) {
-      announceCrux(context, message);
+      announceCrux(context, _spoken(message, action));
     }
     return;
   }
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;
-  announceCrux(context, message);
+  announceCrux(context, _spoken(message, action));
   messenger.showSnackBar(
     SnackBar(
       key: key,
       content: Text(message),
       behavior: SnackBarBehavior.floating,
-      // The four-second standard is this helper's contract, pinned by test;
-      // it must not drift if the framework's default ever changes.
-      // ignore: avoid_redundant_argument_values
-      duration: kCruxInfoSnackDuration,
+      // Four seconds (eight with an action) is this helper's contract,
+      // pinned by test, never the framework's default.
+      duration: duration,
+      action: _snackBarAction(action),
     ),
   );
 }
+
+SnackBarAction? _snackBarAction(CruxToastAction? action) => action == null
+    ? null
+    : SnackBarAction(
+        key: const ValueKey('cruxToastAction'),
+        label: action.label,
+        onPressed: action.onPressed,
+      );
 
 /// Shows the suite-standard error message, with an assertive screen-reader
 /// announcement.
@@ -98,8 +131,13 @@ void showCruxInfoSnack(BuildContext context, String message, {Key? key}) {
 ///
 /// A no-op when there is nowhere to show it. The caller supplies an
 /// already-localized [message]. [key] lands on the toast or the snack bar,
-/// for tests.
-void showCruxErrorSnack(BuildContext context, String message, {Key? key}) {
+/// for tests. [action] is as for [showCruxInfoSnack] ("Retry").
+void showCruxErrorSnack(
+  BuildContext context,
+  String message, {
+  Key? key,
+  CruxToastAction? action,
+}) {
   if (CruxDesktopTokens.isDesktop(context)) {
     if (CruxToasts.show(
       context,
@@ -107,15 +145,16 @@ void showCruxErrorSnack(BuildContext context, String message, {Key? key}) {
       error: true,
       infoDuration: kCruxInfoSnackDuration,
       key: key,
+      action: action,
     )) {
-      announceCrux(context, message, assertive: true);
+      announceCrux(context, _spoken(message, action), assertive: true);
     }
     return;
   }
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;
   final colorScheme = Theme.of(context).colorScheme;
-  announceCrux(context, message, assertive: true);
+  announceCrux(context, _spoken(message, action), assertive: true);
   messenger.showSnackBar(
     SnackBar(
       key: key,
@@ -125,7 +164,10 @@ void showCruxErrorSnack(BuildContext context, String message, {Key? key}) {
       ),
       backgroundColor: colorScheme.errorContainer,
       behavior: SnackBarBehavior.floating,
-      duration: kCruxErrorSnackDuration,
+      duration: action == null
+          ? kCruxErrorSnackDuration
+          : kCruxActionSnackDuration,
+      action: _snackBarAction(action),
     ),
   );
 }

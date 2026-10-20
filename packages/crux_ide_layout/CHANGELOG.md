@@ -15,6 +15,12 @@ increments that built it. Changes from here on get their own entries.
   window-level shortcut that must leave the key to the field.
 - An error toast's close button is now a Tab stop from inside a modal
   dialog too: the toast's focus follows the scope the user is tabbing in.
+- `showCruxInfoSnack` / `showCruxErrorSnack` take an optional `action`
+  (`CruxToastAction`: label and callback): a text button in the toast,
+  reachable with Tab, announced after the message, closing the toast when
+  chosen. An info toast with an action stays for `kCruxActionSnackDuration`
+  (8 s) and never leaves while hovered or focused. Phone and tablet: a
+  `SnackBarAction`. `CruxToastCard` gains `action` / `onAction`.
 
 - **Crux Desktop components.** `showCruxDialog` (showDialog's named
   parameters plus `modalGuardKey`; Escape always closes) and `CruxDialog` /

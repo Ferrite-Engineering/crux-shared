@@ -204,11 +204,17 @@ final class CruxSubmenu extends CruxMenuEntry
   final key: Key?
   final label: String
   final tooltip: String?
+class CruxToastAction
+  const CruxToastAction({required String label, required void Function() onPressed})
+  final label: String
+  final onPressed: void Function()
 class CruxToastCard extends StatelessWidget
-  const CruxToastCard({Key? key, required String message, required bool error, void Function()? onClose})
+  const CruxToastCard({CruxToastAction? action, Key? key, required String message, required bool error, void Function()? onAction, void Function()? onClose})
   build(BuildContext context) -> Widget
+  final action: CruxToastAction?
   final error: bool
   final message: String
+  final onAction: void Function()?
   final onClose: void Function()?
 class EscapeDismissible extends StatelessWidget
   const EscapeDismissible({Key? key, required Widget child})
@@ -249,6 +255,7 @@ confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirm
 cruxTextInputFocused() -> bool
 hideCruxReloadPrompt(BuildContext context) -> void
 hideCruxSnack(BuildContext context) -> void
+get kCruxActionSnackDuration -> Duration
 get kCruxDialogDefaultWidth -> double
 get kCruxDialogGutter -> double
 get kCruxErrorSnackDuration -> Duration
@@ -264,6 +271,6 @@ get kCruxSearchDialogSize -> Size
 shouldEnableLongPressContextMenu({required TargetPlatform platform, required bool isTouchLayout}) -> bool
 showCruxContextMenu(BuildContext context, {required List<CruxMenuEntry> entries, required Offset globalPosition}) -> Future<void>
 showCruxDialog<T>({NavigatorState? navigator, RouteSettings? routeSettings, String? barrierLabel, String? modalGuardKey, bool barrierDismissible, bool useRootNavigator, required BuildContext context, required Widget Function(BuildContext) builder}) -> Future<T?>
-showCruxErrorSnack(BuildContext context, String message, {Key? key}) -> void
-showCruxInfoSnack(BuildContext context, String message, {Key? key}) -> void
+showCruxErrorSnack(BuildContext context, String message, {CruxToastAction? action, Key? key}) -> void
+showCruxInfoSnack(BuildContext context, String message, {CruxToastAction? action, Key? key}) -> void
 showCruxReloadPrompt(BuildContext context, {required String ignoreLabel, required String message, required String reloadLabel, required void Function() onIgnore, required void Function() onReload}) -> void

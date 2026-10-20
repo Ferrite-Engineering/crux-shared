@@ -18,6 +18,12 @@ import 'package:flutter/scheduler.dart';
 /// The stack lives in the root [Overlay], keyed by that overlay, so a toast
 /// raised from inside a dialog outlives the dialog and a second window's
 /// overlay has its own stack.
+///
+/// A toast may carry one [CruxToastAction] (Undo, Show). It is drawn as a
+/// text button, reachable with Tab like the error toast's close button, and
+/// invoking it closes the toast. An info toast that carries an action stays
+/// for the longer duration its caller gives and never leaves while the
+/// pointer is over it or focus is in it.
 abstract final class CruxToasts {
   static final Expando<_ToastStack> _stacks = Expando<_ToastStack>();
 
@@ -29,12 +35,19 @@ abstract final class CruxToasts {
     required bool error,
     required Duration infoDuration,
     Key? key,
+    CruxToastAction? action,
   }) {
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null) return false;
     final tokens = CruxDesktopTokens.of(context) ?? const CruxDesktopTokens();
     (_stacks[overlay] ??= _ToastStack(overlay)).show(
-      _ToastData(message: message, error: error, tokens: tokens, key: key),
+      _ToastData(
+        message: message,
+        error: error,
+        tokens: tokens,
+        key: key,
+        action: action,
+      ),
       duration: error ? null : infoDuration,
     );
     return true;
@@ -48,6 +61,20 @@ abstract final class CruxToasts {
   }
 }
 
+/// The one action a toast can offer: a short, already-localized [label]
+/// ("Undo") and what it does. Invoking it closes the toast.
+@immutable
+class CruxToastAction {
+  /// Creates an action.
+  const CruxToastAction({required this.label, required this.onPressed});
+
+  /// The button's label, also its accessible name.
+  final String label;
+
+  /// Runs when the action is chosen, after which the toast closes.
+  final VoidCallback onPressed;
+}
+
 @immutable
 class _ToastData {
   const _ToastData({
@@ -55,12 +82,14 @@ class _ToastData {
     required this.error,
     required this.tokens,
     this.key,
+    this.action,
   });
 
   final String message;
   final bool error;
   final CruxDesktopTokens tokens;
   final Key? key;
+  final CruxToastAction? action;
 }
 
 class _ToastStack {
@@ -69,20 +98,51 @@ class _ToastStack {
   final OverlayState overlay;
   OverlayEntry? _entry;
   Timer? _timer;
+  Duration? _duration;
+
+  /// Whether the pointer or focus is in the toast, which holds it up.
+  final ValueNotifier<bool> _held = ValueNotifier<bool>(false);
 
   void show(_ToastData data, {required Duration? duration}) {
     hide();
+    _duration = duration;
     final entry = OverlayEntry(
-      builder: (context) => _ToastPositioned(data: data, onClose: hide),
+      builder: (context) => _ToastPositioned(
+        data: data,
+        onClose: hide,
+        held: _held,
+      ),
     );
     _entry = entry;
     overlay.insert(entry);
-    if (duration != null) _timer = Timer(duration, hide);
+    _held
+      ..value = false
+      ..addListener(_onHeldChanged);
+    _arm();
+  }
+
+  void _arm() {
+    _timer?.cancel();
+    final duration = _duration;
+    if (duration == null || _held.value) return;
+    _timer = Timer(duration, hide);
+  }
+
+  void _onHeldChanged() {
+    if (_held.value) {
+      _timer?.cancel();
+      _timer = null;
+    } else {
+      // Released: the full duration again, so a toast is never snatched the
+      // moment the pointer leaves it.
+      _arm();
+    }
   }
 
   void hide() {
     _timer?.cancel();
     _timer = null;
+    _held.removeListener(_onHeldChanged);
     final entry = _entry;
     _entry = null;
     if (entry == null) return;
@@ -102,10 +162,15 @@ class _ToastStack {
 /// dialogs open and close, so Tab reaches the close button from the page and
 /// from inside a modal alike.
 class _ToastPositioned extends StatefulWidget {
-  const _ToastPositioned({required this.data, required this.onClose});
+  const _ToastPositioned({
+    required this.data,
+    required this.onClose,
+    required this.held,
+  });
 
   final _ToastData data;
   final VoidCallback onClose;
+  final ValueNotifier<bool> held;
 
   @override
   State<_ToastPositioned> createState() => _ToastPositionedState();
@@ -118,6 +183,14 @@ class _ToastPositionedState extends State<_ToastPositioned> {
     skipTraversal: true,
   );
   FocusScopeNode? _parent;
+  bool _hovered = false;
+  bool _focused = false;
+
+  void _updateHeld() {
+    final held = _hovered || _focused;
+    if (widget.held.value == held) return;
+    widget.held.value = held;
+  }
 
   @override
   void initState() {
@@ -170,20 +243,42 @@ class _ToastPositionedState extends State<_ToastPositioned> {
     final data = widget.data;
     final tokens = data.tokens;
     final parent = _parent;
+    final action = data.action;
     return Positioned(
       right: 16,
       bottom: tokens.toastBottomInset,
-      child: Focus(
-        focusNode: _anchor,
-        parentNode: parent != null && _isLive(parent) ? parent : null,
-        includeSemantics: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: tokens.toastMaxWidth),
-          child: CruxToastCard(
-            key: data.key,
-            message: data.message,
-            error: data.error,
-            onClose: data.error ? widget.onClose : null,
+      child: MouseRegion(
+        onEnter: (_) {
+          _hovered = true;
+          _updateHeld();
+        },
+        onExit: (_) {
+          _hovered = false;
+          _updateHeld();
+        },
+        child: Focus(
+          focusNode: _anchor,
+          parentNode: parent != null && _isLive(parent) ? parent : null,
+          includeSemantics: false,
+          onFocusChange: (focused) {
+            _focused = focused;
+            _updateHeld();
+          },
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: tokens.toastMaxWidth),
+            child: CruxToastCard(
+              key: data.key,
+              message: data.message,
+              error: data.error,
+              onClose: data.error ? widget.onClose : null,
+              action: action,
+              onAction: action == null
+                  ? null
+                  : () {
+                      widget.onClose();
+                      action.onPressed();
+                    },
+            ),
           ),
         ),
       ),
@@ -191,14 +286,17 @@ class _ToastPositionedState extends State<_ToastPositioned> {
   }
 }
 
-/// The toast surface: an icon, the message and, for an error, a close
-/// button. Exposed so a render check can draw it without the overlay.
+/// The toast surface: an icon, the message, an optional action and, for an
+/// error, a close button. Exposed so a render check can draw it without the
+/// overlay.
 class CruxToastCard extends StatelessWidget {
   /// Creates a toast card.
   const CruxToastCard({
     required this.message,
     required this.error,
     this.onClose,
+    this.action,
+    this.onAction,
     super.key,
   });
 
@@ -210,6 +308,12 @@ class CruxToastCard extends StatelessWidget {
 
   /// Closes the toast; when null there is no close button.
   final VoidCallback? onClose;
+
+  /// The toast's action, drawn as a text button; null for none.
+  final CruxToastAction? action;
+
+  /// Runs when [action] is chosen; defaults to the action's own callback.
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +349,12 @@ class CruxToastCard extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(12, 8, close == null ? 12 : 4, 8),
+        padding: EdgeInsets.fromLTRB(
+          12,
+          8,
+          close == null && action == null ? 12 : 4,
+          8,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -268,6 +377,20 @@ class CruxToastCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (action case final CruxToastAction action) ...<Widget>[
+              const SizedBox(width: 8),
+              TextButton(
+                key: const ValueKey('cruxToastAction'),
+                onPressed: onAction ?? action.onPressed,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 24),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(action.label),
+              ),
+            ],
             if (close != null) ...<Widget>[
               const SizedBox(width: 4),
               IconButton(
