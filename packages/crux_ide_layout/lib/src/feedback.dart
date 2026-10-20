@@ -107,6 +107,9 @@ void showCruxInfoSnack(
       // Four seconds (eight with an action) is this helper's contract,
       // pinned by test, never the framework's default.
       duration: duration,
+      // Without this the framework keeps a snack bar that has an action
+      // until the action is chosen, ignoring [duration].
+      persist: false,
       action: _snackBarAction(action),
     ),
   );
@@ -127,7 +130,9 @@ SnackBarAction? _snackBarAction(CruxToastAction? action) => action == null
 /// the error colour, that **stays until the user closes it** (or a newer
 /// toast replaces it): a failure that vanishes while the user looks elsewhere
 /// was never reported. Under any other theme it is a floating snack bar in
-/// error-container colours for [kCruxErrorSnackDuration].
+/// error-container colours for [kCruxErrorSnackDuration]
+/// ([kCruxActionSnackDuration] with an action), after which it leaves on its
+/// own.
 ///
 /// A no-op when there is nowhere to show it. The caller supplies an
 /// already-localized [message]. [key] lands on the toast or the snack bar,
@@ -167,6 +172,7 @@ void showCruxErrorSnack(
       duration: action == null
           ? kCruxErrorSnackDuration
           : kCruxActionSnackDuration,
+      persist: false,
       action: _snackBarAction(action),
     ),
   );

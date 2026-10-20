@@ -6,6 +6,10 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `showCruxInfoSnack` and `showCruxErrorSnack` with a `CruxToastAction` now
+  leave after `kCruxActionSnackDuration` on phone and tablet. The Material
+  snack bar they use stays until its action is chosen unless told otherwise,
+  which ignored the duration.
 - `CruxMenuItem.trailingBuilder`: an optional trailing widget, typically a tier
   badge. Built only while the menu is open, identical in the "⋯" and
   right-click menus; the item stays enabled and the badge's own semantics are

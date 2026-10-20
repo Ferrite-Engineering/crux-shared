@@ -118,6 +118,60 @@ void main() {
     expect(undone, 1);
   });
 
+  testWidgets('on phone and tablet an info snack bar with an action leaves '
+      'after its duration', (tester) async {
+    await tester.pumpWidget(host(desktop: false));
+    await tester.tap(find.text('Remove'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Bookmark removed.'), findsOneWidget);
+    await tester.pump(kCruxActionSnackDuration);
+    await tester.pumpAndSettle();
+    expect(find.text('Bookmark removed.'), findsNothing);
+    expect(find.text('Undo'), findsNothing);
+    expect(undone, 0);
+  });
+
+  testWidgets('on phone and tablet the action still works before the '
+      'duration ends', (tester) async {
+    await tester.pumpWidget(host(desktop: false));
+    await tester.tap(find.text('Remove'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+    expect(find.text('Bookmark removed.'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(undone, 1);
+    expect(find.text('Bookmark removed.'), findsNothing);
+  });
+
+  testWidgets('on phone and tablet an error snack bar with an action leaves '
+      'after its duration', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showCruxErrorSnack(
+                context,
+                'Export failed.',
+                action: CruxToastAction(label: 'Retry', onPressed: () {}),
+              ),
+              child: const Text('Export'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Export'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Export failed.'), findsOneWidget);
+    await tester.pump(kCruxActionSnackDuration);
+    await tester.pumpAndSettle();
+    expect(find.text('Export failed.'), findsNothing);
+  });
+
   testWidgets('an error toast can carry an action beside its close button', (
     tester,
   ) async {
