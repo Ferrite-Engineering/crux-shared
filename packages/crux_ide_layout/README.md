@@ -69,6 +69,16 @@ class _MyIdeLayout extends ConsumerWidget {
 - **No drag-resize persistence** — an app can leave the sink's
   size setters as no-ops.
 
+## Toasts without a `BuildContext`
+
+`CruxToasts.showInfo(message, {action, key})` and `CruxToasts.showError(...)`
+raise the same desktop toast as `showCruxInfoSnack` / `showCruxErrorSnack` for
+feedback that outlives its widget (a closed context menu, a background re-run
+that fails after its panel unmounted). The host is a window whose root overlay
+holds a `CruxIdeLayout` or has shown a context toast; with several windows the
+most recently focused wins. With no host, or under a non-desktop theme, the
+call returns false and does nothing (a debug build writes a line to stderr).
+
 ## Dependencies
 
 `flutter`, `panes`. No Riverpod dependency — the host drives rebuilds.

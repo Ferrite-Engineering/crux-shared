@@ -6,6 +6,10 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `CruxToasts.showInfo` / `CruxToasts.showError` (and `CruxToasts` itself is
+  now exported): the desktop toast with no `BuildContext`, for feedback raised
+  after the originating widget is gone. Returns whether it was shown; never
+  throws. `CruxIdeLayout` registers its window as the host.
 - `showCruxDialog` takes an optional `navigator:`: the dialog is pushed on
   that navigator (a tab's own, from crux_workspace) instead of the one
   `context` finds.

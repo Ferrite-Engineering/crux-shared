@@ -216,6 +216,11 @@ class CruxToastCard extends StatelessWidget
   final message: String
   final onAction: void Function()?
   final onClose: void Function()?
+final abstract class CruxToasts
+  static hide(BuildContext context) -> void
+  static show(BuildContext context, String message, {CruxToastAction? action, Key? key, required Duration infoDuration, required bool error}) -> bool
+  static showError(String message, {CruxToastAction? action, Key? key}) -> bool
+  static showInfo(String message, {CruxToastAction? action, Key? key}) -> bool
 class EscapeDismissible extends StatelessWidget
   const EscapeDismissible({Key? key, required Widget child})
   build(BuildContext context) -> Widget

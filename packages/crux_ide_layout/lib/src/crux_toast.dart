@@ -4,6 +4,10 @@
 import 'dart:async';
 
 import 'package:crux_ide_layout/src/crux_desktop_tokens.dart';
+import 'package:crux_ide_layout/src/debug_stderr_stub.dart'
+    if (dart.library.io) 'package:crux_ide_layout/src/debug_stderr_io.dart';
+import 'package:crux_ide_layout/src/feedback.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -39,6 +43,7 @@ abstract final class CruxToasts {
   }) {
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null) return false;
+    _ensureHost(overlay);
     final tokens = CruxDesktopTokens.of(context) ?? const CruxDesktopTokens();
     (_stacks[overlay] ??= _ToastStack(overlay)).show(
       _ToastData(
@@ -59,6 +64,161 @@ abstract final class CruxToasts {
     if (overlay == null) return;
     _stacks[overlay]?.hide();
   }
+
+  /// Shows [message] as an informational toast without a [BuildContext], for
+  /// feedback raised after the widget that caused it is gone: a context menu
+  /// that has closed, a background re-run that fails after its panel
+  /// unmounted.
+  ///
+  /// It behaves exactly like `showCruxInfoSnack` called from the host's own
+  /// context: one toast at a time with the newest replacing the one showing,
+  /// the same duration, [action] and focus behaviour, and a polite
+  /// announcement.
+  ///
+  /// The host is a root overlay that a `CruxIdeLayout` is mounted under, or
+  /// that has shown a toast through `showCruxInfoSnack` / `showCruxErrorSnack`.
+  /// When more than one exists (several windows), the one whose focus
+  /// changed most recently wins; a host registered but never focused ranks by
+  /// when it registered.
+  ///
+  /// Returns true when the toast was shown. Returns false, and never throws,
+  /// when no host is registered, the host's theme is not a Crux Desktop theme
+  /// (the phone and tablet path, which has no toast stack), or the host has no
+  /// overlay. A debug build also writes a line to standard error.
+  static bool showInfo(String message, {CruxToastAction? action, Key? key}) =>
+      _showWithoutContext(message, error: false, action: action, key: key);
+
+  /// Shows [message] as an error toast without a [BuildContext]. As
+  /// [showInfo], with the error behaviour of `showCruxErrorSnack`: it stays
+  /// until the user closes it or a newer toast replaces it, and it is
+  /// announced assertively.
+  static bool showError(String message, {CruxToastAction? action, Key? key}) =>
+      _showWithoutContext(message, error: true, action: action, key: key);
+
+  static bool _showWithoutContext(
+    String message, {
+    required bool error,
+    required CruxToastAction? action,
+    required Key? key,
+  }) {
+    try {
+      final overlay = _mostRecentlyFocusedHost();
+      if (overlay == null) {
+        _noHost(message, 'no toast host is registered');
+        return false;
+      }
+      // The overlay's own context sits above its entries, so it carries the
+      // theme and the view the toast and its announcement need.
+      final context = overlay.context;
+      final tokens = CruxDesktopTokens.of(context);
+      if (tokens == null) {
+        _noHost(message, 'the host theme is not a Crux Desktop theme');
+        return false;
+      }
+      (_stacks[overlay] ??= _ToastStack(overlay)).show(
+        _ToastData(
+          message: message,
+          error: error,
+          tokens: tokens,
+          key: key,
+          action: action,
+        ),
+        duration: error
+            ? null
+            : (action == null
+                  ? kCruxInfoSnackDuration
+                  : kCruxActionSnackDuration),
+      );
+      final spoken = action == null ? message : '$message ${action.label}';
+      announceCrux(context, spoken, assertive: error);
+      return true;
+    } on Object catch (e) {
+      _noHost(message, 'failed: $e');
+      return false;
+    }
+  }
+
+  static void _noHost(String message, String why) {
+    if (!kDebugMode) return;
+    writeDebugStderr('CruxToasts: toast not shown ($why): $message');
+  }
+}
+
+class _Host {
+  _Host(this.overlay, this.stamp);
+
+  final OverlayState overlay;
+  int stamp;
+
+  /// Widgets holding this host open; a host with none stays until its
+  /// overlay is gone.
+  int holds = 0;
+}
+
+final List<_Host> _hosts = <_Host>[];
+int _clock = 0;
+bool _listening = false;
+
+/// Registers the root overlay above [context] as a toast host and returns the
+/// call that removes it.
+///
+/// Called by the widget that owns the window's chrome, and by every context
+/// toast, so a window that has shown one is a host from then on. Registering
+/// an overlay that is already a host changes nothing. Not exported from the
+/// package.
+VoidCallback registerCruxToastHost(BuildContext context) {
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return () {};
+  final host = _ensureHost(overlay);
+  host.holds++;
+  var released = false;
+  return () {
+    if (released) return;
+    released = true;
+    host.holds--;
+    if (host.holds <= 0) _hosts.remove(host);
+    _stopListeningIfIdle();
+  };
+}
+
+_Host _ensureHost(OverlayState overlay) {
+  for (final host in _hosts) {
+    if (identical(host.overlay, overlay)) return host;
+  }
+  final host = _Host(overlay, ++_clock);
+  _hosts.add(host);
+  if (!_listening) {
+    _listening = true;
+    FocusManager.instance.addListener(_onPrimaryFocusChanged);
+  }
+  return host;
+}
+
+void _stopListeningIfIdle() {
+  if (_hosts.isEmpty && _listening) {
+    _listening = false;
+    FocusManager.instance.removeListener(_onPrimaryFocusChanged);
+  }
+}
+
+void _onPrimaryFocusChanged() {
+  final focused = FocusManager.instance.primaryFocus?.context;
+  if (focused == null || !focused.mounted) return;
+  final overlay = Overlay.maybeOf(focused, rootOverlay: true);
+  if (overlay == null) return;
+  for (final host in _hosts) {
+    if (identical(host.overlay, overlay)) host.stamp = ++_clock;
+  }
+}
+
+OverlayState? _mostRecentlyFocusedHost() {
+  _hosts.removeWhere((h) => !h.overlay.mounted);
+  _stopListeningIfIdle();
+  _Host? best;
+  for (final host in _hosts) {
+    if (best == null || host.stamp > best.stamp) best = host;
+  }
+  return best?.overlay;
 }
 
 /// The one action a toast can offer: a short, already-localized [label]
@@ -107,11 +267,8 @@ class _ToastStack {
     hide();
     _duration = duration;
     final entry = OverlayEntry(
-      builder: (context) => _ToastPositioned(
-        data: data,
-        onClose: hide,
-        held: _held,
-      ),
+      builder: (context) =>
+          _ToastPositioned(data: data, onClose: hide, held: _held),
     );
     _entry = entry;
     overlay.insert(entry);

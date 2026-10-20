@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:crux_ide_layout/src/crux_chrome_colors.dart';
 import 'package:crux_ide_layout/src/crux_ide_layout_theme.dart';
+import 'package:crux_ide_layout/src/crux_toast.dart' show registerCruxToastHost;
 import 'package:crux_ide_layout/src/focus_regions.dart';
 import 'package:crux_ide_layout/src/ide_panel_layout.dart';
 import 'package:flutter/foundation.dart';
@@ -135,9 +136,14 @@ class _CruxIdeLayoutState extends State<CruxIdeLayout> {
   // window and pass through to the sink normally.
   bool _applyingHostDelta = false;
 
+  // Makes this window's root overlay a host for `CruxToasts.showInfo` and
+  // `showError`, the toast calls that take no BuildContext.
+  VoidCallback? _releaseToastHost;
+
   @override
   void initState() {
     super.initState();
+    _releaseToastHost = registerCruxToastHost(context);
     _controller = _buildController();
     final layout = widget.layout;
     _leftVisible = layout.leftVisible;
@@ -150,6 +156,7 @@ class _CruxIdeLayoutState extends State<CruxIdeLayout> {
 
   @override
   void dispose() {
+    _releaseToastHost?.call();
     _controller.dispose();
     super.dispose();
   }
@@ -523,12 +530,8 @@ class _CruxIdeLayoutState extends State<CruxIdeLayout> {
       final apple =
           defaultTargetPlatform == TargetPlatform.macOS ||
           defaultTargetPlatform == TargetPlatform.iOS;
-      SingleActivator key(LogicalKeyboardKey arrow) => SingleActivator(
-        arrow,
-        shift: true,
-        control: !apple,
-        meta: apple,
-      );
+      SingleActivator key(LogicalKeyboardKey arrow) =>
+          SingleActivator(arrow, shift: true, control: !apple, meta: apple);
       final (grow, shrink) = switch (resizes) {
         IdePane.left => (
           LogicalKeyboardKey.arrowRight,
