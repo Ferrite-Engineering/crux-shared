@@ -69,6 +69,57 @@ class CruxDockRestoreEntry
   final id: String
   final label: String
   final onRestore: void Function()
+class CruxInspector<T extends Object> extends StatefulWidget
+  const CruxInspector({CruxInspectorController? controller, IconData? emptyIcon, Key? key, List<Widget> Function(BuildContext, T)? headerActions, Object? Function(T)? identity, String Function(T)? heldMessage, String Function(T)? title, required List<Widget? Function(BuildContext, T)> sections, required String emptyMessage, required T? selection, void Function()? onEscape})
+  createState() -> State<CruxInspector<T>>
+  final controller: CruxInspectorController?
+  final emptyIcon: IconData?
+  final emptyMessage: String
+  final headerActions: List<Widget> Function(BuildContext, T)?
+  final heldMessage: String Function(T)?
+  final identity: Object? Function(T)?
+  final onEscape: void Function()?
+  final sections: List<Widget? Function(BuildContext, T)>
+  final selection: T?
+  final title: String Function(T)?
+  static markDirty(BuildContext context, {required bool dirty}) -> void
+class CruxInspectorApplyBar extends StatelessWidget
+  const CruxInspectorApplyBar({Key? key, required String applyLabel, required String revertLabel, required void Function()? onApply, required void Function()? onRevert})
+  build(BuildContext context) -> Widget
+  final applyLabel: String
+  final onApply: void Function()?
+  final onRevert: void Function()?
+  final revertLabel: String
+class CruxInspectorController extends ChangeNotifier
+  CruxInspectorController({void Function()? onReveal})
+  cancel() -> void
+  final onReveal: void Function()?
+  get dirty -> bool
+  get focusPending -> bool
+  open() -> void
+class CruxInspectorListSection extends StatelessWidget
+  const CruxInspectorListSection({Key? key, Widget? trailing, required String title, required Widget Function(BuildContext, int) itemBuilder, required int itemCount})
+  build(BuildContext context) -> Widget
+  final itemBuilder: Widget Function(BuildContext, int)
+  final itemCount: int
+  final title: String
+  final trailing: Widget?
+class CruxInspectorSection extends StatelessWidget
+  const CruxInspectorSection({Key? key, Widget? footer, Widget? trailing, required List<Widget> children, required String title, void Function()? onSubmit})
+  build(BuildContext context) -> Widget
+  final children: List<Widget>
+  final footer: Widget?
+  final onSubmit: void Function()?
+  final title: String
+  final trailing: Widget?
+typedef CruxInspectorSectionBuilder<T extends Object> = Widget? Function(BuildContext, T)
+class CruxInspectorValueRow extends StatelessWidget
+  const CruxInspectorValueRow({Key? key, TextStyle? valueStyle, required String label, required String value})
+  build(BuildContext context) -> Widget
+  final label: String
+  final value: String
+  final valueStyle: TextStyle?
 get kCruxDockIconSize -> double
 get kCruxDockRestoreBarThickness -> double
 get kCruxDockStripHeight -> double
+get kCruxInspectorLabelWidth -> double

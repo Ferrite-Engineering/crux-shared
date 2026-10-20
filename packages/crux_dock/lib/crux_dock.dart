@@ -8,8 +8,12 @@
 /// collapse / maximize / pop-out affordances, auto-reveal of newly activated
 /// on-demand tabs. Hosts assemble `CruxDockEntry` lists from their own
 /// providers — the package hard-codes no per-app content.
+///
+/// `CruxInspector` is the dock tab that shows and edits the current canvas
+/// selection's properties, the desktop replacement for a properties dialog.
 library;
 
 export 'src/crux_dock.dart';
 export 'src/crux_dock_restore_bar.dart';
+export 'src/crux_inspector.dart';
 export 'src/dock_entry.dart';

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `CruxInspector`, the dock tab that shows and edits the current canvas
+  selection's properties: selection-bound, built inside the dock's provider
+  scope (never a route), sections from host and Pro seam builders,
+  `CruxInspectorController.open()` for opening it with focus, Escape back to
+  the canvas, held drafts with `CruxInspectorApplyBar`, the panel empty state.
+  `CruxInspectorSection`, `CruxInspectorListSection` and
+  `CruxInspectorValueRow` are its rows. `crux_ide_layout` and
+  `crux_settings_ui` become dependencies.
 - `CruxDock` is a `CruxRegionHintHost`: an empty panel inside it (a
   `CruxPanelEmptyState`) becomes the dock's description while the dock's name
   stays `semanticsLabel`. `crux_a11y` moves from a dev dependency to a

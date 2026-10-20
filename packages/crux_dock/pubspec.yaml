@@ -20,6 +20,13 @@ dependencies:
   # The region hint an empty panel inside the dock describes it with.
   crux_a11y:
     path: ../crux_a11y
+  # The inspector's empty state (CruxPanelEmptyState) and its spoken notice
+  # (announceCrux).
+  crux_ide_layout:
+    path: ../crux_ide_layout
+  # The inspector's rows are CruxFormRows inside a CruxFormSection.
+  crux_settings_ui:
+    path: ../crux_settings_ui
   flutter:
     sdk: flutter
 
