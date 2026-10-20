@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **`CruxSwitch`: the desktop switch.** A 32×18 track with a 14 px thumb,
+  drawn at size rather than a scaled Material `Switch`. One Tab stop that
+  Space and Enter toggle, one semantics node with the toggled state and
+  `semanticLabel`, hover, a disabled state, and an always-visible focus ring
+  (1.5 px, 2.5 px in high contrast).
+
 - **`CruxRegionHintHost` and `CruxRegionHint`: a region's content can
   describe the region without renaming it.** A host builds its region
   semantics with `cruxRegionHintSemantics`; a `CruxRegionHint` below it

@@ -4,6 +4,12 @@ This file was backfilled during the CS documentation sweep, so the entry below
 describes the package's surface as of 0.1.0 rather than reconstructing the
 increments that built it. Changes from here on get their own entries.
 
+## Unreleased
+
+- Reset All confirms through `confirmCruxDestructiveAction`: Cancel holds
+  focus and the reset is drawn in the error colour. New dependency on
+  `crux_ide_layout`.
+
 ## 0.3.0
 
 - The editor is operable by keyboard and screen reader. Every row is one

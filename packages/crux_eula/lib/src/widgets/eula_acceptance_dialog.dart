@@ -5,6 +5,7 @@ import 'package:crux_a11y/crux_a11y.dart';
 import 'package:crux_eula/src/crux_eula_strings.dart';
 import 'package:crux_eula/src/eula_document.dart';
 import 'package:crux_eula/src/widgets/eula_metrics.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDialog;
 import 'package:flutter/material.dart';
 
 /// The first-launch licence agreement — shown until the user accepts it.
@@ -136,17 +137,22 @@ class _CruxEulaAcceptanceDialogState extends State<CruxEulaAcceptanceDialog> {
                           maxWidth: 640,
                           maxHeight: 720,
                         ),
-                        child: Card(
+                        // The Crux Desktop dialog frame, not showCruxDialog:
+                        // the gate mounts this above the Navigator, where no
+                        // route can be pushed.
+                        child: CruxDialog(
                           key: const Key('cruxEulaDialog'),
+                          width: 640,
                           // The surface names the dialog; a semantic
                           // container here would gather the loose prose
                           // into one unnamed node around every control.
                           semanticContainer: false,
-                          margin: const EdgeInsets.all(24),
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: content,
-                          ),
+                          // Focus opens on the agreement itself.
+                          takeFocus: false,
+                          // The content scrolls itself as a last resort.
+                          scrollable: false,
+                          contentPadding: const EdgeInsets.all(24),
+                          content: content,
                         ),
                       ),
                     ),

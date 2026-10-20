@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_a11y/crux_a11y.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxDialog, CruxDialogAction, CruxDialogActionRole, showCruxDialog;
 import 'package:crux_theme/src/widgets/theme_appearance_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -84,8 +86,10 @@ Future<Color?> showColorPickerDialog({
   List<ColorPickerPaletteSection> paletteSections =
       const <ColorPickerPaletteSection>[],
 }) {
-  return showDialog<Color>(
+  // It holds a typed hex value, so a stray scrim click must not discard it.
+  return showCruxDialog<Color>(
     context: context,
+    barrierDismissible: false,
     builder: (ctx) => ColorPickerDialog(
       initialColor: initialColor,
       strings: strings,
@@ -151,8 +155,13 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
   Widget build(BuildContext context) {
     final strings = widget.strings;
     final staged = _hsv.toColor();
-    return AlertDialog(
-      title: Text(strings.colorPickerDialogTitle),
+    final ok = _hexError != null
+        ? null
+        : () => Navigator.of(context).pop(_hsv.toColor());
+    return CruxDialog(
+      title: strings.colorPickerDialogTitle,
+      width: 368,
+      onSubmit: ok,
       content: SizedBox(
         width: 320,
         child: Column(
@@ -190,15 +199,14 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        CruxDialogAction(
+          label: strings.colorPickerCancelLabel,
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(strings.colorPickerCancelLabel),
         ),
-        FilledButton(
-          onPressed: _hexError != null
-              ? null
-              : () => Navigator.of(context).pop(_hsv.toColor()),
-          child: Text(strings.colorPickerOkLabel),
+        CruxDialogAction(
+          label: strings.colorPickerOkLabel,
+          role: CruxDialogActionRole.primary,
+          onPressed: ok,
         ),
       ],
     );

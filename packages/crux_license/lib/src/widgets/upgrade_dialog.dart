@@ -3,7 +3,13 @@
 
 import 'dart:async';
 
-import 'package:crux_ide_layout/crux_ide_layout.dart' show ModalGuard;
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show
+        CruxDialog,
+        CruxDialogAction,
+        CruxDialogActionRole,
+        ModalGuard,
+        showCruxDialog;
 import 'package:crux_license/src/license_tier.dart';
 import 'package:crux_license/src/widgets/feature_tier_badge.dart';
 import 'package:crux_license/src/widgets/license_badge_strings.dart';
@@ -99,18 +105,16 @@ class CruxUpgradeDialog extends StatelessWidget {
     String? supplementalMessage,
     Future<void> Function()? onSeePricing,
   }) {
-    return ModalGuard.run(
-      modalGuardKey,
-      () => showDialog<void>(
-        context: context,
-        builder: (_) => CruxUpgradeDialog(
-          featureName: featureName,
-          requiredTier: requiredTier,
-          strings: strings,
-          l10n: l10n,
-          supplementalMessage: supplementalMessage,
-          onSeePricing: onSeePricing,
-        ),
+    return showCruxDialog<void>(
+      context: context,
+      modalGuardKey: modalGuardKey,
+      builder: (_) => CruxUpgradeDialog(
+        featureName: featureName,
+        requiredTier: requiredTier,
+        strings: strings,
+        l10n: l10n,
+        supplementalMessage: supplementalMessage,
+        onSeePricing: onSeePricing,
       ),
     );
   }
@@ -144,13 +148,13 @@ class CruxUpgradeDialog extends StatelessWidget {
       LicenseTier.openCore => l10n.tierNamePro,
     };
     final supplemental = supplementalMessage;
-    return AlertDialog(
-      title: Row(
-        children: <Widget>[
-          Expanded(child: Text(l10n.title)),
-          FeatureTierBadge(requiredTier: requiredTier, strings: strings),
-        ],
+    return CruxDialog(
+      title: l10n.title,
+      titleTrailing: FeatureTierBadge(
+        requiredTier: requiredTier,
+        strings: strings,
       ),
+      width: 400,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,12 +167,17 @@ class CruxUpgradeDialog extends StatelessWidget {
         ],
       ),
       actions: <Widget>[
-        TextButton(
+        // OK is a text button by the copy contract: it closes, it does not
+        // compete with See pricing.
+        CruxDialogAction(
+          label: l10n.dismissLabel,
+          role: CruxDialogActionRole.tertiary,
           onPressed: () => Navigator.of(context).maybePop(),
-          child: Text(l10n.dismissLabel),
         ),
         if (onSeePricing != null)
-          FilledButton(
+          CruxDialogAction(
+            label: l10n.seePricingLabel,
+            role: CruxDialogActionRole.primary,
             onPressed: () async {
               // Dismiss first: the pricing page opens in the browser, and
               // leaving a modal behind it means the user comes back to a
@@ -176,7 +185,6 @@ class CruxUpgradeDialog extends StatelessWidget {
               await Navigator.of(context).maybePop();
               await onSeePricing!();
             },
-            child: Text(l10n.seePricingLabel),
           ),
       ],
     );

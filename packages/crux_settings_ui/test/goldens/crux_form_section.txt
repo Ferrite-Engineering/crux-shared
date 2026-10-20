@@ -1,0 +1,5 @@
+# Tab walk: 4 stops, cycles
+1. Name edit
+2. Colour Amber button collapsed
+3. Reload on change switch on
+4. Snap to nearest edge check box not checked

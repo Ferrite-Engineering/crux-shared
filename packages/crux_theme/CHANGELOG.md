@@ -1,5 +1,24 @@
 ## Unreleased
 
+- **`cruxDesktopTheme`, `cruxThemeForDevice`, `cruxUsesDesktopLayer`.** The
+  Crux Desktop `ThemeData` over a product's `ColorScheme`: every component
+  theme at the desktop tokens (28 px controls, 4 / 6 / 8 px radii, 13 / 12 /
+  14 px type in the platform UI font, overlays without ink, a 1.5 px focus
+  ring or 2.5 px in high contrast, an 18 % dialog scrim), WaveCrux's tuned
+  card, list, input, tooltip, menu, menu bar, switch and scrollbar themes
+  lifted in, and `CruxDesktopTokens` installed. `cruxThemeForDevice` picks it
+  for macOS, Windows, Linux and the web and the product's own theme for iOS
+  and Android, by platform and never by window size. `applyChromeTokens`
+  layers over it unchanged.
+- **The theme widgets use the Crux Desktop components.** The colour picker
+  opens through `showCruxDialog` in a `CruxDialog` (non-dismissible: it holds
+  a typed hex value; Enter applies), the theme-pack browser's uninstall is
+  `confirmCruxDestructiveAction`, and its messages are the suite toasts, with
+  failures through `showCruxErrorSnack`.
+- **New dependency on `crux_ide_layout`**, which now declares
+  `CruxChromeColors` and `CruxDesktopTokens`; both are re-exported here, so
+  existing imports are unchanged.
+
 - The branded presets complete their chrome from their own palettes. In
   Solarized Dark, Oscilloscope and OLED XR, `toolbar.iconActive` and
   `splitter.hover` take the palette's primary (#B58900, #00FF41, #FFD400), and

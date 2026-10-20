@@ -15,6 +15,9 @@ resolution: workspace
 dependencies:
   crux_app_info:
     path: ../crux_app_info
+  # showCruxDialog / CruxDialog, the frame the desktop About box opens in.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   crux_license:
     path: ../crux_license
   flutter:

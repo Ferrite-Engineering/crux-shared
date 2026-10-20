@@ -3,6 +3,7 @@
 
 import 'dart:math' as math;
 
+import 'package:crux_ide_layout/crux_ide_layout.dart' show showCruxDialog;
 import 'package:flutter/material.dart';
 
 /// Opens the suite's Settings surface with the shared chrome: a modal
@@ -34,7 +35,7 @@ Future<void> openCruxSettings(
       wrap == null ? shell : wrap(ctx, shell);
 
   if (asDialog) {
-    await showDialog<void>(
+    await showCruxDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => shellOf(
@@ -90,49 +91,41 @@ class _CruxSettingsDialogShell extends StatelessWidget {
     final dialogWidth = math.min<double>(860, screen.width - 48);
     final dialogHeight = math.min<double>(620, screen.height - 48);
 
-    // Escape closes Settings even though the barrier is not dismissible.
-    // The route's own dismiss action is disabled whenever the barrier is,
-    // and a disabled action found first ends the Escape lookup, so this
-    // enabled one has to sit between the route and the focused control.
-    return Actions(
-      actions: <Type, Action<Intent>>{
-        DismissIntent: CallbackAction<DismissIntent>(
-          onInvoke: (_) => Navigator.of(context).maybePop(),
-        ),
-      },
-      child: Dialog(
-        // The desktop bridges have no dialog role, so the title is the only
-        // way a screen reader can say where focus went when Settings opens.
-        child: Semantics(
-          container: true,
-          explicitChildNodes: true,
-          label: title,
-          child: SizedBox(
-            width: dialogWidth,
-            height: dialogHeight,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                  child: Row(
-                    children: [
-                      ExcludeSemantics(
-                        child: Text(title, style: theme.textTheme.titleLarge),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        key: const ValueKey('cruxSettingsClose'),
-                        icon: const Icon(Icons.close),
-                        tooltip: closeTooltip,
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
+    // Escape closes Settings even though the barrier is not dismissible:
+    // showCruxDialog puts an enabled dismiss action between the route and
+    // the focused control.
+    return Dialog(
+      // The desktop bridges have no dialog role, so the title is the only
+      // way a screen reader can say where focus went when Settings opens.
+      child: Semantics(
+        container: true,
+        explicitChildNodes: true,
+        label: title,
+        child: SizedBox(
+          width: dialogWidth,
+          height: dialogHeight,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                child: Row(
+                  children: [
+                    ExcludeSemantics(
+                      child: Text(title, style: theme.textTheme.titleLarge),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      key: const ValueKey('cruxSettingsClose'),
+                      icon: const Icon(Icons.close),
+                      tooltip: closeTooltip,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
-                const Divider(height: 1),
-                Expanded(child: body),
-              ],
-            ),
+              ),
+              const Divider(height: 1),
+              Expanded(child: body),
+            ],
           ),
         ),
       ),

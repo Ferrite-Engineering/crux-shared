@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **The category toggles are checkboxes** (`CruxFormRow.checkbox`): the
+  choice applies when the report is sent, not at once. The desktop dialog
+  opens through `showCruxDialog` in a `CruxDialog` frame and is no longer
+  dismissed by a scrim click, since it holds a typed title. The sent
+  confirmation is the suite toast. New dependencies on `crux_ide_layout` and
+  `crux_settings_ui`.
+
 - Removed `cruxPlatformLocaleTag` and `isCruxMobilePlatform`, which only the
   package's own tests used. `cruxLocaleTag` and `isCruxDesktopPlatform` stay.
 - **The screenshot reveal is `crux_io`'s `revealInFileManager`.** The service

@@ -1,0 +1,4 @@
+# Tab walk: 3 stops, cycles
+1. Export button
+2. Open file button
+3. [No file grouping] Close button

@@ -242,3 +242,50 @@ Future<void> helperScopedDialog(BuildContext context) {
     builder: (_) => wrapInActiveTabScope(context, const HelperScopedPanel()),
   );
 }
+
+// --- Shape 8: the Crux Desktop opener, bug and fix. --------------------------
+// `showCruxDialog` also mounts on the root navigator. The scanner matches the
+// opener by name, so this same-named local stand-in proves it sees the call
+// without this package depending on the layout package that declares it.
+
+/// Stands in for the layout package's `showCruxDialog`.
+Future<T?> showCruxDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+  String? modalGuardKey,
+}) => showDialog<T>(
+  context: context,
+  builder: builder,
+  barrierDismissible: barrierDismissible,
+);
+
+class LeakyCruxDialog extends ConsumerWidget {
+  const LeakyCruxDialog({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      Text('${ref.watch(perTabProvider)}');
+}
+
+Future<bool?> leakyCruxDialog(BuildContext context) {
+  return showCruxDialog<bool>(
+    context: context,
+    modalGuardKey: 'leaky',
+    builder: (_) => const LeakyCruxDialog(),
+  );
+}
+
+Future<bool?> fixedCruxDialog(
+  BuildContext context,
+  ProviderContainer container,
+) {
+  return showCruxDialog<bool>(
+    context: context,
+    modalGuardKey: 'fixed',
+    builder: (_) => UncontrolledProviderScope(
+      container: container,
+      child: const LeakyCruxDialog(),
+    ),
+  );
+}

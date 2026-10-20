@@ -1,5 +1,7 @@
 ## Unreleased
 
+- The overflow button is the suite's "⋯" (`Icons.more_horiz`), never "⋮".
+
 - The toolbar surface takes the theme's `toolbar.background` chrome token
   and an enabled button's resting glyph takes `toolbar.icon`, both read from
   `CruxChromeColors`; unset, they keep `surfaceContainerHigh` and the

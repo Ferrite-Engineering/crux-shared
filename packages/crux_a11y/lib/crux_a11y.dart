@@ -23,6 +23,10 @@
 /// [CruxRegionHintHost] and [CruxRegionHint] let a region's content describe
 /// the region without renaming it: an empty dock keeps its title as its name
 /// and gains its empty message as its description.
+///
+/// [CruxSwitch] is the suite's desktop switch, drawn at its 32×18 size rather
+/// than a scaled Material switch, with Space and Enter, a toggled semantics
+/// node named by its row, and an always-visible focus ring.
 library;
 
 import 'package:crux_a11y/crux_a11y.dart'
@@ -31,10 +35,12 @@ import 'package:crux_a11y/crux_a11y.dart'
         CruxModalSurface,
         CruxRegionHint,
         CruxRegionHintHost,
-        CruxScrollRegion;
+        CruxScrollRegion,
+        CruxSwitch;
 import 'package:flutter/material.dart' show Slider;
 
 export 'src/crux_slider.dart';
+export 'src/crux_switch.dart';
 export 'src/modal_gate.dart';
 export 'src/region_hint.dart';
 export 'src/scroll_region.dart';

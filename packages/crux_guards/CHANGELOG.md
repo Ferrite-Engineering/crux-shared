@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- `cruxAuditCruxDesktop` + `CruxDesktopPattern`, `CruxDesktopSite`,
+  `cruxFindDesktopSites`, `CruxDesktopAllowance`, `cruxParseDesktopAllowList`,
+  `cruxFormatDesktopAllowList` and `kCruxDesktopPhoneOnlyMarker`: no raw
+  Material pattern the Crux Desktop layer replaces (`showDialog`,
+  `AlertDialog`, `SimpleDialog`, `SnackBar`, `showSnackBar`,
+  `Icons.more_vert`, `Switch`, `Switch.adaptive`, `SwitchListTile`,
+  `CheckboxListTile`), each finding naming its replacement. Constructions
+  match in both unresolved forms (`AlertDialog(` and `const AlertDialog(`),
+  through an import prefix too. A call site marked
+  `// crux-desktop: phone-only, <reason>` is exempt; a marker without a
+  reason or covering no site is a finding. The rest are absorbed by a
+  per-file allow-list with exact counts, parsed from and seeded as text.
+- `showCruxDialog` is a modal opener for `cruxFindDialogSites`,
+  `cruxAuditModalGuard` and `cruxAuditDismissibleFormDialogs`. It is guarded
+  inside `ModalGuard.run` or when it passes `modalGuardKey:` (anything but
+  the literal `null`), and is dismissible unless it passes
+  `barrierDismissible: false`.
+
 - `cruxAuditProcessExit` + `CruxProcessExitExemption`: no product ends its
   own process with `dart:io`'s `exit` (a call, a tear-off, or either through
   a prefix), because that skips the unclean-shutdown detector's clean-exit

@@ -6,6 +6,23 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **`CruxFormRow` / `CruxFormSection`: label-left desktop forms.** A row
+  around any control, plus `CruxFormRow.toggle` (a `CruxSwitch`, for a
+  setting that applies at once) and `CruxFormRow.checkbox` (for an option in
+  a form that applies on OK). The label is the control's accessible name and,
+  for a switch or checkbox, its click target; help text sits under the
+  control and is read as the hint. Inside a section the labels share a
+  column; with a null `labelWidth` (Settings) label and control spread apart;
+  without `CruxDesktopTokens` (phone, tablet) the label stacks above the
+  control and a toggle keeps the Material switch.
+- **The `CruxSettings*` rows are built on `CruxFormRow`.**
+  `CruxSettingsControlTile` (and the auto-reload tile on it) puts its control
+  at the row's end on desktop instead of under the label;
+  `CruxSettingsSliderTile` holds its slider at `kCruxSettingsSliderWidth` on
+  desktop; `CruxLocaleSettingTile` is a control tile with a boxed dropdown
+  rather than a `ListTile`. The Settings dialog opens through
+  `showCruxDialog`. New dependency on `crux_ide_layout`.
+
 - **`CruxSettingsDialogShell` is no longer public.** No product built it
   directly; `openCruxSettings(asDialog: true)` is the way in, and the shell
   stays as its private implementation.

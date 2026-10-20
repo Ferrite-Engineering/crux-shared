@@ -16,6 +16,9 @@ resolution: workspace
 dependencies:
   crux_app_info:
     path: ../crux_app_info
+  # The suite toasts the manual check reports through.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.1

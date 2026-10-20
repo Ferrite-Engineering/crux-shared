@@ -14,6 +14,10 @@ resolution: workspace
 dependencies:
   crux_a11y:
     path: ../crux_a11y
+  # showCruxDialog for the Settings shell, and the desktop tokens the form
+  # rows read to choose their layout.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   # Pure Dart, for PolicySource: CruxPolicyLock is keyed on the resolved
   # source. The edge runs this way only; crux_policy never imports UI.
   crux_policy:

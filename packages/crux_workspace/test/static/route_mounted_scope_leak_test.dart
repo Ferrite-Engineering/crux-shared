@@ -33,9 +33,10 @@
 // ============================ WHAT THIS GUARD DOES ==========================
 //
 // THE RULE
-//   For every route-builder callback — `showDialog`, `showGeneralDialog`,
-//   `showModalBottomSheet`, `showBottomSheet`, `showCupertinoDialog`,
-//   `showCupertinoModalPopup`, `showAdaptiveDialog`, `showMenu`, and
+//   For every route-builder callback — `showDialog`, `showCruxDialog`,
+//   `showGeneralDialog`, `showModalBottomSheet`, `showBottomSheet`,
+//   `showCupertinoDialog`, `showCupertinoModalPopup`, `showAdaptiveDialog`,
+//   `showMenu`, and
 //   `Navigator.push` / `pushReplacement` / `pushAndRemoveUntil` /
 //   `restorablePush*` (both `Navigator.of(context).push` and the static form)
 //   — take each widget the callback CONSTRUCTS. If that widget's own class
@@ -221,6 +222,23 @@ void main() {
           if (v.widget == 'LeakySearchDialog') v.callSite,
       };
       expect(sites, hasLength(1));
+    });
+
+    test('flags a showCruxDialog builder over a per-tab reader and clears '
+        'its scoped fix', () {
+      final sites = <String>{
+        for (final v in found)
+          if (v.widget == 'LeakyCruxDialog' && v.routeApi == 'showCruxDialog')
+            v.callSite,
+      };
+      expect(sites, hasLength(1));
+      expect(
+        shapes
+            .routeMounts()
+            .where((m) => m.widget == 'LeakyCruxDialog')
+            .map((m) => m.scoped),
+        unorderedEquals(<bool>[false, true]),
+      );
     });
 
     test('flags a read in the widget class body (no State)', () {

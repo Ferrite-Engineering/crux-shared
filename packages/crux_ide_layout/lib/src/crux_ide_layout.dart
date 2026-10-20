@@ -3,10 +3,10 @@
 
 import 'dart:math' as math;
 
+import 'package:crux_ide_layout/src/crux_chrome_colors.dart';
 import 'package:crux_ide_layout/src/crux_ide_layout_theme.dart';
 import 'package:crux_ide_layout/src/focus_regions.dart';
 import 'package:crux_ide_layout/src/ide_panel_layout.dart';
-import 'package:crux_theme/crux_theme.dart' show CruxChromeColors;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

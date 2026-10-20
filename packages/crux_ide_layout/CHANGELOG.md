@@ -6,6 +6,29 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Crux Desktop components.** `showCruxDialog` (showDialog's named
+  parameters plus `modalGuardKey`; Escape always closes) and `CruxDialog` /
+  `CruxDialogAction` (title, body, action row, Enter for the default action,
+  a destructive role, focus moved in on open, size clamped to the window).
+  `confirmCruxDestructiveAction` is rebuilt on them: Cancel is now an
+  outlined button holding focus, the confirm is still the error-coloured
+  `FilledButton`. `CruxOverflowMenu` ("⋯"), `CruxContextMenuRegion`
+  (right-click, Shift+F10, the Menu key) and `showCruxContextMenu` over one
+  `CruxMenuEntry` list. `CruxDesktopTokens`, the theme extension whose
+  presence marks a Crux Desktop theme.
+- **`showCruxInfoSnack` / `showCruxErrorSnack` are toasts on desktop.** Under
+  a theme carrying `CruxDesktopTokens` they show a `CruxToastCard`
+  bottom-right above the status bar in the root overlay: one at a time, the
+  newest replacing it, info gone after `kCruxInfoSnackDuration`, an error
+  staying until closed. Without the tokens (phone, tablet, and every product
+  not yet on `cruxDesktopTheme`) they are the same snack bars as before.
+  Both take an optional `key`; `hideCruxSnack` removes the one showing.
+- **`CruxChromeColors` moved here from `crux_theme`**, which re-exports it,
+  and this package no longer depends on `crux_theme`. The edge now runs
+  `crux_theme` -> `crux_ide_layout`, so the theme widgets can open
+  `showCruxDialog` and the toasts. The chrome-token layout test moved to
+  `crux_theme` with it.
+
 - `showCruxReloadPrompt` / `hideCruxReloadPrompt`: the source-changed prompt
   every product shows when a watched file changes and auto-reload is set to
   prompt. A `MaterialBanner` with the product's message, Ignore, then the

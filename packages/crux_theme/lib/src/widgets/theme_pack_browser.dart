@@ -1,6 +1,8 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show confirmCruxDestructiveAction, showCruxErrorSnack, showCruxInfoSnack;
 import 'package:crux_theme/src/providers.dart';
 import 'package:crux_theme/src/theme_pack.dart';
 import 'package:crux_theme/src/theme_pack_codec.dart';
@@ -77,12 +79,12 @@ class _ThemePackBrowserState extends ConsumerState<ThemePackBrowser> {
       _refresh();
       _showSnack(widget.strings.importSucceededMessage(installed.id));
     } on FormatException catch (e) {
-      _showSnack(widget.strings.importFailedMessage(e.message));
+      _showError(widget.strings.importFailedMessage(e.message));
     } on Exception catch (e) {
       // Storage-layer failures (IO, permissions, quota) are
       // implementation-specific by design — the store abstraction
       // deliberately does not name dart:io types.
-      _showSnack(widget.strings.importFailedMessage('$e'));
+      _showError(widget.strings.importFailedMessage('$e'));
     }
   }
 
@@ -100,7 +102,7 @@ class _ThemePackBrowserState extends ConsumerState<ThemePackBrowser> {
       if (where == null) return;
       _showSnack(widget.strings.exportSucceededMessage(where));
     } on Exception catch (e) {
-      _showSnack(widget.strings.exportFailedMessage('$e'));
+      _showError(widget.strings.exportFailedMessage('$e'));
     }
   }
 
@@ -110,37 +112,25 @@ class _ThemePackBrowserState extends ConsumerState<ThemePackBrowser> {
       if (!mounted) return;
       ref.read(cruxColorThemeProvider.notifier).activate(pack.toTheme());
     } on FormatException catch (e) {
-      _showSnack(widget.strings.importFailedMessage(e.message));
+      _showError(widget.strings.importFailedMessage(e.message));
     } on Exception catch (e) {
-      _showSnack(widget.strings.importFailedMessage('$e'));
+      _showError(widget.strings.importFailedMessage('$e'));
     }
   }
 
   Future<void> _onUninstall(ThemePackHeader header) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(widget.strings.confirmUninstallDialogTitle),
-        content: Text(
-          widget.strings.confirmUninstallDialogBody(header.id),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(widget.strings.confirmUninstallCancelLabel),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(widget.strings.confirmUninstallConfirmLabel),
-          ),
-        ],
-      ),
+    final ok = await confirmCruxDestructiveAction(
+      context,
+      title: widget.strings.confirmUninstallDialogTitle,
+      body: widget.strings.confirmUninstallDialogBody(header.id),
+      confirmLabel: widget.strings.confirmUninstallConfirmLabel,
+      cancelLabel: widget.strings.confirmUninstallCancelLabel,
     );
-    if (ok != true) return;
+    if (!ok) return;
     try {
       await widget.store.uninstallPack(header.id);
     } on Exception catch (e) {
-      _showSnack(widget.strings.importFailedMessage('$e'));
+      _showError(widget.strings.importFailedMessage('$e'));
       return;
     }
     if (!mounted) return;
@@ -149,8 +139,12 @@ class _ThemePackBrowserState extends ConsumerState<ThemePackBrowser> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    messenger?.showSnackBar(SnackBar(content: Text(message)));
+    showCruxInfoSnack(context, message);
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    showCruxErrorSnack(context, message);
   }
 
   @override

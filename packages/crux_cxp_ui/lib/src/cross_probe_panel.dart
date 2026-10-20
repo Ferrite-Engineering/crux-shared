@@ -4,6 +4,8 @@
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:crux_cxp_ui/src/cross_probe_event.dart';
 import 'package:crux_cxp_ui/src/cross_probe_panel_controller.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show hideCruxSnack, showCruxErrorSnack;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -181,20 +183,16 @@ class _SendFailureToasterState extends State<_SendFailureToaster> {
     final failure = widget.failures.value;
     if (failure == null) return;
     // Defer to after the frame: the listener can fire mid-build (an app pushes
-    // the failure from a send handler), and showing a snackbar synchronously
+    // the failure from a send handler), and showing a message synchronously
     // during build asserts.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.maybeOf(context);
-      if (messenger == null) return;
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            key: const Key('cross_probe_send_failure'),
-            content: Text(widget.messageFor(failure)),
-          ),
-        );
+      hideCruxSnack(context);
+      showCruxErrorSnack(
+        context,
+        widget.messageFor(failure),
+        key: const Key('cross_probe_send_failure'),
+      );
     });
   }
 

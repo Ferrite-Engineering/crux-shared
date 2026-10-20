@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **`CruxCxpSettingsControls` is built on `CruxFormRow`.** The three switches
+  are `CruxFormRow.toggle` rows (a `CruxSwitch` on desktop, keys unchanged)
+  and the port is a label-left row. The send-failure message is
+  `showCruxErrorSnack` under the same `cross_probe_send_failure` key. New
+  dependencies on `crux_ide_layout` and `crux_settings_ui`.
+
 - `CrossProbePanel.sendBadgeBuilder` (`CrossProbeSendBadgeBuilder`): an
   optional per-row badge rendered on the leading side of each peer's
   direct-send button, so a product that prices cross-probe origination can

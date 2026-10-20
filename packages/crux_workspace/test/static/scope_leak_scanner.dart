@@ -592,8 +592,8 @@ class RouteMount {
     required this.reads,
   });
 
-  /// The routing API that mounted it: `showDialog`, `showModalBottomSheet`,
-  /// `Navigator.push`, …
+  /// The routing API that mounted it: `showDialog`, `showCruxDialog`,
+  /// `showModalBottomSheet`, `Navigator.push`, …
   final String routeApi;
 
   /// `<path>:<line>` of the route call.
@@ -618,6 +618,7 @@ class RouteMount {
 /// may be outside the per-tab `UncontrolledProviderScope`.
 const Set<String> _routeApis = <String>{
   'showDialog',
+  'showCruxDialog',
   'showGeneralDialog',
   'showModalBottomSheet',
   'showBottomSheet',

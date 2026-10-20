@@ -18,9 +18,10 @@
 /// - `PlatformContextMenu` — the "long-press = right-click" wrapper every
 ///   product uses for row context menus.
 /// - `showCruxInfoSnack` / `showCruxErrorSnack` — the standard feedback
-///   snack bars (floating; 4 s info, 6 s error).
+///   messages: toasts on desktop, floating snack bars on phone and tablet.
 /// - `confirmCruxDestructiveAction` — the standard destructive-action
-///   confirmation dialog (Cancel left, destructive-styled confirm right).
+///   confirmation, a `CruxDialog` (Cancel first and focused, the
+///   destructive-styled confirm after it).
 /// - `CruxSearchDialog` / `CruxSearchResultTile` — the standard Cmd/Ctrl+F
 ///   search modal shell (debounced query, ↑/↓/Enter keyboard navigation).
 /// - `CruxPanelEmptyState` — the standard empty state for a dock panel.
@@ -43,13 +44,35 @@
 ///   collapsed-region restore bars around the IDE layout without ever
 ///   changing the widget type above it, so a dock toggle rebuilds nothing
 ///   beneath.
+///
+/// And the Crux Desktop components every desktop surface is built from:
+///
+/// - `showCruxDialog` / `CruxDialog` / `CruxDialogAction` — the one way a
+///   dialog opens and the one frame it draws: Escape closes, Enter runs the
+///   default action, a destructive variant keeps focus on the safe choice,
+///   the size is clamped to the window, and `ModalGuard` is a parameter.
+/// - The toast stack behind `showCruxInfoSnack` / `showCruxErrorSnack` on
+///   desktop (bottom-right above the status bar, one visible, errors stay
+///   until closed), `hideCruxSnack`, and `CruxToastCard`.
+/// - `CruxOverflowMenu` / `CruxContextMenuRegion` / `showCruxContextMenu`
+///   — the "⋯" button and the same commands on right-click, Shift+F10 and
+///   the Menu key.
+/// - `CruxDesktopTokens` — the layout tokens a Crux Desktop theme carries;
+///   their presence is how the helpers above know they are on desktop.
+/// - `CruxChromeColors` — the chrome colours Material has no slot for,
+///   which `crux_theme`'s `applyChromeTokens` resolves.
 library;
 
 export 'package:panes/panes.dart' show IdePaneBuilder, PaneSize;
 
+export 'src/crux_chrome_colors.dart';
+export 'src/crux_desktop_tokens.dart';
+export 'src/crux_dialog.dart';
 export 'src/crux_ide_layout.dart';
 export 'src/crux_ide_layout_theme.dart';
+export 'src/crux_overflow_menu.dart';
 export 'src/crux_search_dialog.dart';
+export 'src/crux_toast.dart' show CruxToastCard;
 export 'src/dock_restore_frame.dart';
 export 'src/escape_dismissible.dart';
 export 'src/feedback.dart';

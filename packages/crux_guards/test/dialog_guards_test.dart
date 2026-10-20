@@ -71,7 +71,104 @@ Future<void> openInline(BuildContext context) => showModalBottomSheet<void>(
 );
 ''';
 
+const _crux = '''
+class NameDialog extends StatelessWidget {
+  const NameDialog({super.key});
+  @override
+  Widget build(BuildContext context) => const TextField();
+}
+
+Future<bool?> openKeyed(BuildContext context) => showCruxDialog<bool>(
+  context: context,
+  modalGuardKey: 'keyed',
+  builder: (_) => const Text('x'),
+);
+
+Future<void> openBare(BuildContext context) =>
+    showCruxDialog(context: context, builder: (_) => const Text('x'));
+
+Future<void> openNullKey(BuildContext context) => showCruxDialog<void>(
+  context: context,
+  modalGuardKey: null,
+  builder: (_) => const Text('x'),
+);
+
+Future<void> openWrapped(BuildContext context) => ModalGuard.run(
+  'wrapped',
+  () => showCruxDialog<void>(context: context, builder: (_) => const Text('x')),
+);
+
+Future<void> openFormSafely(BuildContext context) => showCruxDialog<void>(
+  context: context,
+  modalGuardKey: 'name',
+  barrierDismissible: false,
+  builder: (_) => const NameDialog(),
+);
+
+Future<void> openFormLoosely(BuildContext context) => showCruxDialog<void>(
+  context: context,
+  modalGuardKey: 'name',
+  builder: (_) => const NameDialog(),
+);
+''';
+
 void main() {
+  group('showCruxDialog', () {
+    test('is found in both call forms and counted', () {
+      final sites = cruxFindDialogSites([_src('lib/x.dart', _crux)]);
+      expect(sites.map((s) => s.opener).toSet(), {'showCruxDialog'});
+      expect(sites.map((s) => s.member), [
+        'openKeyed',
+        'openBare',
+        'openNullKey',
+        'openWrapped',
+        'openFormSafely',
+        'openFormLoosely',
+      ]);
+      expect(kCruxModalOpeners, contains('showCruxDialog'));
+    });
+
+    test('modalGuardKey guards it; a missing or null key does not', () {
+      final sites = {
+        for (final s in cruxFindDialogSites([_src('lib/x.dart', _crux)]))
+          s.member: s,
+      };
+      expect(sites['openKeyed']!.guarded, isTrue);
+      expect(sites['openWrapped']!.guarded, isTrue);
+      expect(sites['openBare']!.guarded, isFalse);
+      expect(sites['openNullKey']!.guarded, isFalse);
+
+      final result = cruxAuditModalGuard(sources: [_src('lib/x.dart', _crux)]);
+      expect(result.findings.map((f) => f.detail.split(' is not').first), [
+        'showCruxDialog in openBare',
+        'showCruxDialog in openNullKey',
+      ]);
+      expect(result.findings.first.detail, contains('modalGuardKey'));
+      expect(result.matchesSeen, 6);
+    });
+
+    test('barrierDismissible: false makes it non-dismissible; a form without '
+        'it is a finding', () {
+      final sites = {
+        for (final s in cruxFindDialogSites([_src('lib/x.dart', _crux)]))
+          s.member: s,
+      };
+      expect(sites['openFormSafely']!.dismissible, isFalse);
+      expect(sites['openFormLoosely']!.dismissible, isTrue);
+
+      final result = cruxAuditDismissibleFormDialogs(
+        sources: [_src('lib/x.dart', _crux)],
+      );
+      expect(result.findings, hasLength(1));
+      expect(
+        result.findings.single.detail,
+        startsWith('showCruxDialog in openFormLoosely holds in-progress input'),
+      );
+      expect(result.findings.single.detail, contains('barrierDismissible'));
+      expect(result.matchesSeen, 2);
+    });
+  });
+
   group('cruxFindDialogSites', () {
     test('finds calls, not mentions, and names the enclosing member', () {
       final sites = cruxFindDialogSites([

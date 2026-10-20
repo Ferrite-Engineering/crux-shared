@@ -20,6 +20,9 @@ dependencies:
   # licence agreement so the two blocking surfaces cannot drift apart.
   crux_a11y:
     path: ../crux_a11y
+  # The toast the installation-id copy confirms with.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   # `kBetaPeriod` (the dark-launch switch) and `licenseTierProvider` (the
   # `license_tier` envelope field). The gate is not meaningful without the
   # first, and the envelope is incomplete without the second.

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_app_info/crux_app_info.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxDialog, showCruxDialog, showCruxInfoSnack;
 import 'package:crux_issue_reporter/src/crux_issue_reporter_strings.dart';
 import 'package:crux_issue_reporter/src/models/crux_issue_category.dart';
 import 'package:crux_issue_reporter/src/models/crux_issue_session_context.dart';
@@ -9,6 +11,7 @@ import 'package:crux_issue_reporter/src/platform_utils.dart';
 import 'package:crux_issue_reporter/src/providers/crux_issue_reporter_providers.dart';
 import 'package:crux_issue_reporter/src/services/crux_issue_reporter_log_buffer.dart';
 import 'package:crux_issue_reporter/src/services/crux_issue_reporter_service.dart';
+import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
@@ -87,12 +90,15 @@ class CruxIssueReporterDialog extends ConsumerStatefulWidget {
     if (!context.mounted) return;
 
     if (isCruxDesktopPlatform) {
-      await showDialog<void>(
+      // It holds a typed title, so a stray scrim click must not discard it.
+      await showCruxDialog<void>(
         context: context,
-        builder: (_) => Dialog(
-          clipBehavior: Clip.antiAlias,
-          child: SizedBox(
-            width: desktopWidth,
+        barrierDismissible: false,
+        builder: (_) => CruxDialog(
+          width: desktopWidth,
+          scrollable: false,
+          contentPadding: EdgeInsets.zero,
+          content: SizedBox(
             height: desktopHeight,
             child: CruxIssueReporterDialog(screenshotPng: screenshot),
           ),
@@ -262,7 +268,6 @@ class _CruxIssueReporterDialogState
     setState(() => _submitting = true);
     final inputs = _inputs(watch: false);
     final strings = inputs.strings;
-    final messenger = ScaffoldMessenger.maybeOf(context);
     final navigator = Navigator.of(context);
 
     final typed = _titleController.text.trim();
@@ -288,9 +293,9 @@ class _CruxIssueReporterDialogState
         setState(() => _submitting = false);
         if (navigator.canPop()) navigator.pop();
         if (result != null) {
-          messenger?.showSnackBar(
-            SnackBar(content: Text(_toastFor(result, strings))),
-          );
+          // The navigator's context outlives this dialog, so the toast shows
+          // over the app the dialog returned to.
+          showCruxInfoSnack(navigator.context, _toastFor(result, strings));
         }
       }
     }
@@ -513,8 +518,9 @@ class _PrivacyCallout extends StatelessWidget {
   }
 }
 
-/// One category row: a localized title with a trailing switch. When [locked],
-/// the switch is fixed on and disabled (App & Environment).
+/// One category row: a checkbox and its localized title. A checkbox, not a
+/// switch: the choice applies when the report is sent, not at once. When
+/// [locked], the box is fixed on and disabled (App & Environment).
 class _CategoryTile extends StatelessWidget {
   const _CategoryTile({
     required this.title,
@@ -536,16 +542,14 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final description = subtitle;
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      minTileHeight: kCruxIssueReporterMinTouchTarget,
-      title: Text(title, style: theme.textTheme.bodyMedium),
-      subtitle: description == null
-          ? null
-          : Text(description, style: theme.textTheme.bodySmall),
-      secondary: locked
-          ? Tooltip(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: kCruxIssueReporterMinTouchTarget,
+      ),
+      child: Row(
+        children: [
+          if (locked) ...[
+            Tooltip(
               message: lockedSemantics ?? '',
               triggerMode: TooltipTriggerMode.manual,
               child: Icon(
@@ -554,10 +558,19 @@ class _CategoryTile extends StatelessWidget {
                 color: theme.disabledColor,
                 semanticLabel: lockedSemantics,
               ),
-            )
-          : null,
-      value: value,
-      onChanged: locked ? null : onChanged,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: CruxFormRow.checkbox(
+              label: title,
+              help: subtitle,
+              value: value,
+              onChanged: locked ? null : onChanged,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

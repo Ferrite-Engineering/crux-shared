@@ -7,6 +7,81 @@
 # disappears or changes shape is a breaking change for all four
 # products; a line that appears is new public surface to justify.
 
+class CruxChromeColors extends ThemeExtension<CruxChromeColors>
+  const CruxChromeColors({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarBackground, Color? toolbarIcon, Color? toolbarIconActive})
+  ==(Object other) -> bool
+  copyWith({Color? splitter, Color? splitterHover, Color? statusBarBackground, Color? statusBarForeground, Color? tabBarBackground, Color? tabBarLabel, Color? tabBarSelected, Color? toolbarBackground, Color? toolbarIcon, Color? toolbarIconActive}) -> CruxChromeColors
+  final splitter: Color?
+  final splitterHover: Color?
+  final statusBarBackground: Color?
+  final statusBarForeground: Color?
+  final tabBarBackground: Color?
+  final tabBarLabel: Color?
+  final tabBarSelected: Color?
+  final toolbarBackground: Color?
+  final toolbarIcon: Color?
+  final toolbarIconActive: Color?
+  get hashCode -> int
+  get isEmpty -> bool
+  lerp(ThemeExtension<CruxChromeColors>? other, double t) -> CruxChromeColors
+  static of(BuildContext context) -> CruxChromeColors?
+class CruxContextMenuRegion extends StatelessWidget
+  const CruxContextMenuRegion({Key? key, bool isTouchLayout, required List<CruxMenuEntry> entries, required Widget child})
+  build(BuildContext context) -> Widget
+  final child: Widget
+  final entries: List<CruxMenuEntry>
+  final isTouchLayout: bool
+class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens>
+  const CruxDesktopTokens({double bodyFontSize, double controlHeight, double controlRadius, double denseControlHeight, double dialogRadius, double focusRingWidth, double menuRadius, double rowHeight, double scrimOpacity, double secondaryFontSize, double titleFontSize, double toastBottomInset, double toastMaxWidth, double twoLineRowHeight})
+  const CruxDesktopTokens.highContrast()
+  ==(Object other) -> bool
+  copyWith({double? bodyFontSize, double? controlHeight, double? controlRadius, double? denseControlHeight, double? dialogRadius, double? focusRingWidth, double? menuRadius, double? rowHeight, double? scrimOpacity, double? secondaryFontSize, double? titleFontSize, double? toastBottomInset, double? toastMaxWidth, double? twoLineRowHeight}) -> CruxDesktopTokens
+  final bodyFontSize: double
+  final controlHeight: double
+  final controlRadius: double
+  final denseControlHeight: double
+  final dialogRadius: double
+  final focusRingWidth: double
+  final menuRadius: double
+  final rowHeight: double
+  final scrimOpacity: double
+  final secondaryFontSize: double
+  final titleFontSize: double
+  final toastBottomInset: double
+  final toastMaxWidth: double
+  final twoLineRowHeight: double
+  get hashCode -> int
+  get scrimColor -> Color
+  lerp(ThemeExtension<CruxDesktopTokens>? other, double t) -> CruxDesktopTokens
+  static isDesktop(BuildContext context) -> bool
+  static of(BuildContext context) -> CruxDesktopTokens?
+class CruxDialog extends StatefulWidget
+  const CruxDialog({EdgeInsetsGeometry? contentPadding, Key? key, List<Widget> actions, String? semanticLabel, String? title, Widget? titleTrailing, bool scrollable, bool semanticContainer, bool takeFocus, double width, required Widget content, void Function()? onSubmit})
+  createState() -> State<CruxDialog>
+  final actions: List<Widget>
+  final content: Widget
+  final contentPadding: EdgeInsetsGeometry?
+  final onSubmit: void Function()?
+  final scrollable: bool
+  final semanticContainer: bool
+  final semanticLabel: String?
+  final takeFocus: bool
+  final title: String?
+  final titleTrailing: Widget?
+  final width: double
+class CruxDialogAction extends StatelessWidget
+  const CruxDialogAction({CruxDialogActionRole role, FocusNode? focusNode, Key? key, bool autofocus, required String label, required void Function()? onPressed})
+  build(BuildContext context) -> Widget
+  final autofocus: bool
+  final focusNode: FocusNode?
+  final label: String
+  final onPressed: void Function()?
+  final role: CruxDialogActionRole
+enum CruxDialogActionRole
+  static const destructive: CruxDialogActionRole
+  static const primary: CruxDialogActionRole
+  static const secondary: CruxDialogActionRole
+  static const tertiary: CruxDialogActionRole
 class CruxDockRestoreFrame extends StatelessWidget
   const CruxDockRestoreFrame({Key? key, Widget? bottomBar, Widget? leftBar, Widget? rightBar, required Widget child})
   build(BuildContext context) -> Widget
@@ -70,8 +145,27 @@ class CruxIdeLayoutTheme
   final resizerHitTestThickness: double
   final resizerHoverColor: Color?
   final resizerThickness: double
+final class CruxMenuDivider extends CruxMenuEntry
+  const CruxMenuDivider()
+sealed class CruxMenuEntry
+  const CruxMenuEntry()
+final class CruxMenuItem extends CruxMenuEntry
+  const CruxMenuItem({IconData? icon, Key? key, bool destructive, bool enabled, required String label, required void Function() onSelected})
+  final destructive: bool
+  final enabled: bool
+  final icon: IconData?
+  final key: Key?
+  final label: String
+  final onSelected: void Function()
 class CruxNextRegionIntent extends Intent
   const CruxNextRegionIntent()
+class CruxOverflowMenu extends StatelessWidget
+  const CruxOverflowMenu({Color? color, Key? key, double iconSize, required List<CruxMenuEntry> entries, required String tooltip})
+  build(BuildContext context) -> Widget
+  final color: Color?
+  final entries: List<CruxMenuEntry>
+  final iconSize: double
+  final tooltip: String
 class CruxPanelEmptyState extends StatelessWidget
   const CruxPanelEmptyState({IconData? icon, Key? key, Widget? action, required String message})
   build(BuildContext context) -> Widget
@@ -101,6 +195,12 @@ class CruxSearchResultTile extends StatelessWidget
   final title: String
   final trailingChipLabel: String?
 typedef CruxSearchRowBuilder<T> = Widget Function(BuildContext, T, {required bool highlighted, required void Function() onActivate})
+class CruxToastCard extends StatelessWidget
+  const CruxToastCard({Key? key, required String message, required bool error, void Function()? onClose})
+  build(BuildContext context) -> Widget
+  final error: bool
+  final message: String
+  final onClose: void Function()?
 class EscapeDismissible extends StatelessWidget
   const EscapeDismissible({Key? key, required Widget child})
   build(BuildContext context) -> Widget
@@ -138,6 +238,9 @@ class PlatformContextMenu extends StatelessWidget
 announceCrux(BuildContext context, String message, {bool assertive}) -> void
 confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirmKey, Key? dialogKey, required String body, required String cancelLabel, required String confirmLabel, required String title}) -> Future<bool>
 hideCruxReloadPrompt(BuildContext context) -> void
+hideCruxSnack(BuildContext context) -> void
+get kCruxDialogDefaultWidth -> double
+get kCruxDialogGutter -> double
 get kCruxErrorSnackDuration -> Duration
 get kCruxInfoSnackDuration -> Duration
 get kCruxPaneResizeStep -> double
@@ -149,6 +252,8 @@ get kCruxSearchDebounceInterval -> Duration
 get kCruxSearchDialogRowExtent -> double
 get kCruxSearchDialogSize -> Size
 shouldEnableLongPressContextMenu({required TargetPlatform platform, required bool isTouchLayout}) -> bool
-showCruxErrorSnack(BuildContext context, String message) -> void
-showCruxInfoSnack(BuildContext context, String message) -> void
+showCruxContextMenu(BuildContext context, {required List<CruxMenuEntry> entries, required Offset globalPosition}) -> Future<void>
+showCruxDialog<T>({RouteSettings? routeSettings, String? barrierLabel, String? modalGuardKey, bool barrierDismissible, bool useRootNavigator, required BuildContext context, required Widget Function(BuildContext) builder}) -> Future<T?>
+showCruxErrorSnack(BuildContext context, String message, {Key? key}) -> void
+showCruxInfoSnack(BuildContext context, String message, {Key? key}) -> void
 showCruxReloadPrompt(BuildContext context, {required String ignoreLabel, required String message, required String reloadLabel, required void Function() onIgnore, required void Function() onReload}) -> void

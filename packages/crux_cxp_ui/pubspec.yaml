@@ -16,6 +16,13 @@ resolution: workspace
 dependencies:
   crux_cxp:
     path: ../crux_cxp
+  # The send-failure toast.
+  crux_ide_layout:
+    path: ../crux_ide_layout
+  # CruxFormRow / CruxFormSection, which the settings controls are built on
+  # (and, through it, CruxSwitch).
+  crux_settings_ui:
+    path: ../crux_settings_ui
   flutter:
     sdk: flutter
   meta: ^1.15.0

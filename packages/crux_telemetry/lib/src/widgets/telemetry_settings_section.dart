@@ -3,6 +3,7 @@
 
 import 'dart:async' show unawaited;
 
+import 'package:crux_ide_layout/crux_ide_layout.dart' show showCruxInfoSnack;
 import 'package:crux_settings_ui/crux_settings_ui.dart';
 import 'package:crux_telemetry/src/crux_telemetry_strings.dart';
 import 'package:crux_telemetry/src/models/telemetry_consent_state.dart';
@@ -44,16 +45,19 @@ class TelemetrySettingsSection extends ConsumerWidget {
 
     return CruxSettingsCard(
       children: [
-        SwitchListTile(
-          key: const Key('settingsTelemetrySwitch'),
-          title: Text(strings.settingsToggleLabel),
-          subtitle: Text(strings.settingsToggleDescription),
-          value: consent == TelemetryConsentState.enabled,
-          onChanged: (enabled) => unawaited(
-            notifier.set(
-              enabled
-                  ? TelemetryConsentState.enabled
-                  : TelemetryConsentState.disabled,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: CruxFormRow.toggle(
+            key: const Key('settingsTelemetrySwitch'),
+            label: strings.settingsToggleLabel,
+            help: strings.settingsToggleDescription,
+            value: consent == TelemetryConsentState.enabled,
+            onChanged: (enabled) => unawaited(
+              notifier.set(
+                enabled
+                    ? TelemetryConsentState.enabled
+                    : TelemetryConsentState.disabled,
+              ),
             ),
           ),
         ),
@@ -138,12 +142,6 @@ class TelemetrySettingsSection extends ConsumerWidget {
   ) async {
     await Clipboard.setData(ClipboardData(text: id));
     if (!context.mounted) return;
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(content: Text(strings.settingsInstallationIdCopied)),
-      );
+    showCruxInfoSnack(context, strings.settingsInstallationIdCopied);
   }
 }

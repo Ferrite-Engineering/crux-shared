@@ -50,15 +50,17 @@ final class CruxDismissibleFormAllowance {
 }
 
 /// A dialog that holds in-progress input sets `barrierDismissible: false`
-/// (`isDismissible: false` for a bottom sheet).
+/// (`isDismissible: false` for a bottom sheet). `showCruxDialog` defaults to
+/// dismissible like `showDialog` and is read the same way.
 ///
 /// Workflow and form dialogs close by a deliberate act (Cancel, the close
 /// button, Escape), never a stray click on the scrim, which discards what
 /// the user typed. Lightweight confirms and read-only viewers may stay
 /// dismissible and are not flagged.
 ///
-/// **What counts as a form.** A `showDialog`, `showModalBottomSheet` or
-/// `showGeneralDialog` call is a form when its own text names
+/// **What counts as a form.** A `showDialog`, `showCruxDialog`,
+/// `showModalBottomSheet` or `showGeneralDialog` call is a form when its own
+/// text names
 /// `TextEditingController`, `TextField` or `TextFormField`, or names a class
 /// that does, itself or through the `State` its `createState` builds. Classes
 /// are looked up in [sources] and in [classSources] (the open core's `lib/`

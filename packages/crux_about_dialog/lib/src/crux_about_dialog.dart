@@ -5,6 +5,8 @@ import 'package:crux_about_dialog/src/about_action.dart';
 import 'package:crux_about_dialog/src/about_attribution_section.dart';
 import 'package:crux_about_dialog/src/about_strings.dart';
 import 'package:crux_app_info/crux_app_info.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxDialog, showCruxDialog;
 import 'package:crux_license/crux_license.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
@@ -132,7 +134,7 @@ class CruxAboutDialog extends StatelessWidget {
       betaChipVisible: betaChipVisible,
     );
     if (_isDesktopPlatform) {
-      await showDialog<void>(
+      await showCruxDialog<void>(
         context: context,
         builder: (_) => _AboutDialogShell(dialog: dialog),
       );
@@ -174,33 +176,29 @@ class _AboutDialogShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Dialog(
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        width: 560,
-        height: 660,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-              child: Row(
-                children: [
-                  Text(dialog.title, style: theme.textTheme.titleLarge),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    tooltip: MaterialLocalizations.of(context).closeButtonLabel,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(child: _AboutScrollBody(dialog: dialog)),
-            _AboutBrandingBanner(dialog: dialog),
-          ],
+    return CruxDialog(
+      title: dialog.title,
+      titleTrailing: IconButton(
+        icon: const Icon(Icons.close),
+        tooltip: MaterialLocalizations.of(context).closeButtonLabel,
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      width: 560,
+      scrollable: false,
+      contentPadding: EdgeInsets.zero,
+      // The body scrolls itself; the frame holds it at the About box's
+      // height, or the window's less its gutter when that is shorter.
+      content: SizedBox(
+        height: 600,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8)),
+          child: Column(
+            children: [
+              const Divider(height: 1),
+              Expanded(child: _AboutScrollBody(dialog: dialog)),
+              _AboutBrandingBanner(dialog: dialog),
+            ],
+          ),
         ),
       ),
     );

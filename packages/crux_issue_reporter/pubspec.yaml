@@ -16,11 +16,17 @@ resolution: workspace
 dependencies:
   crux_app_info:
     path: ../crux_app_info
+  # showCruxDialog / CruxDialog and the toast the reporter confirms with.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   # `revealInFileManager`, for showing the saved screenshot: one reveal for
   # the suite, which resolves the file manager to an absolute path and passes
   # Explorer's `/select,` switch and the path as the single argument it needs.
   crux_io:
     path: ../crux_io
+  # `CruxFormRow.checkbox`, the category rows.
+  crux_settings_ui:
+    path: ../crux_settings_ui
   # `TelemetryUncaughtErrorCounter`: the error handlers `captureFlutterErrors`
   # installs are the one place every uncaught error passes, so they are where
   # the `app.uncaught_error` count is taken.

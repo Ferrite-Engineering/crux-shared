@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The Privacy toggle and the first-launch disclosure's toggle are
+  `CruxFormRow.toggle` rows (a `CruxSwitch` on desktop), under the same keys;
+  the installation-id copy confirms with the suite toast. New dependency on
+  `crux_ide_layout`.
+
 - **A normal quit is no longer counted as an unclean shutdown.** Every
   product's Quit menu item and quit shortcut ended the process with
   `dart:io`'s `exit(0)`, which runs no Dart, so the session marker was left

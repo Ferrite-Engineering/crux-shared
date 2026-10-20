@@ -36,7 +36,7 @@ enum CruxOverflowPresentation {
 
 /// The trailing overflow affordance for a `CruxToolbar`.
 ///
-/// A three-dot button that opens the product's full action list, grouped and
+/// A "⋯" button that opens the product's full action list, grouped and
 /// labelled. It is the answer to "the strip is too narrow to show everything":
 /// three of the four products previously had no such answer at all, so their
 /// trailing buttons simply disappeared on a narrow window.
@@ -180,7 +180,8 @@ class CruxToolbarOverflowMenu<A extends Object> extends StatelessWidget {
     height: metrics.buttonSize,
     child: IconButton(
       color: CruxChromeColors.of(context)?.toolbarIcon,
-      icon: Icon(Icons.more_vert, size: metrics.iconSize),
+      // The suite's visible overflow is the horizontal "⋯", never "⋮".
+      icon: Icon(Icons.more_horiz, size: metrics.iconSize),
       tooltip: tooltip,
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,

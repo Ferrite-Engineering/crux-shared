@@ -14,6 +14,9 @@ environment:
 resolution: workspace
 
 dependencies:
+  # showCruxDialog / CruxDialog, the frame the switcher opens in.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   crux_projects:
     path: ../crux_projects
   flutter:

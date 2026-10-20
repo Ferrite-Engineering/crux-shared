@@ -285,7 +285,9 @@ void main() {
     );
     await tester.tap(find.widgetWithText(TextButton, 'Reset all'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    // The confirm is a destructive CruxDialog: Cancel is its outlined safe
+    // action.
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Cancel'));
     await tester.pumpAndSettle();
     expect(reset, isFalse);
   });

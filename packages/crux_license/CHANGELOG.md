@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **`CruxUpgradeDialog` is a `CruxDialog`.** `show` opens it through
+  `showCruxDialog(modalGuardKey: CruxUpgradeDialog.modalGuardKey)`, which
+  holds the same `ModalGuard`; the copy contract is unchanged (OK is still a
+  text button, See pricing a filled one). The licence panel's deactivate
+  confirm is a destructive `CruxDialog` with focus on Cancel, its offline
+  request viewer a `CruxDialog`, and its messages the suite toasts, failures
+  through `showCruxErrorSnack`.
+
 - **Removed `CruxEditionLineStringsEn`.** No product used it: each
   supplies its own `CruxEditionLineStrings` from its ARB files.
 - **The licence panel's educational section is a browser hand-off.** It no

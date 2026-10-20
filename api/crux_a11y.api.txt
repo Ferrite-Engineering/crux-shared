@@ -53,4 +53,15 @@ class CruxSlider extends StatelessWidget
   final semanticFormatterCallback: String Function(double)?
   final thumbColor: Color?
   final value: double
+class CruxSwitch extends StatefulWidget
+  const CruxSwitch({FocusNode? focusNode, Key? key, String? semanticLabel, bool autofocus, required bool value, required void Function(bool)? onChanged})
+  createState() -> State<CruxSwitch>
+  final autofocus: bool
+  final focusNode: FocusNode?
+  final onChanged: void Function(bool)?
+  final semanticLabel: String?
+  final value: bool
 cruxRegionHintSemantics({bool container, bool explicitChildNodes, required String? hint, required String? label, required Widget child}) -> Widget
+get kCruxSwitchThumbSize -> double
+get kCruxSwitchTrackHeight -> double
+get kCruxSwitchTrackWidth -> double

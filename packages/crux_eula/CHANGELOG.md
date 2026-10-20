@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- The agreement draws in the Crux Desktop dialog frame (`CruxDialog` with
+  `semanticContainer: false`, since `CruxModalSurface` already names it)
+  instead of a `Card`. It stays above the `Navigator`, so it is not opened
+  through `showCruxDialog`. Focus, Tab order and the transcript are
+  unchanged. New dependency on `crux_ide_layout`.
+
 - **`crux_eula_guards.dart`**, a second entry point holding
   `cruxAuditEulaSeededBoots`: the static guard that fails when an
   integration test boots the app (`bootstrap(` or a product's own

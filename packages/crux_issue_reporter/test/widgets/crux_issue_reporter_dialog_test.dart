@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:crux_app_info/crux_app_info.dart';
 import 'package:crux_issue_reporter/crux_issue_reporter.dart';
+import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -218,15 +219,16 @@ void main() {
     ]) {
       final tile = find.byKey(cruxIssueTileKey(id));
       expect(tile, findsOneWidget);
-      final tileSwitch = find.descendant(
+      // A checkbox: the choice applies when the report is sent.
+      final tileBox = find.descendant(
         of: tile,
-        matching: find.byType(SwitchListTile),
+        matching: find.byType(Checkbox),
       );
-      expect(tester.widget<SwitchListTile>(tileSwitch).value, isTrue);
+      expect(tester.widget<Checkbox>(tileBox).value, isTrue);
 
       await tester.tap(tile);
       await tester.pump();
-      expect(tester.widget<SwitchListTile>(tileSwitch).value, isFalse);
+      expect(tester.widget<Checkbox>(tileBox).value, isFalse);
     }
   });
 
@@ -237,14 +239,16 @@ void main() {
     await tester.pumpAndSettle();
 
     final strings = _stringsOf(tester);
-    final lockedTile = find.ancestor(
+    final lockedRow = find.ancestor(
       of: find.text(strings.categoryAppEnv),
-      matching: find.byType(SwitchListTile),
+      matching: find.byType(CruxFormRow),
     );
-    expect(lockedTile, findsOneWidget);
-    final tile = tester.widget<SwitchListTile>(lockedTile);
-    expect(tile.value, isTrue);
-    expect(tile.onChanged, isNull);
+    expect(lockedRow, findsOneWidget);
+    final box = tester.widget<Checkbox>(
+      find.descendant(of: lockedRow, matching: find.byType(Checkbox)),
+    );
+    expect(box.value, isTrue);
+    expect(box.onChanged, isNull);
     expect(find.byIcon(Icons.lock_outline), findsOneWidget);
   });
 

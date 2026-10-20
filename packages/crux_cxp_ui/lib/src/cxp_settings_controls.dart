@@ -1,6 +1,8 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_settings_ui/crux_settings_ui.dart'
+    show CruxFormRow, CruxFormSection;
 import 'package:flutter/material.dart';
 
 /// Localized strings for [CruxCxpSettingsControls]. Every user-visible
@@ -138,52 +140,53 @@ class _CruxCxpSettingsControlsState extends State<CruxCxpSettingsControls> {
   Widget build(BuildContext context) {
     final strings = widget.strings;
     final enabled = widget.enabled;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    // Every setting here applies at once, so each is a switch row; the
+    // label is the switch's name and its click target.
+    return CruxFormSection(
+      labelWidth: null,
+      spacing: 12,
       children: [
-        SwitchListTile(
+        CruxFormRow.toggle(
           key: const ValueKey('cxpSettingsEnable'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(strings.enableLabel),
-          subtitle: Text(strings.enableHelp),
+          label: strings.enableLabel,
+          help: strings.enableHelp,
           value: enabled,
           onChanged: widget.onEnabledChanged,
         ),
-        const SizedBox(height: 8),
-        TextField(
-          key: const ValueKey('cxpSettingsPort'),
-          controller: _portController,
-          enabled: enabled,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            isDense: true,
-            labelText: strings.portLabel,
-            helperText: strings.portHelp,
-            helperMaxLines: 3,
-            errorText: _portError,
+        CruxFormRow(
+          label: strings.portLabel,
+          help: strings.portHelp,
+          child: SizedBox(
+            width: 160,
+            child: TextField(
+              key: const ValueKey('cxpSettingsPort'),
+              controller: _portController,
+              enabled: enabled,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                isDense: true,
+                errorText: _portError,
+                errorMaxLines: 3,
+              ),
+              onSubmitted: _submitPort,
+            ),
           ),
-          onSubmitted: _submitPort,
         ),
-        SwitchListTile(
+        CruxFormRow.toggle(
           key: const ValueKey('cxpSettingsAttention'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(strings.attentionLabel),
-          subtitle: Text(strings.attentionHelp),
+          label: strings.attentionLabel,
+          help: strings.attentionHelp,
           value: widget.requestAttention,
           onChanged: enabled ? widget.onRequestAttentionChanged : null,
         ),
-        SwitchListTile(
+        CruxFormRow.toggle(
           key: const ValueKey('cxpSettingsBroadcast'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(strings.broadcastLabel),
-          subtitle: Text(strings.broadcastHelp),
+          label: strings.broadcastLabel,
+          help: strings.broadcastHelp,
           value: widget.broadcastSelection,
           onChanged: enabled ? widget.onBroadcastSelectionChanged : null,
         ),
-        if (widget.statusTile != null) ...[
-          const SizedBox(height: 8),
-          widget.statusTile!,
-        ],
+        if (widget.statusTile != null) widget.statusTile!,
       ],
     );
   }

@@ -19,6 +19,9 @@ dependencies:
   # telemetry disclosure so the two blocking surfaces cannot drift apart.
   crux_a11y:
     path: ../crux_a11y
+  # `CruxDialog`, the frame the agreement is drawn in.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.1

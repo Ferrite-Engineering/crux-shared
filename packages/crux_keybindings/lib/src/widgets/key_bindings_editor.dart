@@ -3,6 +3,8 @@
 
 import 'dart:async';
 
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show confirmCruxDestructiveAction;
 import 'package:crux_keybindings/src/key_binding.dart';
 import 'package:crux_keybindings/src/key_binding_resolver.dart';
 import 'package:crux_keybindings/src/shortcut_conflicts.dart';
@@ -455,24 +457,16 @@ class _KeyBindingsEditorState<A extends CruxAction>
 
   Future<void> _confirmResetAll() async {
     final strings = widget.strings;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(strings.resetAllTitle),
-        content: Text(strings.resetAllBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(strings.resetAllCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(strings.resetAllLabel),
-          ),
-        ],
-      ),
+    // Resetting discards every customized binding, so it is a destructive
+    // confirm: Cancel holds focus and the reset is drawn in the error colour.
+    final confirmed = await confirmCruxDestructiveAction(
+      context,
+      title: strings.resetAllTitle,
+      body: strings.resetAllBody,
+      confirmLabel: strings.resetAllLabel,
+      cancelLabel: strings.resetAllCancel,
     );
-    if (confirmed ?? false) widget.onResetAll();
+    if (confirmed) widget.onResetAll();
   }
 }
 

@@ -3,6 +3,14 @@
 
 import 'dart:async';
 
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show
+        CruxDialog,
+        CruxDialogAction,
+        CruxDialogActionRole,
+        showCruxDialog,
+        showCruxErrorSnack,
+        showCruxInfoSnack;
 import 'package:crux_license/src/crux_product.dart';
 import 'package:crux_license/src/license_actions.dart';
 import 'package:crux_license/src/license_panel_providers.dart';
@@ -458,26 +466,25 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
   }
 
   Future<void> _deactivate(CruxLicenseActions actions) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showCruxDialog<bool>(
       context: context,
       // A destructive confirm is a deliberate act, and default focus stays on
       // the safe action.
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(_s.licenseDeactivateConfirmTitle),
+      builder: (context) => CruxDialog(
+        title: _s.licenseDeactivateConfirmTitle,
+        width: 400,
         content: Text(_s.licenseDeactivateConfirmBody),
         actions: [
-          TextButton(
+          CruxDialogAction(
+            label: _s.licenseCancelAction,
             autofocus: true,
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(_s.licenseCancelAction),
           ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+          CruxDialogAction(
+            label: _s.licenseDeactivateConfirmAction,
+            role: CruxDialogActionRole.destructive,
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(_s.licenseDeactivateConfirmAction),
           ),
         ],
       ),
@@ -488,7 +495,7 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
     if (result.isOk) {
       _announce(_s.licenseDeactivatedMessage);
     } else {
-      _announce(_messageFor(result as LicenseActionFailed));
+      _announceFailure(result as LicenseActionFailed);
     }
   }
 
@@ -574,21 +581,24 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
     final result = await actions.exportOfflineRequest();
     if (!mounted) return;
     if (result is LicenseActionFailed) {
-      _announce(_messageFor(result));
+      _announceFailure(result);
       return;
     }
     final payload = (result as LicenseActionSucceeded).payload ?? '';
-    await showDialog<void>(
+    await showCruxDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(_s.licenseExportRequestTitle),
+      builder: (context) => CruxDialog(
+        title: _s.licenseExportRequestTitle,
+        width: 520,
         content: SelectableText(
           payload,
           style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
         ),
         actions: [
-          TextButton(
+          CruxDialogAction(
+            label: _s.licenseCopyAction,
+            role: CruxDialogActionRole.tertiary,
             onPressed: () {
               // Close first, and never let the clipboard decide whether the
               // dialog goes away: a platform that refuses the write would
@@ -597,12 +607,11 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
               Navigator.of(context).pop();
               unawaited(_copyRequest(payload));
             },
-            child: Text(_s.licenseCopyAction),
           ),
-          TextButton(
+          CruxDialogAction(
+            label: _s.licenseCloseAction,
             autofocus: true,
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(_s.licenseCloseAction),
           ),
         ],
       ),
@@ -653,16 +662,16 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
   ) async {
     final result = await action();
     if (!mounted || result.isOk) return;
-    _announce(_messageFor(result as LicenseActionFailed));
+    _announceFailure(result as LicenseActionFailed);
   }
 
-  void _announce(String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
+  /// Reports an outcome through the suite toast, which replaces any message
+  /// still showing and speaks it.
+  void _announce(String message) => showCruxInfoSnack(context, message);
+
+  /// Reports a failure: a toast that stays until it is closed on desktop.
+  void _announceFailure(LicenseActionFailed failed) =>
+      showCruxErrorSnack(context, _messageFor(failed));
 
   String _messageFor(LicenseActionFailed failed) => switch (failed.failure) {
     CruxLicenseActionFailure.rejected =>

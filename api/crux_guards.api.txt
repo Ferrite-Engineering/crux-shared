@@ -11,6 +11,35 @@ final class CruxClassIndex
   factory CruxClassIndex(Iterable<CruxGuardSource> sources)
   get length -> int
   holdsTypedInput(String name, String fromPath) -> bool
+final class CruxDesktopAllowance
+  const CruxDesktopAllowance({required CruxDesktopPattern pattern, required String file, required String reason, required int count})
+  final count: int
+  final file: String
+  final pattern: CruxDesktopPattern
+  final reason: String
+  toString() -> String
+enum CruxDesktopPattern
+  const CruxDesktopPattern(String id, String replacement)
+  final id: String
+  final replacement: String
+  static const alertDialog: CruxDesktopPattern
+  static const checkboxListTile: CruxDesktopPattern
+  static const materialSwitch: CruxDesktopPattern
+  static const moreVert: CruxDesktopPattern
+  static const showDialog: CruxDesktopPattern
+  static const showSnackBar: CruxDesktopPattern
+  static const simpleDialog: CruxDesktopPattern
+  static const snackBar: CruxDesktopPattern
+  static const switchAdaptive: CruxDesktopPattern
+  static const switchListTile: CruxDesktopPattern
+  static fromId(String id) -> CruxDesktopPattern?
+final class CruxDesktopSite
+  const CruxDesktopSite({required CruxDesktopPattern pattern, required String path, required bool phoneOnly, required int line})
+  final line: int
+  final path: String
+  final pattern: CruxDesktopPattern
+  final phoneOnly: bool
+  toString() -> String
 final class CruxDialogSite
   const CruxDialogSite({required Set<String> referencedTypes, required String member, required String opener, required String path, required bool dismissible, required bool guarded, required bool namesTypedInput, required int line})
   final dismissible: bool
@@ -81,6 +110,7 @@ final class CruxRefAfterAwaitExemption
   final function: String
   final reason: String
 cruxArbMessageKeys(String arbJson) -> Set<String>
+cruxAuditCruxDesktop({Iterable<CruxDesktopAllowance> allowances, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditDismissibleFormDialogs({Iterable<CruxDismissibleFormAllowance> allowances, Iterable<CruxGuardSource> classSources, Iterable<CruxKnownFormDialog> knownForms, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditModalGuard({Iterable<CruxModalGuardAllowance> allowances, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditOutlineText({Iterable<CruxOutlineExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
@@ -88,6 +118,10 @@ cruxAuditPrivateEmptyStates({Iterable<CruxEmptyStateExemption> exemptions, bool 
 cruxAuditProcessExit({Iterable<CruxProcessExitExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditRefAfterAwait({Iterable<CruxRefAfterAwaitExemption> exemptions, required Iterable<CruxGuardSource> sources}) -> CruxGuardResult
 cruxAuditUnusedL10nKeys({Iterable<CruxL10nRetention> retained, String arbPath, required Iterable<CruxGuardSource> sources, required Set<String> keys}) -> CruxGuardResult
+cruxFindDesktopSites(Iterable<CruxGuardSource> sources) -> List<CruxDesktopSite>
 cruxFindDialogSites(Iterable<CruxGuardSource> sources) -> List<CruxDialogSite>
+cruxFormatDesktopAllowList(Iterable<CruxDesktopSite> sites, {required String reason}) -> String
+cruxParseDesktopAllowList(String text) -> List<CruxDesktopAllowance>
+get kCruxDesktopPhoneOnlyMarker -> String
 get kCruxModalOpeners -> Set<String>
 get kCruxTypedInputMarkers -> Set<String>

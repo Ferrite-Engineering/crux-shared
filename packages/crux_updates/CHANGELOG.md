@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `runManualUpdateCheck` reports through the suite toasts (`showCruxInfoSnack`,
+  `showCruxErrorSnack` for a failed check, `hideCruxSnack` to retire the
+  in-flight message), so the outcome is spoken and sits bottom-right on
+  desktop. It no longer needs a `ScaffoldMessenger`. New dependency on
+  `crux_ide_layout`.
+
 - **Releases that change only paid features are no longer offered to seats
   without them.** Each product ships one binary, and a licence key unlocks
   paid features in place, so a paid-only release used to put an update banner

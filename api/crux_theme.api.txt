@@ -77,6 +77,30 @@ class CruxColorThemeNotifier extends Notifier<CruxColorTheme>
   build() -> CruxColorTheme
   final initial: CruxColorTheme
   reset() -> void
+class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens>
+  const CruxDesktopTokens({double bodyFontSize, double controlHeight, double controlRadius, double denseControlHeight, double dialogRadius, double focusRingWidth, double menuRadius, double rowHeight, double scrimOpacity, double secondaryFontSize, double titleFontSize, double toastBottomInset, double toastMaxWidth, double twoLineRowHeight})
+  const CruxDesktopTokens.highContrast()
+  ==(Object other) -> bool
+  copyWith({double? bodyFontSize, double? controlHeight, double? controlRadius, double? denseControlHeight, double? dialogRadius, double? focusRingWidth, double? menuRadius, double? rowHeight, double? scrimOpacity, double? secondaryFontSize, double? titleFontSize, double? toastBottomInset, double? toastMaxWidth, double? twoLineRowHeight}) -> CruxDesktopTokens
+  final bodyFontSize: double
+  final controlHeight: double
+  final controlRadius: double
+  final denseControlHeight: double
+  final dialogRadius: double
+  final focusRingWidth: double
+  final menuRadius: double
+  final rowHeight: double
+  final scrimOpacity: double
+  final secondaryFontSize: double
+  final titleFontSize: double
+  final toastBottomInset: double
+  final toastMaxWidth: double
+  final twoLineRowHeight: double
+  get hashCode -> int
+  get scrimColor -> Color
+  lerp(ThemeExtension<CruxDesktopTokens>? other, double t) -> CruxDesktopTokens
+  static isDesktop(BuildContext context) -> bool
+  static of(BuildContext context) -> CruxDesktopTokens?
 class CruxThemeExtension extends ThemeExtension<CruxThemeExtension>
   const CruxThemeExtension({required CruxColorTheme theme})
   ==(Object other) -> bool
@@ -349,7 +373,10 @@ get chromeCategoryId -> String
 get chromeTokens -> ThemeTokenCategory
 get cruxColorThemeProvider -> NotifierProvider<CruxColorThemeNotifier, CruxColorTheme>
 get cruxDarkPresetId -> String
+cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) -> ThemeData
 get cruxLightPresetId -> String
+cruxThemeForDevice({TargetPlatform? platform, bool isWeb, required ColorScheme colorScheme, required ThemeData Function() mobile, required bool highContrast}) -> ThemeData
+cruxUsesDesktopLayer({TargetPlatform? platform, bool isWeb}) -> bool
 defaultBuiltinPreset() -> CruxColorTheme
 get legacyPresetIdAliases -> Map<String, String>
 migratePresetId(String id) -> String

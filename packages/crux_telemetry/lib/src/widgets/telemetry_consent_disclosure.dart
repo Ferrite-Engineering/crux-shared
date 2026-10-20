@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_a11y/crux_a11y.dart';
+import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
 import 'package:crux_telemetry/src/crux_telemetry_strings.dart';
 import 'package:crux_telemetry/src/widgets/telemetry_consent_metrics.dart';
 import 'package:flutter/material.dart';
@@ -273,15 +274,14 @@ class _DisclosureContent extends StatelessWidget {
           const Divider(height: 24),
           ConstrainedBox(
             constraints: BoxConstraints(minHeight: target),
-            child: SwitchListTile(
-              key: const Key('telemetryConsentSwitch'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                strings.consentToggleLabel,
-                style: TextStyle(fontSize: metrics.bodyFontSize),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: CruxFormRow.toggle(
+                key: const Key('telemetryConsentSwitch'),
+                label: strings.consentToggleLabel,
+                value: enabled,
+                onChanged: onEnabledChanged,
               ),
-              value: enabled,
-              onChanged: onEnabledChanged,
             ),
           ),
           const SizedBox(height: 12),

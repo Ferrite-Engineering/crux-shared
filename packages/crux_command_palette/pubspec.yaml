@@ -10,6 +10,9 @@ environment:
 resolution: workspace
 
 dependencies:
+  # showCruxDialog, the route the palette opens on.
+  crux_ide_layout:
+    path: ../crux_ide_layout
   crux_shortcut_action:
     path: ../crux_shortcut_action
   flutter:

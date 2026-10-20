@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
 import 'package:crux_telemetry/crux_telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,7 +72,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // `unset` is not consent, and the switch must not imply it is.
-      expect(tester.widget<SwitchListTile>(_switch).value, isFalse);
+      expect(tester.widget<CruxFormRow>(_switch).value, isFalse);
     });
 
     testWidgets('reflects a value stored by an earlier session', (
@@ -84,7 +85,7 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
-      expect(tester.widget<SwitchListTile>(_switch).value, isTrue);
+      expect(tester.widget<CruxFormRow>(_switch).value, isTrue);
     });
 
     testWidgets('switching on writes enabled, switching off writes disabled', (
@@ -208,7 +209,7 @@ void main() {
           .record(TelemetryEvent('workspace.restored'));
       await tester.pumpAndSettle();
 
-      expect(tester.widget<SwitchListTile>(_switch).value, isFalse);
+      expect(tester.widget<CruxFormRow>(_switch).value, isFalse);
       expect(storage.values.containsKey(kTelemetryInstallationIdKey), isFalse);
       expect(noneText, findsOneWidget);
       expect(idText, findsNothing);
@@ -342,7 +343,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TelemetryConsentDisclosure), findsNothing);
-      expect(tester.widget<SwitchListTile>(_switch).value, isFalse);
+      expect(tester.widget<CruxFormRow>(_switch).value, isFalse);
       expect(_storedConsent(), TelemetryConsentState.disabled);
     });
 
@@ -366,7 +367,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TelemetryConsentDisclosure), findsNothing);
-      expect(tester.widget<SwitchListTile>(_switch).value, isTrue);
+      expect(tester.widget<CruxFormRow>(_switch).value, isTrue);
     });
 
     testWidgets('both surfaces read the same gate provider', (tester) async {

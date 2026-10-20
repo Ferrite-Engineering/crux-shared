@@ -27,10 +27,17 @@
 /// - `cruxAuditRefAfterAwait`: a widget's `ref` is never used after an
 ///   `await` without a `mounted` check.
 /// - `cruxAuditModalGuard`: every `showDialog` / `showModalBottomSheet` /
-///   `showGeneralDialog` runs inside `ModalGuard.run`, or is allowed with a
-///   reason.
+///   `showGeneralDialog` / `showCruxDialog` runs inside `ModalGuard.run`
+///   (a `showCruxDialog` may pass `modalGuardKey:` instead), or is allowed
+///   with a reason.
 /// - `cruxAuditDismissibleFormDialogs`: a dialog that holds typed input
 ///   sets `barrierDismissible: false`.
+/// - `cruxAuditCruxDesktop` (with `cruxParseDesktopAllowList` and
+///   `cruxFormatDesktopAllowList`): no raw Material pattern the Crux Desktop
+///   layer replaces (`showDialog`, `AlertDialog`, `SnackBar`,
+///   `Icons.more_vert`, `Switch`, the list-tile toggles), outside a call site
+///   marked `// crux-desktop: phone-only, <why>` or a per-file allow-list
+///   with exact counts.
 /// - `cruxAuditPrivateEmptyStates`: no hand-rolled copy of
 ///   `CruxPanelEmptyState`.
 /// - `cruxAuditProcessExit`: no product ends its own process with
@@ -44,6 +51,7 @@
 /// nothing is a finding.
 library;
 
+export 'src/crux_desktop_guard.dart';
 export 'src/dialog_sites.dart'
     show
         CruxClassIndex,

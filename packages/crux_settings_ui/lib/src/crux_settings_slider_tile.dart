@@ -2,10 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_a11y/crux_a11y.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDesktopTokens;
+import 'package:crux_settings_ui/src/crux_form_row.dart';
 import 'package:flutter/material.dart';
 
+/// The width of a settings slider and its readout on desktop.
+const double kCruxSettingsSliderWidth = 280;
+
 /// A uniform settings slider row: label + description, then a [Slider] with
-/// a fixed-width value readout on the right.
+/// a fixed-width value readout on the right. A [CruxFormRow]: on desktop the
+/// slider sits at the row's end, [kCruxSettingsSliderWidth] wide; on phone
+/// and tablet it runs full width under the label.
 ///
 /// Gives every slider in a settings panel one rhythm instead of ad-hoc
 /// slider-in-subtitle blocks.
@@ -54,43 +61,40 @@ class CruxSettingsSliderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final slider = Row(
+      children: [
+        Expanded(
+          child: CruxSlider(
+            min: min,
+            max: max,
+            divisions: divisions,
+            value: value,
+            label: label,
+            onChanged: onChanged,
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 56,
+          child: Text(
+            valueText,
+            textAlign: TextAlign.end,
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: theme.textTheme.bodyLarge),
-          const SizedBox(height: 2),
-          Text(
-            description,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: CruxSlider(
-                  min: min,
-                  max: max,
-                  divisions: divisions,
-                  value: value,
-                  label: label,
-                  onChanged: onChanged,
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 56,
-                child: Text(
-                  valueText,
-                  textAlign: TextAlign.end,
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ),
-            ],
-          ),
-        ],
+      // The slider keeps its own semantics node (its value indicator lives
+      // in an overlay of its own), so the row does not merge it.
+      child: CruxFormRow(
+        label: title,
+        help: description,
+        mergeSemantics: false,
+        child: CruxDesktopTokens.isDesktop(context)
+            ? SizedBox(width: kCruxSettingsSliderWidth, child: slider)
+            : slider,
       ),
     );
   }

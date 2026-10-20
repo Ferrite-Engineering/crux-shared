@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
 import 'package:crux_telemetry/crux_telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -69,7 +70,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(tester.widget<SwitchListTile>(_switch).value, isTrue);
+      expect(tester.widget<CruxFormRow>(_switch).value, isTrue);
     });
 
     testWidgets('arrives off in the EEA, the UK, Switzerland and South Korea', (
@@ -90,7 +91,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          tester.widget<SwitchListTile>(_switch).value,
+          tester.widget<CruxFormRow>(_switch).value,
           isFalse,
           reason: '$locale must arrive opt-in',
         );
@@ -255,7 +256,7 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
-      expect(tester.widget<SwitchListTile>(_switch).value, isTrue);
+      expect(tester.widget<CruxFormRow>(_switch).value, isTrue);
     });
 
     testWidgets('pre-armed on + Continue writes enabled', (tester) async {
@@ -274,7 +275,7 @@ void main() {
 
       await tester.tap(_switch);
       await tester.pumpAndSettle();
-      expect(tester.widget<SwitchListTile>(_switch).value, isFalse);
+      expect(tester.widget<CruxFormRow>(_switch).value, isFalse);
 
       await tester.tap(_continue);
       await tester.pumpAndSettle();

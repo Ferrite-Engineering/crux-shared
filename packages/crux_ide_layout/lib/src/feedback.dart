@@ -3,6 +3,9 @@
 
 import 'dart:async';
 
+import 'package:crux_ide_layout/src/crux_desktop_tokens.dart';
+import 'package:crux_ide_layout/src/crux_dialog.dart';
+import 'package:crux_ide_layout/src/crux_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
@@ -41,18 +44,39 @@ void announceCrux(
   );
 }
 
-/// Shows the suite-standard informational snack bar: floating behavior,
-/// four-second duration, and a polite screen-reader announcement.
+/// Shows the suite-standard informational message, with a polite
+/// screen-reader announcement.
 ///
-/// A no-op when no [ScaffoldMessenger] is in scope, so callers on
-/// messenger-less test scaffolds degrade silently instead of throwing.
-/// The caller supplies an already-localized [message].
-void showCruxInfoSnack(BuildContext context, String message) {
+/// Under a Crux Desktop theme (one carrying `CruxDesktopTokens`, which
+/// `cruxThemeForDevice` installs on macOS, Windows, Linux and the web) it is
+/// a toast, bottom-right above the status bar: one visible at a time, a new
+/// one replacing it, gone after [kCruxInfoSnackDuration]. Under any other
+/// theme (phone and tablet) it is a floating Material snack bar of the same
+/// duration.
+///
+/// A no-op when there is nowhere to show it (no root `Overlay` on desktop, no
+/// [ScaffoldMessenger] otherwise), so callers on bare test scaffolds degrade
+/// silently instead of throwing. The caller supplies an already-localized
+/// [message]. [key] lands on the toast or the snack bar, for tests.
+void showCruxInfoSnack(BuildContext context, String message, {Key? key}) {
+  if (CruxDesktopTokens.isDesktop(context)) {
+    if (CruxToasts.show(
+      context,
+      message,
+      error: false,
+      infoDuration: kCruxInfoSnackDuration,
+      key: key,
+    )) {
+      announceCrux(context, message);
+    }
+    return;
+  }
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;
   announceCrux(context, message);
   messenger.showSnackBar(
     SnackBar(
+      key: key,
       content: Text(message),
       behavior: SnackBarBehavior.floating,
       // The four-second standard is this helper's contract, pinned by test;
@@ -63,19 +87,38 @@ void showCruxInfoSnack(BuildContext context, String message) {
   );
 }
 
-/// Shows the suite-standard error snack bar: floating behavior, six-second
-/// duration, error-container colors so a failure is visually distinct from
-/// routine feedback, and an assertive screen-reader announcement.
+/// Shows the suite-standard error message, with an assertive screen-reader
+/// announcement.
 ///
-/// A no-op when no [ScaffoldMessenger] is in scope. The caller supplies an
-/// already-localized [message].
-void showCruxErrorSnack(BuildContext context, String message) {
+/// Under a Crux Desktop theme it is a toast like [showCruxInfoSnack]'s, in
+/// the error colour, that **stays until the user closes it** (or a newer
+/// toast replaces it): a failure that vanishes while the user looks elsewhere
+/// was never reported. Under any other theme it is a floating snack bar in
+/// error-container colours for [kCruxErrorSnackDuration].
+///
+/// A no-op when there is nowhere to show it. The caller supplies an
+/// already-localized [message]. [key] lands on the toast or the snack bar,
+/// for tests.
+void showCruxErrorSnack(BuildContext context, String message, {Key? key}) {
+  if (CruxDesktopTokens.isDesktop(context)) {
+    if (CruxToasts.show(
+      context,
+      message,
+      error: true,
+      infoDuration: kCruxInfoSnackDuration,
+      key: key,
+    )) {
+      announceCrux(context, message, assertive: true);
+    }
+    return;
+  }
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;
   final colorScheme = Theme.of(context).colorScheme;
   announceCrux(context, message, assertive: true);
   messenger.showSnackBar(
     SnackBar(
+      key: key,
       content: Text(
         message,
         style: TextStyle(color: colorScheme.onErrorContainer),
@@ -87,14 +130,25 @@ void showCruxErrorSnack(BuildContext context, String message) {
   );
 }
 
+/// Removes the message [showCruxInfoSnack] or [showCruxErrorSnack] is
+/// showing over [context], if any: for a "working on it" message whose
+/// outcome needs no message of its own. A no-op when nothing is showing.
+void hideCruxSnack(BuildContext context) {
+  if (CruxDesktopTokens.isDesktop(context)) {
+    CruxToasts.hide(context);
+    return;
+  }
+  ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+}
+
 /// Shows the suite-standard destructive-action confirmation dialog and
 /// resolves to whether the user confirmed.
 ///
-/// Layout convention: [cancelLabel] on the left as a plain [TextButton],
-/// [confirmLabel] on the right as a [FilledButton] in the theme's error
-/// colors, so the destructive choice is visually marked and sits in the
-/// default-action position. Dismissing the dialog any other way (barrier
-/// tap, escape) resolves `false`.
+/// A [CruxDialog] through [showCruxDialog]: [cancelLabel] first, holding
+/// focus when the dialog opens so Enter or Space on arrival cancels, then
+/// [confirmLabel] as a filled button in the theme's error colours, so the
+/// destructive choice is visibly marked and never the default. Dismissing the
+/// dialog any other way (barrier tap, Escape) resolves `false`.
 ///
 /// All four strings are caller-supplied and already localized. The optional
 /// [dialogKey]/[cancelKey]/[confirmKey] let host apps keep stable widget
@@ -109,32 +163,28 @@ Future<bool> confirmCruxDestructiveAction(
   Key? cancelKey,
   Key? confirmKey,
 }) async {
-  final confirmed = await showDialog<bool>(
+  final confirmed = await showCruxDialog<bool>(
     context: context,
-    builder: (dialogContext) {
-      final colorScheme = Theme.of(dialogContext).colorScheme;
-      return AlertDialog(
-        key: dialogKey,
-        title: Text(title),
-        content: Text(body),
-        actions: <Widget>[
-          TextButton(
-            key: cancelKey,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(cancelLabel),
-          ),
-          FilledButton(
-            key: confirmKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-              foregroundColor: colorScheme.onError,
-            ),
-            child: Text(confirmLabel),
-          ),
-        ],
-      );
-    },
+    builder: (dialogContext) => CruxDialog(
+      key: dialogKey,
+      title: title,
+      width: 400,
+      content: Text(body),
+      actions: <Widget>[
+        CruxDialogAction(
+          key: cancelKey,
+          label: cancelLabel,
+          autofocus: true,
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+        CruxDialogAction(
+          key: confirmKey,
+          label: confirmLabel,
+          role: CruxDialogActionRole.destructive,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+      ],
+    ),
   );
   return confirmed ?? false;
 }

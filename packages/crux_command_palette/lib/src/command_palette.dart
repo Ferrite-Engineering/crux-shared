@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_ide_layout/crux_ide_layout.dart' show showCruxDialog;
 import 'package:crux_shortcut_action/crux_shortcut_action.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -125,9 +126,10 @@ class CommandPalette<T extends CruxAction> extends StatefulWidget {
     ScrollWrapperBuilder? scrollWrapperBuilder,
     Widget? Function(T action)? trailingBuilder,
   }) {
-    return showDialog<void>(
+    // The palette draws its own top-anchored surface; showCruxDialog gives it
+    // the suite's scrim and Escape handling.
+    return showCruxDialog<void>(
       context: context,
-      barrierColor: Colors.black54,
       builder: (_) => CommandPalette<T>(
         actions: actions,
         labelFor: labelFor,

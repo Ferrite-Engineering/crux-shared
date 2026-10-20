@@ -3,6 +3,8 @@
 
 import 'dart:async';
 
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxDialog, showCruxDialog;
 import 'package:crux_projects/crux_projects.dart';
 import 'package:crux_projects_ui/src/crux_projects_ui_strings.dart';
 import 'package:crux_projects_ui/src/project_activation_observer.dart';
@@ -38,11 +40,19 @@ class CruxProjectSwitcherDialog extends ConsumerStatefulWidget {
   /// Creates the dialog.
   const CruxProjectSwitcherDialog({super.key});
 
-  /// `showDialog` wrapper for action dispatchers.
+  /// Opens the switcher in the Crux Desktop dialog frame, for action
+  /// dispatchers. The switcher draws its own header and focuses its own
+  /// search field.
   static Future<void> show(BuildContext context) {
-    return showDialog<void>(
+    return showCruxDialog<void>(
       context: context,
-      builder: (_) => const Dialog(child: CruxProjectSwitcherDialog()),
+      builder: (_) => const CruxDialog(
+        width: 560,
+        scrollable: false,
+        takeFocus: false,
+        contentPadding: EdgeInsets.zero,
+        content: CruxProjectSwitcherDialog(),
+      ),
     );
   }
 

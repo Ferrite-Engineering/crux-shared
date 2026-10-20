@@ -3,7 +3,8 @@
 
 import 'dart:async';
 
-import 'package:crux_ide_layout/crux_ide_layout.dart' show ModalGuard;
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxDialog, ModalGuard;
 import 'package:crux_license/crux_license.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -136,7 +137,7 @@ void main() {
       // Only the title, body, and dismiss label render — two Text widgets
       // in the dialog content would indicate a phantom supplemental line.
       final dialogTexts = find.descendant(
-        of: find.byType(AlertDialog),
+        of: find.byType(CruxDialog),
         matching: find.byType(Text),
       );
       expect(dialogTexts, findsNWidgets(4)); // title, badge, body, dismiss

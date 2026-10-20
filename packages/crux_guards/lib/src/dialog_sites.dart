@@ -8,12 +8,16 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:crux_guards/src/guard_types.dart';
 import 'package:meta/meta.dart';
 
-/// The functions that open a modal surface: `showDialog`,
-/// `showModalBottomSheet` and `showGeneralDialog`, called without a target.
+/// The functions that open a modal surface, called without a target:
+/// `showDialog`, `showModalBottomSheet`, `showGeneralDialog`, and
+/// `crux_ide_layout`'s `showCruxDialog`, which takes `showDialog`'s named
+/// parameters plus `modalGuardKey:` (when non-null it runs itself inside
+/// `ModalGuard.run` under that key).
 const Set<String> kCruxModalOpeners = <String>{
   'showDialog',
   'showModalBottomSheet',
   'showGeneralDialog',
+  'showCruxDialog',
 };
 
 /// The identifiers that mark a dialog as holding typed input.
@@ -49,16 +53,19 @@ final class CruxDialogSite {
   /// member; its enclosing member is. `<unit>` when there is none.
   final String member;
 
-  /// `showDialog`, `showModalBottomSheet` or `showGeneralDialog`.
+  /// `showDialog`, `showModalBottomSheet`, `showGeneralDialog` or
+  /// `showCruxDialog`.
   final String opener;
 
   /// Whether the call sits inside the arguments of a `ModalGuard.run(...)`
-  /// call in the same file.
+  /// call in the same file, or is a `showCruxDialog` call that passes a
+  /// `modalGuardKey:` argument other than the literal `null`.
   final bool guarded;
 
   /// Whether a scrim click may close the surface: `false` only when the call
-  /// passes `barrierDismissible: false` (or `isDismissible: false` to
-  /// `showModalBottomSheet`).
+  /// passes `barrierDismissible: false` (to `showDialog`, `showCruxDialog` or
+  /// `showGeneralDialog`), or `isDismissible: false` to
+  /// `showModalBottomSheet`.
   final bool dismissible;
 
   /// Every capitalised identifier in the call's text: the widget classes its
@@ -80,7 +87,9 @@ final class CruxDialogSite {
 /// Reads the syntax tree of each source (no resolution), so a mention in a
 /// comment or a string is not a call, and a `showDialog` wrapped by a
 /// `ModalGuard.run` earlier in the file but outside its parentheses is not
-/// guarded.
+/// guarded. A `showCruxDialog` call is also guarded when it passes a
+/// `modalGuardKey:` that is not the literal `null`; the key's value is not
+/// checked.
 List<CruxDialogSite> cruxFindDialogSites(Iterable<CruxGuardSource> sources) {
   final sites = <CruxDialogSite>[];
   for (final file in sources) {
@@ -116,7 +125,9 @@ class _SiteVisitor extends RecursiveAstVisitor<void> {
           line: lineOf(file.source, node.methodName.offset),
           member: enclosingMemberName(node),
           opener: name,
-          guarded: _insideModalGuard(node),
+          guarded:
+              _insideModalGuard(node) ||
+              (name == 'showCruxDialog' && _passesModalGuardKey(node)),
           dismissible: !_passesFalse(
             node,
             name == 'showModalBottomSheet'
@@ -137,6 +148,19 @@ bool _insideModalGuard(AstNode node) {
     if (p is MethodInvocation &&
         p.methodName.name == 'run' &&
         (p.target?.toSource().endsWith('ModalGuard') ?? false)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Whether [node] passes a `modalGuardKey:` argument other than the literal
+/// `null`.
+bool _passesModalGuardKey(MethodInvocation node) {
+  for (final argument in node.argumentList.arguments) {
+    if (argument is NamedExpression &&
+        argument.name.label.name == 'modalGuardKey' &&
+        argument.expression is! NullLiteral) {
       return true;
     }
   }

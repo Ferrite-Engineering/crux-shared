@@ -17,6 +17,25 @@ class CruxAutoReloadSettingTile extends StatelessWidget
   final onChanged: void Function(AutoReloadMode)
   final promptLabel: String
   final value: AutoReloadMode
+class CruxFormRow extends StatelessWidget
+  const CruxFormRow({Key? key, String? help, bool mergeSemantics, double? labelWidth, required String label, required Widget child})
+  const CruxFormRow.checkbox({Key? key, String? help, double? labelWidth, required String label, required bool value, required void Function(bool)? onChanged})
+  const CruxFormRow.toggle({Key? key, String? help, double? labelWidth, required String label, required bool value, required void Function(bool)? onChanged})
+  build(BuildContext context) -> Widget
+  final child: Widget?
+  final help: String?
+  final label: String
+  final labelWidth: double?
+  final mergeSemantics: bool
+  final onChanged: void Function(bool)?
+  final value: bool?
+class CruxFormSection extends StatelessWidget
+  const CruxFormSection({Key? key, String? title, double spacing, double? labelWidth, required List<Widget> children})
+  build(BuildContext context) -> Widget
+  final children: List<Widget>
+  final labelWidth: double?
+  final spacing: double
+  final title: String?
 class CruxLocaleSettingTile extends StatelessWidget
   const CruxLocaleSettingTile({Key? key, required String description, required String label, required String locale, required void Function(String) onChanged})
   build(BuildContext context) -> Widget
@@ -113,6 +132,9 @@ class CruxSettingsSliderTile extends StatelessWidget
   final title: String
   final value: double
   final valueText: String
+get kCruxFormLabelWidth -> double
+get kCruxFormSpreadControlMaxWidth -> double
 get kCruxPolicyLockNoteEn -> String
+get kCruxSettingsSliderWidth -> double
 get kCruxSupportedLocales -> Map<String, String>
 openCruxSettings(BuildContext context, {Widget Function(BuildContext, Widget)? wrap, required String closeTooltip, required String title, required Widget Function(BuildContext) bodyBuilder, required bool asDialog}) -> Future<void>

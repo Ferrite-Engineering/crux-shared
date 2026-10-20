@@ -27,16 +27,26 @@
 /// `ThemeAppearanceSection` drop-in composer that stitches the three
 /// surfaces together for adopters who don't want a custom layout.
 ///
-/// Product migrations off per-product theme types (WaveCrux off
-/// `WavecruxColorTheme`, future Crux products from their per-product
-/// 1.x theme types) ship in follow-on releases.
+/// **Crux Desktop:** `cruxDesktopTheme` returns the one desktop
+/// `ThemeData` every product builds on (every component theme set to the
+/// desktop tokens, system UI font, no ink), and `cruxThemeForDevice` is the
+/// one place the desktop layer is chosen over a product's phone and tablet
+/// theme, by host platform. Both install `CruxDesktopTokens`, which the
+/// dialog, toast and overflow-menu helpers in `crux_ide_layout` read.
+///
+/// `CruxChromeColors` and `CruxDesktopTokens` are declared in
+/// `crux_ide_layout` (whose chrome reads them) and re-exported here, so
+/// importing either package names the same types.
 ///
 /// See the package README for the canonical adoption pattern.
 library;
 
+export 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxChromeColors, CruxDesktopTokens;
+
 export 'src/chrome_theme_data.dart';
-export 'src/crux_chrome_colors.dart';
 export 'src/crux_color_theme.dart';
+export 'src/crux_desktop_theme.dart';
 export 'src/crux_theme_extension.dart';
 export 'src/directory_theme_pack_store.dart';
 export 'src/preset_token_overlay.dart';

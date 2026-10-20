@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `CommandPalette.show` opens through `showCruxDialog`, so the palette takes
+  the theme's dialog scrim (18 % under a Crux Desktop theme) rather than a
+  fixed one. New dependency on `crux_ide_layout`.
+
 - **Fix: the shortcut hint on each row is readable.** The hint was painted
   with `colorScheme.outline`, a border token that every product theme replaces
   with its own, dimmer border colour. It measured 1.08:1 against the selected

@@ -6,6 +6,10 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- The desktop About box opens through `showCruxDialog` in a `CruxDialog`
+  frame: the title is the dialog's accessible name and the close button is
+  in its title row. New dependency on `crux_ide_layout`.
+
 - Removed `CruxAboutStringsEn`. No product used it; every product passes its
   own localized `CruxAboutStrings`.
 

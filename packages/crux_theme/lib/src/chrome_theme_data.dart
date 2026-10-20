@@ -1,7 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:crux_theme/src/crux_chrome_colors.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxChromeColors;
 import 'package:crux_theme/src/crux_color_theme.dart';
 import 'package:crux_theme/src/crux_theme_extension.dart';
 import 'package:crux_theme/src/theme_registry.dart';

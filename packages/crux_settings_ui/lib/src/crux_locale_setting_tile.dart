@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_settings_ui/src/crux_settings_control_tile.dart';
 import 'package:flutter/material.dart';
 
 /// The suite's four shipped UI languages, as `CoreSettings.locale` codes
@@ -48,19 +49,31 @@ class CruxLocaleSettingTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = kCruxSupportedLocales.containsKey(locale) ? locale : 'en';
-    return ListTile(
-      title: Text(label),
-      subtitle: Text(description),
-      trailing: DropdownButton<String>(
-        key: const ValueKey('cruxLocaleDropdown'),
-        value: value,
-        onChanged: (v) {
-          if (v != null) onChanged(v);
-        },
-        items: [
-          for (final entry in kCruxSupportedLocales.entries)
-            DropdownMenuItem(value: entry.key, child: Text(entry.value)),
-        ],
+    return CruxSettingsControlTile(
+      title: label,
+      description: description,
+      // Boxed like a text field: the decorator draws the theme's field
+      // border, and the dropdown's own underline is hidden.
+      control: SizedBox(
+        width: 200,
+        child: InputDecorator(
+          decoration: const InputDecoration(isDense: true),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              key: const ValueKey('cruxLocaleDropdown'),
+              value: value,
+              isDense: true,
+              isExpanded: true,
+              onChanged: (v) {
+                if (v != null) onChanged(v);
+              },
+              items: [
+                for (final entry in kCruxSupportedLocales.entries)
+                  DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDialog;
 import 'package:crux_theme/crux_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,7 +203,7 @@ void main() {
 
       await tester.tap(
         find.descendant(
-          of: find.byType(AlertDialog),
+          of: find.byType(CruxDialog),
           // The dialog's confirm label is the same word as the row's
           // own Uninstall button, so scope the tap to the dialog.
           matching: find.text(_strings.confirmUninstallConfirmLabel),
@@ -240,7 +241,7 @@ void main() {
       store.failWith = Exception('permission denied');
       await tester.tap(
         find.descendant(
-          of: find.byType(AlertDialog),
+          of: find.byType(CruxDialog),
           // The dialog's confirm label is the same word as the row's
           // own Uninstall button, so scope the tap to the dialog.
           matching: find.text(_strings.confirmUninstallConfirmLabel),

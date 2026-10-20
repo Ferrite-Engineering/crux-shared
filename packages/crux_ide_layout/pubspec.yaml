@@ -13,11 +13,10 @@ environment:
 resolution: workspace
 
 dependencies:
-  # The region hint a panel empty state uses to describe its region.
+  # The region hint a panel empty state uses to describe its region, and the
+  # focus-walk harness the dialog and toast tests use.
   crux_a11y:
     path: ../crux_a11y
-  crux_theme:
-    path: ../crux_theme
   flutter:
     sdk: flutter
   panes: ^1.3.0
@@ -26,9 +25,6 @@ dependencies:
 dev_dependencies:
   flutter_localizations:
     sdk: flutter
-  # Drives the token editor's own write path (`applyOverrides`) in the theme
-  # tests.
-  flutter_riverpod: ^3.3.1
   flutter_test:
     sdk: flutter
   very_good_analysis: ^11.0.0

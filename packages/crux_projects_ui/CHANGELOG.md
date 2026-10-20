@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `CruxProjectSwitcherDialog.show` opens through `showCruxDialog` in a
+  `CruxDialog` frame. New dependency on `crux_ide_layout`.
+
 - **Reopening a recent project that can no longer be loaded is reported
   and forgotten.** A persistent registry refuses a path that has gone from
   disk with a `ProjectLoadException` and keeps the entry. The recents
