@@ -222,9 +222,10 @@ class CruxSearchResultTile extends StatelessWidget
   final trailingChipLabel: String?
 typedef CruxSearchRowBuilder<T> = Widget Function(BuildContext, T, {required bool highlighted, required void Function() onActivate})
 class CruxSegment<T>
-  const CruxSegment({IconData? icon, String? tooltip, bool enabled, required String label, required T value})
+  const CruxSegment({IconData? icon, String? tooltip, bool enabled, bool iconOnly, required String label, required T value})
   final enabled: bool
   final icon: IconData?
+  final iconOnly: bool
   final label: String
   final tooltip: String?
   final value: T

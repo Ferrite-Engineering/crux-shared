@@ -4,6 +4,7 @@
 import 'package:crux_a11y/crux_a11y.dart';
 import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_ide_layout/crux_ide_layout.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,14 +78,51 @@ class _HostState extends State<_Host> {
   );
 }
 
-_HostState _state(WidgetTester tester) => tester.state<_HostState>(
-  find.byType(_Host),
-);
+class _IconHost extends StatefulWidget {
+  const _IconHost({this.mixed = false});
 
-Finder _segment(String label) => find.ancestor(
-  of: find.text(label),
-  matching: find.byType(CruxPressable),
-);
+  final bool mixed;
+
+  @override
+  State<_IconHost> createState() => _IconHostState();
+}
+
+class _IconHostState extends State<_IconHost> {
+  String value = 'wave';
+
+  @override
+  Widget build(BuildContext context) => CruxSegmentedControl<String>(
+    semanticLabel: 'View',
+    segments: [
+      const CruxSegment(
+        value: 'wave',
+        label: 'Wave',
+        icon: Icons.show_chart,
+        iconOnly: true,
+      ),
+      CruxSegment(
+        value: 'table',
+        label: 'Table',
+        icon: Icons.table_chart,
+        iconOnly: !widget.mixed,
+      ),
+      const CruxSegment(
+        value: 'both',
+        label: 'Both',
+        icon: Icons.vertical_split,
+        iconOnly: true,
+      ),
+    ],
+    selected: value,
+    onChanged: (v) => setState(() => value = v),
+  );
+}
+
+_HostState _state(WidgetTester tester) =>
+    tester.state<_HostState>(find.byType(_Host));
+
+Finder _segment(String label) =>
+    find.ancestor(of: find.text(label), matching: find.byType(CruxPressable));
 
 String? _focusedLabel() {
   final context = FocusManager.instance.primaryFocus?.context;
@@ -241,9 +279,7 @@ void main() {
     );
   });
 
-  testWidgets('pressing darkens the selected segment in light', (
-    tester,
-  ) async {
+  testWidgets('pressing darkens the selected segment in light', (tester) async {
     await tester.pumpWidget(const _Host(brightness: Brightness.light));
     Color face() {
       final box = tester.widget<Container>(
@@ -295,6 +331,146 @@ void main() {
       ),
     );
     handle.dispose();
+  });
+
+  group('icon-only segments', () {
+    Widget host({double? width, bool mixed = false}) => MaterialApp(
+      theme: _theme(Brightness.dark),
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: width,
+            child: Row(
+              children: [
+                TextButton(onPressed: () {}, child: const Text('Before')),
+                _IconHost(mixed: mixed),
+                TextButton(onPressed: () {}, child: const Text('After')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    _IconHostState icons(WidgetTester tester) =>
+        tester.state<_IconHostState>(find.byType(_IconHost));
+
+    Finder seg(String label) => find.byWidgetPredicate(
+      (w) => w is CruxPressable && w.semanticLabel == label,
+    );
+
+    testWidgets('three fit in 96 px, 28 px tall, no label drawn', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: _theme(Brightness.dark),
+          home: const Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(width: 96, child: _IconHost()),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      final size = tester.getSize(find.byType(CruxSegmentedControl<String>));
+      expect(size.width, lessThanOrEqualTo(96));
+      expect(size.height, 28);
+      expect(find.text('Wave'), findsNothing);
+      // Icon (16) plus 7 px each side.
+      expect(tester.getSize(seg('Wave')).width, 30);
+    });
+
+    testWidgets('the semantic name is the label', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(host());
+      expect(
+        tester.getSemantics(seg('Wave')),
+        matchesSemantics(
+          label: 'Wave',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isFocusable: true,
+          hasTapAction: true,
+          hasFocusAction: true,
+        ),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('the label is the tooltip on hover', (tester) async {
+      await tester.pumpWidget(host());
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(seg('Table')));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Table'), findsOneWidget);
+      expect(find.byTooltip('Table'), findsOneWidget);
+      await mouse.removePointer();
+    });
+
+    testWidgets('the label is the tooltip on keyboard focus', (tester) async {
+      await tester.pumpWidget(host());
+      await _key(tester, LogicalKeyboardKey.tab);
+      await _key(tester, LogicalKeyboardKey.tab);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(_focusedLabel(), 'Wave');
+      expect(find.text('Wave'), findsOneWidget);
+      await _key(tester, LogicalKeyboardKey.arrowRight);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(_focusedLabel(), 'Table');
+      expect(find.text('Table'), findsOneWidget);
+      expect(find.text('Wave'), findsNothing);
+      await _key(tester, LogicalKeyboardKey.tab);
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Table'), findsNothing);
+    });
+
+    testWidgets('arrows, Space and Enter work as for labelled segments', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host());
+      await _key(tester, LogicalKeyboardKey.tab);
+      await _key(tester, LogicalKeyboardKey.tab);
+      await _key(tester, LogicalKeyboardKey.arrowRight);
+      expect(_focusedLabel(), 'Table');
+      await _key(tester, LogicalKeyboardKey.space);
+      expect(icons(tester).value, 'table');
+      await _key(tester, LogicalKeyboardKey.arrowRight);
+      await _key(tester, LogicalKeyboardKey.enter);
+      expect(icons(tester).value, 'both');
+      await tester.tap(seg('Wave'));
+      await tester.pump();
+      expect(icons(tester).value, 'wave');
+    });
+
+    testWidgets('a mixed control keeps labelled segments beside icon-only', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(mixed: true));
+      expect(find.text('Wave'), findsNothing);
+      expect(find.text('Table'), findsOneWidget);
+      expect(find.byIcon(Icons.table_chart), findsOneWidget);
+      expect(find.byIcon(Icons.vertical_split), findsOneWidget);
+    });
+
+    testWidgets('focus walk: one stop, named segments', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(host());
+      final walk = await walkFocus(tester);
+      expectCleanFocusWalk(walk);
+      expect(walk.stops, hasLength(3));
+      expectFocusWalkGolden(
+        walk,
+        'test/goldens/crux_segmented_control_icon_only.txt',
+      );
+      handle.dispose();
+    });
   });
 
   testWidgets('focus walk: one stop, inside the named group', (tester) async {

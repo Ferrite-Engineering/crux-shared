@@ -18,6 +18,11 @@ increments that built it. Changes from here on get their own entries.
   pushed route is never where focus goes back to. `CruxFocusRegion` entry
   focuses a control, never a focus scope (a nested navigator's page, which
   sorts first and announces nothing).
+- `CruxSegment(iconOnly: true)`: an icon-only segment for narrow docks. The
+  `label` stays required and becomes the semantic name and the tooltip (on
+  hover and on keyboard focus); `tooltip` overrides the text. Same height,
+  ring, states and keyboard as a labelled segment; 16 px icon with 7 px (6
+  dense) padding, so three fit in 96 px. Mixed with labelled segments works.
 - **`CruxSegmentedControl` / `CruxSegment`: the owned segmented control.**
   28 px (24 px `dense`), a 4 px radius, one flat bordered track with flush
   segments and dividers that hide beside the selected one, the selected

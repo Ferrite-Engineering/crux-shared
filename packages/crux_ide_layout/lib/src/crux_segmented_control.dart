@@ -14,20 +14,30 @@ class CruxSegment<T> {
     required this.value,
     required this.label,
     this.icon,
+    this.iconOnly = false,
     this.tooltip,
     this.enabled = true,
-  });
+  }) : assert(!iconOnly || icon != null, 'An icon-only segment needs an icon.');
 
   /// The value the segment selects.
   final T value;
 
-  /// The localized label, drawn and announced.
+  /// The localized label. Always required: drawn beside the icon, or, for an
+  /// [iconOnly] segment, not drawn but kept as the accessible name and as
+  /// the tooltip.
   final String label;
 
-  /// An optional glyph before the label.
+  /// An optional glyph before the label, or alone when [iconOnly].
   final IconData? icon;
 
-  /// An optional hover explanation. Not part of the accessible name.
+  /// Whether the segment draws only [icon]. Its width is the 16 px icon plus
+  /// the icon-button padding (7 px each side, 6 px when dense), so three fit
+  /// in 96 px; [label] is its semantic name and, unless
+  /// [tooltip] says otherwise, its tooltip (on hover and on keyboard focus).
+  final bool iconOnly;
+
+  /// An optional hover explanation. Not part of the accessible name. An
+  /// [iconOnly] segment falls back to [label] when this is null.
   final String? tooltip;
 
   /// Whether the segment can be chosen.
@@ -88,6 +98,7 @@ class CruxSegmentedControl<T> extends StatefulWidget {
 
 class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
   final List<FocusNode> _nodes = <FocusNode>[];
+  final List<GlobalKey<TooltipState>> _tips = <GlobalKey<TooltipState>>[];
 
   /// The segment that is the group's Tab stop.
   int _current = 0;
@@ -128,9 +139,11 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
     while (_nodes.length < widget.segments.length) {
       final i = _nodes.length;
       _nodes.add(FocusNode(debugLabel: 'CruxSegment $i'));
+      _tips.add(GlobalKey<TooltipState>());
     }
     while (_nodes.length > widget.segments.length) {
       _nodes.removeLast().dispose();
+      _tips.removeLast();
     }
   }
 
@@ -143,6 +156,9 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
     }
     return 0;
   }
+
+  String? _tooltipFor(CruxSegment<T> s) =>
+      s.tooltip ?? (s.iconOnly ? s.label : null);
 
   void _choose(int i) {
     final onChanged = widget.onChanged;
@@ -224,6 +240,13 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
         selected: on,
         onFocusChange: (focused) {
           if (focused && _current != i) setState(() => _current = i);
+          if (_tooltipFor(s) == null) return;
+          if (!focused) {
+            Tooltip.dismissAllToolTips();
+          } else if (FocusManager.instance.highlightMode ==
+              FocusHighlightMode.traditional) {
+            _tips[i].currentState?.ensureTooltipVisible();
+          }
         },
         builder: (context, state) {
           final base = on ? style.selectedFill : style.face;
@@ -248,23 +271,31 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
             inset: true,
             child: Container(
               height: segmentHeight,
-              padding: EdgeInsets.symmetric(horizontal: widget.dense ? 10 : 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: s.iconOnly
+                    ? (widget.dense ? 6 : 7)
+                    : (widget.dense ? 10 : 12),
+              ),
               decoration: BoxDecoration(color: face, borderRadius: radius),
               child: Center(
                 widthFactor: 1,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (s.icon case final IconData icon) ...[
-                      Icon(icon, size: 16, color: text),
-                      const SizedBox(width: 6),
+                    if (s.iconOnly)
+                      Icon(s.icon, size: 16, color: text)
+                    else ...[
+                      if (s.icon case final IconData icon) ...[
+                        Icon(icon, size: 16, color: text),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        s.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: labelStyle,
+                      ),
                     ],
-                    Text(
-                      s.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: labelStyle,
-                    ),
                   ],
                 ),
               ),
@@ -272,8 +303,9 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
           );
         },
       );
-      if (s.tooltip case final String tooltip) {
+      if (_tooltipFor(s) case final String tooltip) {
         child = Tooltip(
+          key: _tips[i],
           message: tooltip,
           excludeFromSemantics: true,
           child: child,
@@ -287,9 +319,7 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
       return SizedBox(
         width: 1,
         height: segmentHeight,
-        child: ColoredBox(
-          color: hidden ? Colors.transparent : style.border,
-        ),
+        child: ColoredBox(color: hidden ? Colors.transparent : style.border),
       );
     }
 
