@@ -8,6 +8,10 @@
 #   tool/check-consumers.sh                 # all four products
 #   tool/check-consumers.sh wavecrux        # one product
 #
+# A checkout that wraps an open core (the core as a subdirectory named after
+# it) can be named too: its overrides cover every crux_* package its graph
+# reaches, and the wrapped core's generated code is produced first.
+#
 # Why this exists
 # ---------------
 # Every consumer declares bare `path:` dependencies into its `crux-shared`
@@ -98,9 +102,17 @@ write_overrides() {
     for pkg_dir in "$SHARED_ROOT"/packages/*/; do
       local pkg
       pkg="$(basename "$pkg_dir")"
-      # Only override packages this product actually depends on; overriding a
+      # Only override packages this product's graph depends on; overriding a
       # package the product does not use is harmless but noisy in pub output.
-      if grep -q "crux-shared/packages/$pkg\b" "$product_dir/pubspec.yaml"; then
+      # The graph is every pubspec under the product, not only its own: a
+      # checkout that wraps an open core reaches most crux_* packages through
+      # that open core's pubspec (and its shared packages' pubspecs), and an
+      # override that misses one leaves two paths to the same package, which
+      # pub refuses. The vendored crux-shared copies are skipped: their
+      # pubspecs name siblings by `../`, never by this path.
+      if grep -rqs --include=pubspec.yaml --exclude-dir=crux-shared \
+        --exclude-dir=.dart_tool --exclude-dir=build \
+        "crux-shared/packages/$pkg\b" "$product_dir"; then
         echo "  $pkg:"
         echo "    path: $pkg_dir"
       fi
@@ -155,6 +167,22 @@ for product in "${PRODUCTS[@]}"; do
   (
     cd "$product_dir" || exit 1
     set -e
+    # A checkout that wraps an open core imports that core's generated code
+    # (localizations, build_runner output), which a fresh checkout does not
+    # have. Generate it in the core first, as that checkout's own CI does.
+    for core in "${ALL_PRODUCTS[@]}"; do
+      if [[ "$core" != "$product" && -f "$core/pubspec.yaml" ]]; then
+        echo "--> prepare the wrapped open core: $core"
+        (
+          cd "$core"
+          flutter pub get
+          if grep -qE '^  build_runner:' pubspec.yaml; then
+            dart run build_runner build --delete-conflicting-outputs
+          fi
+          flutter gen-l10n
+        )
+      fi
+    done
     echo "--> flutter pub get"
     flutter pub get
     # Not every product uses codegen -- SimCrux declares no build_runner
