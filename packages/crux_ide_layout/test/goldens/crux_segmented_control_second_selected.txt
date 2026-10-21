@@ -1,0 +1,4 @@
+# Tab walk: 3 stops, cycles
+1. Before button
+2. [View grouping] Table button selected
+3. After button

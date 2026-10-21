@@ -157,6 +157,14 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
     return 0;
   }
 
+  /// Focus leaving the group puts the Tab stop back on the selected segment,
+  /// so the next Tab lands there however far the arrows had moved focus.
+  void _onGroupFocusChange(bool hasFocus) {
+    if (hasFocus || !mounted) return;
+    final stop = _restingStop();
+    if (stop != _current) setState(() => _current = stop);
+  }
+
   String? _tooltipFor(CruxSegment<T> s) =>
       s.tooltip ?? (s.iconOnly ? s.label : null);
 
@@ -331,6 +339,7 @@ class _CruxSegmentedControlState<T> extends State<CruxSegmentedControl<T>> {
         canRequestFocus: false,
         skipTraversal: true,
         includeSemantics: false,
+        onFocusChange: _onGroupFocusChange,
         onKeyEvent: _onKey,
         child: Container(
           height: style.height,

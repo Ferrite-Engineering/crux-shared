@@ -23,6 +23,8 @@ class _Host extends StatefulWidget {
     this.dense = false,
     this.brightness = Brightness.dark,
     this.disabledSegment,
+    this.initial = 'wave',
+    this.iconOnly = false,
   });
 
   final bool enabled;
@@ -30,13 +32,22 @@ class _Host extends StatefulWidget {
   final Brightness brightness;
   final String? disabledSegment;
 
+  /// The value selected at first; null selects nothing.
+  final String? initial;
+
+  /// Whether every segment draws only its icon.
+  final bool iconOnly;
+
   @override
   State<_Host> createState() => _HostState();
 }
 
 class _HostState extends State<_Host> {
-  String value = 'wave';
+  late String? value = widget.initial;
   final List<String> changes = <String>[];
+
+  /// Selects [v] from outside the control, as a model change would.
+  void select(String v) => setState(() => value = v);
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -59,6 +70,8 @@ class _HostState extends State<_Host> {
                   CruxSegment(
                     value: v,
                     label: label,
+                    icon: widget.iconOnly ? Icons.circle : null,
+                    iconOnly: widget.iconOnly,
                     enabled: v != widget.disabledSegment,
                   ),
               ],
@@ -468,6 +481,133 @@ void main() {
       expectFocusWalkGolden(
         walk,
         'test/goldens/crux_segmented_control_icon_only.txt',
+      );
+      handle.dispose();
+    });
+  });
+
+  group('Tab lands on the selected segment', () {
+    for (final iconOnly in [false, true]) {
+      final kind = iconOnly ? 'icon-only' : 'labelled';
+      for (final (initial, label) in const [
+        ('wave', 'Wave'),
+        ('table', 'Table'),
+        ('both', 'Both'),
+      ]) {
+        testWidgets('$kind, $label selected', (tester) async {
+          await tester.pumpWidget(_Host(initial: initial, iconOnly: iconOnly));
+          await _key(tester, LogicalKeyboardKey.tab);
+          expect(_focusedLabel(), 'button');
+          await _key(tester, LogicalKeyboardKey.tab);
+          expect(_focusedLabel(), label);
+          // One Tab stop: the next Tab leaves the group.
+          await _key(tester, LogicalKeyboardKey.tab);
+          expect(_focusedLabel(), 'button');
+        });
+      }
+
+      testWidgets('$kind, nothing selected: the first segment', (tester) async {
+        await tester.pumpWidget(_Host(initial: null, iconOnly: iconOnly));
+        await _key(tester, LogicalKeyboardKey.tab);
+        await _key(tester, LogicalKeyboardKey.tab);
+        expect(_focusedLabel(), 'Wave');
+      });
+
+      testWidgets('$kind, nothing selected and the first disabled: the first '
+          'enabled segment', (tester) async {
+        await tester.pumpWidget(
+          _Host(initial: null, iconOnly: iconOnly, disabledSegment: 'wave'),
+        );
+        await _key(tester, LogicalKeyboardKey.tab);
+        await _key(tester, LogicalKeyboardKey.tab);
+        expect(_focusedLabel(), 'Table');
+      });
+
+      testWidgets('$kind, the selected segment disabled: the first enabled '
+          'one', (tester) async {
+        await tester.pumpWidget(
+          _Host(initial: 'table', iconOnly: iconOnly, disabledSegment: 'table'),
+        );
+        await _key(tester, LogicalKeyboardKey.tab);
+        await _key(tester, LogicalKeyboardKey.tab);
+        expect(_focusedLabel(), 'Wave');
+      });
+
+      testWidgets('$kind, Shift+Tab into the group also lands on the '
+          'selected segment, and out returns to the previous control', (
+        tester,
+      ) async {
+        await tester.pumpWidget(_Host(initial: 'table', iconOnly: iconOnly));
+        await _key(tester, LogicalKeyboardKey.tab);
+        await _key(tester, LogicalKeyboardKey.tab);
+        await _key(tester, LogicalKeyboardKey.tab);
+        expect(_focusedLabel(), 'button');
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        expect(_focusedLabel(), 'Table');
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        expect(_focusedLabel(), 'button');
+      });
+
+      testWidgets('$kind, after arrowing away and leaving, Tab returns to '
+          'the selected segment', (tester) async {
+        await tester.pumpWidget(_Host(initial: 'table', iconOnly: iconOnly));
+        await _key(tester, LogicalKeyboardKey.tab);
+        await _key(tester, LogicalKeyboardKey.tab);
+        await _key(tester, LogicalKeyboardKey.arrowRight);
+        expect(_focusedLabel(), 'Both');
+        // Focus moved without selecting.
+        expect(_state(tester).value, 'table');
+        await _key(tester, LogicalKeyboardKey.tab);
+        expect(_focusedLabel(), 'button');
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        expect(_focusedLabel(), 'Table');
+      });
+    }
+
+    testWidgets('a selection made elsewhere moves the Tab stop', (
+      tester,
+    ) async {
+      await tester.pumpWidget(const _Host());
+      _state(tester).select('both');
+      await tester.pump();
+      await _key(tester, LogicalKeyboardKey.tab);
+      await _key(tester, LogicalKeyboardKey.tab);
+      expect(_focusedLabel(), 'Both');
+    });
+
+    testWidgets('focus walk: the second segment selected, one stop on it', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(const _Host(initial: 'table'));
+      final walk = await walkFocus(tester);
+      expectCleanFocusWalk(walk);
+      expect(walk.stops, hasLength(3));
+      expectFocusWalkGolden(
+        walk,
+        'test/goldens/crux_segmented_control_second_selected.txt',
+      );
+      handle.dispose();
+    });
+
+    testWidgets('focus walk: the last segment selected, icon-only', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(const _Host(initial: 'both', iconOnly: true));
+      final walk = await walkFocus(tester);
+      expectCleanFocusWalk(walk);
+      expect(walk.stops, hasLength(3));
+      expectFocusWalkGolden(
+        walk,
+        'test/goldens/crux_segmented_control_last_selected_icon_only.txt',
       );
       handle.dispose();
     });
