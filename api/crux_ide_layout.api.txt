@@ -258,6 +258,7 @@ class PlatformContextMenu extends StatelessWidget
   final onContextMenu: void Function(Offset)
 announceCrux(BuildContext context, String message, {bool assertive}) -> void
 confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirmKey, Key? dialogKey, required String body, required String cancelLabel, required String confirmLabel, required String title}) -> Future<bool>
+cruxFocusIsInPushedRoute([FocusNode? focus]) -> bool
 cruxTextInputFocused() -> bool
 hideCruxReloadPrompt(BuildContext context) -> void
 hideCruxSnack(BuildContext context) -> void

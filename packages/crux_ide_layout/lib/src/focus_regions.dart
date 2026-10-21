@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:crux_a11y/crux_a11y.dart';
+import 'package:crux_ide_layout/src/pushed_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -50,11 +51,15 @@ const Map<ShortcutActivator, Intent> kCruxRegionShortcuts =
 /// two layouts, a closed tab's content), or the window came back from a
 /// native file dialog — the scope puts it back: on the control last focused
 /// inside it if that still exists, otherwise in the [CruxFocusRegion.primary]
-/// region, otherwise in the first region. A bare scope announces nothing and
-/// sits above every screen-level shortcut handler, so a window left in that
-/// state is both silent and deaf to its own keyboard shortcuts. Controlled
-/// by [restoreLostFocus]; on by default on desktop platforms only, where a
-/// restored text field cannot raise a soft keyboard.
+/// region, otherwise in the first region. Focus resting on the bare scope of
+/// a page route or navigator inside the screen (a tab's own navigator,
+/// whose page does not take focus) is lost in the same way, unless a route
+/// is open above that page (a tab-modal dialog). A control inside such a
+/// dialog is never the one focus goes back to. A bare scope announces
+/// nothing and sits above every screen-level shortcut handler, so a window
+/// left in that state is both silent and deaf to its own keyboard
+/// shortcuts. Controlled by [restoreLostFocus]; on by default on desktop
+/// platforms only, where a restored text field cannot raise a soft keyboard.
 class CruxFocusRegionScope extends StatefulWidget {
   /// Creates the scope.
   const CruxFocusRegionScope({
@@ -127,15 +132,45 @@ class CruxFocusRegionScopeState extends State<CruxFocusRegionScope> {
 
   bool _isInside(FocusNode node) => _isUnder(node, _scopeNode);
 
+  /// Whether [primary] holds focus on purpose. Inside the screen, anything
+  /// but a bare navigator does. Outside it, a real control does (a menu bar,
+  /// a dialog's button) and a bare scope or navigator does not.
+  bool _holdsFocus(FocusNode primary) {
+    if (_isBareNavigatorFocus(primary)) return false;
+    return _isInside(primary) || primary is! FocusScopeNode;
+  }
+
+  /// Whether [node] is a navigator's own focus node, or the scope of its
+  /// first page, with no route open above that page.
+  ///
+  /// A nested navigator inside the screen (a tab's own navigator, whose page
+  /// does not take focus itself) takes focus onto its own node when it is
+  /// built and nothing else has it. That node announces nothing, like a bare
+  /// scope outside the screen. With a route open above the page (a
+  /// tab-modal dialog, before Tab moves into it) focus is where it should be.
+  bool _isBareNavigatorFocus(FocusNode node) {
+    final context = node.context;
+    if (context == null || !context.mounted) return false;
+    final navigator = Navigator.maybeOf(context);
+    if (navigator == null || navigator.canPop()) return false;
+    final own = navigator.focusNode;
+    return identical(node, own) ||
+        (node is FocusScopeNode && identical(node.parent, own));
+  }
+
   void _onFocusChanged() {
     final primary = FocusManager.instance.primaryFocus;
-    if (primary != null && _isInside(primary)) {
-      if (primary is! FocusScopeNode) _lastInside = primary;
-      return;
+    if (primary != null) {
+      // A control in a dialog over part of the screen is not where focus
+      // goes back to once the dialog has closed.
+      if (_isInside(primary) &&
+          primary is! FocusScopeNode &&
+          !_isBareNavigatorFocus(primary) &&
+          !cruxFocusIsInPushedRoute(primary)) {
+        _lastInside = primary;
+      }
+      if (_holdsFocus(primary)) return;
     }
-    // A real control outside the screen (a menu bar, a dialog's button)
-    // holds focus on purpose.
-    if (primary != null && primary is! FocusScopeNode) return;
     if (_restoreScheduled || !mounted || !_restores) return;
     _restoreScheduled = true;
     // After the frame that dropped focus has finished building, so a
@@ -149,9 +184,7 @@ class CruxFocusRegionScopeState extends State<CruxFocusRegionScope> {
     _restoreScheduled = false;
     if (!mounted) return;
     final primary = FocusManager.instance.primaryFocus;
-    if (primary != null && (primary is! FocusScopeNode || _isInside(primary))) {
-      return;
-    }
+    if (primary != null && _holdsFocus(primary)) return;
     if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
     final last = _lastInside;
     if (last != null &&
@@ -351,8 +384,10 @@ class CruxFocusRegionState extends State<CruxFocusRegion> {
       last.requestFocus();
       return true;
     }
+    // Controls only: a scope (a nested navigator's page) sorts first in
+    // reading order and, focused, holds focus on itself, announcing nothing.
     final candidates = _node.traversalDescendants
-        .where((node) => node.context != null)
+        .where((node) => node is! FocusScopeNode && node.context != null)
         .toList();
     if (candidates.isEmpty) return false;
     ReadingOrderTraversalPolicy()

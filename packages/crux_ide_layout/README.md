@@ -87,6 +87,21 @@ right-click menu. The builder runs only while the menu is open, so a badge that
 records an impression records it when shown. The item stays enabled; the badge
 is not part of the label and its own semantics are read once after it.
 
+## Keys while a tab dialog is open
+
+`showCruxDialog(navigator: ...)` pushes on a tab's own navigator, inside the
+screen's route, so `ModalRoute.of(context).isCurrent` stays true for a
+window-level key handler while the dialog is up. Escape pressed to close the
+dialog would also clear a selection or cancel a cursor. Every product's
+window-level handler (a `HardwareKeyboard` handler, or a `Focus` around the
+whole screen) that acts on bare keys returns early while
+`cruxFocusIsInPushedRoute()` is true: focus is in a route above the first
+page of its navigator (a dialog, a sheet, a popup menu) on any navigator.
+
+`CruxFocusRegionScope` treats focus resting on a nested navigator's own node,
+or on its first page's route scope, as lost (both announce nothing), and puts
+it back unless a route is open above that page.
+
 ## Dependencies
 
 `flutter`, `panes`. No Riverpod dependency — the host drives rebuilds.

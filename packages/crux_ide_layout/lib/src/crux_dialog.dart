@@ -43,6 +43,10 @@ const double kCruxDialogDefaultWidth = 440;
 ///   `CruxTabNavigators`) so the dialog mounts under that tab's provider
 ///   scope instead of wrapping its builder in a second scope over the tab's
 ///   container. The dialog then covers that navigator's area, not the window.
+///   Tab and Shift+Tab stay inside the dialog; a click or a window-level
+///   shortcut still reaches the rest of the window. Escape closes it and
+///   focus returns to the control that had it in the tab. A window-level key
+///   handler skips keys while `cruxFocusIsInPushedRoute()` is true.
 ///
 /// - **[blocking]**, true by default, is the modal dialog with the theme's
 ///   scrim. Pass false for a transient surface that does not interrupt (a
@@ -92,6 +96,10 @@ Future<T?> showCruxDialog<T>({
         barrierDismissible: dismissible,
         barrierLabel: barrierLabel,
         settings: routeSettings,
+        // A nested navigator hands Tab on to the window by default; a dialog
+        // keeps it, as one on the root navigator does. The pointer and
+        // window-level shortcuts still reach the rest of the window.
+        traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
         // Themes between the caller and the navigator travel with the
         // dialog, as showDialog does; a caller outside the navigator (a menu
         // bar opening a dialog on a tab's navigator) has none to carry.

@@ -110,10 +110,28 @@ class _TabContentBuilder extends InheritedWidget {
 /// product's widget test can build the same shape around a single tab's
 /// content without a whole pane host.
 ///
-/// The navigator's single page has no transition. The navigator's own focus
-/// scope is set to hand Tab on to the enclosing scope at its edge, as a
-/// route does, so the tab's content does not become a Tab trap that the
-/// pane's tab bar cannot be reached from.
+/// What the host does so a tab-modal dialog behaves like a dialog without
+/// taking the window with it:
+///
+/// - **Semantics.** The navigator is its own semantics container. A route's
+///   modal barrier hides from screen readers everything painted before it,
+///   up to the nearest semantics container; without one here, the tab's
+///   page (or a dialog over it) hid the window's toolbar and tab bar.
+///   Within the tab, a dialog still hides the content behind it.
+/// - **Focus, the tab's content.** The page does not take focus when the
+///   tab is built: focus stays where the window put it, and a
+///   `CruxFocusRegionScope` above puts it in the screen's primary region
+///   when it was lost. Tab and Shift+Tab leave the content at its edges for
+///   the rest of the window (the tab bar, the toolbar, the docks), so the
+///   content is not a Tab trap.
+/// - **Focus, a pushed route.** A dialog or sheet pushed on the navigator
+///   takes focus when it opens and keeps Tab and Shift+Tab inside itself.
+///   The pointer and window-level shortcuts still reach the rest of the
+///   window. When it closes, focus returns to the control in the tab that
+///   had it before. Window-level key handlers that should stay quiet while
+///   a dialog is up check `cruxFocusIsInPushedRoute` (crux_ide_layout).
+///
+/// The page has no transition.
 class CruxTabNavigatorHost extends StatefulWidget {
   /// Creates the host for one tab.
   const CruxTabNavigatorHost({
@@ -134,48 +152,61 @@ class CruxTabNavigatorHost extends StatefulWidget {
 
 class _CruxTabNavigatorHostState extends State<CruxTabNavigatorHost> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _releaseEdges());
-  }
-
-  @override
-  void didUpdateWidget(CruxTabNavigatorHost oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.navigatorKey, widget.navigatorKey)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _releaseEdges());
-    }
-  }
-
-  void _releaseEdges() {
-    if (!mounted) return;
-    final node = widget.navigatorKey.currentState?.focusNode;
-    if (node is FocusScopeNode) {
-      node.traversalEdgeBehavior = TraversalEdgeBehavior.parentScope;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return _TabNavigatorMarker(
       navigatorKey: widget.navigatorKey,
       child: _TabContentBuilder(
         builder: widget.builder,
-        child: Navigator(
-          key: widget.navigatorKey,
-          onGenerateInitialRoutes: (_, _) => <Route<void>>[
-            PageRouteBuilder<void>(
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-              pageBuilder: (pageContext, _, _) => Builder(
-                builder: (inner) => inner
-                    .dependOnInheritedWidgetOfExactType<_TabContentBuilder>()!
-                    .builder(inner),
-              ),
-            ),
-          ],
+        child: Semantics(
+          container: true,
+          explicitChildNodes: true,
+          child: Navigator(
+            key: widget.navigatorKey,
+            // Every route pushed above the page keeps Tab inside itself; the
+            // page overrides this for itself.
+            routeTraversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
+            onGenerateInitialRoutes: (_, _) => <Route<void>>[
+              _TabContentRoute(),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+/// The tab's content as its navigator's first page: no transition, no
+/// focus request of its own, and Tab handed on to the window at its edges.
+class _TabContentRoute extends PageRoute<void> {
+  _TabContentRoute()
+    : super(
+        requestFocus: false,
+        traversalEdgeBehavior: TraversalEdgeBehavior.parentScope,
+      );
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) => Builder(
+    builder: (inner) => inner
+        .dependOnInheritedWidgetOfExactType<_TabContentBuilder>()!
+        .builder(inner),
+  );
 }

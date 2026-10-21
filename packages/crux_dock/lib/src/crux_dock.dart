@@ -506,49 +506,72 @@ class _DockTab extends StatelessWidget {
       color: color,
       fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
     );
-    return InkWell(
-      key: ValueKey('cruxDockTab-${entry.id}'),
-      onTap: onSelect,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          // VSCode's active-tab treatment: a primary underline, content
-          // stepping up to onSurface.
-          border: Border(
-            bottom: BorderSide(
-              color: selected ? theme.colorScheme.primary : Colors.transparent,
-              width: 2,
-            ),
+    // One node for the tab: a button named after the entry, with its
+    // selected state and its badge count as the value. The visible label and
+    // the badge are excluded so neither is announced a second time; the
+    // close button stays a separate, named child.
+    return Semantics(
+      container: true,
+      button: true,
+      selected: selected,
+      label: entry.label,
+      value: entry.badgeCount > 0 ? '${entry.badgeCount}' : null,
+      child: InkWell(
+        key: ValueKey('cruxDockTab-${entry.id}'),
+        onTap: onSelect,
+        child: _content(theme, color, style),
+      ),
+    );
+  }
+
+  Widget _content(ThemeData theme, Color color, TextStyle? style) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        // VSCode's active-tab treatment: a primary underline, content
+        // stepping up to onSurface.
+        border: Border(
+          bottom: BorderSide(
+            color: selected ? theme.colorScheme.primary : Colors.transparent,
+            width: 2,
           ),
         ),
-        child: Row(
-          children: [
-            Icon(entry.icon, size: kCruxDockIconSize, color: color),
-            const SizedBox(width: 6),
-            Text(entry.label, style: style),
-            if (entry.badgeCount > 0) ...[
-              const SizedBox(width: 6),
-              _DockBadge(count: entry.badgeCount),
-            ],
-            if (entry.closable) ...[
-              const SizedBox(width: 4),
-              // The `×` has no visible text, so Semantics is the only thing
-              // standing between it and being announced as an unnamed
-              // "button". Falls back to the tab's own label rather than an
-              // English default — the package carries no localizations.
-              Semantics(
-                label: entry.closeSemanticLabel ?? entry.label,
-                button: true,
-                child: InkWell(
-                  key: ValueKey('cruxDockClose-${entry.id}'),
-                  onTap: entry.onClose,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Icon(Icons.close, size: 14, color: color),
-                ),
+      ),
+      child: Row(
+        children: [
+          ExcludeSemantics(
+            child: Row(
+              children: [
+                Icon(entry.icon, size: kCruxDockIconSize, color: color),
+                const SizedBox(width: 6),
+                Text(entry.label, style: style),
+                if (entry.badgeCount > 0) ...[
+                  const SizedBox(width: 6),
+                  _DockBadge(count: entry.badgeCount),
+                ],
+              ],
+            ),
+          ),
+          if (entry.closable) ...[
+            const SizedBox(width: 4),
+            // The `×` has no visible text, so Semantics is the only thing
+            // standing between it and being announced as an unnamed
+            // "button". Falls back to the tab's own label rather than an
+            // English default — the package carries no localizations. Its
+            // own container, so it is not folded into the tab's node.
+            Semantics(
+              container: true,
+              label: entry.closeSemanticLabel ?? entry.label,
+              button: true,
+              child: InkWell(
+                key: ValueKey('cruxDockClose-${entry.id}'),
+                onTap: entry.onClose,
+                borderRadius: BorderRadius.circular(8),
+                child: Icon(Icons.close, size: 14, color: color),
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -1,6 +1,6 @@
 # Tab walk: 5 stops, cycles
 1. Schematic grouping
-2. [Right dock grouping] Values text
-3. Inspector text
+2. [Right dock grouping] Values button
+3. Inspector button selected
 4. Name edit alpha
 5. Locked check box not checked

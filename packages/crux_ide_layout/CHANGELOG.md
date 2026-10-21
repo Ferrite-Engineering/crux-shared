@@ -6,6 +6,18 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- `cruxFocusIsInPushedRoute([FocusNode?])`: whether focus is in a route above
+  the first page of its navigator, on any navigator. A window-level key
+  handler returns early while it is true, so Escape in a tab dialog does not
+  also reach the screen.
+- `showCruxDialog(navigator:)` keeps Tab and Shift+Tab inside the dialog
+  (closed loop), as a dialog on the root navigator does.
+- `CruxFocusRegionScope` treats focus resting on a nested navigator's own
+  node, or on its first page's route scope, as lost and puts it in the
+  primary region, unless a route is open above that page. A control inside a
+  pushed route is never where focus goes back to. `CruxFocusRegion` entry
+  focuses a control, never a focus scope (a nested navigator's page, which
+  sorts first and announces nothing).
 - `showCruxInfoSnack` with a `CruxToastAction` now leaves after
   `kCruxActionSnackDuration` on phone and tablet. The Material snack bar it
   uses stays until its action is chosen unless told otherwise, which ignored

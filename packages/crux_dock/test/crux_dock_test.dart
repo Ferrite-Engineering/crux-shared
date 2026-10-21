@@ -178,6 +178,50 @@ void main() {
         expect(find.text('42'), findsOneWidget);
       });
 
+      testWidgets('a tab is one named button with its selected state and its '
+          'count; its close button is a separate named button', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        await tester.pumpWidget(
+          _host(
+            CruxDock(
+              entries: [
+                _entry('a', badgeCount: 3, onClose: () {}),
+                _entry('b'),
+              ],
+              activeId: 'a',
+              onSelect: (_) {},
+            ),
+          ),
+        );
+        expect(
+          tester.getSemantics(find.byKey(const ValueKey('cruxDockTab-a'))),
+          isSemantics(
+            label: 'label-a',
+            value: '3',
+            isButton: true,
+            isSelected: true,
+            hasTapAction: true,
+          ),
+        );
+        expect(
+          tester.getSemantics(find.byKey(const ValueKey('cruxDockTab-b'))),
+          isSemantics(
+            label: 'label-b',
+            isButton: true,
+            isSelected: false,
+          ),
+        );
+        expect(
+          tester.getSemantics(find.byKey(const ValueKey('cruxDockClose-a'))),
+          isSemantics(label: 'label-a', isButton: true),
+        );
+        // The visible label is not a second node.
+        expect(find.semantics.byLabel('label-b'), findsOne);
+        handle.dispose();
+      });
+
       testWidgets('zero is suppressed', (tester) async {
         await tester.pumpWidget(
           _host(

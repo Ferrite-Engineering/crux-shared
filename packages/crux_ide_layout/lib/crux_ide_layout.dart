@@ -84,5 +84,6 @@ export 'src/ide_panel_layout.dart';
 export 'src/modal_guard.dart';
 export 'src/panel_empty_state.dart';
 export 'src/platform_context_menu.dart';
+export 'src/pushed_route.dart';
 export 'src/reload_prompt.dart';
 export 'src/text_input_focus.dart';

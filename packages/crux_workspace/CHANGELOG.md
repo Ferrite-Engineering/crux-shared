@@ -1,5 +1,14 @@
 ## Unreleased
 
+- **Tab navigators and assistive technology.** `CruxTabNavigatorHost` makes
+  each tab's navigator its own semantics container, so a route's modal
+  barrier (the page's, or a tab dialog's) no longer hides the window's
+  toolbar and tab bar from screen readers. The tab's page does not take focus
+  itself (under a `CruxFocusRegionScope` focus goes to the primary region and
+  is announced) and hands Tab on to the window at its edges. Routes pushed on
+  the tab's navigator keep Tab and Shift+Tab inside themselves. The navigator
+  node edge setting that never applied (the node is not a scope) is gone.
+  Product key handlers check `cruxFocusIsInPushedRoute()` (crux_ide_layout).
 - **One Recent list.** `CruxRecentList` (a list's store, entries and
   missing-file check, declared once per list), `CruxRecentListNotifier`
   (`markOpened` to the front with a cap, `remove`, `clear`, and `open`, which

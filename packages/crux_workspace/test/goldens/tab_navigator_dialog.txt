@@ -1,0 +1,4 @@
+# Tab walk: 3 stops, cycles
+1. Cancel button
+2. OK button
+3. Name edit

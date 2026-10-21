@@ -275,7 +275,11 @@ void main() {
         .openTab(displayName: 'A', payload: 'a');
     await tester.pumpAndSettle();
     final walk = await walkFocus(tester);
+    // Every stop is heard: the tab's page route once hid the tab bar from
+    // the semantics tree, so its chip and close button were silent stops.
+    expectCleanFocusWalk(walk, context: 'pane host with tab navigators');
     expect(walk.transcript, contains('Open A'));
+    expect(walk.transcript, contains('A button selected'));
     // Something outside the tab content (the tab bar) is a stop too.
     expect(
       walk.stops.where((stop) => !stop.line.contains('Open A')),

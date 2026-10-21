@@ -1,0 +1,5 @@
+# Tab walk: 4 stops, cycles
+1. Rename button
+2. [Toolbar grouping] Save button
+3. Find button
+4. First button

@@ -231,6 +231,26 @@ container managers: a disposed navigator never completes the futures of the
 routes left on it, so without that a dialog open on a tab as it closes leaves
 its opener (and any `ModalGuard` key it holds) waiting forever.
 
+What a keyboard and a screen reader get, with nothing for the product to add:
+
+- The tab's navigator is its own semantics container, so a dialog's modal
+  barrier hides only the tab behind it. Without that the barrier hid the
+  window's toolbar and tab bar from screen readers.
+- The tab's page does not take focus when the tab opens. Under a
+  `CruxFocusRegionScope` (crux_ide_layout) focus goes to the screen's primary
+  region and is announced. Tab leaves the page at its edges for the rest of
+  the window.
+- A dialog or sheet pushed on the tab's navigator takes focus and keeps Tab
+  and Shift+Tab inside itself; the pointer and window-level shortcuts still
+  reach the rest of the window. Escape closes a `showCruxDialog` dialog and
+  focus returns to the control that had it in the tab.
+
+What each product does: a window-level key handler (a `HardwareKeyboard`
+handler, or a `Focus` around the whole screen) that acts on bare keys such
+as Escape or the arrows returns early while `cruxFocusIsInPushedRoute()`
+(crux_ide_layout) is true. `ModalRoute.of(context).isCurrent` is not enough:
+a tab's dialog sits inside the screen's route, which stays current.
+
 ## Multi-window
 
 `kMultiWindowAvailable` is `false` in this release. The two delegate

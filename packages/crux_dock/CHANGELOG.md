@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- A dock tab is announced as one button named after its entry, with its
+  selected state and its badge count as the value (it was plain text with no
+  role or state). Its close button stays a separate named button. Product
+  focus-walk transcripts that walk a multi-entry dock change from
+  `<label> text` to `<label> button` (and `selected` on the active tab).
 - `CruxInspector`, the dock tab that shows and edits the current canvas
   selection's properties: selection-bound, built inside the dock's provider
   scope (never a route), sections from host and Pro seam builders,
