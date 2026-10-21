@@ -177,15 +177,15 @@ jobs:
       # skipped. The floor is that less 0.5%; the ceiling allows two skips.
       # crux_flow's 189 tests raised it by 188 (its count less 0.5%). The
       # mapping, SARIF, containment, signature, foreign-SQLite and Yosys
-      # frontend tests added 137, of which 133 run here: raised by 132. The
-      # other four drive a real Yosys (two formal and Liberty reads in
-      # crux_yosys, two live re-elaborations in crux_flow) and skip on this
-      # runner, which installs none, beside the existing one, so the ceiling
-      # rose from two to six.
+      # frontend tests added 147, of which 142 run here: raised by 141. The
+      # other five drive a real Yosys (formal and Liberty reads and a
+      # yosys-slang read in crux_yosys, two live re-elaborations in crux_flow)
+      # and skip on this runner, which installs none, beside the existing
+      # one, so the ceiling rose from two to seven.
       - name: Test count did not shrink
         env:
-          MIN_TESTS: '4055'
-          MAX_SKIPPED: '6'
+          MIN_TESTS: '4064'
+          MAX_SKIPPED: '7'
         run: |
           python3 - <<'PY'
           import glob, json, os, sys

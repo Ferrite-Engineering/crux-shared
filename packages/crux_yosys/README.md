@@ -15,8 +15,12 @@ shelling out to a Yosys binary and shaping the captured output. It owns
   `outputUnreadable`, which share its synthetic exit code `-1`.
   `YosysRunRequest.frontend` (`YosysFrontend`) picks the read:
   `read_verilog`, `read_verilog -formal` for a formal elaboration, or one
-  `read_slang` (yosys-slang; its file names are bare, so a path with white
-  space is refused). VHDL is always lowered first by a standalone
+  `read_slang -f <command file>` (yosys-slang, with `--single-unit`,
+  `--top`, allow-listed `slangOptions`, and quoted paths in the command
+  file; check `YosysAvailabilityService.probeSlang` first). yosys-slang
+  writes `src` files relative to Yosys's working directory and async-reset
+  flip-flops as `$aldff`, port connections as `$buf`: callers resolve and
+  read them accordingly. VHDL is always lowered first by a standalone
   `ghdl --synth --out=verilog`, never the ghdl-yosys-plugin.
 - **`YosysRunner.runScript`** — the same contract for a caller-written
   script (`YosysScriptRequest`, statements built with

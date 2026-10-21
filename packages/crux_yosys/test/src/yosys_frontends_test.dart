@@ -33,6 +33,8 @@ class _Recorder implements ProcessRunner {
   String? script;
   List<String>? ghdlArgs;
   String? ghdlOutput;
+  String? slangCommandPath;
+  String? slangCommandFile;
 
   @override
   Future<ProcessRunResult> run(
@@ -58,6 +60,11 @@ class _Recorder implements ProcessRunner {
       );
     }
     script = arguments[arguments.indexOf('-p') + 1];
+    final slang = RegExp(r'read_slang -f (\S+);').firstMatch(script!);
+    if (slang != null) {
+      slangCommandPath = slang.group(1);
+      slangCommandFile = File(slang.group(1)!).readAsStringSync();
+    }
     final body = json;
     if (body != null) {
       final target = RegExp('write_json "([^"]+)"').firstMatch(script!)!;
@@ -86,7 +93,115 @@ class _Missing implements ProcessRunner {
   }) => throw ProcessException(executable, arguments, 'not found', 2);
 }
 
+/// Answers every spawn with [exitCode] (or throws when [missing]) and counts
+/// the spawns, for the slang probe.
+class _ProbeRunner implements ProcessRunner {
+  _ProbeRunner({
+    this.exitCode = 0,
+    this.missing = false,
+    this.stdout =
+        "-- Running command `help read_slang' --\n\n"
+        '    read_slang [options] [filename]\n',
+  });
+
+  final int exitCode;
+  final bool missing;
+  final String stdout;
+  final List<List<String>> calls = [];
+
+  @override
+  Future<ProcessRunResult> run(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+    Map<String, String>? environment,
+    Duration? timeout,
+    Future<void>? cancelSignal,
+    String? stdoutFilePath,
+    void Function(String line)? onStderrLine,
+  }) async {
+    calls.add([executable, ...arguments]);
+    if (missing) throw ProcessException(executable, arguments, 'nope', 2);
+    return ProcessRunResult(exitCode: exitCode, stdout: stdout, stderr: '');
+  }
+}
+
 void main() {
+  group('YosysAvailabilityService.probeSlang', () {
+    setUp(YosysAvailabilityService.resetSlangProbeCacheForTesting);
+
+    test(
+      'asks for help on read_slang; its usage line means available',
+      () async {
+        final runner = _ProbeRunner();
+        final service = YosysAvailabilityService(
+          runner: runner,
+          executableNameOverride: '/oss/bin/yosys',
+        );
+        expect(await service.probeSlang(), isTrue);
+        expect(runner.calls.single, [
+          '/oss/bin/yosys',
+          '-Q',
+          '-T',
+          '-p',
+          'help read_slang',
+        ]);
+      },
+    );
+
+    test('exit 0 is not enough: Homebrew Yosys answers "No such command" '
+        'and exits 0', () async {
+      expect(
+        await YosysAvailabilityService(
+          runner: _ProbeRunner(
+            stdout:
+                "-- Running command `help read_slang' --\n"
+                'No such command or cell type: read_slang\n',
+          ),
+          executableNameOverride: '/brew/bin/yosys',
+        ).probeSlang(),
+        isFalse,
+      );
+    });
+
+    test('a Yosys without the command, or no Yosys, is not', () async {
+      expect(
+        await YosysAvailabilityService(
+          runner: _ProbeRunner(exitCode: 1),
+          executableNameOverride: '/brew/bin/yosys',
+        ).probeSlang(),
+        isFalse,
+      );
+      expect(
+        await YosysAvailabilityService(
+          runner: _ProbeRunner(missing: true),
+          executableNameOverride: '/none/yosys',
+        ).probeSlang(),
+        isFalse,
+      );
+    });
+
+    test('the answer is cached per executable path', () async {
+      final runner = _ProbeRunner();
+      final a = YosysAvailabilityService(
+        runner: runner,
+        executableNameOverride: '/a/yosys',
+      );
+      await a.probeSlang();
+      await a.probeSlang();
+      await YosysAvailabilityService(
+        runner: runner,
+        executableNameOverride: '/a/yosys',
+      ).probeSlang();
+      expect(runner.calls, hasLength(1));
+      await YosysAvailabilityService(
+        runner: runner,
+        executableNameOverride: '/b/yosys',
+      ).probeSlang();
+      expect(runner.calls, hasLength(2));
+    });
+  });
+
   late Directory temp;
   setUp(() => temp = Directory.systemTemp.createTempSync('crux_yosys_fe_'));
   tearDown(() {
@@ -129,26 +244,103 @@ void main() {
       );
     });
 
-    test('slang reads every source in one bare read_slang', () {
+    test('slang reads one command file', () {
+      const request = YosysRunRequest(
+        sources: [YosysSourceFile('/r/a.v')],
+        topModule: 'a',
+        frontend: YosysFrontend.slang,
+      );
       expect(
-        script(
-          const YosysRunRequest(
-            sources: [
-              YosysSourceFile('/r/a.v'),
-              YosysSourceFile.systemVerilog('/r/p.sv'),
-            ],
-            includePaths: ['/r/inc'],
-            defines: ['W=4'],
-            topModule: 'a',
-            frontend: YosysFrontend.slang,
-          ),
+        YosysRunner.buildScript(
+          request,
+          jsonOutputPath: '/t/out.json',
+          slangCommandFile: '/t/read.f',
         ),
-        'read_slang -I /r/inc -D W=4 /r/a.v /r/p.sv; '
-        'hierarchy -check -top a; proc; write_json "/t/out.json"',
+        'read_slang -f /t/read.f; hierarchy -check -top a; proc; '
+        'write_json "/t/out.json"',
+      );
+      expect(() => script(request), throwsArgumentError);
+      expect(YosysRunner.readSourcePaths(request), ['/r/a.v']);
+    });
+
+    test('a slang run writes single-unit, top, options, -I, -D and quoted '
+        'sources into a command file in its temp directory, then removes '
+        'it', () async {
+      final runner = _Recorder(json: '{"modules": {}}');
+      final result =
+          await YosysRunner(
+            processRunner: runner,
+            tempDirectory: temp,
+          ).run(
+            const YosysRunRequest(
+              sources: [
+                YosysSourceFile('/r/my design/a.v'),
+                YosysSourceFile.systemVerilog('/r/p.sv'),
+              ],
+              includePaths: ['/r/inc dir'],
+              defines: ['W=4'],
+              topModule: 'a',
+              frontend: YosysFrontend.slang,
+              slangOptions: ['--ignore-initial', '--ignore-assertions'],
+            ),
+          );
+      expect(result, isA<YosysRunSuccess>());
+      expect(runner.slangCommandPath, startsWith(temp.path));
+      expect(runner.slangCommandFile, '''
+--single-unit
+--top a
+--ignore-initial
+--ignore-assertions
+-I "/r/inc dir"
+-D W=4
+"/r/my design/a.v"
+"/r/p.sv"
+''');
+      expect(File(runner.slangCommandPath!).existsSync(), isFalse);
+      expect(temp.listSync(), isEmpty);
+    });
+
+    test('no top, no --top; single-unit always', () {
+      expect(
+        YosysScriptCommands.slangCommandFile(['/r/a.sv']),
+        '--single-unit\n"/r/a.sv"\n',
       );
     });
 
-    test('slang refuses a source path with white space', () async {
+    test('a slang option outside the allow-list is refused unrun', () async {
+      for (final bad in [
+        '--allow-hierarchical-const',
+        '--ignore-initial --top x',
+        '--blackboxed-module a;b',
+        '-D X=1',
+        '',
+      ]) {
+        final runner = _Recorder(json: '{}');
+        final result =
+            await YosysRunner(
+              processRunner: runner,
+              tempDirectory: temp,
+            ).run(
+              YosysRunRequest(
+                sources: const [YosysSourceFile('/r/a.sv')],
+                frontend: YosysFrontend.slang,
+                slangOptions: [bad],
+              ),
+            );
+        expect(
+          result,
+          isA<YosysRunFailure>().having(
+            (f) => f.kind,
+            'kind',
+            YosysFailureKind.invalidRequest,
+          ),
+          reason: bad,
+        );
+        expect(runner.executables, isEmpty, reason: bad);
+      }
+    });
+
+    test('slang options under another frontend are refused', () async {
       final runner = _Recorder(json: '{}');
       final result =
           await YosysRunner(
@@ -156,8 +348,9 @@ void main() {
             tempDirectory: temp,
           ).run(
             const YosysRunRequest(
-              sources: [YosysSourceFile('/r/my design/a.v')],
-              frontend: YosysFrontend.slang,
+              sources: [YosysSourceFile('/r/a.sv')],
+              frontend: YosysFrontend.verilogFormal,
+              slangOptions: ['--ignore-initial'],
             ),
           );
       expect(
@@ -169,6 +362,33 @@ void main() {
         ),
       );
       expect(runner.executables, isEmpty);
+    });
+
+    test('every allow-listed option is accepted', () {
+      for (final ok in [
+        '--ignore-initial',
+        '--ignore-assertions',
+        '--compat vcs',
+        '--blackboxed-module rglts_pdm_3p3v',
+        r'--blackboxed-module a$b',
+      ]) {
+        expect(() => YosysScriptCommands.checkSlangOption(ok), returnsNormally);
+      }
+    });
+
+    test('slang options are part of a request’s identity', () {
+      const a = YosysRunRequest(
+        sources: [YosysSourceFile('/r/a.v')],
+        frontend: YosysFrontend.slang,
+      );
+      const b = YosysRunRequest(
+        sources: [YosysSourceFile('/r/a.v')],
+        frontend: YosysFrontend.slang,
+        slangOptions: ['--ignore-initial'],
+      );
+      expect(a == b, isFalse);
+      expect(a.copyWith().slangOptions, isEmpty);
+      expect(b.copyWith().slangOptions, ['--ignore-initial']);
     });
 
     test('the frontend survives VHDL lowering', () async {
@@ -257,8 +477,11 @@ void main() {
       );
     });
 
-    test('readSlang and hierarchy', () {
-      expect(YosysScriptCommands.readSlang(['/a.sv']), 'read_slang /a.sv');
+    test('readSlangCommandFile and hierarchy', () {
+      expect(
+        YosysScriptCommands.readSlangCommandFile('/t/read.f'),
+        'read_slang -f /t/read.f',
+      );
       expect(YosysScriptCommands.hierarchy('top'), 'hierarchy -check -top top');
     });
 
@@ -272,7 +495,22 @@ void main() {
         throwsArgumentError,
       );
       expect(
-        () => YosysScriptCommands.readSlang(['/a b.sv']),
+        () => YosysScriptCommands.readSlangCommandFile('/t b/read.f'),
+        throwsArgumentError,
+      );
+      expect(
+        () => YosysScriptCommands.slangCommandFile(['/a".sv']),
+        throwsArgumentError,
+      );
+      expect(
+        () => YosysScriptCommands.slangCommandFile(['/a.sv'], top: 'a b'),
+        throwsArgumentError,
+      );
+      expect(
+        () => YosysScriptCommands.slangCommandFile(
+          ['/a.sv'],
+          defines: ['A B'],
+        ),
         throwsArgumentError,
       );
       expect(

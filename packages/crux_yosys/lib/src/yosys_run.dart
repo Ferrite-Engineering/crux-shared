@@ -36,13 +36,36 @@ enum YosysFrontend {
   verilogFormal,
 
   /// The yosys-slang frontend, `read_slang`, which reads every Verilog and
-  /// SystemVerilog source as SystemVerilog in one command.
+  /// SystemVerilog source as SystemVerilog in one compilation unit.
   ///
-  /// Needs a Yosys with yosys-slang available (the OSS CAD Suite build has
-  /// it); any other fails with Yosys's own "No such command: read_slang".
-  /// `read_slang` does not strip quotes from file names, so its file names
-  /// are emitted bare, and a source path containing white space is refused
-  /// as an invalid request rather than passed as two broken tokens.
+  /// Needs a Yosys with yosys-slang (the OSS CAD Suite build has it built
+  /// in; Homebrew's does not): ask `YosysAvailabilityService.probeSlang`
+  /// first. Without it the run fails with Yosys's own "No such command".
+  ///
+  /// What the runner passes, and why (measured on OpenTitan earlgrey, Ibex
+  /// and CVA6):
+  ///
+  /// - `--single-unit` always: macros then cross files, as they do in one
+  ///   `read_verilog`; without it every `` `ASSERT `` after its defining
+  ///   file is undefined.
+  /// - `--top <topModule>` whenever a top is set: otherwise slang elaborates
+  ///   every module in the file list, including ones the top never
+  ///   instantiates.
+  /// - The request's allow-listed [YosysRunRequest.slangOptions].
+  /// - Sources, `-I` and `-D` through a temporary command file
+  ///   (`read_slang -f`) in the runner's temp directory, removed with the
+  ///   run: paths there are quoted, so a path with spaces works (a quoted
+  ///   name on `read_slang`'s own command line keeps its quotes), and a
+  ///   list of hundreds of files stays out of the process argument limit.
+  ///   The temp directory's own path must not contain white space.
+  ///
+  /// What a caller must know about the result: yosys-slang writes each `src`
+  /// file **relative to Yosys's working directory** (`../../rtl/x.sv`), with
+  /// or without `--diag-abs-paths`, so resolve span files against the
+  /// directory Yosys ran in (this process's, for the runner) before
+  /// relating them to the project; and it writes an asynchronously reset
+  /// flip-flop as `$aldff` and a port connection as a `$buf` cell, where the
+  /// built-in reader writes `$adff` and a plain wire.
   slang,
 }
 
@@ -107,6 +130,7 @@ class YosysRunRequest {
     this.vhdlStandard,
     this.vhdlTopUnit,
     this.frontend = YosysFrontend.verilog,
+    this.slangOptions = const <String>[],
   });
 
   /// Convenience constructor that takes a list of Verilog file paths.
@@ -171,6 +195,15 @@ class YosysRunRequest {
   /// for.
   final YosysFrontend frontend;
 
+  /// The caller's own `read_slang` options, for [YosysFrontend.slang] only
+  /// (a request with any under another frontend is refused). Each entry is
+  /// one option from a fixed allow-list (`YosysScriptCommands.slangOptions`
+  /// says which): `--ignore-initial`, `--ignore-assertions`,
+  /// `--compat vcs`, or `--blackboxed-module <identifier>`. A lint pass that
+  /// reads no assertion passes the first two; a formal read passes neither.
+  /// Anything else is an invalid request.
+  final List<String> slangOptions;
+
   /// A copy with [includePaths] replaced; every other field, [frontend]
   /// included, is carried over.
   YosysRunRequest copyWith({List<String>? includePaths}) => YosysRunRequest(
@@ -182,6 +215,7 @@ class YosysRunRequest {
     vhdlStandard: vhdlStandard,
     vhdlTopUnit: vhdlTopUnit,
     frontend: frontend,
+    slangOptions: slangOptions,
   );
 
   /// Returns true if any source in [sources] is VHDL.
@@ -213,6 +247,7 @@ class YosysRunRequest {
     if (!_listEq(other.defines, defines)) return false;
     if (!_listEq(other.includePaths, includePaths)) return false;
     if (!_listEq(other.extraCommands, extraCommands)) return false;
+    if (!_listEq(other.slangOptions, slangOptions)) return false;
     return true;
   }
 
@@ -226,6 +261,7 @@ class YosysRunRequest {
     Object.hashAll(defines),
     Object.hashAll(includePaths),
     Object.hashAll(extraCommands),
+    Object.hashAll(slangOptions),
   );
 }
 

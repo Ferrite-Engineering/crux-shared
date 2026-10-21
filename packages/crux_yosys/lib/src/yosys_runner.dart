@@ -138,7 +138,12 @@ class YosysRunner {
     // Holds the links to include directories whose paths contain whitespace;
     // removed in the finally. Null when no include directory needs one.
     Directory? includeLinkDirectory;
+    // Holds a slang request's `read_slang -f` command file; removed in the
+    // finally. Null for the other frontends.
+    File? slangCommandFile;
     try {
+      // Refuse an unacceptable slang option before anything is spawned.
+      _checkSlangOptions(request);
       // VHDL pre-synth: lower every VHDL source to Verilog with a
       // standalone `ghdl --synth` before Yosys ever runs. On any non-happy
       // outcome (killed, non-zero exit, empty emission) return early with
@@ -179,10 +184,32 @@ class YosysRunner {
           loweredVerilogFile.path,
         );
       }
-      final linked = _linkWhitespaceIncludeDirs(effectiveRequest);
-      includeLinkDirectory = linked.directory;
-      effectiveRequest = linked.request;
-      final script = _buildScript(effectiveRequest, jsonFile.path);
+      final String script;
+      if (effectiveRequest.frontend == YosysFrontend.slang) {
+        // The command file quotes every path, so include directories need
+        // no whitespace-free links.
+        final commandFile = _allocateTempFile('f');
+        slangCommandFile = commandFile;
+        commandFile.writeAsStringSync(
+          YosysScriptCommands.slangCommandFile(
+            _readSources(effectiveRequest),
+            top: effectiveRequest.topModule,
+            includePaths: effectiveRequest.includePaths,
+            defines: effectiveRequest.defines,
+            options: effectiveRequest.slangOptions,
+          ),
+        );
+        script = _buildScript(
+          effectiveRequest,
+          jsonFile.path,
+          slangCommandFile: commandFile.path,
+        );
+      } else {
+        final linked = _linkWhitespaceIncludeDirs(effectiveRequest);
+        includeLinkDirectory = linked.directory;
+        effectiveRequest = linked.request;
+        script = _buildScript(effectiveRequest, jsonFile.path);
+      }
       return await _runScriptAndRead(
         script,
         jsonFile,
@@ -207,7 +234,11 @@ class YosysRunner {
       return _unreadableJsonFailure(e);
     } finally {
       // Best-effort cleanup; ignore if a file was never created.
-      for (final file in <File?>[jsonFile, loweredVerilogFile]) {
+      for (final file in <File?>[
+        jsonFile,
+        loweredVerilogFile,
+        slangCommandFile,
+      ]) {
         if (file != null && file.existsSync()) {
           try {
             file.deleteSync();
@@ -604,7 +635,12 @@ class YosysRunner {
   /// Exposed at library scope (via [buildScript]) so tests and the
   /// consuming-product verification helpers can assert on the exact
   /// script the runner would emit without spawning a subprocess.
-  static String _buildScript(YosysRunRequest request, String jsonOutputPath) {
+  static String _buildScript(
+    YosysRunRequest request,
+    String jsonOutputPath, {
+    String? slangCommandFile,
+  }) {
+    _checkSlangOptions(request);
     final verilogSources = <YosysSourceFile>[];
     final systemVerilogSources = <YosysSourceFile>[];
     for (final src in request.sources) {
@@ -654,18 +690,20 @@ class YosysRunner {
           );
         }
       case YosysFrontend.slang:
-        // One read for every source: slang reads Verilog as SystemVerilog,
-        // and splitting the files would elaborate them as separate designs.
-        final sources = [...verilogSources, ...systemVerilogSources];
-        if (sources.isNotEmpty) {
-          commands.add(
-            YosysScriptCommands.readSlang(
-              [for (final s in sources) s.path],
-              includePaths: request.includePaths,
-              defines: request.defines,
-            ),
+        // One read of one command file for every source (see
+        // [YosysScriptCommands.slangCommandFile]): slang reads Verilog as
+        // SystemVerilog, and splitting the files would elaborate them as
+        // separate designs.
+        if (slangCommandFile == null) {
+          throw ArgumentError.value(
+            null,
+            'slangCommandFile',
+            'A slang request reads its sources from a command file',
           );
         }
+        commands.add(
+          YosysScriptCommands.readSlangCommandFile(slangCommandFile),
+        );
     }
 
     final hierarchy = StringBuffer('hierarchy -check');
@@ -696,10 +734,45 @@ class YosysRunner {
   /// lowered to Verilog out-of-band (see [buildGhdlSynthArguments]) before
   /// the request reaches the script builder, so a raw request that still
   /// carries VHDL sources yields a script with no read command for them.
+  ///
+  /// A [YosysFrontend.slang] request reads a command file; pass the path it
+  /// would have as [slangCommandFile] (its contents are
+  /// [YosysScriptCommands.slangCommandFile] over [readSourcePaths]).
   static String buildScript(
     YosysRunRequest request, {
     required String jsonOutputPath,
-  }) => _buildScript(request, jsonOutputPath);
+    String? slangCommandFile,
+  }) => _buildScript(
+    request,
+    jsonOutputPath,
+    slangCommandFile: slangCommandFile,
+  );
+
+  /// The Verilog and SystemVerilog sources of [request], in order: what the
+  /// read command (or a slang command file) names. VHDL sources are
+  /// lowered first and named by the lowered file instead.
+  static List<String> readSourcePaths(YosysRunRequest request) =>
+      _readSources(request);
+
+  static List<String> _readSources(YosysRunRequest request) => [
+    for (final s in request.sources)
+      if (s.language != YosysSourceLanguage.vhdl) s.path,
+  ];
+
+  /// Throws [ArgumentError] for a request whose `slangOptions` the runner
+  /// would refuse: any under a frontend other than slang, or any outside
+  /// [YosysScriptCommands.slangOptions].
+  static void _checkSlangOptions(YosysRunRequest request) {
+    if (request.slangOptions.isEmpty) return;
+    if (request.frontend != YosysFrontend.slang) {
+      throw ArgumentError.value(
+        request.slangOptions,
+        'slangOptions',
+        'read_slang options apply only to the slang frontend',
+      );
+    }
+    request.slangOptions.forEach(YosysScriptCommands.checkSlangOption);
+  }
 
   static String _buildCallerScript(
     YosysScriptRequest request,
@@ -942,22 +1015,77 @@ abstract final class YosysScriptCommands {
     return buffer.toString();
   }
 
-  /// `read_slang [-I dir]... [-D def]... <file>...`, the yosys-slang
-  /// frontend.
+  /// `read_slang -f <commandFile>`: the yosys-slang frontend, reading its
+  /// sources and options from a command file written with
+  /// [slangCommandFile].
   ///
-  /// `read_slang` does not strip quotes from a file name, so the files are
-  /// emitted bare and a path containing white space throws.
-  static String readSlang(
-    List<String> paths, {
+  /// `read_slang` keeps the quotes of a quoted name on its own command line,
+  /// so [commandFile] is emitted bare and a path with white space throws:
+  /// write the command file in a directory whose path has none.
+  static String readSlangCommandFile(String commandFile) {
+    final path = YosysRunner._bareOption(
+      commandFile,
+      'A read_slang command file',
+    );
+    return 'read_slang -f $path';
+  }
+
+  /// The options a request may add to a slang read: each entry one of
+  /// these, `--blackboxed-module` followed by one identifier.
+  static const List<String> slangOptions = [
+    '--ignore-initial',
+    '--ignore-assertions',
+    '--compat vcs',
+    '--blackboxed-module <identifier>',
+  ];
+
+  static final RegExp _blackboxed = RegExp(
+    r'^--blackboxed-module ([A-Za-z_][A-Za-z0-9_$]*)$',
+  );
+
+  /// Throws [ArgumentError] unless [option] is one of [slangOptions].
+  static void checkSlangOption(String option) {
+    if (option == '--ignore-initial' ||
+        option == '--ignore-assertions' ||
+        option == '--compat vcs' ||
+        _blackboxed.hasMatch(option)) {
+      return;
+    }
+    throw ArgumentError.value(
+      option,
+      'slangOptions',
+      'Not an allowed read_slang option (allowed: ${slangOptions.join(', ')})',
+    );
+  }
+
+  /// The contents of a `read_slang -f` command file, one entry per line:
+  /// `--single-unit` (always, so macros cross files as they do in one
+  /// `read_verilog`), `--top <top>` when [top] is set (so modules the top
+  /// never instantiates are not elaborated), the allow-listed [options],
+  /// then `-I "<dir>"`, `-D <define>` and `"<source>"`, paths double-quoted
+  /// so white space in them is kept.
+  ///
+  /// Throws [ArgumentError] for a path or define holding a double quote,
+  /// `;` or a newline, a define with white space, a top that is not a bare
+  /// identifier, or an option outside [slangOptions].
+  static String slangCommandFile(
+    List<String> sources, {
+    String? top,
     List<String> includePaths = const <String>[],
     List<String> defines = const <String>[],
+    List<String> options = const <String>[],
   }) {
-    final buffer = StringBuffer('read_slang');
-    _writeOptions(buffer, includePaths, defines);
-    for (final path in paths) {
-      buffer.write(' ${YosysRunner._bareOption(path, 'A read_slang source')}');
-    }
-    return buffer.toString();
+    options.forEach(checkSlangOption);
+    return <String>[
+      '--single-unit',
+      if (top != null && top.isNotEmpty)
+        '--top ${YosysRunner._identifier(top)}',
+      ...options,
+      for (final inc in includePaths) '-I "${YosysRunner._escape(inc)}"',
+      for (final def in defines) '-D ${YosysRunner._bareOption(def, 'Define')}',
+      for (final path in sources) '"${YosysRunner._escape(path)}"',
+      '',
+    ].join('\n');
   }
 
   /// `hierarchy -check -top <top>`, the top name checked as a bare

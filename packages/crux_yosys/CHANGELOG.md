@@ -8,18 +8,31 @@
   frontend.** `verilogFormal` reads with `read_verilog -formal` (`-formal
   -sv` for SystemVerilog), so `assert`, `assume`, `cover` and `$past` are
   read instead of refused; `slang` reads every source in one `read_slang`.
-  `read_slang` keeps the quotes of a quoted file name, so its files are
-  emitted bare and a path with white space is an invalid request. The
-  default, `verilog`, is the script as before. The frontend survives VHDL
-  lowering and include-directory linking (`YosysRunRequest.copyWith`).
+  The slang read is what OpenTitan earlgrey, Ibex and CVA6 were measured to
+  need: `--single-unit` always (macros cross files), `--top <topModule>`
+  when a top is set (modules the top never instantiates are not
+  elaborated), the request's `slangOptions` from a fixed allow-list
+  (`--ignore-initial`, `--ignore-assertions`, `--compat vcs`,
+  `--blackboxed-module <id>`; anything else, or any option under another
+  frontend, is an invalid request), and sources, `-I` and `-D` in a
+  temporary `read_slang -f` command file with quoted paths, written in the
+  runner's temp directory and removed with the run (paths with spaces work;
+  a long file list stays out of argv). The default, `verilog`, is the
+  script as before. The frontend survives VHDL lowering and
+  include-directory linking (`YosysRunRequest.copyWith`).
+- **`YosysAvailabilityService.probeSlang`**: whether this Yosys has
+  `read_slang`, from `yosys -Q -T -p "help read_slang"`, cached per
+  executable path. It reads the answer, not the exit status: Homebrew
+  Yosys 0.69 prints "No such command" and exits 0.
 - **`YosysRunner.runScript` and `YosysScriptCommands`: a caller-written
   script.** For steps the fixed elaboration cannot express, such as reading
   a Liberty library before a gate-level design: the statements run in
   order, `write_json` is appended, and the result is the same
   `YosysRunResult` with the same never-throws, kill and cleanup behaviour.
   Each statement must be one statement (no `;` or newline, quotes paired);
-  `readLiberty`, `readVerilog`, `readSlang` and `hierarchy` build them with
-  the fixed script's quoting and checks.
+  `readLiberty`, `readVerilog`, `readSlangCommandFile` (with
+  `slangCommandFile` for its contents) and `hierarchy` build them with the
+  fixed script's quoting and checks.
 - **`YosysRunner.lowerVhdl`: the VHDL lowering on its own.** Runs the same
   standalone `ghdl --synth --out=verilog` and keeps the emitted Verilog at
   a path the caller chose, for a tool that needs the Verilog itself (an

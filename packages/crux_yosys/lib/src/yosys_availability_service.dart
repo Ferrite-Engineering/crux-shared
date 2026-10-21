@@ -98,6 +98,47 @@ class YosysAvailabilityService {
     }
   }
 
+  static final Map<String, Future<bool>> _slangByExecutable = {};
+
+  /// Whether this Yosys has the yosys-slang frontend (`read_slang`), the
+  /// precondition for `YosysFrontend.slang`.
+  ///
+  /// Runs `yosys -Q -T -p "help read_slang"` and reads the answer, not the
+  /// exit status: a Yosys without the command (Homebrew's 0.69) prints "No
+  /// such command or cell type" and still exits 0. Available means exit 0
+  /// and the command's own usage line (`read_slang [options]`) in the
+  /// output, which the OSS CAD Suite build, with yosys-slang built in,
+  /// prints. A missing binary or a timeout is not available. Never throws.
+  /// The answer is cached per
+  /// executable path for the life of the process, so a caller may ask before
+  /// every elaboration; [resetSlangProbeCacheForTesting] clears it.
+  Future<bool> probeSlang() => _slangByExecutable.putIfAbsent(
+    _executableName,
+    _runSlangProbe,
+  );
+
+  Future<bool> _runSlangProbe() async {
+    try {
+      final result = await _runner.run(
+        _executableName,
+        const <String>['-Q', '-T', '-p', 'help read_slang'],
+        timeout: probeTimeout,
+      );
+      final output = '${result.stdout}\n${result.stderr}';
+      return result.termination == ProcessTermination.exited &&
+          result.exitCode == 0 &&
+          output.contains('read_slang [') &&
+          !output.contains('No such command');
+    } on ProcessException {
+      return false;
+    } on ProcessOutputIncompleteException {
+      return false;
+    }
+  }
+
+  /// Clears the per-executable cache [probeSlang] keeps.
+  static void resetSlangProbeCacheForTesting() => _slangByExecutable.clear();
+
   /// Pulls the first non-empty line out of `yosys -V` output. Yosys
   /// writes the banner to stdout in current releases but historically
   /// has used stderr; we accept either.
