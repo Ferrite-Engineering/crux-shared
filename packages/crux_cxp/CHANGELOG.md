@@ -1,3 +1,19 @@
+## 0.11.0
+
+`CxpDiscovery.stop()` now waits for a scan in flight. Package **minor**:
+`CxpDiscovery` gains a constructor parameter, `stopTimeout`, and `stop()`
+can now throw. No wire change.
+
+### `stop()` completes only once no scan is running
+
+A scan already in flight is told to give up at its next step and is
+awaited, so when `stop()` returns discovery holds no directory listing and
+no manifest file open and the manifest directory can be deleted at once,
+which on Windows an open handle prevents. The wait is bounded by
+`stopTimeout` (default 5 s). A scan still running after that is reported
+rather than swallowed: the stop is otherwise complete, and `stop()` throws a
+`TimeoutException` naming the directory. Calling it again waits again.
+
 ## 0.10.0
 
 Wire **1.3**: mutual peer authentication. The listener now proves to the
