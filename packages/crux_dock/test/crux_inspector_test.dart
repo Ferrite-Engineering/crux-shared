@@ -749,6 +749,31 @@ void main() {
     });
   }
 
+  testWidgets('the apply bar wraps instead of overflowing in a narrow dock', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        const Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 150,
+            child: CruxInspectorApplyBar(
+              applyLabel: 'Add Decoder',
+              revertLabel: 'Cancel',
+              onApply: null,
+              onRevert: null,
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('Add Decoder'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(tester.getBottomRight(find.text('Add Decoder')).dx, lessThan(150));
+  });
+
   test('the inspector opens no route', () {
     // Being a dock tab, not a route, is what keeps it inside the editor
     // tab's provider scope. A route opened from here would mount above it.

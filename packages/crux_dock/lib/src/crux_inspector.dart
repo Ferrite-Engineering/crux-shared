@@ -812,12 +812,20 @@ class CruxInspectorApplyBar extends StatelessWidget {
   final VoidCallback? onRevert;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisAlignment: MainAxisAlignment.end,
-    children: <Widget>[
-      TextButton(onPressed: onRevert, child: Text(revertLabel)),
-      const SizedBox(width: 8),
-      FilledButton(onPressed: onApply, child: Text(applyLabel)),
-    ],
+  // A Wrap, not a Row: in a narrow dock the two buttons plus a long label
+  // ("Add Decoder", a translation) are wider than the Inspector, and a Row
+  // overflows; the Wrap drops Apply onto its own line instead.
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    child: Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
+      children: <Widget>[
+        TextButton(onPressed: onRevert, child: Text(revertLabel)),
+        FilledButton(onPressed: onApply, child: Text(applyLabel)),
+      ],
+    ),
   );
 }
