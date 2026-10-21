@@ -298,8 +298,16 @@ class CxpDiscovery {
   /// The scan in progress, if any. A tick that finds one does nothing.
   Future<void>? _scanInFlight;
 
+  StreamController<CxpPeerManifest> _identityChanges =
+      StreamController<CxpPeerManifest>.broadcast();
+
   /// Stream of discovery events.
   Stream<CxpDiscoveryEvent> get events => _events.stream;
+
+  /// The manifest of a peer already known whose identity changed between
+  /// two scans, such as a new [PeerIdentity.activeDocument]. Not a presence
+  /// event: the peer neither appeared nor left, so [events] says nothing.
+  Stream<CxpPeerManifest> get identityChanges => _identityChanges.stream;
 
   /// Snapshot of currently-known peers.
   List<CxpPeerManifest> get peers => List.unmodifiable(_known.values);
@@ -313,6 +321,7 @@ class CxpDiscovery {
     if (_running) return;
     if (_events.isClosed) {
       _events = StreamController<CxpDiscoveryEvent>.broadcast();
+      _identityChanges = StreamController<CxpPeerManifest>.broadcast();
       _known.clear();
     }
     _running = true;
@@ -345,6 +354,7 @@ class CxpDiscovery {
       _timer?.cancel();
       _timer = null;
       await _events.close();
+      await _identityChanges.close();
     }
     await _awaitIdle();
   }
@@ -530,12 +540,15 @@ class CxpDiscovery {
 
     _dedupeByIdentity(found);
 
-    // Emit add events for new peers.
+    // Emit add events for new peers, and identity changes for known ones.
     for (final entry in found.entries) {
-      if (!_known.containsKey(entry.key)) {
+      final previous = _known[entry.key];
+      if (previous == null) {
         if (!_events.isClosed) {
           _events.add(CxpDiscoveryEvent(added: true, manifest: entry.value));
         }
+      } else if (previous.identity != entry.value.identity) {
+        if (!_identityChanges.isClosed) _identityChanges.add(entry.value);
       }
     }
     // Emit remove events for peers that vanished.
@@ -752,6 +765,36 @@ class CxpManifestWriter {
     if (interval != null) {
       _heartbeat = Timer.periodic(interval, (_) => _refresh());
     }
+  }
+
+  /// Republish the manifest at once with [identity], keeping the host, port
+  /// and heartbeat of the last [write].
+  ///
+  /// This is how a value that changes while the peer runs, such as
+  /// [PeerIdentity.activeDocument], reaches other peers: the `hello` a peer
+  /// sent is fixed for its connection, so they read the current value from
+  /// the manifest they rescan. Writes already in flight are waited out
+  /// first, so an older heartbeat cannot land after this one. [identity]
+  /// must keep the [PeerIdentity.peerId] the manifest was written for.
+  /// Does nothing before [write] or after [remove].
+  Future<void> updateIdentity(PeerIdentity identity) async {
+    final current = _identity;
+    if (current == null) return;
+    if (identity.peerId != current.peerId) {
+      throw ArgumentError.value(
+        identity.peerId,
+        'identity.peerId',
+        'must match the peer the manifest was written for',
+      );
+    }
+    _identity = identity;
+    await Future.wait([
+      for (final write in _writes.toList()) write.catchError((Object _) {}),
+    ]);
+    final host = _host;
+    final port = _port;
+    if (_identity != identity || host == null || port == null) return;
+    await _writeOnce(identity: identity, host: host, port: port);
   }
 
   Future<void> _writeOnce({

@@ -143,6 +143,37 @@ void main() {
         'riscv.formal.trace_step',
       );
     });
+
+    test('the generic formal binding and its attribute keys are the spec '
+        'literals', () {
+      expect(CxpStreamCoordinate.formalTraceStepStreamId, 'formal.trace_step');
+      expect(CxpStreamCoordinate.formalVerdictAttribute, 'formal.verdict');
+      expect(
+        CxpStreamCoordinate.formalDepthConfiguredAttribute,
+        'formal.depth_configured',
+      );
+      expect(
+        CxpStreamCoordinate.formalPropertyKindAttribute,
+        'formal.property_kind',
+      );
+      expect(CxpStreamCoordinate.formalModeAttribute, 'formal.mode');
+    });
+
+    test('a formal.trace_step coordinate carries the equivalence partition '
+        'as its sub_id', () {
+      final coord = CxpStreamCoordinate(
+        streamId: CxpStreamCoordinate.formalTraceStepStreamId,
+        sequenceIndex: 0,
+        subId: 'alu.y',
+        attributes: const <String, String>{
+          CxpStreamCoordinate.formalVerdictAttribute: 'fail',
+        },
+      );
+      final back = CxpStreamCoordinate.tryFromJson(coord.toJson())!;
+      expect(back, coord);
+      expect(back.sequenceIndex, 0, reason: 'the initial state is step 0');
+      expect(back.subId, 'alu.y');
+    });
   });
 
   group('coordinate on the wire', () {

@@ -1,3 +1,60 @@
+## 0.12.0
+
+The vocabulary of CXP 1.3 Working Draft rev. 9 (formal properties and
+implementation runs). Wire version unchanged: `cxpProtocolVersion` stays
+`1.3`, because every addition is to an open vocabulary (element kinds, stream
+ids, metadata keys) or an optional, ignorable identity field. Package
+**minor**: `KnownElementKind` gains three values, which breaks every
+exhaustive `switch` over it; consumers add the cases (on their existing
+decline branch until they handle the kinds).
+
+### Element kinds
+
+`ElementKind.property` (`property`: a formal assertion, assumption or cover,
+path `<file>:<line>[:<col>]` relative to the project root, role in the
+`formal.property_kind` metadata key), `ElementKind.timingPath`
+(`timing_path`: one reported timing path of one run, opaque path
+`<run id>/<rank>`) and `ElementKind.cell` (`cell`: a cell of a
+post-synthesis or post-place netlist, `<top>.<flat cell name>`), with their
+`KnownElementKind` values. The `KnownElementKind` doc now says what a new
+value is: an open-vocabulary registration in a revision of the
+specification, not a protocol version.
+
+### Stream binding and keys
+
+`CxpStreamCoordinate.formalTraceStepStreamId` (`formal.trace_step`, §9.9.3):
+the solver step of a formal counterexample or cover witness, initial state
+step 0, with the equivalence partition in `subId`; attribute keys
+`formal.verdict`, `formal.depth_configured`, `formal.property_kind` and
+`formal.mode`. `riscv.formal.trace_step` is unchanged. Registered metadata
+keys (§9.3.1): `cxpMappingMetadataKey` (`crux.mapping`, values
+`cxpMappingValues`), `cxpFormalPropertyKindMetadataKey`,
+`cxpFormalPropertyLabelMetadataKey`, `cxpFormalEqyGoldScopeMetadataKey` and
+`cxpFormalEqyGateScopeMetadataKey`. No artifact-kind constants: artifact
+kinds stay opaque and product-owned.
+
+### `PeerIdentity.activeDocument`
+
+An optional `active_document` on the identity (§8.1): the file or display
+name of the design the peer's active window has open, so several windows of
+one product can be told apart. Display only. `normalizeActiveDocument`
+reduces a value to its last path component, strips control and
+bidirectional-override characters and cuts it to
+`kCxpActiveDocumentMaxLength` (120); `fromJson` and `toJson` apply it, so a
+directory never travels. `withActiveDocument` returns a copy.
+
+A `hello` is fixed for its connection, so the current value travels in the
+manifest: `CxpManifestWriter.updateIdentity` republishes it at once
+(atomic, owner-only, after any write in flight), and
+`CxpDiscovery.identityChanges` reports a known peer whose identity changed
+between scans, separately from presence `events`.
+
+### Documentation
+
+`CxpWorkspaceStore.resolveArtifact` states §9.10.2's rule: `source` is one
+HDL file, a project file of any product is `project`, and a receiver
+resolving either passes `accepts`.
+
 ## 0.11.1
 
 Wire unchanged; Dart API unchanged. `CxpPathContainment` keys both sides of

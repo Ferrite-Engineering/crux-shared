@@ -60,6 +60,7 @@ class CruxCxpStrings {
     required this.noPeersRunningHelp,
     required this.selectionCommand,
     required this.instanceLabel,
+    required this.instanceDocumentLabel,
     required this.outcomeSent,
     required this.outcomeRefused,
     required this.outcomeNoResponse,
@@ -211,6 +212,11 @@ class CruxCxpStrings {
   /// One of several windows of a product: "WaveCrux 2".
   final String Function(String product, int ordinal) instanceLabel;
 
+  /// One of several windows of a product, with the design that window has
+  /// open: "WaveCrux 2 (alu.vcd)". The document is the peer's announced
+  /// active document, already reduced to display text.
+  final String Function(String instance, String document) instanceDocumentLabel;
+
   /// Spoken after a send landed.
   final String Function(String target) outcomeSent;
 
@@ -281,6 +287,7 @@ class CruxCxpStrings {
     noPeersRunningHelp: noPeersRunningHelp,
     selectionCommand: selectionCommand,
     instanceLabel: instanceLabel,
+    instanceDocumentLabel: instanceDocumentLabel,
     outcomeSent: outcomeSent,
     outcomeRefused: outcomeRefused,
     outcomeNoResponse: outcomeNoResponse,
@@ -380,6 +387,7 @@ class CruxCxpStrings {
         'cross-probe to it.',
     selectionCommand: 'Cross-probe Selection…',
     instanceLabel: (product, ordinal) => '$product $ordinal',
+    instanceDocumentLabel: (instance, document) => '$instance ($document)',
     outcomeSent: (target) => 'Cross-probed to $target',
     outcomeRefused: (target, reason) => 'Cross-probe to $target: $reason',
     outcomeNoResponse: (target) => '$target did not answer the cross-probe',
@@ -432,6 +440,7 @@ class CruxCxpStrings {
         '启动 WaveCrux、NetCrux、LintCrux 或 SimCrux 并开启 CXP，即可交叉探测到它。',
     selectionCommand: '交叉探测所选内容…',
     instanceLabel: (product, ordinal) => '$product $ordinal',
+    instanceDocumentLabel: (instance, document) => '$instance（$document）',
     outcomeSent: (target) => '已交叉探测到 $target',
     outcomeRefused: (target, reason) => '发送到 $target 的交叉探测：$reason',
     outcomeNoResponse: (target) => '$target 未响应交叉探测',
@@ -486,6 +495,7 @@ class CruxCxpStrings {
         'クロスプローブできます。',
     selectionCommand: '選択をクロスプローブ…',
     instanceLabel: (product, ordinal) => '$product $ordinal',
+    instanceDocumentLabel: (instance, document) => '$instance（$document）',
     outcomeSent: (target) => '$target へクロスプローブしました',
     outcomeRefused: (target, reason) => '$target へのクロスプローブ: $reason',
     outcomeNoResponse: (target) => '$target はクロスプローブに応答しませんでした',
@@ -540,6 +550,7 @@ class CruxCxpStrings {
         '교차 프로브할 수 있습니다.',
     selectionCommand: '선택 항목 교차 프로브…',
     instanceLabel: (product, ordinal) => '$product $ordinal',
+    instanceDocumentLabel: (instance, document) => '$instance ($document)',
     outcomeSent: (target) => '$target(으)로 교차 프로브했습니다',
     outcomeRefused: (target, reason) => '$target에 보낸 교차 프로브: $reason',
     outcomeNoResponse: (target) => '$target이(가) 교차 프로브에 응답하지 않았습니다',

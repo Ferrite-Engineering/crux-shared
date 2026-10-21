@@ -163,6 +163,13 @@ timeout and ends as a `CrossProbeOutcome`, reported the same way everywhere
 announced. Cross-probing is free; `crossProbeGateProvider` is the seam a
 pricing decision would use.
 
+A send carries one element, so a kind a target can act on only beside other
+elements (NetCrux's `timing_path` and `property`) comes after the kinds it can
+act on alone in that target's row. A product running in several windows is a
+submenu of them; a window that announced its open design with
+`CruxCxpRuntime.setActiveDocument` reads "WaveCrux 2 (alu.vcd)". The
+document is display text only.
+
 All words come from `CruxCxpStrings` in the suite's locales.
 
 ## Status

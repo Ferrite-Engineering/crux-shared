@@ -8,8 +8,11 @@ import 'package:meta/meta.dart';
 /// Exists so code that handles every kind it knows about can still switch
 /// exhaustively — `switch (kind.known) { … case null: … }` — while
 /// [ElementKind] itself stays open to kinds defined by products that ship
-/// after this library. Adding a value here is a minor protocol revision;
-/// receiving an unrecognised kind is not an error.
+/// after this library. Element kinds are an open vocabulary: adding a value
+/// here registers a kind in a revision of the specification without
+/// changing the protocol version, and receiving an unrecognised kind is not
+/// an error. Adding a value does break every exhaustive switch over this
+/// enum, so it is a minor version of this package.
 enum KnownElementKind {
   /// A bit or vector signal in a simulation trace or netlist.
   signal,
@@ -40,6 +43,20 @@ enum KnownElementKind {
 
   /// A free-form source-code location (file + line + optional column).
   source,
+
+  /// A formal property: an assertion, assumption or cover. The path is
+  /// `<file>:<line>[:<col>]`, relative to the project root; the role
+  /// travels in the `formal.property_kind` metadata key.
+  property,
+
+  /// One reported timing path of one implementation run. The path is
+  /// opaque (`<run id>/<rank>`); receivers act on the elements that
+  /// accompany it, never on the path.
+  timingPath,
+
+  /// A cell of a post-synthesis or post-place netlist, as
+  /// `<top>.<flat cell name>`.
+  cell,
 }
 
 /// Discriminator for the kind of design element an [ElementId] points to.
@@ -127,6 +144,23 @@ class ElementKind {
     KnownElementKind.source,
   );
 
+  /// A formal property (assertion, assumption or cover), addressed as
+  /// `<file>:<line>[:<col>]` relative to the project root.
+  static const ElementKind property = ElementKind._(
+    'property',
+    KnownElementKind.property,
+  );
+
+  /// One reported timing path of one implementation run; the path is
+  /// opaque.
+  static const ElementKind timingPath = ElementKind._(
+    'timing_path',
+    KnownElementKind.timingPath,
+  );
+
+  /// A cell of a post-synthesis or post-place netlist.
+  static const ElementKind cell = ElementKind._('cell', KnownElementKind.cell);
+
   /// Every kind this build defines by name, in declaration order.
   ///
   /// Kinds received from a peer that this build does not know are *not*
@@ -142,6 +176,9 @@ class ElementKind {
     test,
     breakpoint,
     source,
+    property,
+    timingPath,
+    cell,
   ];
 
   static const Map<String, ElementKind> _byName = <String, ElementKind>{
@@ -155,6 +192,9 @@ class ElementKind {
     'test': test,
     'breakpoint': breakpoint,
     'source': source,
+    'property': property,
+    'timing_path': timingPath,
+    'cell': cell,
   };
 
   /// The wire form of this kind. Stable; this is what crosses the socket.

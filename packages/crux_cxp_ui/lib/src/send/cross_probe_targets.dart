@@ -52,6 +52,14 @@ class CrossProbeSelection {
 /// The element kinds each suite product shows when asked, in the order a
 /// sender prefers them. The shared answer to "what do I send to WaveCrux?":
 /// the first kind the selection has, and the target accepts, wins.
+///
+/// A directed cross-probe carries one element. NetCrux lists
+/// [ElementKind.timingPath] and [ElementKind.property] last: a timing path's
+/// path is opaque and a property's is a source line, so NetCrux can act on
+/// either only beside the mapped signals, and a selection that also names
+/// a signal sends the signal. WaveCrux lists neither: a counterexample
+/// reaches it as a [ElementKind.source] element whose path is the trace,
+/// with the step in the coordinate.
 const Map<String, List<ElementKind>> kCrossProbeTargetKinds =
     <String, List<ElementKind>>{
       'wavecrux': <ElementKind>[
@@ -68,9 +76,12 @@ const Map<String, List<ElementKind>> kCrossProbeTargetKinds =
         ElementKind.net,
         ElementKind.port,
         ElementKind.instance,
+        ElementKind.cell,
         ElementKind.scope,
         ElementKind.signal,
         ElementKind.source,
+        ElementKind.timingPath,
+        ElementKind.property,
       ],
       'lintcrux': <ElementKind>[
         ElementKind.rule,

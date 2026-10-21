@@ -3,6 +3,9 @@
 
 import 'package:meta/meta.dart';
 
+/// The longest [PeerIdentity.activeDocument] kept, in characters (CXP §8.1).
+const int kCxpActiveDocumentMaxLength = 120;
+
 /// Self-description a CXP peer announces during the handshake.
 ///
 /// Every server start writes a manifest containing this identity, and
@@ -11,15 +14,24 @@ import 'package:meta/meta.dart';
 @immutable
 class PeerIdentity {
   /// Creates a peer identity.
+  ///
+  /// [activeDocument] is display text; [withActiveDocument] and
+  /// [PeerIdentity.fromJson]
+  /// reduce a value to it with [normalizeActiveDocument], and [toJson]
+  /// writes only the reduced form, so a directory never travels in it.
   const PeerIdentity({
     required this.peerId,
     required this.productName,
     required this.productVersion,
     this.capabilities = const <String>{},
+    this.activeDocument,
   });
 
   /// Decodes a [PeerIdentity] from its JSON form. Throws [FormatException]
   /// on missing required fields.
+  ///
+  /// An `active_document` that is not a string, or is empty once reduced
+  /// to display text, is read as absent.
   factory PeerIdentity.fromJson(Map<String, Object?> json) {
     final peerId = json['peer_id'];
     final productName = json['product_name'];
@@ -44,13 +56,46 @@ class PeerIdentity {
         if (entry is String) capabilities.add(entry);
       }
     }
+    final rawDocument = json['active_document'];
     return PeerIdentity(
       peerId: peerId,
       productName: productName,
       productVersion: productVersion,
       capabilities: capabilities,
+      activeDocument: rawDocument is String
+          ? normalizeActiveDocument(rawDocument)
+          : null,
     );
   }
+
+  /// Reduces [raw] to what [activeDocument] may hold: its last path
+  /// component (a directory never travels or shows), with control and
+  /// bidirectional-override characters removed, trimmed, and cut to
+  /// [kCxpActiveDocumentMaxLength] characters. Null when nothing is left.
+  static String? normalizeActiveDocument(String? raw) {
+    if (raw == null) return null;
+    final segments = raw
+        .split(RegExp(r'[/\\]'))
+        .where((segment) => segment.trim().isNotEmpty);
+    if (segments.isEmpty) return null;
+    final cleaned = String.fromCharCodes(
+      segments.last.runes.where((rune) => !_isHiddenControl(rune)),
+    ).trim();
+    if (cleaned.isEmpty) return null;
+    final runes = cleaned.runes.toList(growable: false);
+    if (runes.length <= kCxpActiveDocumentMaxLength) return cleaned;
+    return String.fromCharCodes(
+      runes.take(kCxpActiveDocumentMaxLength),
+    ).trimRight();
+  }
+
+  static bool _isHiddenControl(int rune) =>
+      rune < 0x20 ||
+      (rune >= 0x7f && rune <= 0x9f) ||
+      (rune >= 0x200b && rune <= 0x200f) ||
+      (rune >= 0x202a && rune <= 0x202e) ||
+      (rune >= 0x2066 && rune <= 0x2069) ||
+      rune == 0xfeff;
 
   /// Globally unique identifier for this running peer process.
   ///
@@ -67,17 +112,41 @@ class PeerIdentity {
 
   /// Optional set of capability strings the peer advertises.
   ///
-  /// Capability strings let peers gate optional protocol extensions. The v1
-  /// protocol defines no required capabilities; peers MAY advertise their
-  /// own strings (typically namespaced, e.g. `wavecrux.signal_value`).
+  /// Advisory strings (CXP §8.1): message kinds, product-namespaced strings
+  /// (`wavecrux.signal_value`), and strings the specification registers
+  /// under the reserved `cxp.` prefix, such as `cxp.accepts:<element kind>`
+  /// for each element kind the peer's highlight handler honours.
   final Set<String> capabilities;
 
+  /// The design this peer's active window has open, for display only: a
+  /// file name or a design's display name, never a directory (CXP §8.1).
+  ///
+  /// Optional and ignorable. A receiver shows it as text beside the peer's
+  /// name and never opens, resolves, matches or routes on it. It changes
+  /// while the peer runs, so the current value is the one in the peer's
+  /// manifest, not the copy its `hello` carried.
+  final String? activeDocument;
+
+  /// A copy with [activeDocument] replaced by [document] reduced to display
+  /// text with [normalizeActiveDocument] (null, or nothing left, removes
+  /// it).
+  PeerIdentity withActiveDocument(String? document) => PeerIdentity(
+    peerId: peerId,
+    productName: productName,
+    productVersion: productVersion,
+    capabilities: capabilities,
+    activeDocument: normalizeActiveDocument(document),
+  );
+
   /// JSON encoding suitable for inclusion in a `Hello` or manifest.
+  /// `active_document` is written reduced to display text, and only when
+  /// something is left of it.
   Map<String, Object?> toJson() => <String, Object?>{
     'peer_id': peerId,
     'product_name': productName,
     'product_version': productVersion,
     'capabilities': capabilities.toList(growable: false),
+    'active_document': ?normalizeActiveDocument(activeDocument),
   };
 
   @override
@@ -87,6 +156,7 @@ class PeerIdentity {
           other.peerId == peerId &&
           other.productName == productName &&
           other.productVersion == productVersion &&
+          other.activeDocument == activeDocument &&
           _setEquals(other.capabilities, capabilities));
 
   @override
@@ -95,6 +165,7 @@ class PeerIdentity {
     productName,
     productVersion,
     Object.hashAllUnordered(capabilities),
+    activeDocument,
   );
 
   @override

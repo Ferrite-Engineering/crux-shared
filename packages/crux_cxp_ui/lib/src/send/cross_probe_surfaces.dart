@@ -80,6 +80,21 @@ Future<CrossProbeOutcome> sendCrossProbe(
   return outcome;
 }
 
+/// "WaveCrux 2", or "WaveCrux 2 (alu.vcd)" when that window announces the
+/// design it has open. The document is display text only: it is never
+/// opened, resolved or matched on.
+String _instanceText(
+  CruxCxpStrings strings,
+  CrossProbeTarget target,
+  int index,
+) {
+  final instance = strings.instanceLabel(target.label, index + 1);
+  final document = target.instances[index].activeDocument;
+  return document == null
+      ? instance
+      : strings.instanceDocumentLabel(instance, document);
+}
+
 /// The menu entries for [targets]: one item per product, and a submenu of
 /// windows for a product running in several.
 List<CruxMenuEntry> _targetEntries(
@@ -115,7 +130,7 @@ List<CruxMenuEntry> _targetEntries(
             for (var i = 0; i < target.instances.length; i++)
               item(
                 target.instances[i],
-                strings.instanceLabel(target.label, i + 1),
+                _instanceText(strings, target, i),
                 target.instances[i].peerId,
               ),
           ],

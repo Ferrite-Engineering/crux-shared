@@ -349,10 +349,17 @@ class CxpWorkspaceStore {
   ///
   /// [accepts], when given, admits only the records whose path the receiver
   /// can open — typically a check on the file extension. Several products
-  /// publish the same kind (`source` names an HDL file, a lint project and a
-  /// simulation config alike), and without it step 4 hands a receiver
-  /// whichever product upserted last. Filtering happens before every step,
-  /// so a single record of another product's file is not returned either.
+  /// publish the same kind, and without it step 4 hands a receiver whichever
+  /// product upserted last. Filtering happens before every step, so a single
+  /// record of another product's file is not returned either.
+  ///
+  /// CXP §9.10.2 makes the filter a rule for `source` and `project`:
+  /// `source` names one HDL source file, and a producer publishes a project
+  /// file, lint project, simulation configuration or manifest as `project`,
+  /// never as `source`. Several products still publish `project` for one
+  /// design, and records written before the rule may carry such a file as
+  /// `source`, so a receiver resolving either kind passes [accepts] and
+  /// answers `honored: false` when nothing it recognises is left.
   ///
   /// Reads synchronously, as [readArtifacts] does; prefer
   /// [resolveArtifactAsync].

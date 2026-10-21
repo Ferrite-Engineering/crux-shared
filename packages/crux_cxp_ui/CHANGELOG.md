@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **CXP 1.3 rev. 9 vocabulary in the send table.** NetCrux's row of
+  `kCrossProbeTargetKinds` gains `cell` after `instance`, then `timing_path`
+  and `property` after `source`, never first: a directed cross-probe carries
+  one element, and NetCrux acts on either only beside the mapped signals.
+  WaveCrux, LintCrux and SimCrux rows are unchanged (a counterexample reaches
+  WaveCrux as a `source` element with a coordinate).
+- **Which window is which.** `CruxCxpRuntime.setActiveDocument` announces the
+  open design's file or display name through the manifest; `peers` carry the
+  value each peer's manifest announces, and the "Cross-probe to" submenu of a
+  product running in several windows reads "WaveCrux 2 (alu.vcd)"
+  (`CruxCxpStrings.instanceDocumentLabel`, all four locales). Display only.
+- **A throwing request handler no longer leaks its error.** Its
+  acknowledgement's reason is the fixed
+  `CruxCxpRuntime.handlerFailedReason`, never the exception text, which can
+  carry a path.
 - **The shared CXP lifecycle.** `cruxCxpRuntimeProvider` runs one product's CXP
   presence (`CruxCxpRuntime`: server, manifest, discovery, connector) from
   `cruxCxpSettingsProvider`, which saves `CruxCxpSettings` under the keys every

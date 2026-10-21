@@ -194,6 +194,30 @@ void main() {
       expect(_sent.single.$1.peerId, 'wavecrux-7-20');
     });
 
+    testWidgets('a window that announces its document shows it beside its '
+        'number', (tester) async {
+      await tester.pumpWidget(
+        host(
+          peers: [
+            _peer('wavecrux', 10).withActiveDocument('/proj/alu.vcd'),
+            _peer('wavecrux', 20),
+          ],
+          child: (_, _) => overflow(),
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cross-probe to'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('WaveCrux'));
+      await tester.pumpAndSettle();
+      expect(find.text('WaveCrux 1 (alu.vcd)'), findsOneWidget);
+      expect(find.text('WaveCrux 2'), findsOneWidget);
+      await tester.tap(find.text('WaveCrux 1 (alu.vcd)'));
+      await tester.pumpAndSettle();
+      expect(_sent.single.$1.peerId, 'wavecrux-7-10');
+    });
+
     testWidgets('a refused send is an error toast with the peer reason', (
       tester,
     ) async {

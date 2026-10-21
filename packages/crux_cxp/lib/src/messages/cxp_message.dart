@@ -123,6 +123,39 @@ abstract final class CxpMessageKind {
 /// <https://edacrux.app/cxp#sec-6-1>).
 const String cxpDesignIdMetadataKey = 'crux.design_id';
 
+/// Registered `metadata` key (CXP §9.3.1): how the referenced RTL elements
+/// were derived from an implementation netlist. Its value is one of
+/// [cxpMappingValues]. Receivers display it and never upgrade it: a
+/// `statement` mapping is never shown as a `register` one.
+const String cxpMappingMetadataKey = 'crux.mapping';
+
+/// The values [cxpMappingMetadataKey] may carry, strongest first:
+/// `register` (an exact register), `statement` (the statement that drives
+/// it), `span` (a source span only) and `unmapped`.
+const List<String> cxpMappingValues = <String>[
+  'register',
+  'statement',
+  'span',
+  'unmapped',
+];
+
+/// Registered `metadata` key (CXP §9.3.1): a formal property's role,
+/// `assert`, `assume` or `cover`. A cover is a property with this key set
+/// to `cover`, not a separate element kind.
+const String cxpFormalPropertyKindMetadataKey = 'formal.property_kind';
+
+/// Registered `metadata` key (CXP §9.3.1): the user's label for a formal
+/// property, when the frontend kept one. Display only.
+const String cxpFormalPropertyLabelMetadataKey = 'formal.property_label';
+
+/// Registered `metadata` key (CXP §9.3.1): the scope of the gold (reference)
+/// design inside an equivalence trace.
+const String cxpFormalEqyGoldScopeMetadataKey = 'formal.eqy.gold_scope';
+
+/// Registered `metadata` key (CXP §9.3.1): the scope of the gate (revised)
+/// design inside an equivalence trace.
+const String cxpFormalEqyGateScopeMetadataKey = 'formal.eqy.gate_scope';
+
 /// Base type for every CXP wire message body.
 ///
 /// A [CxpMessage] is the structured payload carried inside a [CxpEnvelope].

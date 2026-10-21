@@ -100,6 +100,9 @@ void main() {
           'test',
           'breakpoint',
           'source',
+          'property',
+          'timing_path',
+          'cell',
         ],
       );
       for (final kind in ElementKind.values) {
@@ -141,9 +144,31 @@ void main() {
         ElementKind.values.map((k) => k.known).toSet(),
         KnownElementKind.values.toSet(),
       );
+      // The wire name is the enum value's name in snake case.
+      String snake(String name) => name.replaceAllMapped(
+        RegExp('[A-Z]'),
+        (m) => '_${m[0]!.toLowerCase()}',
+      );
       for (final kind in ElementKind.values) {
-        expect(kind.known!.name, kind.name);
+        expect(snake(kind.known!.name), kind.name);
       }
+    });
+
+    test('the formal and implementation-run kinds decode by wire name', () {
+      expect(identical(ElementKind('property'), ElementKind.property), isTrue);
+      expect(
+        identical(ElementKind('timing_path'), ElementKind.timingPath),
+        isTrue,
+      );
+      expect(identical(ElementKind('cell'), ElementKind.cell), isTrue);
+      expect(ElementKind('timingPath').isKnown, isFalse);
+      const wire = <String, Object?>{
+        'kind': 'timing_path',
+        'path': 'run_a/1',
+      };
+      final id = ElementId.fromJson(wire);
+      expect(id.kind.known, KnownElementKind.timingPath);
+      expect(id.toJson(), wire);
     });
 
     test('internal code can still switch exhaustively via known', () {
@@ -158,6 +183,9 @@ void main() {
         KnownElementKind.test => 'test',
         KnownElementKind.breakpoint => 'breakpoint',
         KnownElementKind.source => 'source',
+        KnownElementKind.property => 'property',
+        KnownElementKind.timingPath => 'timing_path',
+        KnownElementKind.cell => 'cell',
         null => 'unknown',
       };
       expect(describe(ElementKind.signal), 'signal');

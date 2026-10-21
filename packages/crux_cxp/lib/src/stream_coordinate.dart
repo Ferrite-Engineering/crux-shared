@@ -141,6 +141,37 @@ class CxpStreamCoordinate {
   /// run, so a receiver never presents replayed evidence as measured.
   static const String riscvModeAttribute = 'riscv.mode';
 
+  /// Stream identifier of a formal counterexample or cover witness trace's
+  /// step sequence, for any design: CXP §9.9.3, the generic sibling of
+  /// [riscvFormalTraceStepStreamId].
+  ///
+  /// [sequenceIndex] is the solver step at which the property failed or the
+  /// cover was reached, counting the trace's initial state as step 0. In a
+  /// witness the solver writes, step k is the k-th sample of its formal
+  /// clock and is also stated by the trace's own step counter. [subId]
+  /// **may** carry the equivalence partition an equivalence trace belongs
+  /// to; it is absent for a property check. A receiver that cannot
+  /// establish the trace's step grid declines the coordinate rather than
+  /// guessing, and still honours the element.
+  static const String formalTraceStepStreamId = 'formal.trace_step';
+
+  /// Attribute key: the verdict the producer recorded for the property
+  /// (advisory; display only).
+  static const String formalVerdictAttribute = 'formal.verdict';
+
+  /// Attribute key: the depth the check was configured with, in decimal
+  /// (advisory; it is not the step).
+  static const String formalDepthConfiguredAttribute =
+      'formal.depth_configured';
+
+  /// Attribute key: the property's role, `assert`, `assume` or `cover`.
+  static const String formalPropertyKindAttribute = 'formal.property_kind';
+
+  /// Attribute key: producer-defined provenance token, as
+  /// [riscvModeAttribute] is for the RVFI binding. `demo` marks a coordinate
+  /// derived from a replayed fixture rather than a live run.
+  static const String formalModeAttribute = 'formal.mode';
+
   /// Which decoded stream this indexes, and the index space [sequenceIndex]
   /// counts in. An **open vocabulary**: a receiver that does not implement a
   /// stream id ignores the coordinate and honours the rest of the message.

@@ -51,6 +51,7 @@ class CxpDiscovery
   final staleThreshold: Duration
   final stopTimeout: Duration
   get events -> Stream<CxpDiscoveryEvent>
+  get identityChanges -> Stream<CxpPeerManifest>
   get peers -> List<CxpPeerManifest>
   start() -> Future<void>
   stop() -> Future<void>
@@ -94,6 +95,7 @@ class CxpManifestWriter
   final heartbeatInterval: Duration?
   final manifestDirectory: String
   remove() -> Future<void>
+  updateIdentity(PeerIdentity identity) -> Future<void>
   write({required PeerIdentity identity, required String host, required int port}) -> Future<void>
 abstract class CxpMessage
   const CxpMessage()
@@ -172,6 +174,11 @@ class CxpStreamCoordinate
   final streamId: String
   final subId: String?
   get hashCode -> int
+  static const formalDepthConfiguredAttribute: String
+  static const formalModeAttribute: String
+  static const formalPropertyKindAttribute: String
+  static const formalTraceStepStreamId: String
+  static const formalVerdictAttribute: String
   static const riscvFormalTraceStepStreamId: String
   static const riscvInsnAttribute: String
   static const riscvIsaAttribute: String
@@ -222,15 +229,18 @@ class ElementKind
   get hashCode -> int
   get isKnown -> bool
   static const breakpoint: ElementKind
+  static const cell: ElementKind
   static const instance: ElementKind
   static const marker: ElementKind
   static const net: ElementKind
   static const port: ElementKind
+  static const property: ElementKind
   static const rule: ElementKind
   static const scope: ElementKind
   static const signal: ElementKind
   static const source: ElementKind
   static const test: ElementKind
+  static const timingPath: ElementKind
   static const values: List<ElementKind>
   toString() -> String
 class ErrorResponse extends CxpMessage
@@ -287,15 +297,18 @@ class InboundCxpMessage
   final message: CxpMessage
 enum KnownElementKind
   static const breakpoint: KnownElementKind
+  static const cell: KnownElementKind
   static const instance: KnownElementKind
   static const marker: KnownElementKind
   static const net: KnownElementKind
   static const port: KnownElementKind
+  static const property: KnownElementKind
   static const rule: KnownElementKind
   static const scope: KnownElementKind
   static const signal: KnownElementKind
   static const source: KnownElementKind
   static const test: KnownElementKind
+  static const timingPath: KnownElementKind
 class LocalCxpClient implements CxpClient
   LocalCxpClient({Duration connectTimeout, Duration handshakeTimeout, int maxLineLength, int maxPendingWriteBytes, required PeerIdentity selfIdentity})
   connect({String? token, bool mutualAuth, required String host, required int port}) -> Future<void>
@@ -371,16 +384,19 @@ class NotifySelection extends CxpMessage
   toJson() -> Map<String, Object?>
   toString() -> String
 class PeerIdentity
-  const PeerIdentity({Set<String> capabilities, required String peerId, required String productName, required String productVersion})
+  const PeerIdentity({Set<String> capabilities, String? activeDocument, required String peerId, required String productName, required String productVersion})
   factory PeerIdentity.fromJson(Map<String, Object?> json)
   ==(Object other) -> bool
+  final activeDocument: String?
   final capabilities: Set<String>
   final peerId: String
   final productName: String
   final productVersion: String
   get hashCode -> int
+  static normalizeActiveDocument(String? raw) -> String?
   toJson() -> Map<String, Object?>
   toString() -> String
+  withActiveDocument(String? document) -> PeerIdentity
 class PeerPresenceEvent
   const PeerPresenceEvent({required PeerIdentity peer, required bool connected})
   final connected: bool
@@ -489,9 +505,15 @@ cxpAuthTokensMatch(String? presented, String expected) -> bool
 get cxpDefaultManifestHeartbeat -> Duration
 cxpDesignIdForPath(String fileOrDirPath) -> String
 get cxpDesignIdMetadataKey -> String
+get cxpFormalEqyGateScopeMetadataKey -> String
+get cxpFormalEqyGoldScopeMetadataKey -> String
+get cxpFormalPropertyKindMetadataKey -> String
+get cxpFormalPropertyLabelMetadataKey -> String
 get cxpHelloAckProofLabel -> String
 get cxpHelloProofLabel -> String
 cxpLoopbackDialAddress(String host) -> String?
+get cxpMappingMetadataKey -> String
+get cxpMappingValues -> List<String>
 get cxpProcessAuthToken -> String
 get cxpProtocolVersion -> String
 get cxpSubscribeToAll -> List<CxpSubscription>
@@ -501,5 +523,6 @@ generateCxpAuthNonce() -> String
 generateCxpAuthToken() -> String
 isCompatibleCxpVersion(String version) -> bool
 isCxpLoopbackHost(String host) -> bool
+get kCxpActiveDocumentMaxLength -> int
 sharedCxpManifestDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 sharedCxpWorkspaceDirectory({Map<String, String>? environment, String? operatingSystem}) -> String

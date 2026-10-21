@@ -130,18 +130,56 @@ class CruxCxpRuntime {
       _unreachableChanges.stream;
 
   /// The connected peers, one entry per peer id, never this process.
+  ///
+  /// A peer's `hello` is fixed for its connection, so each entry carries the
+  /// [PeerIdentity.activeDocument] of the peer's discovered manifest, which
+  /// the peer rewrites when its active document changes (CXP §8.1).
   List<PeerIdentity> get peers {
     if (!_running) return const <PeerIdentity>[];
+    final manifests = <String, PeerIdentity>{
+      for (final manifest in _discovery?.peers ?? const <CxpPeerManifest>[])
+        manifest.identity.peerId: manifest.identity,
+    };
     final byId = <String, PeerIdentity>{};
     for (final peer in <PeerIdentity>[
       ...?_server?.connectedPeers,
       ...?_connector?.connectedPeers,
     ]) {
       if (peer.peerId == selfIdentity.peerId) continue;
-      byId.putIfAbsent(peer.peerId, () => peer);
+      byId.putIfAbsent(peer.peerId, () {
+        final announced = manifests[peer.peerId];
+        return announced == null
+            ? peer
+            : peer.withActiveDocument(announced.activeDocument);
+      });
     }
     return List<PeerIdentity>.unmodifiable(byId.values);
   }
+
+  /// The design this window has open, as other peers are shown it, or null.
+  String? get activeDocument => _activeDocument;
+  String? _activeDocument;
+
+  /// Announces [document] (a file name or a design's display name, never a
+  /// directory; null clears it) as this window's open design: the manifest
+  /// is rewritten at once, and peers show it beside this window's name in
+  /// their "Cross-probe to" menus. Display only (CXP §8.1). Safe to call
+  /// before [start]: the first manifest then carries it.
+  Future<void> setActiveDocument(String? document) async {
+    final normalized = PeerIdentity.normalizeActiveDocument(document);
+    if (normalized == _activeDocument) return;
+    _activeDocument = normalized;
+    final writer = _manifestWriter;
+    if (!_running || writer == null) return;
+    try {
+      await writer.updateIdentity(_announcedIdentity);
+    } on Object {
+      // Display only: the next heartbeat or change republishes it.
+    }
+  }
+
+  PeerIdentity get _announcedIdentity =>
+      selfIdentity.withActiveDocument(_activeDocument);
 
   /// Peers that were discovered but could not be dialled. Empty when the
   /// runtime is not running; a peer leaves once it connects or its manifest
@@ -190,7 +228,7 @@ class CruxCxpRuntime {
       final writer = _manifestWriterFactory(manifestDirectory);
       _manifestWriter = writer;
       await writer.write(
-        identity: selfIdentity,
+        identity: _announcedIdentity,
         host: '127.0.0.1',
         port: bound,
       );
@@ -199,7 +237,9 @@ class CruxCxpRuntime {
         selfIdentity.peerId,
       );
       _discovery = discovery;
-      _subscriptions.add(discovery.events.listen((_) => _publishPeers()));
+      _subscriptions
+        ..add(discovery.events.listen((_) => _publishPeers()))
+        ..add(discovery.identityChanges.listen((_) => _publishPeers()));
       await discovery.start();
       // `server:` routes every dialled link's frames into this server, so a
       // peer this process only dialled still reaches the request handlers
@@ -498,13 +538,22 @@ class CruxCxpRuntime {
     }
   }
 
+  /// The acknowledgement reason when a request handler throws. Fixed: the
+  /// error itself can carry a path (a `FileSystemException` names the file)
+  /// or the sender's own input, and a reason never repeats either (CXP
+  /// §9.11, §11.3).
+  static const String handlerFailedReason = 'the request could not be handled';
+
   static Future<CruxCxpHandlerResult> _invoke(
     Future<CruxCxpHandlerResult> Function() body,
   ) async {
     try {
       return await body();
-    } on Object catch (e) {
-      return CruxCxpHandlerResult(honored: false, reason: '$e');
+    } on Object {
+      return const CruxCxpHandlerResult(
+        honored: false,
+        reason: handlerFailedReason,
+      );
     }
   }
 

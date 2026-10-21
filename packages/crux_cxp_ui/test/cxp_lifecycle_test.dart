@@ -50,6 +50,9 @@ class _Handler extends CruxCxpRequestHandler {
     PeerIdentity from,
   ) async {
     if (hang) await Completer<void>().future;
+    if (request.element.kind == ElementKind.port) {
+      throw const FileSystemException('cannot open', '/home/user/secret/a.v');
+    }
     if (request.element.kind != ElementKind.net) {
       return const CruxCxpHandlerResult(
         honored: false,
@@ -401,6 +404,33 @@ void main() {
       expect(outcome.kind, CrossProbeOutcomeKind.refused);
       expect(outcome.reason, 'nothing named that');
       expect(attention, 0);
+    });
+
+    test('a handler that throws is acknowledged with a fixed reason that '
+        'never carries the error, or its path', () async {
+      final outcome = await wave
+          .read(crossProbeDispatcherProvider)
+          .send(netPeer, selection(ElementKind.port));
+      expect(outcome.kind, CrossProbeOutcomeKind.refused);
+      expect(outcome.reason, CruxCxpRuntime.handlerFailedReason);
+      expect(outcome.reason, isNot(contains('/home/user')));
+      expect(attention, 0);
+    });
+
+    test('the active document reaches the other product through the '
+        'manifest, reduced to its file name', () async {
+      final runtime = (await runtimeOf(wave))!;
+      await runtime.setActiveDocument('/home/user/secret/alu.vcd');
+      expect(runtime.activeDocument, 'alu.vcd');
+      await _until(
+        () => net.read(cruxCxpPeersProvider).single.activeDocument == 'alu.vcd',
+        reason: 'NetCrux to read the new manifest',
+      );
+      await runtime.setActiveDocument(null);
+      await _until(
+        () => net.read(cruxCxpPeersProvider).single.activeDocument == null,
+        reason: 'NetCrux to read the cleared manifest',
+      );
     });
 
     test('a kind the target cannot show is not sent', () async {

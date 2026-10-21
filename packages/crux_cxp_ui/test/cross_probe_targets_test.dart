@@ -115,6 +115,87 @@ void main() {
       expect(kindFor(violation, _peer('acme', 1)), ElementKind.scope);
     });
 
+    test('NetCrux takes a cell after an instance, and a timing path or a '
+        'property only when the selection names nothing it lists first', () {
+      final netcrux = kCrossProbeTargetKinds['netcrux']!;
+      expect(
+        netcrux.indexOf(ElementKind.cell),
+        netcrux.indexOf(ElementKind.instance) + 1,
+      );
+      expect(
+        netcrux.indexOf(ElementKind.timingPath),
+        greaterThan(netcrux.indexOf(ElementKind.source)),
+      );
+      expect(
+        netcrux.indexOf(ElementKind.property),
+        greaterThan(netcrux.indexOf(ElementKind.source)),
+      );
+
+      // A worst-paths row: the endpoint signal first, then the path.
+      const pathRow = CrossProbeSelection(
+        candidates: <ElementId>[
+          ElementId(kind: ElementKind.signal, path: 'top.u_div.cnt_q[23]'),
+          ElementId(kind: ElementKind.source, path: 'div.v:21'),
+          ElementId(kind: ElementKind.timingPath, path: 'run_a/1'),
+        ],
+      );
+      final accepting = _peer(
+        'netcrux',
+        1,
+        capabilities: <String>{
+          '${kCxpAcceptsCapabilityPrefix}signal',
+          '${kCxpAcceptsCapabilityPrefix}source',
+          '${kCxpAcceptsCapabilityPrefix}timing_path',
+        },
+      );
+      expect(
+        kindFor(pathRow, accepting),
+        ElementKind.signal,
+        reason: 'one directed element: the signal NetCrux can act on alone',
+      );
+      // A property row whose only other candidate NetCrux cannot take.
+      const propertyRow = CrossProbeSelection(
+        candidates: <ElementId>[
+          ElementId(kind: ElementKind.property, path: 'rtl/fifo.sv:45'),
+          ElementId(kind: ElementKind.test, path: 'fifo_prove'),
+        ],
+      );
+      expect(kindFor(propertyRow, _peer('netcrux', 1)), ElementKind.property);
+      const cellRow = CrossProbeSelection(
+        candidates: <ElementId>[
+          ElementId(kind: ElementKind.scope, path: 'top'),
+          ElementId(kind: ElementKind.cell, path: 'top._1234_'),
+        ],
+      );
+      expect(kindFor(cellRow, _peer('netcrux', 1)), ElementKind.cell);
+    });
+
+    test('WaveCrux, LintCrux and SimCrux take none of the new kinds', () {
+      for (final product in <String>['wavecrux', 'lintcrux', 'simcrux']) {
+        expect(
+          kCrossProbeTargetKinds[product],
+          isNot(
+            anyElement(
+              isIn(<ElementKind>[
+                ElementKind.property,
+                ElementKind.timingPath,
+                ElementKind.cell,
+              ]),
+            ),
+          ),
+          reason: product,
+        );
+      }
+      // A counterexample reaches WaveCrux as the trace, a source element.
+      const counterexample = CrossProbeSelection(
+        candidates: <ElementId>[
+          ElementId(kind: ElementKind.property, path: 'rtl/fifo.sv:45'),
+          ElementId(kind: ElementKind.source, path: '/work/fifo/trace.vcd'),
+        ],
+      );
+      expect(kindFor(counterexample, _peer('wavecrux', 1)), ElementKind.source);
+    });
+
     test('the binding advertises its accepted kinds', () {
       const binding = CruxCxpProductBinding(
         productName: 'netcrux',
@@ -271,6 +352,7 @@ void main() {
           s.noPeersRunningHelp,
           s.selectionCommand,
           s.instanceLabel('WaveCrux', 2),
+          s.instanceDocumentLabel(s.instanceLabel('WaveCrux', 2), 'alu.vcd'),
           s.outcomeSent('NetCrux'),
           s.outcomeRefused('NetCrux', 'no design open'),
           s.outcomeNoResponse('NetCrux'),
@@ -286,6 +368,11 @@ void main() {
           expect(line, isNot(matches(RegExp('[←-⇿▶▸]'))));
         }
         expect(s.enableHelp, contains('WaveCrux'));
+        expect(
+          s.instanceDocumentLabel(s.instanceLabel('WaveCrux', 2), 'alu.vcd'),
+          allOf(contains('WaveCrux 2'), contains('alu.vcd')),
+          reason: code,
+        );
       }
     });
 

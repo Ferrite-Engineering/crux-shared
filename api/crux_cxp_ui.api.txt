@@ -170,6 +170,7 @@ class CruxCxpRuntime
   final port: int
   final productVersion: String
   final selfIdentity: PeerIdentity
+  get activeDocument -> String?
   get boundPort -> int?
   get events -> Stream<CrossProbeEvent>
   get isAvailable -> bool
@@ -180,7 +181,9 @@ class CruxCxpRuntime
   get unreachablePeers -> List<CxpDialFailure>
   requestHighlight(String peerId, RequestHighlight request, {Duration timeout, String? summary}) -> Future<({RequestHighlightAck? ack, bool delivered})>
   sendTo(String peerId, CxpMessage message, {String? summary}) -> bool
+  setActiveDocument(String? document) -> Future<void>
   start() -> Future<void>
+  static const handlerFailedReason: String
   stop() -> Future<void>
 typedef CruxCxpServerStatus = ({int? port, String? problem, bool running})
 class CruxCxpSettings
@@ -263,6 +266,7 @@ class CruxCxpStrings
   final eventSelectionReceived: String
   final eventSelectionSent: String
   final eventsSection: String
+  final instanceDocumentLabel: String Function(String, String)
   final instanceLabel: String Function(String, int)
   final noEvents: String
   final noPeers: String
