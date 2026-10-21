@@ -1,5 +1,12 @@
 ## Unreleased
 
+- **`PresetPreview`: the built-in Crux Dark and Crux Light presets show
+  filled swatches.** They state no tokens, so each swatch resolved to the
+  registry's transparent "use the product's value" sentinel and painted
+  nothing. A transparent swatch now shows the colour the preset renders as in
+  the product's theme for the preset's brightness and the platform contrast.
+  Presets that state their tokens are unchanged.
+
 - **`cruxDesktopTheme`: the focus ring, neutral secondary buttons, card
   radius and regular-weight menus.** Keyboard focus on a button or a text
   field now draws the ring the owned controls draw (a primary stroke 2 px
