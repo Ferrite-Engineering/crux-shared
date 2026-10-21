@@ -14,9 +14,7 @@ const _desktop = CruxDesktopTokens();
 /// A desktop host whose button opens [open].
 Widget _host(void Function(BuildContext context) open) {
   return MaterialApp(
-    theme: ThemeData(
-      extensions: const <ThemeExtension<dynamic>>[_desktop],
-    ),
+    theme: ThemeData(extensions: const <ThemeExtension<dynamic>>[_desktop]),
     home: Builder(
       builder: (context) => Scaffold(
         body: Center(
@@ -84,16 +82,87 @@ void main() {
     testWidgets('a dismissible dialog closes on a scrim click', (tester) async {
       await tester.pumpWidget(
         _host(
-          (context) => showCruxDialog<bool>(
-            context: context,
-            builder: _confirm,
-          ),
+          (context) =>
+              showCruxDialog<bool>(context: context, builder: _confirm),
         ),
       );
       await _open(tester);
       await tester.tapAt(const Offset(4, 4));
       await tester.pumpAndSettle();
       expect(find.byType(CruxDialog), findsNothing);
+    });
+
+    testWidgets('the default dialog has a scrim', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          (context) =>
+              showCruxDialog<bool>(context: context, builder: _confirm),
+        ),
+      );
+      await _open(tester);
+      final barrier = tester.widget<ModalBarrier>(
+        find.byType(ModalBarrier).last,
+      );
+      expect(barrier.color, isNotNull);
+      expect(barrier.color!.a, greaterThan(0));
+    });
+
+    group('blocking: false', () {
+      Widget host({bool barrierDismissible = true, String? guardKey}) => _host(
+        (context) => showCruxDialog<bool>(
+          context: context,
+          blocking: false,
+          barrierDismissible: barrierDismissible,
+          modalGuardKey: guardKey,
+          builder: _confirm,
+        ),
+      );
+
+      testWidgets('has no scrim', (tester) async {
+        await tester.pumpWidget(host());
+        await _open(tester);
+        final barrier = tester.widget<ModalBarrier>(
+          find.byType(ModalBarrier).last,
+        );
+        expect(barrier.color?.a ?? 0, 0);
+      });
+
+      testWidgets('closes on a click outside, even if asked not to '
+          'be dismissible', (tester) async {
+        await tester.pumpWidget(host(barrierDismissible: false));
+        await _open(tester);
+        expect(find.byType(CruxDialog), findsOneWidget);
+        await tester.tapAt(const Offset(4, 4));
+        await tester.pumpAndSettle();
+        expect(find.byType(CruxDialog), findsNothing);
+      });
+
+      testWidgets('closes on Escape', (tester) async {
+        await tester.pumpWidget(host());
+        await _open(tester);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.byType(CruxDialog), findsNothing);
+      });
+
+      testWidgets('moves focus into the dialog', (tester) async {
+        await tester.pumpWidget(host());
+        await _open(tester);
+        final focused = FocusManager.instance.primaryFocus?.context;
+        expect(focused, isNotNull);
+        expect(focused!.findAncestorWidgetOfExactType<CruxDialog>(), isNotNull);
+      });
+
+      testWidgets('modalGuardKey still suppresses a second copy', (
+        tester,
+      ) async {
+        await tester.pumpWidget(host(guardKey: 'stats'));
+        await _open(tester);
+        expect(ModalGuard.isOpen('stats'), isTrue);
+        await tester.tapAt(const Offset(4, 4));
+        await tester.pumpAndSettle();
+        expect(ModalGuard.isOpen('stats'), isFalse);
+      });
     });
 
     testWidgets('modalGuardKey suppresses a second copy while one is open', (
@@ -166,10 +235,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         _host(
-          (context) => showCruxDialog<bool>(
-            context: context,
-            builder: _confirm,
-          ),
+          (context) =>
+              showCruxDialog<bool>(context: context, builder: _confirm),
         ),
       );
       await _open(tester);
@@ -310,17 +377,12 @@ void main() {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
         _host(
-          (context) => showCruxDialog<bool>(
-            context: context,
-            builder: _confirm,
-          ),
+          (context) =>
+              showCruxDialog<bool>(context: context, builder: _confirm),
         ),
       );
       await _open(tester);
-      expect(
-        find.bySemanticsLabel('Rename marker'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('Rename marker'), findsOneWidget);
       expectFocusAnnounced(tester, named: 'Cancel', context: 'dialog opened');
       handle.dispose();
     });

@@ -55,7 +55,7 @@ void main() {
   });
 
   group('showCruxErrorSnack', () {
-    testWidgets('shows a floating error snack with the 6 s duration', (
+    testWidgets('shows a floating error snack that stays until dismissed', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -67,17 +67,21 @@ void main() {
       expect(find.text('load failed'), findsOneWidget);
       final snack = tester.widget<SnackBar>(find.byType(SnackBar));
       expect(snack.behavior, SnackBarBehavior.floating);
-      expect(snack.duration, kCruxErrorSnackDuration);
-      expect(kCruxErrorSnackDuration, const Duration(seconds: 6));
+      expect(snack.persist, isTrue);
+      expect(snack.showCloseIcon, isTrue);
+      await tester.pump(const Duration(minutes: 2));
+      await tester.pump();
+      expect(find.text('load failed'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      expect(find.text('load failed'), findsNothing);
     });
 
     testWidgets('uses the error-container palette', (tester) async {
       await tester.pumpWidget(
         _snackHost((context) => showCruxErrorSnack(context, 'load failed')),
       );
-      final colorScheme = Theme.of(
-        tester.element(find.text('go')),
-      ).colorScheme;
+      final colorScheme = Theme.of(tester.element(find.text('go'))).colorScheme;
       await tester.tap(find.text('go'));
       await tester.pump();
 
@@ -123,9 +127,7 @@ void main() {
 
     testWidgets('the confirm button is destructive-styled', (tester) async {
       await tester.pumpWidget(host(({required confirmed}) {}));
-      final colorScheme = Theme.of(
-        tester.element(find.text('go')),
-      ).colorScheme;
+      final colorScheme = Theme.of(tester.element(find.text('go'))).colorScheme;
       await tester.tap(find.text('go'));
       await tester.pumpAndSettle();
 

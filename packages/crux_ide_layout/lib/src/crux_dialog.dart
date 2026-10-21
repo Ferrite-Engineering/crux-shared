@@ -44,6 +44,12 @@ const double kCruxDialogDefaultWidth = 440;
 ///   scope instead of wrapping its builder in a second scope over the tab's
 ///   container. The dialog then covers that navigator's area, not the window.
 ///
+/// - **[blocking]**, true by default, is the modal dialog with the theme's
+///   scrim. Pass false for a transient surface that does not interrupt (a
+///   statistics popover): no scrim (a transparent barrier), closed by a click
+///   outside it as well as by Escape, whatever [barrierDismissible] says.
+///   Focus-in, [modalGuardKey] and the semantics behaviour are unchanged.
+///
 /// [builder] normally returns a [CruxDialog]. The EULA, which is mounted
 /// above the `Navigator` where no route can be pushed, uses [CruxDialog]
 /// directly instead.
@@ -56,7 +62,11 @@ Future<T?> showCruxDialog<T>({
   bool useRootNavigator = true,
   RouteSettings? routeSettings,
   NavigatorState? navigator,
+  bool blocking = true,
 }) async {
+  // A non-blocking surface has no scrim and closes on a click outside it, so
+  // it is always dismissible by the barrier.
+  final dismissible = !blocking || barrierDismissible;
   Widget build(BuildContext dialogContext) =>
       _CruxDialogRouteScope(child: Builder(builder: builder));
   Future<T?> open() {
@@ -64,7 +74,8 @@ Future<T?> showCruxDialog<T>({
     if (target == null) {
       return showDialog<T>(
         context: context,
-        barrierDismissible: barrierDismissible,
+        barrierColor: blocking ? null : Colors.transparent,
+        barrierDismissible: dismissible,
         barrierLabel: barrierLabel,
         useRootNavigator: useRootNavigator,
         routeSettings: routeSettings,
@@ -75,8 +86,10 @@ Future<T?> showCruxDialog<T>({
       DialogRoute<T>(
         context: context,
         builder: build,
-        barrierColor: DialogTheme.of(context).barrierColor ?? Colors.black54,
-        barrierDismissible: barrierDismissible,
+        barrierColor: blocking
+            ? DialogTheme.of(context).barrierColor ?? Colors.black54
+            : Colors.transparent,
+        barrierDismissible: dismissible,
         barrierLabel: barrierLabel,
         settings: routeSettings,
         // Themes between the caller and the navigator travel with the
@@ -331,10 +344,7 @@ class _CruxDialogState extends State<CruxDialog> {
     final screen = MediaQuery.sizeOf(context);
     const gutter = kCruxDialogGutter * 2;
     final width = math
-        .max(
-          0,
-          math.min(widget.width, screen.width - gutter),
-        )
+        .max(0, math.min(widget.width, screen.width - gutter))
         .toDouble();
     final maxHeight = math.max(0, screen.height - gutter).toDouble();
     final title = widget.title;
@@ -440,10 +450,7 @@ bool _enterSubmits() {
 /// handler on the dialog's own (semantics-free) focus node rather than a
 /// `Shortcuts` widget, whose focus node would add a semantics node around
 /// the body.
-KeyEventResult _onDialogKey(
-  KeyEvent event,
-  VoidCallback? onSubmit,
-) {
+KeyEventResult _onDialogKey(KeyEvent event, VoidCallback? onSubmit) {
   if (onSubmit == null || event is! KeyDownEvent) {
     return KeyEventResult.ignored;
   }

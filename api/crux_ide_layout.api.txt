@@ -276,7 +276,7 @@ get kCruxSearchDialogRowExtent -> double
 get kCruxSearchDialogSize -> Size
 shouldEnableLongPressContextMenu({required TargetPlatform platform, required bool isTouchLayout}) -> bool
 showCruxContextMenu(BuildContext context, {required List<CruxMenuEntry> entries, required Offset globalPosition}) -> Future<void>
-showCruxDialog<T>({NavigatorState? navigator, RouteSettings? routeSettings, String? barrierLabel, String? modalGuardKey, bool barrierDismissible, bool useRootNavigator, required BuildContext context, required Widget Function(BuildContext) builder}) -> Future<T?>
+showCruxDialog<T>({NavigatorState? navigator, RouteSettings? routeSettings, String? barrierLabel, String? modalGuardKey, bool barrierDismissible, bool blocking, bool useRootNavigator, required BuildContext context, required Widget Function(BuildContext) builder}) -> Future<T?>
 showCruxErrorSnack(BuildContext context, String message, {CruxToastAction? action, Key? key}) -> void
 showCruxInfoSnack(BuildContext context, String message, {CruxToastAction? action, Key? key}) -> void
 showCruxReloadPrompt(BuildContext context, {required String ignoreLabel, required String message, required String reloadLabel, required void Function() onIgnore, required void Function() onReload}) -> void

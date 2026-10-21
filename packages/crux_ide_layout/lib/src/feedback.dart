@@ -13,8 +13,8 @@ import 'package:flutter/semantics.dart';
 /// [showCruxInfoSnack].
 const Duration kCruxInfoSnackDuration = Duration(seconds: 4);
 
-/// Standard duration for error snack bars shown by [showCruxErrorSnack].
-/// Longer than the info duration so the user has time to read a failure.
+/// The nominal reading time for a failure. [showCruxErrorSnack] no longer
+/// times out: an error stays until it is dismissed.
 const Duration kCruxErrorSnackDuration = Duration(seconds: 6);
 
 /// How long an informational message that carries an action stays: long
@@ -130,9 +130,8 @@ SnackBarAction? _snackBarAction(CruxToastAction? action) => action == null
 /// the error colour, that **stays until the user closes it** (or a newer
 /// toast replaces it): a failure that vanishes while the user looks elsewhere
 /// was never reported. Under any other theme it is a floating snack bar in
-/// error-container colours for [kCruxErrorSnackDuration]
-/// ([kCruxActionSnackDuration] with an action), after which it leaves on its
-/// own.
+/// error-container colours that likewise stays until it is dismissed (its
+/// close icon, its action, or a swipe), with or without an action.
 ///
 /// A no-op when there is nowhere to show it. The caller supplies an
 /// already-localized [message]. [key] lands on the toast or the snack bar,
@@ -169,10 +168,10 @@ void showCruxErrorSnack(
       ),
       backgroundColor: colorScheme.errorContainer,
       behavior: SnackBarBehavior.floating,
-      duration: action == null
-          ? kCruxErrorSnackDuration
-          : kCruxActionSnackDuration,
-      persist: false,
+      // A failure stays until the user dismisses it, as on desktop; the
+      // close icon is the dismissal for a message with no action.
+      persist: true,
+      showCloseIcon: true,
       action: _snackBarAction(action),
     ),
   );

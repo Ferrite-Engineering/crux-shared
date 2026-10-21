@@ -67,4 +67,44 @@ void main() {
     SemanticsOrphanGuard.instance.check(context: 'CruxDialog and toast');
     expect(SemanticsOrphanGuard.instance.updates, greaterThan(1));
   });
+
+  testWidgets('a non-blocking CruxDialog serializes no orphan node', (
+    tester,
+  ) async {
+    SemanticsOrphanGuard.instance.reset();
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          extensions: const <ThemeExtension<dynamic>>[CruxDesktopTokens()],
+        ),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                key: const Key('open'),
+                onPressed: () => showCruxDialog<void>(
+                  context: context,
+                  blocking: false,
+                  builder: (dialogContext) => const CruxDialog(
+                    title: 'Stats',
+                    content: Text('42 nodes'),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open')));
+    await tester.pumpAndSettle();
+    expect(find.text('42 nodes'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    handle.dispose();
+    SemanticsOrphanGuard.instance.check(context: 'non-blocking CruxDialog');
+    expect(SemanticsOrphanGuard.instance.updates, greaterThan(1));
+  });
 }

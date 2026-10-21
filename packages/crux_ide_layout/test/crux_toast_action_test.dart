@@ -145,8 +145,8 @@ void main() {
     expect(find.text('Bookmark removed.'), findsNothing);
   });
 
-  testWidgets('on phone and tablet an error snack bar with an action leaves '
-      'after its duration', (tester) async {
+  testWidgets('on phone and tablet an error snack bar with an action stays '
+      'until dismissed', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -167,7 +167,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Export failed.'), findsOneWidget);
-    await tester.pump(kCruxActionSnackDuration);
+    await tester.pump(const Duration(minutes: 2));
+    await tester.pump();
+    expect(find.text('Export failed.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
     expect(find.text('Export failed.'), findsNothing);
   });
