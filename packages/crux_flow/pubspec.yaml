@@ -1,0 +1,33 @@
+name: crux_flow
+description: Implementation-flow results for the suite — run and timing models, METRICS2.1 keys, the LibreLane metric table, aggregation and comparison, Yosys source spans, and the nextpnr report and log readers.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+# PURE DART, PERMANENTLY. No `flutter:` key here, ever, and no transitive
+# route to one — `no_flutter_dependency_test.dart` asserts it on every run.
+# The SimCrux headless binary reads flow runs through this package, and a
+# Flutter import anywhere in its graph drags `dart:ui` into that compile.
+#
+# Siblings are relative paths, never bare constraints: products consume this
+# package as a `path:` dependency from outside the workspace, where a bare
+# constraint would resolve as a hosted package and conflict.
+dependencies:
+  # Contained paths and atomic writes for run directories.
+  crux_io:
+    path: ../crux_io
+  # The elaborated-design model the source-span index is built over.
+  crux_netlist:
+    path: ../crux_netlist
+  meta: ^1.15.0
+  path: ^1.9.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^11.0.0
+  # Test-only: the purity guard walks the dependency closure's pubspecs.
+  yaml: ^3.1.0

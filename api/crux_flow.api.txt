@@ -1,0 +1,330 @@
+# Public API surface of package:crux_flow/crux_flow.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum ClockEdge
+  const ClockEdge(String wireName)
+  final wireName: String
+  static const falling: ClockEdge
+  static const rising: ClockEdge
+  static fromWireName(String wireName) -> ClockEdge
+class FlowInputLimits
+  const FlowInputLimits({int maxBytes, int maxJsonDepth, int maxLineLength, int maxMetricKeyLength})
+  final maxBytes: int
+  final maxJsonDepth: int
+  final maxLineLength: int
+  final maxMetricKeyLength: int
+  static const defaults: FlowInputLimits
+enum FlowKind
+  const FlowKind(String wireName)
+  final wireName: String
+  static const librelane: FlowKind
+  static const nextpnr: FlowKind
+  static fromWireName(String wireName) -> FlowKind
+class FlowReadException extends FormatException
+  const FlowReadException(FlowReadFailure failure, String message)
+  final failure: FlowReadFailure
+  toString() -> String
+enum FlowReadFailure
+  static const malformed: FlowReadFailure
+  static const nonFinite: FlowReadFailure
+  static const tooDeep: FlowReadFailure
+  static const tooLarge: FlowReadFailure
+class FlowRun
+  const FlowRun({DateTime? finishedAt, DateTime? startedAt, List<FlowStep> steps, List<TimingPath> timing, Map<String, Object?> metrics, Map<String, String> artifacts, Map<String, String> toolVersions, required FlowRunRef ref, required FlowVerdict verdict})
+  factory FlowRun.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final artifacts: Map<String, String>
+  final finishedAt: DateTime?
+  final metrics: Map<String, Object?>
+  final ref: FlowRunRef
+  final startedAt: DateTime?
+  final steps: List<FlowStep>
+  final timing: List<TimingPath>
+  final toolVersions: Map<String, String>
+  final verdict: FlowVerdict
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class FlowRunRef
+  const FlowRunRef({required FlowKind kind, required String readerVersion, required String root, required String tag, required bool verified})
+  factory FlowRunRef.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final kind: FlowKind
+  final readerVersion: String
+  final root: String
+  final tag: String
+  final verified: bool
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class FlowStep
+  const FlowStep({Duration? runtime, String? logPath, String? metricsOut, required FlowStepStatus status, required String dir, required String id, required String tool, required int ordinal})
+  factory FlowStep.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final dir: String
+  final id: String
+  final logPath: String?
+  final metricsOut: String?
+  final ordinal: int
+  final runtime: Duration?
+  final status: FlowStepStatus
+  final tool: String
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+enum FlowStepStatus
+  const FlowStepStatus(String wireName)
+  final wireName: String
+  static const completed: FlowStepStatus
+  static const failed: FlowStepStatus
+  static const notStarted: FlowStepStatus
+  static const running: FlowStepStatus
+  static const skipped: FlowStepStatus
+  static fromWireName(String wireName) -> FlowStepStatus
+enum FlowVerdict
+  const FlowVerdict(String wireName)
+  final wireName: String
+  get isMet -> bool
+  static const met: FlowVerdict
+  static const notRun: FlowVerdict
+  static const stopped: FlowVerdict
+  static const unrecognised: FlowVerdict
+  static const violated: FlowVerdict
+  static fromWireName(String wireName) -> FlowVerdict
+enum MappingFidelity
+  const MappingFidelity(String wireName)
+  final wireName: String
+  static const register: MappingFidelity
+  static const span: MappingFidelity
+  static const statement: MappingFidelity
+  static const unmapped: MappingFidelity
+  static fromWireName(String wireName) -> MappingFidelity
+enum MetricAggregator
+  static const max: MetricAggregator
+  static const min: MetricAggregator
+  static const sum: MetricAggregator
+enum MetricChangeClass
+  static const changed: MetricChangeClass
+  static const critical: MetricChangeClass
+  static const unchanged: MetricChangeClass
+  static const worse: MetricChangeClass
+class MetricComparison
+  ==(Object other) -> bool
+  final better: bool?
+  final changed: bool
+  final critical: bool
+  final current: Object?
+  final delta: num?
+  final deltaPercent: num?
+  final formattedCurrent: String
+  final formattedDelta: String
+  final formattedGold: String
+  final gold: Object?
+  final key: MetricKey
+  get changeClass -> MetricChangeClass
+  get hashCode -> int
+  get metricName -> String
+  toString() -> String
+class MetricDefinition
+  const MetricDefinition(String name, {List<String> dontAggregate, MetricAggregator? aggregator, bool critical, bool? higherIsBetter})
+  ==(Object other) -> bool
+  final aggregator: MetricAggregator?
+  final critical: bool
+  final dontAggregate: List<String>
+  final higherIsBetter: bool?
+  final name: String
+  get hashCode -> int
+  toString() -> String
+class MetricDefinitionTable
+  MetricDefinitionTable({required List<MetricDefinition> definitions, required String source, required int version})
+  [](String name) -> MetricDefinition?
+  contains(String name) -> bool
+  final definitions: List<MetricDefinition>
+  final source: String
+  final version: int
+class MetricDiff
+  factory MetricDiff.fromMetrics(Map<String, Object?> gold, Map<String, Object?> current, {MetricDefinitionTable? table, MetricFilter? filter, int significantFigures})
+  final comparisons: List<MetricComparison>
+  get statistics -> MetricDiffStatistics
+  listed(MetricDiffVerbosity verbosity) -> List<MetricComparison>
+  renderMarkdown(MetricDiffVerbosity verbosity) -> String
+class MetricDiffStatistics
+  const MetricDiffStatistics({required int better, required int critical, required int unchanged, required int worse})
+  ==(Object other) -> bool
+  final better: int
+  final critical: int
+  final unchanged: int
+  final worse: int
+  get hashCode -> int
+  toString() -> String
+enum MetricDiffVerbosity
+  static const all: MetricDiffVerbosity
+  static const changed: MetricDiffVerbosity
+  static const critical: MetricDiffVerbosity
+  static const worse: MetricDiffVerbosity
+class MetricFilter
+  MetricFilter(List<String> wildcards)
+  ==(Object other) -> bool
+  filter(Iterable<String> names) -> Iterable<String>
+  final wildcards: List<String>
+  get hashCode -> int
+  matches(String name) -> bool
+  static const compareDefaultWildcards: List<String>
+  static final all: MetricFilter
+  static final compareDefaults: MetricFilter
+  toString() -> String
+class MetricKey
+  const MetricKey(String base, [List<MetricModifier> modifiers])
+  ==(Object other) -> bool
+  final base: String
+  final modifiers: List<MetricModifier>
+  format() -> String
+  get hashCode -> int
+  get isModified -> bool
+  modifier(String name) -> String?
+  static tryParse(String name) -> MetricKey?
+  toString() -> String
+class MetricModifier
+  const MetricModifier(String name, String value)
+  ==(Object other) -> bool
+  final name: String
+  final value: String
+  get hashCode -> int
+  toString() -> String
+class MetricsDocument
+  factory MetricsDocument.parse(String text, {FlowInputLimits limits})
+  final droppedLongKeys: int
+  final droppedValues: int
+  final values: Map<String, Object?>
+  static readFile(String path, {FlowInputLimits limits}) -> Future<MetricsDocument>
+class NextpnrClockFrequency
+  const NextpnrClockFrequency({String? logMarker, required String clock, required double achievedMhz, required double constraintMhz})
+  ==(Object other) -> bool
+  final achievedMhz: double
+  final clock: String
+  final constraintMhz: double
+  final logMarker: String?
+  get hashCode -> int
+  get meetsConstraint -> bool
+  toString() -> String
+class NextpnrLog
+  const NextpnrLog({required List<NextpnrClockFrequency> clocks, required String? errorLine})
+  final clocks: List<NextpnrClockFrequency>
+  final errorLine: String?
+  get verdict -> FlowVerdict
+class NextpnrLogReader
+  const NextpnrLogReader({FlowInputLimits limits})
+  final limits: FlowInputLimits
+  parse(String text) -> NextpnrLog
+  readFile(String path) -> Future<NextpnrReading<NextpnrLog>>
+class NextpnrReading<T extends Object>
+  const NextpnrReading({String? problem, T? result, required FlowVerdict verdict})
+  final problem: String?
+  final result: T?
+  final verdict: FlowVerdict
+class NextpnrReport
+  const NextpnrReport({required List<NextpnrClockFrequency> clocks, required List<TimingPath> criticalPaths, required Map<String, NextpnrResourceUse> utilization})
+  final clocks: List<NextpnrClockFrequency>
+  final criticalPaths: List<TimingPath>
+  final utilization: Map<String, NextpnrResourceUse>
+  get verdict -> FlowVerdict
+class NextpnrReportReader
+  const NextpnrReportReader({FlowInputLimits limits})
+  final limits: FlowInputLimits
+  parse(String text) -> NextpnrReport
+  readFile(String path) -> Future<NextpnrReading<NextpnrReport>>
+class NextpnrResourceUse
+  const NextpnrResourceUse({required int available, required int used})
+  ==(Object other) -> bool
+  final available: int
+  final used: int
+  get hashCode -> int
+  toString() -> String
+class RtlMapping
+  const RtlMapping({List<SrcSpan> spans, String? register, required MappingFidelity fidelity})
+  factory RtlMapping.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final fidelity: MappingFidelity
+  final register: String?
+  final spans: List<SrcSpan>
+  get hashCode -> int
+  static const unmapped: RtlMapping
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class SrcSpan
+  const SrcSpan({int? endCol, int? endLine, int? startCol, required String file, required int startLine})
+  factory SrcSpan.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final endCol: int?
+  final endLine: int?
+  final file: String
+  final startCol: int?
+  final startLine: int
+  format() -> String
+  get hashCode -> int
+  static parseAll(String? attribute) -> List<SrcSpan>
+  static tryParse(String raw) -> SrcSpan?
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class TimingPath
+  const TimingPath({ClockEdge? fromEdge, ClockEdge? toEdge, String? clockFrom, String? clockTo, int? slackPs, required List<TimingSegment> segments, required String endpoint, required String startpoint, required TimingPathOrigin origin, required double delayNs, required int delayPs, required int rank})
+  factory TimingPath.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final clockFrom: String?
+  final clockTo: String?
+  final delayNs: double
+  final delayPs: int
+  final endpoint: String
+  final fromEdge: ClockEdge?
+  final origin: TimingPathOrigin
+  final rank: int
+  final segments: List<TimingSegment>
+  final slackPs: int?
+  final startpoint: String
+  final toEdge: ClockEdge?
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+enum TimingPathOrigin
+  const TimingPathOrigin(String wireName)
+  final wireName: String
+  static const nextpnrReport: TimingPathOrigin
+  static const openSta: TimingPathOrigin
+  static fromWireName(String wireName) -> TimingPathOrigin
+class TimingSegment
+  const TimingSegment({List<String> sources, String? fromPort, String? net, String? toPort, required String fromCell, required String rawType, required String toCell, required TimingSegmentType type, required double delayNs, required int delayPs})
+  factory TimingSegment.fromJson(Map<String, Object?> json)
+  ==(Object other) -> bool
+  final delayNs: double
+  final delayPs: int
+  final fromCell: String
+  final fromPort: String?
+  final net: String?
+  final rawType: String
+  final sources: List<String>
+  final toCell: String
+  final toPort: String?
+  final type: TimingSegmentType
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+enum TimingSegmentType
+  const TimingSegmentType(String wireName)
+  final wireName: String
+  static const clkToQ: TimingSegmentType
+  static const hold: TimingSegmentType
+  static const logic: TimingSegmentType
+  static const other: TimingSegmentType
+  static const routing: TimingSegmentType
+  static const setup: TimingSegmentType
+  static fromToolWord(String word) -> TimingSegmentType
+aggregateMetrics(Map<String, Object?> input, {MetricDefinitionTable? table}) -> Map<String, Object?>
+get librelaneMetricsV1 -> MetricDefinitionTable
+matchSourceBySuffix(String recorded, Iterable<String> designSources) -> String?
+sharedPathSuffixLength(String a, String b) -> int

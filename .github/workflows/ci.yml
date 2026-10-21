@@ -175,9 +175,10 @@ jobs:
       #
       # Measured on this runner across the 38 packages: 3754 ran, none
       # skipped. The floor is that less 0.5%; the ceiling allows two skips.
+      # crux_flow's 189 tests raised it by 188 (its count less 0.5%).
       - name: Test count did not shrink
         env:
-          MIN_TESTS: '3735'
+          MIN_TESTS: '3923'
           MAX_SKIPPED: '2'
         run: |
           python3 - <<'PY'
