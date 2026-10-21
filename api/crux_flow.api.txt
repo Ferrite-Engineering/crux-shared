@@ -13,6 +13,17 @@ enum ClockEdge
   static const falling: ClockEdge
   static const rising: ClockEdge
   static fromWireName(String wireName) -> ClockEdge
+class FlowContainment
+  const FlowContainment(List<String> roots)
+  allows(String path) -> bool
+  final roots: List<String>
+  refuse(String path) -> String?
+  require(String path) -> String
+  requireRecorded(String base, String recorded) -> String
+class FlowContainmentException implements Exception
+  const FlowContainmentException(String reason)
+  final reason: String
+  toString() -> String
 class FlowInputLimits
   const FlowInputLimits({int maxBytes, int maxJsonDepth, int maxLineLength, int maxMetricKeyLength})
   final maxBytes: int
@@ -63,6 +74,14 @@ class FlowRunRef
   get hashCode -> int
   toJson() -> Map<String, Object?>
   toString() -> String
+class FlowSarifWriter
+  const FlowSarifWriter({String toolName, String? sourceRoot, String? toolVersion})
+  final sourceRoot: String?
+  final toolName: String
+  final toolVersion: String?
+  nextpnr(NextpnrReport report, {RtlRegisterResolver? resolver}) -> Map<String, Object?>
+  relativeUri(String file) -> String?
+  static encode(Map<String, Object?> log) -> String
 class FlowStep
   const FlowStep({Duration? runtime, String? logPath, String? metricsOut, required FlowStepStatus status, required String dir, required String id, required String tool, required int ordinal})
   factory FlowStep.fromJson(Map<String, Object?> json)
@@ -203,6 +222,19 @@ class MetricsDocument
   final droppedValues: int
   final values: Map<String, Object?>
   static readFile(String path, {FlowInputLimits limits}) -> Future<MetricsDocument>
+class NetlistSrcIndex
+  factory NetlistSrcIndex.fromModel(NetlistModel design, {String? module})
+  factory NetlistSrcIndex.parse(String text, {FlowInputLimits limits, String? module})
+  containsCell(String name) -> bool
+  final moduleName: String
+  get cellCount -> int
+  get cellNames -> Iterable<String>
+  get netCount -> int
+  isStorage(String name) -> bool
+  spansOfCell(String name) -> List<SrcSpan>
+  spansOfNet(String name) -> List<SrcSpan>
+  static read(String path, {FlowInputLimits limits, String? module}) -> Future<NetlistSrcIndex>
+  typeOfCell(String name) -> String?
 class NextpnrClockFrequency
   const NextpnrClockFrequency({String? logMarker, required String clock, required double achievedMhz, required double constraintMhz})
   ==(Object other) -> bool
@@ -257,6 +289,34 @@ class RtlMapping
   static const unmapped: RtlMapping
   toJson() -> Map<String, Object?>
   toString() -> String
+class RtlRegister
+  const RtlRegister({List<SrcSpan> assignments, List<SrcSpan> blocks, List<SrcSpan> declaration, required String name})
+  ==(Object other) -> bool
+  final assignments: List<SrcSpan>
+  final blocks: List<SrcSpan>
+  final declaration: List<SrcSpan>
+  final name: String
+  get hashCode -> int
+  toString() -> String
+class RtlRegisterResolver
+  const RtlRegisterResolver(RtlRegisterSet registers, {NetlistSrcIndex? index})
+  final index: NetlistSrcIndex?
+  final registers: RtlRegisterSet
+  resolve({Iterable<String> sources, String? cell, String? net, bool? storage}) -> RtlMapping
+  resolvePath(TimingPath path) -> TimingPathMapping
+class RtlRegisterSet
+  factory RtlRegisterSet.fromModel(NetlistModel elaboration, {String? top, int maxDepth, int maxInstances})
+  factory RtlRegisterSet.parse(String text, {FlowInputLimits limits, String? top})
+  [](String name) -> RtlRegister?
+  assignedAt(SrcSpan span) -> List<RtlRegister>
+  assignedInBlock(SrcSpan span) -> List<RtlRegister>
+  declaredAt(SrcSpan span) -> List<RtlRegister>
+  final sourceFiles: Set<String>
+  get length -> int
+  get registers -> Iterable<RtlRegister>
+  registerForCellName(String cellName) -> RtlRegister?
+  sourceFileOf(String recordedFile) -> String?
+  static read(String path, {FlowInputLimits limits, String? top}) -> Future<RtlRegisterSet>
 class SrcSpan
   const SrcSpan({int? endCol, int? endLine, int? startCol, required String file, required int startLine})
   factory SrcSpan.fromJson(Map<String, Object?> json)
@@ -291,6 +351,14 @@ class TimingPath
   get hashCode -> int
   toJson() -> Map<String, Object?>
   toString() -> String
+class TimingPathMapping
+  const TimingPathMapping({required List<RtlMapping> segments, required RtlMapping endpoint, required RtlMapping startpoint})
+  ==(Object other) -> bool
+  final endpoint: RtlMapping
+  final segments: List<RtlMapping>
+  final startpoint: RtlMapping
+  get hashCode -> int
+  nearestMapped(int index) -> int?
 enum TimingPathOrigin
   const TimingPathOrigin(String wireName)
   final wireName: String
@@ -325,6 +393,13 @@ enum TimingSegmentType
   static const setup: TimingSegmentType
   static fromToolWord(String word) -> TimingSegmentType
 aggregateMetrics(Map<String, Object?> input, {MetricDefinitionTable? table}) -> Map<String, Object?>
+isStorageCell(Cell cell) -> bool
+isToolLibraryPath(String file) -> bool
+get kFlowClockConstraintRule -> String
+get kFlowSarifFingerprintKey -> String
+get kFlowSarifSourceRoot -> String
+get kFlowTimingPathRule -> String
 get librelaneMetricsV1 -> MetricDefinitionTable
 matchSourceBySuffix(String recorded, Iterable<String> designSources) -> String?
+sameSourceRange(SrcSpan a, SrcSpan b) -> bool
 sharedPathSuffixLength(String a, String b) -> int

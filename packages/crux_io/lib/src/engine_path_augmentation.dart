@@ -20,13 +20,20 @@ import 'package:path/path.dart' as p;
 /// `PATH` through [appendMissingPathDirs].
 ///
 /// - **macOS**: the Homebrew and MacPorts bin directories,
-///   `/opt/homebrew/bin` and `/usr/local/bin`.
+///   `/opt/homebrew/bin` and `/usr/local/bin`, then the Nix profiles below.
+/// - **Linux**: the Nix profiles: the user's `~/.nix-profile/bin`, then the
+///   system default profile `/nix/var/nix/profiles/default/bin`. A desktop
+///   session inherits the login `PATH`, but a Nix install adds its profiles
+///   from a shell rc file that a desktop launcher does not read, and the
+///   LibreLane toolchain is installed through Nix.
 /// - **Windows**: the persistent (registry) `PATH` — Machine then User — that
 ///   a freshly-logged-in process inherits, including the `lib` DLL directory
 ///   Yosys and Verilator need. Appending it restores the post-reboot view
-///   without an actual reboot. Read from the registry once and cached for the
-///   process lifetime.
-/// - **Linux**: none; the desktop session's `PATH` is inherited normally.
+///   without an actual reboot.
+///
+/// Computed once and cached for the process lifetime on every platform, so a
+/// spawn loop calling this per engine reads neither the registry nor `HOME`
+/// more than once.
 ///
 /// Desktop only: it reads `Platform`, which a web build cannot, and a browser
 /// spawns no engines. Like the atomic writes, a web build must not call it.
@@ -34,12 +41,45 @@ import 'package:path/path.dart' as p;
 /// This was carried as three byte-identical copies, one per product that
 /// spawns an engine, each header asking to be moved here.
 List<String> engineSearchDirs() {
-  if (Platform.isMacOS) {
-    return const <String>['/opt/homebrew/bin', '/usr/local/bin'];
-  }
   if (Platform.isWindows) return _windowsPersistentPathDirs();
-  return const <String>[];
+  return _cachedPosixDirs ??= posixEngineSearchDirs(
+    macOS: Platform.isMacOS,
+    home: Platform.environment['HOME'],
+  );
 }
+
+List<String>? _cachedPosixDirs;
+
+/// The Nix system default profile's bin directory.
+const String kNixDefaultProfileBin = '/nix/var/nix/profiles/default/bin';
+
+/// The directories [engineSearchDirs] returns on macOS ([macOS] true) and
+/// Linux, for the user whose home directory is [home].
+///
+/// The user's `~/.nix-profile/bin` is included only when [home] is an
+/// absolute path that cannot split a `PATH`: one holding a `:` would add a
+/// second, unintended entry, and a relative one would be searched from the
+/// directory the product was launched in.
+///
+/// Pure, so both platforms' answers are testable on every host.
+@visibleForTesting
+List<String> posixEngineSearchDirs({required bool macOS, String? home}) {
+  final userProfile = home == null || !_isUsableHome(home)
+      ? null
+      : p.posix.join(home, '.nix-profile', 'bin');
+  return List<String>.unmodifiable(<String>[
+    if (macOS) ...const <String>['/opt/homebrew/bin', '/usr/local/bin'],
+    ?userProfile,
+    kNixDefaultProfileBin,
+  ]);
+}
+
+bool _isUsableHome(String home) =>
+    home.startsWith('/') &&
+    !home.contains(':') &&
+    !home.contains('\x00') &&
+    home.trim() == home &&
+    home != '/';
 
 List<String>? _cachedWindowsPathDirs;
 
@@ -244,7 +284,11 @@ String? prependPathDirs(
   ].join(separator);
 }
 
-/// Test seam: clears the cached Windows registry read so a test can force a
-/// re-read (the production cache is process-lifetime).
+/// Test seam: clears the cached answer (the Windows registry read, or the
+/// macOS and Linux list) so a test can force a re-read (the production cache
+/// is process-lifetime).
 @visibleForTesting
-void resetEngineSearchDirsCacheForTesting() => _cachedWindowsPathDirs = null;
+void resetEngineSearchDirsCacheForTesting() {
+  _cachedWindowsPathDirs = null;
+  _cachedPosixDirs = null;
+}

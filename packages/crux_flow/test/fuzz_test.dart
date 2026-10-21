@@ -119,6 +119,46 @@ void main() {
     }
   });
 
+  test('NetlistSrcIndex and RtlRegisterSet throw only FlowReadException', () {
+    final elaboration = File(
+      'test/fixtures/elaboration/path_adder.json',
+    ).readAsStringSync();
+    final synthesized = File(
+      'test/fixtures/synthesized/path_adder_ice40.json',
+    ).readAsStringSync();
+    for (final seed in [elaboration, synthesized]) {
+      for (final input in _mutants(seed, random, 300)) {
+        _onlyReadErrors(input, () {
+          final index = NetlistSrcIndex.parse(input);
+          index.cellNames.take(5).forEach(index.spansOfCell);
+        });
+        _onlyReadErrors(input, () {
+          final registers = RtlRegisterSet.parse(input);
+          final resolver = RtlRegisterResolver(registers);
+          for (final r in registers.registers) {
+            resolver.resolve(cell: '${r.name}_X', storage: true);
+          }
+        });
+      }
+    }
+  });
+
+  test('RtlRegisterResolver and FlowSarifWriter survive any report', () {
+    final registers = RtlRegisterSet.parse(
+      File('test/fixtures/elaboration/path_adder.json').readAsStringSync(),
+    );
+    final resolver = RtlRegisterResolver(registers);
+    for (final input in _mutants(report, random, 300)) {
+      _onlyReadErrors(input, () {
+        final parsed = const NextpnrReportReader().parse(input);
+        parsed.criticalPaths.forEach(resolver.resolvePath);
+        FlowSarifWriter.encode(
+          const FlowSarifWriter().nextpnr(parsed, resolver: resolver),
+        );
+      });
+    }
+  });
+
   test('MetricKey and SrcSpan parse anything without throwing', () {
     const seeds = [
       'timing__setup__ws__corner:nom_tt_025C_1v80',

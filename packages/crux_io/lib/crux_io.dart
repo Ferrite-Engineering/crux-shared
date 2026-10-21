@@ -38,6 +38,16 @@
 ///   form waits for end-of-file, not for the exit, and throws
 ///   `ProcessOutputIncompleteException` instead of returning output it cannot
 ///   vouch for.
+/// * **Path containment** — whether a path resolves inside a directory the
+///   user chose — was the CXP receiver's rule alone, and the flow and formal
+///   readers needed the same one for run roots and engine work directories.
+///   `containmentKey`, `isPathWithin` and `containingRoot` are that rule,
+///   which the CXP receiver now calls.
+/// * **Finding signatures** — `CruxSignature` and `cruxFnv1a64`, the
+///   `crux-fnv1a64/1` identity — lived in the lint product's baselines, and
+///   the formal property history and the flow findings needed the identical
+///   scheme. A second copy that hashed one code unit differently would make
+///   every stored signature match nothing.
 ///
 /// `crux_io` is a **pure-Dart leaf**: it depends on no other Crux package, so
 /// every persistence layer in the suite can depend on it without creating a
@@ -64,4 +74,5 @@ export 'src/engine_path_augmentation.dart';
 export 'src/path_identity.dart';
 export 'src/process_output.dart';
 export 'src/reveal_in_file_manager.dart';
+export 'src/signature.dart';
 export 'src/spawn_guards.dart';

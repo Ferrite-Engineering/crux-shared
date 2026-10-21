@@ -248,27 +248,95 @@ void main() {
     test('platform-appropriate search dirs', () {
       resetEngineSearchDirsCacheForTesting();
       final dirs = engineSearchDirs();
-      if (Platform.isMacOS) {
-        expect(dirs, <String>['/opt/homebrew/bin', '/usr/local/bin']);
-      } else if (Platform.isWindows) {
+      if (Platform.isWindows) {
         // Reads the persistent registry PATH — a real Windows dev box has a
         // non-empty PATH. Every entry is a non-empty string.
         expect(dirs, isNotEmpty);
         expect(dirs.every((d) => d.isNotEmpty), isTrue);
       } else {
-        // Linux inherits the desktop-session PATH normally.
-        expect(dirs, isEmpty);
+        expect(
+          dirs,
+          posixEngineSearchDirs(
+            macOS: Platform.isMacOS,
+            home: Platform.environment['HOME'],
+          ),
+        );
+        expect(dirs, contains(kNixDefaultProfileBin));
+        if (Platform.isMacOS) {
+          expect(dirs.take(2), <String>['/opt/homebrew/bin', '/usr/local/bin']);
+        }
       }
     });
 
     test('repeated calls return one list, not one registry read each', () {
-      // On macOS and Linux the answer is a const list, so identity holds by
-      // construction; on Windows it holds because the registry read is
-      // cached for the process lifetime. Either way a spawn loop calling
-      // this per engine must not pay for a `reg query` each time.
+      // Cached for the process lifetime on every platform, so a spawn loop
+      // calling this per engine pays for neither a `reg query` nor a HOME
+      // read each time.
       resetEngineSearchDirsCacheForTesting();
       final first = engineSearchDirs();
       expect(identical(engineSearchDirs(), first), isTrue);
+    });
+  });
+
+  group('posixEngineSearchDirs', () {
+    test('macOS: Homebrew and MacPorts first, then the Nix profiles', () {
+      expect(posixEngineSearchDirs(macOS: true, home: '/Users/ada'), <String>[
+        '/opt/homebrew/bin',
+        '/usr/local/bin',
+        '/Users/ada/.nix-profile/bin',
+        '/nix/var/nix/profiles/default/bin',
+      ]);
+    });
+
+    test('Linux: the user profile before the system default profile', () {
+      expect(posixEngineSearchDirs(macOS: false, home: '/home/ada'), <String>[
+        '/home/ada/.nix-profile/bin',
+        '/nix/var/nix/profiles/default/bin',
+      ]);
+    });
+
+    test('no usable HOME: only the system default profile', () {
+      for (final home in <String?>[
+        null,
+        '',
+        'relative/home',
+        '/',
+        '/home/a:/evil',
+        ' /home/ada',
+        '/home/ada\x00x',
+      ]) {
+        expect(
+          posixEngineSearchDirs(macOS: false, home: home),
+          <String>[kNixDefaultProfileBin],
+          reason: 'home ${home == null ? 'null' : '"$home"'}',
+        );
+      }
+    });
+
+    test('a trailing separator on HOME does not double it', () {
+      expect(
+        posixEngineSearchDirs(macOS: false, home: '/home/ada/').first,
+        '/home/ada/.nix-profile/bin',
+      );
+    });
+
+    test('the list cannot be modified by a caller', () {
+      final dirs = posixEngineSearchDirs(macOS: false, home: '/home/ada');
+      expect(() => dirs.add('/x'), throwsUnsupportedError);
+    });
+
+    test('appending them leaves an existing Nix entry where it is', () {
+      final dirs = posixEngineSearchDirs(macOS: false, home: '/home/ada');
+      expect(
+        appendMissingPathDirs(
+          '/home/ada/.nix-profile/bin:/usr/bin',
+          dirs,
+          separator: ':',
+          caseInsensitive: false,
+        ),
+        '/home/ada/.nix-profile/bin:/usr/bin:'
+        '/nix/var/nix/profiles/default/bin',
+      );
     });
   });
 }

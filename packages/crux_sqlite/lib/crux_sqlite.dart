@@ -62,10 +62,16 @@
 /// README ("The migration rules"); this package is those rules made
 /// executable.
 ///
+/// **A database the suite does not own** (a file another tool wrote, such as
+/// a formal engine's `status.sqlite`) is read through
+/// `openForeignSqliteReadOnly`, which opens it immutable and read-only and
+/// runs none of the above: no migration, no `schema_meta`, no backup.
+///
 /// Pure Dart, permanently. See `no_flutter_dependency_test.dart`.
 library;
 
 export 'src/crux_db_recovery.dart';
+export 'src/crux_foreign_database.dart';
 export 'src/crux_migration.dart';
 export 'src/crux_open_policy.dart';
 export 'src/crux_pre_upgrade_backup.dart';

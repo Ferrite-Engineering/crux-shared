@@ -44,7 +44,7 @@ or an installer's "launch now" carries an older process `PATH` that omits toolch
 user has since added. `yosys` then fails "not found" while sitting right there.
 
 ```dart
-final dirs = engineSearchDirs();                       // platform-appropriate; const [] on Linux
+final dirs = engineSearchDirs();                       // platform-appropriate, cached
 final path = appendMissingPathDirs(
   Platform.environment['PATH'] ?? '',
   dirs,
@@ -57,7 +57,31 @@ Every product that spawns an engine carried this as a byte-identical file whose 
 asked to be moved here. `engineSearchDirs` is desktop-only, like the atomic writes: a
 browser spawns no engines. The Windows half reads the persistent registry `PATH`
 (Machine, then User) once per process through `reg query`; the parse of that output is a
-pure function, `parseWindowsPersistentPath`, so it is tested on every host.
+pure function, `parseWindowsPersistentPath`, so it is tested on every host. On macOS
+and Linux the list ends with the Nix profiles, `~/.nix-profile/bin` (only for an
+absolute `HOME` that cannot split a `PATH`) and `/nix/var/nix/profiles/default/bin`,
+because a desktop launcher does not read the shell rc file a Nix install adds them
+from; `posixEngineSearchDirs` is the pure form.
+
+## Path containment
+
+`isPathWithin(root, path)` and `containingRoot(path, roots)` answer whether a path
+resolves inside a directory, with the filesystem doing the reading
+(`containmentKey`): the deepest existing prefix is resolved as an open would resolve
+it, links first and `..` after, the rest is appended as written, a `..` below a
+directory that does not exist or a prefix that cannot be resolved has no key, and case
+folds where the filesystem folds it. It fails closed. The CXP receiver's
+open-request rule and the flow readers' run-root checks are this one function.
+
+## Finding signatures
+
+`CruxSignature.compute(fields, text)` is the suite's one cross-run identity for a
+finding, the `crux-fnv1a64/1` scheme: FNV-1a 64-bit (`cruxFnv1a64`, over UTF-16 code
+units, 16 lowercase hex) of the fields joined by `|` and the text with white-space runs
+collapsed. Line numbers are never a field. `projectRelativePath` and
+`projectRelativeMessage` make a path or a message checkout-independent first. Lifted
+from LintCrux's baseline fingerprint, whose shipped values are pinned here on the VM
+and in Chrome: the limb arithmetic exists so dart2js computes the same bits.
 
 ## Spawn resolution
 

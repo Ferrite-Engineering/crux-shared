@@ -51,6 +51,16 @@ import 'package:path/path.dart' as p;
 /// the diagnostic parser can extract `file:line:col` messages, and a
 /// [YosysFailureKind] saying which failure it was.
 ///
+/// The read command follows [YosysRunRequest.frontend]: `read_verilog`,
+/// `read_verilog -formal` for a formal elaboration, or one `read_slang` for
+/// the yosys-slang frontend.
+///
+/// Two more entry points share the same never-throws contract, temp-file
+/// handling and kill behaviour: [runScript] runs a caller-written script
+/// (a Liberty library read before a gate-level design, say) with
+/// `write_json` appended, and [lowerVhdl] runs only the `ghdl --synth`
+/// lowering and keeps the emitted Verilog at a path the caller chose.
+///
 /// All filesystem and process touches go through injectable seams so
 /// tests don't need a real Yosys binary: the [ProcessRunner] handles
 /// subprocess spawning and the temp directory + filename are derived
@@ -136,48 +146,33 @@ class YosysRunner {
       var effectiveRequest = request;
       if (request.hasVhdlSources) {
         loweredVerilogFile = _allocateVerilogFile();
-        final ghdlResult = await _processRunner.run(
-          _ghdlExecutable,
-          buildGhdlSynthArguments(request),
+        final lowered = await lowerVhdl(
+          request,
+          outputPath: loweredVerilogFile.path,
           timeout: timeout,
           cancelSignal: cancelSignal,
-          stdoutFilePath: loweredVerilogFile.path,
         );
-        switch (ghdlResult.termination) {
-          case ProcessTermination.timedOut:
-            return YosysRunTimeout(
-              budget: timeout ?? Duration.zero,
-              stdout: ghdlResult.stdout,
-              stderr: ghdlResult.stderr,
-            );
-          case ProcessTermination.cancelled:
-            return YosysRunCancelled(
-              stdout: ghdlResult.stdout,
-              stderr: ghdlResult.stderr,
-            );
-          case ProcessTermination.exited:
+        switch (lowered) {
+          case VhdlLowerSuccess():
             break;
-        }
-        if (ghdlResult.exitCode != 0) {
-          return YosysRunFailure(
-            kind: YosysFailureKind.nonZeroExit,
-            exitCode: ghdlResult.exitCode,
-            stdout: ghdlResult.stdout,
-            stderr: ghdlResult.stderr.isEmpty
-                ? 'ghdl --synth exited ${ghdlResult.exitCode} with no output'
-                : ghdlResult.stderr,
-          );
-        }
-        if (!loweredVerilogFile.existsSync() ||
-            loweredVerilogFile.lengthSync() == 0) {
-          return YosysRunFailure(
-            kind: YosysFailureKind.noOutput,
-            exitCode: ghdlResult.exitCode,
-            stdout: ghdlResult.stdout,
-            stderr: ghdlResult.stderr.isEmpty
-                ? 'ghdl --synth exited cleanly but emitted no Verilog'
-                : ghdlResult.stderr,
-          );
+          case VhdlLowerTimeout(:final budget):
+            return YosysRunTimeout(
+              budget: budget,
+              stdout: lowered.stdout,
+              stderr: lowered.stderr,
+            );
+          case VhdlLowerCancelled():
+            return YosysRunCancelled(
+              stdout: lowered.stdout,
+              stderr: lowered.stderr,
+            );
+          case VhdlLowerFailure(:final kind, :final exitCode):
+            return YosysRunFailure(
+              kind: kind,
+              exitCode: exitCode,
+              stdout: lowered.stdout,
+              stderr: lowered.stderr,
+            );
         }
         effectiveRequest = _lowerVhdlToVerilog(
           request,
@@ -188,6 +183,222 @@ class YosysRunner {
       includeLinkDirectory = linked.directory;
       effectiveRequest = linked.request;
       final script = _buildScript(effectiveRequest, jsonFile.path);
+      return await _runScriptAndRead(
+        script,
+        jsonFile,
+        timeout: timeout,
+        cancelSignal: cancelSignal,
+        onStderrLine: onStderrLine,
+      );
+    } on ProcessException catch (e) {
+      return _launchFailure(e);
+    } on ProcessOutputIncompleteException catch (e) {
+      return _incompleteOutputFailure(e);
+      // Deliberately catching an Error. `_escape` signals a rejected path or
+      // identifier with ArgumentError, which is the right signal for the
+      // synchronous `buildScript` entry point but would breach this method's
+      // documented never-throws contract. The value comes from the user's
+      // own file paths, so it is input validation rather than a programming
+      // error, and it belongs in the result type.
+      // ignore: avoid_catching_errors
+    } on ArgumentError catch (e) {
+      return _invalidRequestFailure(e);
+    } on FileSystemException catch (e) {
+      return _unreadableJsonFailure(e);
+    } finally {
+      // Best-effort cleanup; ignore if a file was never created.
+      for (final file in <File?>[jsonFile, loweredVerilogFile]) {
+        if (file != null && file.existsSync()) {
+          try {
+            file.deleteSync();
+          } on FileSystemException {
+            // Ignore — leftover temp files are not fatal.
+          }
+        }
+      }
+      final linkDirectory = includeLinkDirectory;
+      if (linkDirectory != null) _removeLinkDirectory(linkDirectory);
+    }
+  }
+
+  /// Runs a caller-written [request] script, then `write_json` to a temp
+  /// file, and returns the document exactly as [run] does: same result
+  /// types, same never-throws contract, same kill and cleanup behaviour.
+  ///
+  /// For steps the fixed elaboration script of [run] cannot express:
+  /// reading a Liberty library before a gate-level design, a read with no
+  /// `proc`, the caller's own pass sequence. Build the file-reading
+  /// statements with [YosysScriptCommands]. Every statement is checked as
+  /// one statement ([YosysFailureKind.invalidRequest] otherwise); nothing
+  /// else about them is policed here, so a statement taken from a project
+  /// file must pass the consumer's own allow-list first.
+  ///
+  /// The script runs from this process's working directory, so relative
+  /// paths in it resolve there; pass absolute paths.
+  Future<YosysRunResult> runScript(
+    YosysScriptRequest request, {
+    Duration? timeout,
+    Future<void>? cancelSignal,
+    void Function(String line)? onStderrLine,
+  }) async {
+    final jsonFile = _allocateJsonFile();
+    try {
+      final script = _buildCallerScript(request, jsonFile.path);
+      return await _runScriptAndRead(
+        script,
+        jsonFile,
+        timeout: timeout,
+        cancelSignal: cancelSignal,
+        onStderrLine: onStderrLine,
+      );
+    } on ProcessException catch (e) {
+      return _launchFailure(e);
+    } on ProcessOutputIncompleteException catch (e) {
+      return _incompleteOutputFailure(e);
+      // Deliberately catching an Error, for the reason [run] gives.
+      // ignore: avoid_catching_errors
+    } on ArgumentError catch (e) {
+      return _invalidRequestFailure(e);
+    } on FileSystemException catch (e) {
+      return _unreadableJsonFailure(e);
+    } finally {
+      if (jsonFile.existsSync()) {
+        try {
+          jsonFile.deleteSync();
+        } on FileSystemException {
+          // Ignore — a leftover temp file is not fatal.
+        }
+      }
+    }
+  }
+
+  /// Lowers [request]'s VHDL sources to Verilog with a standalone
+  /// `ghdl --synth --out=verilog` ([buildGhdlSynthArguments]) and writes the
+  /// emitted Verilog to [outputPath], with no Yosys run after it.
+  ///
+  /// The one VHDL path in the suite: VHDL is never read through the
+  /// ghdl-yosys-plugin. [run] lowers through here and deletes its temp copy;
+  /// this keeps the file, for a consumer that hands the Verilog to another
+  /// tool (an equivalence check's gold design, say).
+  ///
+  /// [outputPath] is the caller's: it is created or replaced, never deleted,
+  /// and a failed lowering may leave it empty or partial. Choose it inside a
+  /// directory this process owns (a per-run work directory, one generated
+  /// safe segment); nothing here checks where it is.
+  ///
+  /// **Never throws.** A missing `ghdl` is [VhdlLowerFailure] of kind
+  /// [YosysFailureKind.launch]; a request with no VHDL source, an
+  /// unacceptable unit name or standard is [YosysFailureKind.invalidRequest];
+  /// a non-zero exit is [YosysFailureKind.nonZeroExit]; a clean exit with
+  /// an empty or missing file is [YosysFailureKind.noOutput].
+  Future<VhdlLowerResult> lowerVhdl(
+    YosysRunRequest request, {
+    required String outputPath,
+    Duration? timeout,
+    Future<void>? cancelSignal,
+  }) async {
+    try {
+      if (!request.hasVhdlSources) {
+        return const VhdlLowerFailure(
+          kind: YosysFailureKind.invalidRequest,
+          exitCode: launchFailureExitCode,
+          stdout: '',
+          stderr: 'Invalid Yosys request: the request has no VHDL source',
+        );
+      }
+      final arguments = buildGhdlSynthArguments(request);
+      final ghdl = await _processRunner.run(
+        _ghdlExecutable,
+        arguments,
+        timeout: timeout,
+        cancelSignal: cancelSignal,
+        stdoutFilePath: outputPath,
+      );
+      switch (ghdl.termination) {
+        case ProcessTermination.timedOut:
+          return VhdlLowerTimeout(
+            budget: timeout ?? Duration.zero,
+            stdout: ghdl.stdout,
+            stderr: ghdl.stderr,
+          );
+        case ProcessTermination.cancelled:
+          return VhdlLowerCancelled(stdout: ghdl.stdout, stderr: ghdl.stderr);
+        case ProcessTermination.exited:
+          break;
+      }
+      if (ghdl.exitCode != 0) {
+        return VhdlLowerFailure(
+          kind: YosysFailureKind.nonZeroExit,
+          exitCode: ghdl.exitCode,
+          stdout: ghdl.stdout,
+          stderr: ghdl.stderr.isEmpty
+              ? 'ghdl --synth exited ${ghdl.exitCode} with no output'
+              : ghdl.stderr,
+        );
+      }
+      final output = File(outputPath);
+      if (!output.existsSync() || output.lengthSync() == 0) {
+        return VhdlLowerFailure(
+          kind: YosysFailureKind.noOutput,
+          exitCode: ghdl.exitCode,
+          stdout: ghdl.stdout,
+          stderr: ghdl.stderr.isEmpty
+              ? 'ghdl --synth exited cleanly but emitted no Verilog'
+              : ghdl.stderr,
+        );
+      }
+      return VhdlLowerSuccess(
+        outputPath: outputPath,
+        stdout: ghdl.stdout,
+        stderr: ghdl.stderr,
+      );
+    } on ProcessException catch (e) {
+      final failure = _launchFailure(e);
+      return VhdlLowerFailure(
+        kind: failure.kind,
+        exitCode: failure.exitCode,
+        stdout: failure.stdout,
+        stderr: failure.stderr,
+      );
+    } on ProcessOutputIncompleteException catch (e) {
+      final failure = _incompleteOutputFailure(e);
+      return VhdlLowerFailure(
+        kind: failure.kind,
+        exitCode: failure.exitCode,
+        stdout: failure.stdout,
+        stderr: failure.stderr,
+      );
+      // Deliberately catching an Error, for the reason [run] gives.
+      // ignore: avoid_catching_errors
+    } on ArgumentError catch (e) {
+      final failure = _invalidRequestFailure(e);
+      return VhdlLowerFailure(
+        kind: failure.kind,
+        exitCode: failure.exitCode,
+        stdout: failure.stdout,
+        stderr: failure.stderr,
+      );
+    } on FileSystemException catch (e) {
+      return VhdlLowerFailure(
+        kind: YosysFailureKind.outputUnreadable,
+        exitCode: launchFailureExitCode,
+        stdout: '',
+        stderr: 'Could not check the emitted Verilog: ${e.message}',
+      );
+    }
+  }
+
+  /// Runs [script] and reads the `write_json` output at [jsonFile] back,
+  /// mapping every outcome onto a [YosysRunResult]. Shared by [run] and
+  /// [runScript] so the two cannot drift.
+  Future<YosysRunResult> _runScriptAndRead(
+    String script,
+    File jsonFile, {
+    Duration? timeout,
+    Future<void>? cancelSignal,
+    void Function(String line)? onStderrLine,
+  }) async {
+    {
       final processResult = await _runProcess(
         script,
         timeout: timeout,
@@ -246,69 +457,55 @@ class YosysRunner {
         stdout: processResult.stdout,
         stderr: processResult.stderr,
       );
-    } on ProcessException catch (e) {
-      // Yosys (or, for a VHDL request, ghdl) is not installed, not on PATH,
-      // or not executable. This is the single most common real-world
-      // failure and it must not surface as a thrown exception — the
-      // documented contract is that callers can pattern-match every
-      // outcome. The executable name comes from the exception so the
-      // message names whichever tool actually failed to spawn.
-      return YosysRunFailure(
-        kind: YosysFailureKind.launch,
-        exitCode: launchFailureExitCode,
-        stdout: '',
-        stderr: 'Could not run the executable "${e.executable}": ${e.message}',
-      );
-    } on ProcessOutputIncompleteException catch (e) {
-      // The tool exited on its own but its stdout/stderr could not be read
-      // to the end, so the log may be missing the last diagnostic it
-      // printed. The same never-throws contract applies, and the result
-      // must not look like a run whose stderr the diagnostic parser can
-      // trust.
-      return YosysRunFailure(
-        kind: YosysFailureKind.outputUnreadable,
-        exitCode: launchFailureExitCode,
-        stdout: '',
-        stderr: 'Could not read the tool output to its end: it ${e.message}',
-      );
-      // Deliberately catching an Error. `_escape` signals a rejected path or
-      // identifier with ArgumentError, which is the right signal for the
-      // synchronous `buildScript` entry point but would breach this method's
-      // documented never-throws contract. The value comes from the user's
-      // own file paths, so it is input validation rather than a programming
-      // error, and it belongs in the result type.
-      // ignore: avoid_catching_errors
-    } on ArgumentError catch (e) {
-      return YosysRunFailure(
+    }
+  }
+
+  /// Yosys (or, for a VHDL request, ghdl) is not installed, not on PATH, or
+  /// not executable. This is the single most common real-world failure and
+  /// it must not surface as a thrown exception: the documented contract is
+  /// that callers can pattern-match every outcome. The executable name comes
+  /// from the exception so the message names whichever tool actually failed
+  /// to spawn.
+  static YosysRunFailure _launchFailure(ProcessException e) => YosysRunFailure(
+    kind: YosysFailureKind.launch,
+    exitCode: launchFailureExitCode,
+    stdout: '',
+    stderr: 'Could not run the executable "${e.executable}": ${e.message}',
+  );
+
+  /// The tool exited on its own but its stdout/stderr could not be read to
+  /// the end, so the log may be missing the last diagnostic it printed. The
+  /// same never-throws contract applies, and the result must not look like a
+  /// run whose stderr the diagnostic parser can trust.
+  static YosysRunFailure _incompleteOutputFailure(
+    ProcessOutputIncompleteException e,
+  ) => YosysRunFailure(
+    kind: YosysFailureKind.outputUnreadable,
+    exitCode: launchFailureExitCode,
+    stdout: '',
+    stderr: 'Could not read the tool output to its end: it ${e.message}',
+  );
+
+  /// `_escape` and its siblings signal a rejected path, identifier or
+  /// statement with [ArgumentError]; the value comes from the user's own
+  /// files, so it belongs in the result type.
+  static YosysRunFailure _invalidRequestFailure(ArgumentError e) =>
+      YosysRunFailure(
         kind: YosysFailureKind.invalidRequest,
         exitCode: launchFailureExitCode,
         stdout: '',
         stderr: 'Invalid Yosys request: ${e.message}',
       );
-    } on FileSystemException catch (e) {
-      // The write_json temp file could not be read back (removed underneath
-      // us, permissions, full disk).
-      return YosysRunFailure(
+
+  /// The write_json temp file could not be read back (removed underneath
+  /// us, permissions, full disk).
+  static YosysRunFailure _unreadableJsonFailure(FileSystemException e) =>
+      YosysRunFailure(
         kind: YosysFailureKind.outputUnreadable,
         exitCode: launchFailureExitCode,
         stdout: '',
         stderr: 'Could not read the Yosys JSON output: ${e.message}',
       );
-    } finally {
-      // Best-effort cleanup; ignore if a file was never created.
-      for (final file in <File?>[jsonFile, loweredVerilogFile]) {
-        if (file != null && file.existsSync()) {
-          try {
-            file.deleteSync();
-          } on FileSystemException {
-            // Ignore — leftover temp files are not fatal.
-          }
-        }
-      }
-      final linkDirectory = includeLinkDirectory;
-      if (linkDirectory != null) _removeLinkDirectory(linkDirectory);
-    }
-  }
 
   /// Gives every include directory whose path contains whitespace a
   /// whitespace-free alias: a link (a symlink, or a junction on Windows)
@@ -342,15 +539,7 @@ class YosysRunner {
       }
     }
     return (
-      request: YosysRunRequest(
-        sources: request.sources,
-        topModule: request.topModule,
-        defines: request.defines,
-        includePaths: includePaths,
-        extraCommands: request.extraCommands,
-        vhdlStandard: request.vhdlStandard,
-        vhdlTopUnit: request.vhdlTopUnit,
-      ),
+      request: request.copyWith(includePaths: includePaths),
       directory: directory,
     );
   }
@@ -434,37 +623,49 @@ class YosysRunner {
 
     final commands = <String>[];
 
-    // Verilog read (1995/2001/2005). `-I` and `-D` are Verilog
-    // preprocessor flags, so they go on this read command. Their values are
-    // emitted bare and file names quoted; see [_bareOption] for why.
-    if (verilogSources.isNotEmpty) {
-      final readBuffer = StringBuffer('read_verilog');
-      for (final inc in request.includePaths) {
-        readBuffer.write(' -I ${_bareOption(inc, 'Include path')}');
-      }
-      for (final def in request.defines) {
-        readBuffer.write(' -D ${_bareOption(def, 'Define')}');
-      }
-      for (final file in verilogSources) {
-        readBuffer.write(' "${_escape(file.path)}"');
-      }
-      commands.add(readBuffer.toString());
-    }
-
-    // SystemVerilog read uses `-sv`. Emitted as a separate command so
-    // Yosys parses each file under the correct dialect.
-    if (systemVerilogSources.isNotEmpty) {
-      final readBuffer = StringBuffer('read_verilog -sv');
-      for (final inc in request.includePaths) {
-        readBuffer.write(' -I ${_bareOption(inc, 'Include path')}');
-      }
-      for (final def in request.defines) {
-        readBuffer.write(' -D ${_bareOption(def, 'Define')}');
-      }
-      for (final file in systemVerilogSources) {
-        readBuffer.write(' "${_escape(file.path)}"');
-      }
-      commands.add(readBuffer.toString());
+    switch (request.frontend) {
+      case YosysFrontend.verilog:
+      case YosysFrontend.verilogFormal:
+        final formal = request.frontend == YosysFrontend.verilogFormal;
+        // Verilog read (1995/2001/2005). `-I` and `-D` are Verilog
+        // preprocessor flags, so they go on this read command. Their values
+        // are emitted bare and file names quoted; see [_bareOption] for why.
+        if (verilogSources.isNotEmpty) {
+          commands.add(
+            YosysScriptCommands.readVerilog(
+              [for (final s in verilogSources) s.path],
+              formal: formal,
+              includePaths: request.includePaths,
+              defines: request.defines,
+            ),
+          );
+        }
+        // SystemVerilog read uses `-sv`. Emitted as a separate command so
+        // Yosys parses each file under the correct dialect.
+        if (systemVerilogSources.isNotEmpty) {
+          commands.add(
+            YosysScriptCommands.readVerilog(
+              [for (final s in systemVerilogSources) s.path],
+              systemVerilog: true,
+              formal: formal,
+              includePaths: request.includePaths,
+              defines: request.defines,
+            ),
+          );
+        }
+      case YosysFrontend.slang:
+        // One read for every source: slang reads Verilog as SystemVerilog,
+        // and splitting the files would elaborate them as separate designs.
+        final sources = [...verilogSources, ...systemVerilogSources];
+        if (sources.isNotEmpty) {
+          commands.add(
+            YosysScriptCommands.readSlang(
+              [for (final s in sources) s.path],
+              includePaths: request.includePaths,
+              defines: request.defines,
+            ),
+          );
+        }
     }
 
     final hierarchy = StringBuffer('hierarchy -check');
@@ -499,6 +700,42 @@ class YosysRunner {
     YosysRunRequest request, {
     required String jsonOutputPath,
   }) => _buildScript(request, jsonOutputPath);
+
+  static String _buildCallerScript(
+    YosysScriptRequest request,
+    String jsonOutputPath,
+  ) => <String>[
+    ...request.commands.map(_callerStatement),
+    'write_json "${_escape(jsonOutputPath)}"',
+  ].join('; ');
+
+  /// Validates one statement of a [YosysScriptRequest]: no `;`, newline or
+  /// carriage return anywhere (each splits the `-p` string into commands
+  /// whether quoted or not), and double quotes only in pairs, so a quoted
+  /// file name cannot run on into the statements after it.
+  static String _callerStatement(String command) {
+    const forbidden = [';', '\n', '\r'];
+    final unbalanced = '"'.allMatches(command).length.isOdd;
+    if (command.trim().isEmpty ||
+        unbalanced ||
+        forbidden.any(command.contains)) {
+      throw ArgumentError.value(
+        command,
+        'commands',
+        'Each script command must be one non-empty Yosys statement, without '
+            'semicolons or newlines and with its double quotes paired',
+      );
+    }
+    return command;
+  }
+
+  /// The exact script [runScript] would pass for [request], `write_json`
+  /// included. Pure; throws [ArgumentError] for a statement [runScript]
+  /// would refuse.
+  static String buildCallerScript(
+    YosysScriptRequest request, {
+    required String jsonOutputPath,
+  }) => _buildCallerScript(request, jsonOutputPath);
 
   /// Builds the argument list for the standalone `ghdl --synth` invocation
   /// that lowers a request's VHDL sources to Verilog on stdout. Pure; does
@@ -548,6 +785,7 @@ class YosysRunner {
       defines: request.defines,
       includePaths: request.includePaths,
       extraCommands: request.extraCommands,
+      frontend: request.frontend,
     );
   }
 
@@ -666,5 +904,77 @@ class YosysRunner {
       );
     }
     return value;
+  }
+}
+
+/// Builders for the file-reading statements of a [YosysScriptRequest], with
+/// the quoting and checks [YosysRunner.run]'s own script applies: a file
+/// name is double-quoted where the reading pass strips the quotes, option
+/// values are bare, and a value holding a double quote, `;` or a newline
+/// (or, where emitted bare, white space) throws [ArgumentError], which
+/// [YosysRunner.runScript] reports as [YosysFailureKind.invalidRequest].
+abstract final class YosysScriptCommands {
+  /// `read_liberty [-lib] "<path>"`. With [lib] (the default) every cell is
+  /// read as a black box carrying only its interface, which is what a
+  /// gate-level design read after it needs; without it the cells' Liberty
+  /// functions are read as logic.
+  static String readLiberty(String path, {bool lib = true}) =>
+      'read_liberty${lib ? ' -lib' : ''} "${YosysRunner._escape(path)}"';
+
+  /// `read_verilog [-formal] [-sv] [-I dir]... [-D def]... "<file>"...`.
+  ///
+  /// [formal] enables the formal constructs (`assert`, `assume`, `cover`,
+  /// `$past`); [systemVerilog] reads the files as SystemVerilog.
+  static String readVerilog(
+    List<String> paths, {
+    bool systemVerilog = false,
+    bool formal = false,
+    List<String> includePaths = const <String>[],
+    List<String> defines = const <String>[],
+  }) {
+    final buffer = StringBuffer('read_verilog');
+    if (formal) buffer.write(' -formal');
+    if (systemVerilog) buffer.write(' -sv');
+    _writeOptions(buffer, includePaths, defines);
+    for (final path in paths) {
+      buffer.write(' "${YosysRunner._escape(path)}"');
+    }
+    return buffer.toString();
+  }
+
+  /// `read_slang [-I dir]... [-D def]... <file>...`, the yosys-slang
+  /// frontend.
+  ///
+  /// `read_slang` does not strip quotes from a file name, so the files are
+  /// emitted bare and a path containing white space throws.
+  static String readSlang(
+    List<String> paths, {
+    List<String> includePaths = const <String>[],
+    List<String> defines = const <String>[],
+  }) {
+    final buffer = StringBuffer('read_slang');
+    _writeOptions(buffer, includePaths, defines);
+    for (final path in paths) {
+      buffer.write(' ${YosysRunner._bareOption(path, 'A read_slang source')}');
+    }
+    return buffer.toString();
+  }
+
+  /// `hierarchy -check -top <top>`, the top name checked as a bare
+  /// identifier.
+  static String hierarchy(String top) =>
+      'hierarchy -check -top ${YosysRunner._identifier(top)}';
+
+  static void _writeOptions(
+    StringBuffer buffer,
+    List<String> includePaths,
+    List<String> defines,
+  ) {
+    for (final inc in includePaths) {
+      buffer.write(' -I ${YosysRunner._bareOption(inc, 'Include path')}');
+    }
+    for (final def in defines) {
+      buffer.write(' -D ${YosysRunner._bareOption(def, 'Define')}');
+    }
   }
 }

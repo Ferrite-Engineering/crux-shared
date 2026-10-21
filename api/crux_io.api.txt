@@ -12,6 +12,12 @@ class CapturedProcessOutput
   final exitCode: int
   final stderr: List<String>
   final stdout: List<String>
+final abstract class CruxSignature
+  static compute(List<String> fields, String text) -> String
+  static const scheme: String
+  static normalizeText(String text) -> String
+  static projectRelativeMessage(String text, String projectRoot) -> String
+  static projectRelativePath(String filePath, String projectRoot) -> String
 class ProcessOutputIncompleteException implements Exception
   const ProcessOutputIncompleteException({List<String> excerpt, Object? readError, required Duration drainGrace, required ProcessOutputLoss loss, required int exitCode})
   final drainGrace: Duration
@@ -48,16 +54,22 @@ appendMissingPathDirs(String currentPath, List<String> extraDirs, {required Stri
 canonicalPathKey(String path, {bool resolveSymlinks, bool? caseInsensitive}) -> String
 canonicalizePath(String path, {bool resolveSymlinks}) -> String
 collectProcessOutput({Duration drainGrace, required Future<int> exitCode, required Stream<String> stderr, required Stream<String> stdout}) -> Future<CapturedProcessOutput>
+containingRoot(String path, Iterable<String> roots) -> String?
+containmentKey(String absolute) -> String?
+cruxFnv1a64(String input) -> String
 drainProcessOutput({Duration drainGrace, List<String> Function()? excerpt, bool Function()? terminatedByCaller, required List<ProcessStreamDrain<Object?>> drains, required int exitCode}) -> Future<void>
 engineSearchDirs() -> List<String>
 get filesystemIsCaseInsensitive -> bool
 isAbsoluteSpawnPath(String path) -> bool
+isPathWithin(String root, String path) -> bool
 isSamePath(String a, String b, {bool resolveSymlinks, bool? caseInsensitive}) -> bool
 get kDefaultWindowsPathExt -> String
+get kNixDefaultProfileBin -> String
 get kProcessOutputDrainGrace -> Duration
 get kProcessOutputExcerptLines -> int
 ossCadSuiteSpawnEnvironment(String executable, Map<String, String>? environment, {bool Function(String)? isDirectory, bool Function(String)? isFile, required Map<String, String> parentEnvironment, required bool windows}) -> Map<String, String>?
 parseWindowsPersistentPath(String regQueryOutput, {required Map<String, String> environment}) -> List<String>
+posixEngineSearchDirs({String? home, required bool macOS}) -> List<String>
 prependPathDirs(String currentPath, List<String> dirs, {required String separator, required bool caseInsensitive}) -> String?
 processOutputExcerpt(Iterable<String> lines) -> List<String>
 requireSpawnExecutable(String executable, {String? pathExt, bool Function(String)? exists, required String? pathEnvironment, required bool windows}) -> String

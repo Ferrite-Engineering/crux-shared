@@ -1030,9 +1030,13 @@ try {
         sources: sources,
         subject: 'crux_sqlite/lib/src',
         // The open policy IS the sanctioned route; its own two calls to the
-        // factory are what everything else goes through.
+        // factory are what everything else goes through. The foreign-file
+        // open is the other: read-only and versionless, so there is no
+        // version to downgrade, no migration to run and no lock to wait
+        // on (immutable takes none), and its options pass no `version:`.
         expectedDirectOpenFiles: {
           p.join('lib', 'src', 'crux_open_policy.dart'),
+          p.join('lib', 'src', 'crux_foreign_database.dart'),
         },
       );
       expect(report.isClean, isTrue, reason: report.describe());

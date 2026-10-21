@@ -3,7 +3,9 @@
 
 /// Cross-suite Yosys subprocess infrastructure for the EDACrux suite.
 ///
-/// Exports `YosysRunner` (spawn yosys + capture write_json output),
+/// Exports `YosysRunner` (spawn yosys + capture write_json output, with a
+/// formal or yosys-slang read, a caller-written script mode built with
+/// `YosysScriptCommands`, and a VHDL lower-only call),
 /// `YosysAvailabilityService` (probe `yosys -V`),
 /// `YosysDiagnosticParser` (structured stderr parsing),
 /// `ProcessRunner` / `DefaultProcessRunner` / `ProcessRegistry` (the

@@ -21,6 +21,31 @@ enum YosysSourceLanguage {
   vhdl,
 }
 
+/// Which Yosys frontend reads a request's Verilog and SystemVerilog sources.
+///
+/// VHDL is unaffected: it is always lowered by `ghdl --synth` first and the
+/// emitted Verilog is read by the frontend chosen here.
+enum YosysFrontend {
+  /// The built-in frontend, `read_verilog` (`-sv` for SystemVerilog files).
+  verilog,
+
+  /// The built-in frontend with formal constructs enabled,
+  /// `read_verilog -formal` (`-formal -sv` for SystemVerilog files):
+  /// immediate and concurrent `assert`, `assume` and `cover`, `$past` and
+  /// the other formal-only system functions are read instead of refused.
+  verilogFormal,
+
+  /// The yosys-slang frontend, `read_slang`, which reads every Verilog and
+  /// SystemVerilog source as SystemVerilog in one command.
+  ///
+  /// Needs a Yosys with yosys-slang available (the OSS CAD Suite build has
+  /// it); any other fails with Yosys's own "No such command: read_slang".
+  /// `read_slang` does not strip quotes from file names, so its file names
+  /// are emitted bare, and a source path containing white space is refused
+  /// as an invalid request rather than passed as two broken tokens.
+  slang,
+}
+
 /// One source-language input to a [YosysRunRequest]. Carries an
 /// absolute path plus the language hint that drives Yosys's read
 /// command selection.
@@ -81,6 +106,7 @@ class YosysRunRequest {
     this.extraCommands = const <String>[],
     this.vhdlStandard,
     this.vhdlTopUnit,
+    this.frontend = YosysFrontend.verilog,
   });
 
   /// Convenience constructor that takes a list of Verilog file paths.
@@ -140,6 +166,24 @@ class YosysRunRequest {
   /// to `top` as the last-resort default.
   final String? vhdlTopUnit;
 
+  /// The frontend that reads the Verilog and SystemVerilog sources; the
+  /// built-in `read_verilog` unless a formal or yosys-slang read is asked
+  /// for.
+  final YosysFrontend frontend;
+
+  /// A copy with [includePaths] replaced; every other field, [frontend]
+  /// included, is carried over.
+  YosysRunRequest copyWith({List<String>? includePaths}) => YosysRunRequest(
+    sources: sources,
+    topModule: topModule,
+    defines: defines,
+    includePaths: includePaths ?? this.includePaths,
+    extraCommands: extraCommands,
+    vhdlStandard: vhdlStandard,
+    vhdlTopUnit: vhdlTopUnit,
+    frontend: frontend,
+  );
+
   /// Returns true if any source in [sources] is VHDL.
   bool get hasVhdlSources =>
       sources.any((s) => s.language == YosysSourceLanguage.vhdl);
@@ -164,6 +208,7 @@ class YosysRunRequest {
     if (other.topModule != topModule) return false;
     if (other.vhdlStandard != vhdlStandard) return false;
     if (other.vhdlTopUnit != vhdlTopUnit) return false;
+    if (other.frontend != frontend) return false;
     if (!_listEq(other.sources, sources)) return false;
     if (!_listEq(other.defines, defines)) return false;
     if (!_listEq(other.includePaths, includePaths)) return false;
@@ -176,6 +221,7 @@ class YosysRunRequest {
     topModule,
     vhdlStandard,
     vhdlTopUnit,
+    frontend,
     Object.hashAll(sources),
     Object.hashAll(defines),
     Object.hashAll(includePaths),
@@ -332,6 +378,112 @@ final class YosysRunCancelled extends YosysRunResult {
     required super.stdout,
     required super.stderr,
   });
+}
+
+/// A Yosys script the caller writes, for the steps the fixed elaboration
+/// script cannot express: reading a Liberty library before the design, a
+/// gate-level read with no `proc`, a pass sequence of the caller's own.
+///
+/// Run by `YosysRunner.runScript`, which appends one `write_json` to a temp
+/// file and returns the document as [YosysRunSuccess.rawJson], exactly as
+/// `YosysRunner.run` does. Build file-reading statements with
+/// `YosysScriptCommands` so paths are quoted and checked the way the fixed
+/// script's are.
+///
+/// Each entry of [commands] must be a single statement: no `;`, newline or
+/// double quote outside the quoting `YosysScriptCommands` emits. A consumer
+/// that takes statements from a project file still filters them against its
+/// own allow-list: `exec` and `shell` are single statements too.
+@immutable
+class YosysScriptRequest {
+  /// Creates a script request.
+  const YosysScriptRequest({required this.commands});
+
+  /// The statements, in order. The runner appends `write_json`.
+  final List<String> commands;
+
+  @override
+  bool operator ==(Object other) =>
+      other is YosysScriptRequest && _listEq(other.commands, commands);
+
+  @override
+  int get hashCode => Object.hashAll(commands);
+
+  @override
+  String toString() => 'YosysScriptRequest(${commands.length} commands)';
+}
+
+/// The outcome of lowering a request's VHDL to Verilog on its own, with
+/// `YosysRunner.lowerVhdl`. Sealed so a caller handles every case.
+@immutable
+sealed class VhdlLowerResult {
+  const VhdlLowerResult({required this.stdout, required this.stderr});
+
+  /// Captured stdout of `ghdl`; empty on success, where stdout is the
+  /// emitted Verilog and went to the output file.
+  final String stdout;
+
+  /// Captured stderr of `ghdl`, its diagnostics.
+  final String stderr;
+}
+
+/// `ghdl --synth --out=verilog` exited cleanly and wrote a non-empty Verilog
+/// file at [outputPath].
+@immutable
+final class VhdlLowerSuccess extends VhdlLowerResult {
+  /// Creates a success result.
+  const VhdlLowerSuccess({
+    required this.outputPath,
+    required super.stdout,
+    required super.stderr,
+  });
+
+  /// Where the emitted Verilog is: the path the caller gave. The caller owns
+  /// the file.
+  final String outputPath;
+}
+
+/// `ghdl` could not be run, exited non-zero, or emitted nothing. [kind] says
+/// which, with the same vocabulary as [YosysRunFailure].
+@immutable
+final class VhdlLowerFailure extends VhdlLowerResult {
+  /// Creates a failure result.
+  const VhdlLowerFailure({
+    required this.kind,
+    required this.exitCode,
+    required super.stdout,
+    required super.stderr,
+  });
+
+  /// Why the lowering failed: [YosysFailureKind.launch] (no `ghdl`),
+  /// [YosysFailureKind.invalidRequest] (no VHDL source, a bad unit name or
+  /// standard), [YosysFailureKind.nonZeroExit], [YosysFailureKind.noOutput]
+  /// or [YosysFailureKind.outputUnreadable].
+  final YosysFailureKind kind;
+
+  /// `ghdl`'s exit status, or `-1` when no process status exists.
+  final int exitCode;
+}
+
+/// `ghdl` exceeded its time [budget] and was killed.
+@immutable
+final class VhdlLowerTimeout extends VhdlLowerResult {
+  /// Creates a timeout result.
+  const VhdlLowerTimeout({
+    required this.budget,
+    required super.stdout,
+    required super.stderr,
+  });
+
+  /// The budget after which the runner killed the process.
+  final Duration budget;
+}
+
+/// `ghdl` was killed because the caller's cancel signal fired.
+@immutable
+final class VhdlLowerCancelled extends VhdlLowerResult {
+  /// Creates a cancelled result.
+  const VhdlLowerCancelled({required super.stdout, required super.stderr});
 }
 
 bool _listEq<T>(List<T> a, List<T> b) {

@@ -15,3 +15,8 @@ bool hostFilesystemIsCaseInsensitive() => false;
 /// would change what a URL names.
 String hostCanonicalizePath(String trimmed, {required bool resolveSymlinks}) =>
     trimmed;
+
+/// [absolute] itself, or null when it has a `..` segment: with no filesystem
+/// to walk, a parent step cannot be resolved, so it is not contained anywhere.
+String? hostContainmentKey(String absolute) =>
+    absolute.split('/').contains('..') ? null : absolute;

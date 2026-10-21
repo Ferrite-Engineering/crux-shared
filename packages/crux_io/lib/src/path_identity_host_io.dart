@@ -31,3 +31,26 @@ String hostCanonicalizePath(String trimmed, {required bool resolveSymlinks}) {
     return result;
   }
 }
+
+/// The containment key of the absolute path [absolute]: the deepest existing
+/// prefix as spelled, resolved by the filesystem, with the rest appended as
+/// written; null when it has none. See `containmentKey`.
+String? hostContainmentKey(String absolute) {
+  try {
+    var head = absolute;
+    final remainder = <String>[];
+    while (FileSystemEntity.typeSync(head, followLinks: false) ==
+        FileSystemEntityType.notFound) {
+      final parent = p.dirname(head);
+      if (parent == head) return null;
+      remainder.insert(0, p.basename(head));
+      head = parent;
+    }
+    if (remainder.contains('..')) return null;
+    final resolved = File(head).resolveSymbolicLinksSync();
+    final joined = p.normalize(p.joinAll(<String>[resolved, ...remainder]));
+    return hostFilesystemIsCaseInsensitive() ? joined.toLowerCase() : joined;
+  } on FileSystemException {
+    return null;
+  }
+}

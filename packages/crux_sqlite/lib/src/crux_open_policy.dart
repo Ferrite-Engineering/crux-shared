@@ -51,7 +51,9 @@ void ensureCruxSqliteFfiInitialized() {
   databaseFactory = ffi.databaseFactoryFfi;
 }
 
-/// **The one place in the suite an `OpenDatabaseOptions` is constructed.**
+/// **The one place in the suite an `OpenDatabaseOptions` is constructed** for
+/// a store the suite owns. (`openForeignSqliteReadOnly` builds the other: a
+/// read-only, versionless options object for a file another tool wrote.)
 ///
 /// A store supplies three things — a migration list (via [runner]), a
 /// data-value declaration ([recovery]), and a path — and gets a correctly

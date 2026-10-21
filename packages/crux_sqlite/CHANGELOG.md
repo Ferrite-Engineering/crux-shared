@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **Added `openForeignSqliteReadOnly`**, the one open of a SQLite file the
+  suite does not own (a formal engine's `status.sqlite`). It runs no
+  migration, writes no `schema_meta`, sets no `user_version` and takes no
+  backup: a store's open path stamps the file it opens, which is right for
+  ours and wrong for another tool's. It opens an SQLite URI with
+  `mode=ro&immutable=1`, because a plain read-only open of a WAL-mode file
+  still creates its `-shm` (pinned by a control test) and fails in a
+  read-only directory. Immutable also skips the `-wal`, so a file whose
+  writer left a non-empty one is refused
+  (`CruxForeignDatabaseRefusal.notCheckpointed`) rather than read as if
+  complete; a missing path and a directory are refused too, with
+  `CruxForeignDatabaseException`, which is deliberately outside the sealed
+  `CruxSqliteException` family that describes the suite's own stores.
+
 ## 0.5.0
 
 - **G5b sees provider seams.** A seed in `extraOpenEntryPoints` matched only

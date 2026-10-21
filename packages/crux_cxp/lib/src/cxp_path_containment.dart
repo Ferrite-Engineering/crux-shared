@@ -38,8 +38,9 @@ import 'package:path/path.dart' as p;
 ///
 /// With [roots] the rule is the spec's: the path, canonicalised, must lie
 /// inside one of the directories the callback returns, canonicalised the
-/// same way (see [_key] for what canonical means here). The callback is
-/// consulted on every check so it can read live session state. A callback
+/// same way (`crux_io`'s `containmentKey` says what canonical means here).
+/// The callback is consulted on every check so it can read live session
+/// state. A callback
 /// that returns nothing means nothing is open, and everything is refused.
 ///
 /// ### The value checked is the value opened
@@ -116,16 +117,25 @@ class CxpPathContainment {
     if (network != null) return network;
     if (openRoots == null) return null;
 
+    // Both sides are keyed by crux_io's `containmentKey`, CXP §11.3's "the
+    // path the filesystem would reach": the deepest existing prefix as
+    // spelled is resolved by the filesystem, the rest is appended as
+    // written, a `..` in that rest or an unresolvable prefix has no key, and
+    // case is folded where the filesystem folds it. On Windows the
+    // filesystem API collapses `..` as text before it resolves anything, and
+    // so does the resolution, so the check reads a path the way the open
+    // will; junctions resolve like links. A missing drive or share has no
+    // key. The same rule guards every other contained path in the suite.
     final rootKeys = <String>[];
     var anyRoot = false;
     for (final root in openRoots) {
       if (root.trim().isEmpty) continue;
       anyRoot = true;
-      final rootKey = _key(p.absolute(root));
+      final rootKey = containmentKey(p.absolute(root));
       if (rootKey != null) rootKeys.add(rootKey);
     }
     if (!anyRoot) return 'no directory is open in this session';
-    final key = _key(path);
+    final key = containmentKey(path);
     if (key == null) return 'file_path cannot be resolved';
     for (final rootKey in rootKeys) {
       if (key == rootKey || p.isWithin(rootKey, key)) return null;
@@ -135,55 +145,4 @@ class CxpPathContainment {
 
   /// Whether [path] may be opened — [refuse] returned null.
   bool allows(String path) => refuse(path) == null;
-
-  /// The comparison key for [absolute], or null when it has none and must
-  /// be refused.
-  ///
-  /// CXP §11.3 asks for the path the filesystem would reach, so the
-  /// filesystem does the reading:
-  ///
-  /// - **Existing prefix.** The deepest prefix of the path *as spelled*
-  ///   that exists is handed to `resolveSymbolicLinksSync`, which on POSIX
-  ///   is `realpath`: every link is followed before the `..` that comes
-  ///   after it, as `open` does. Nothing is normalised first — collapsing
-  ///   `<root>/link/..` as text puts it in `<root>` when the filesystem
-  ///   finds it beside the link's target, which is how a link inside a root
-  ///   once opened a file outside it. Chains of links resolve to their end.
-  /// - **Remainder.** What does not exist yet is appended as written, and
-  ///   a `..` in it has no key: the filesystem cannot walk a directory that
-  ///   does not exist, and one created later could be a link.
-  /// - **Unresolvable.** A prefix that exists but cannot be resolved — a
-  ///   dangling link, a loop — has no key. A write through a dangling link
-  ///   would create its target wherever it points.
-  /// - **Case.** Folded where the filesystem folds it (macOS, Windows),
-  ///   drive letters included.
-  ///
-  /// Both sides of every comparison go through here, so a root spelled
-  /// through a link (macOS `/var` → `/private/var`, `/tmp` →
-  /// `/private/tmp`) and a path spelled on the other side of it agree,
-  /// whether or not the path exists yet.
-  ///
-  /// On Windows the filesystem API collapses `..` as text before it
-  /// resolves anything, and `resolveSymbolicLinksSync` does the same, so
-  /// the check again reads a path the way the open will; junctions resolve
-  /// like links. A missing drive or share has no key.
-  static String? _key(String absolute) {
-    try {
-      var head = absolute;
-      final remainder = <String>[];
-      while (FileSystemEntity.typeSync(head, followLinks: false) ==
-          FileSystemEntityType.notFound) {
-        final parent = p.dirname(head);
-        if (parent == head) return null;
-        remainder.insert(0, p.basename(head));
-        head = parent;
-      }
-      if (remainder.contains('..')) return null;
-      final resolved = File(head).resolveSymbolicLinksSync();
-      final joined = p.normalize(p.joinAll(<String>[resolved, ...remainder]));
-      return filesystemIsCaseInsensitive ? joined.toLowerCase() : joined;
-    } on FileSystemException {
-      return null;
-    }
-  }
 }

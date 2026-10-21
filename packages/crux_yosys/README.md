@@ -13,6 +13,19 @@ shelling out to a Yosys binary and shaping the captured output. It owns
   (`YosysFailureKind`) says why: `launch` is the executable that could not
   be started (not installed), distinct from `invalidRequest` and
   `outputUnreadable`, which share its synthetic exit code `-1`.
+  `YosysRunRequest.frontend` (`YosysFrontend`) picks the read:
+  `read_verilog`, `read_verilog -formal` for a formal elaboration, or one
+  `read_slang` (yosys-slang; its file names are bare, so a path with white
+  space is refused). VHDL is always lowered first by a standalone
+  `ghdl --synth --out=verilog`, never the ghdl-yosys-plugin.
+- **`YosysRunner.runScript`** — the same contract for a caller-written
+  script (`YosysScriptRequest`, statements built with
+  `YosysScriptCommands`), for a step the fixed script cannot express:
+  reading a Liberty library before a gate-level design, say. `write_json` is
+  appended; each statement must be one statement.
+- **`YosysRunner.lowerVhdl`** — the VHDL lowering on its own, keeping the
+  emitted Verilog at the caller's path (`VhdlLowerResult`, sealed, never
+  thrown).
 - **`YosysAvailabilityService`** — probes `yosys -V` and returns a
   structured `YosysAvailability` (`available` with version banner,
   `notFound`, or `unusable` with a structured reason code).

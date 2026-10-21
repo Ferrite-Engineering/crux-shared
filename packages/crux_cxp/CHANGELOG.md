@@ -1,3 +1,12 @@
+## 0.11.1
+
+Wire unchanged; Dart API unchanged. `CxpPathContainment` keys both sides of
+its check with `crux_io`'s `containmentKey`, the same rule lifted out of this
+class so the flow readers can apply it too. Behaviour is identical: the
+deepest existing prefix is resolved by the filesystem, a `..` below a
+missing directory or an unresolvable prefix is refused, and case folds where
+the filesystem folds it.
+
 ## 0.11.0
 
 `CxpDiscovery.stop()` now waits for a scan in flight. Package **minor**:

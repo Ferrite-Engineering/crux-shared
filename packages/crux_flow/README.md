@@ -2,9 +2,10 @@
 
 Implementation-flow results for the suite: the models a flow run is read
 into, METRICS2.1 metric keys with the LibreLane metric table, aggregation and
-run-to-run comparison, Yosys source spans, and the readers for nextpnr's
-report and log. Pure Dart, so the headless binaries read a run without
-Flutter.
+run-to-run comparison, Yosys source spans, the readers for nextpnr's report
+and log, the mapping of a tool's cells back to source registers, SARIF
+output, and the containment rule for the paths a run names. Pure Dart, so
+the headless binaries read a run without Flutter.
 
 ```dart
 import 'package:crux_flow/crux_flow.dart';
@@ -40,6 +41,11 @@ print(diff.renderMarkdown(MetricDiffVerbosity.worse));
 | `MetricDiff`, `MetricComparison`, `MetricDiffStatistics`, `MetricDiffVerbosity`, `MetricChangeClass`, `MetricFilter` | Two runs' metrics compared with LibreLane `compare.py` semantics in decimal arithmetic, its four verbosity levels, its wildcard filter, and its Markdown table. |
 | `MetricsDocument` | A `metrics.json` read under the input limits. |
 | `NextpnrReportReader`, `NextpnrLogReader`, `NextpnrReport`, `NextpnrLog`, `NextpnrClockFrequency`, `NextpnrResourceUse`, `NextpnrReading` | nextpnr's `report.json` (one reader for iCE40, ECP5, Gowin and GateMate) and its log (for runs without `--report`). Met iff every clock reaches its constraint. |
+| `NetlistSrcIndex`, `isStorageCell` | A synthesized design's cell and net names to their `SrcSpan`s, and whether a cell is a flip-flop or latch (by its ports, so an unseen library reads too). |
+| `RtlRegisterSet`, `RtlRegister`, `isToolLibraryPath`, `sameSourceRange` | The source design's registers from its elaboration: declaration, assigning statements and block, named by instance path; the name stem of a synthesized flip-flop (`ra_SB_DFF_Q_2_DFFLC` is `ra`). |
+| `RtlRegisterResolver`, `TimingPathMapping` | A path's start, end and every segment mapped to `register`, `statement`, `span` or `unmapped`, preferring the register. |
+| `FlowSarifWriter` | Timing findings as SARIF 2.1.0 for any SARIF reader: no numbers in messages (baselines survive reruns), `crux-fnv1a64/1` fingerprints, URIs relative to `SRCROOT`, English only. |
+| `FlowContainment`, `FlowContainmentException` | A run root, or a path a run's records name, must resolve inside the allowed directories, symlinks resolved. |
 | `FlowInputLimits`, `FlowReadException`, `FlowReadFailure` | The byte, JSON-depth, key-length and line-length caps every reader applies, and the one exception every reader throws. |
 
 ## Inputs are hostile until read
@@ -57,5 +63,7 @@ are captures from real place-and-route runs, with verdicts written from
 nextpnr's own log lines; the metric table is checked row by row against an
 extraction of upstream's `library.py`; aggregation and key parsing carry
 upstream's own unit-test vectors; and the comparison's decimal strings were
-checked against Python's `decimal` module. `test/fixtures/PROVENANCE.md` has
-the detail.
+checked against Python's `decimal` module. The mapping's expectations are
+written from the designed-path RTL (`mapping.expected.json`), over Yosys's
+own elaboration and synthesis of it. `test/fixtures/PROVENANCE.md` has the
+detail.

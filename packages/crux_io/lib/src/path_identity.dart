@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_io/src/path_identity_host.dart';
+import 'package:path/path.dart' as p;
 
 /// Whether the platform's default filesystem treats `Foo.txt` and `foo.txt`
 /// as the same file.
@@ -100,4 +101,76 @@ bool isSamePath(
     resolveSymlinks: resolveSymlinks,
   );
   return keyA == keyB;
+}
+
+/// The key a containment check compares for the absolute path [absolute], or
+/// null when it has none and must be refused.
+///
+/// This is the path the filesystem would reach, so the filesystem does the
+/// reading:
+///
+/// - **Existing prefix.** The deepest prefix of the path *as spelled* that
+///   exists is resolved by the filesystem (`realpath` on POSIX): every link is
+///   followed before the `..` that comes after it, as `open` does. Nothing is
+///   normalised first. Collapsing `<root>/link/..` as text puts it in
+///   `<root>` when the filesystem finds it beside the link's target, which is
+///   how a link inside a root once opened a file outside it.
+/// - **Remainder.** What does not exist yet is appended as written, and a
+///   `..` in it has no key: the filesystem cannot walk a directory that does
+///   not exist, and one created later could be a link.
+/// - **Unresolvable.** A prefix that exists but cannot be resolved (a
+///   dangling link, a loop) has no key. A write through a dangling link would
+///   create its target wherever it points.
+/// - **Case.** Folded where the filesystem folds it (macOS, Windows), drive
+///   letters included.
+///
+/// Both sides of a comparison go through here, so a root spelled through a
+/// link (macOS `/tmp` to `/private/tmp`) and a path spelled on the other side
+/// of it agree, whether or not the path exists yet. Unlike [canonicalPathKey],
+/// which fails soft because it compares, this fails closed because it
+/// guards.
+///
+/// The key is a comparison value, never a path to open. In a browser it is
+/// [absolute] unchanged, or null when it holds a `..` segment.
+String? containmentKey(String absolute) {
+  if (absolute.isEmpty || absolute.contains('\x00')) return null;
+  return hostContainmentKey(absolute);
+}
+
+/// Whether [path] resolves to [root] or to somewhere inside it, by
+/// [containmentKey] on both sides.
+///
+/// [path] must be absolute and is judged exactly as spelled: a relative path,
+/// one with surrounding white space, an empty one or one holding a NUL is
+/// never contained. [root] is made absolute against the working directory
+/// first. Whole path components are compared, so `/work/project-old` is not
+/// inside `/work/project`.
+///
+/// The answer describes the filesystem at the moment of the call: a process
+/// that can write inside [root] can replace a directory with a link between
+/// this check and an open. Check the value about to be opened, immediately
+/// before opening it.
+bool isPathWithin(String root, String path) =>
+    containingRoot(path, <String>[root]) != null;
+
+/// The first of [roots] that [path] resolves inside (see [isPathWithin]), or
+/// null when none does. Blank roots are skipped.
+String? containingRoot(String path, Iterable<String> roots) {
+  if (path.isEmpty || path.trim() != path) return null;
+  if (!p.isAbsolute(path) || p.isRootRelative(path)) return null;
+  final key = containmentKey(path);
+  if (key == null) return null;
+  for (final root in roots) {
+    if (root.trim().isEmpty) continue;
+    final String absoluteRoot;
+    try {
+      absoluteRoot = p.absolute(root);
+    } on Object {
+      continue;
+    }
+    final rootKey = containmentKey(absoluteRoot);
+    if (rootKey == null) continue;
+    if (key == rootKey || p.isWithin(rootKey, key)) return root;
+  }
+  return null;
 }

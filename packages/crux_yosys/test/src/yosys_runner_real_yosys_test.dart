@@ -73,4 +73,96 @@ void main() {
     },
     skip: skip,
   );
+
+  test(
+    'the formal read keeps an assertion the default read refuses',
+    () async {
+      final source = File('${tempDir.path}/p.v')
+        ..writeAsStringSync(
+          'module p(input clk, input a);\n'
+          '  always @(posedge clk) assert (a == a);\n'
+          'endmodule\n',
+        );
+      final runner = YosysRunner(tempDirectory: tempDir);
+      final plain = await runner.run(
+        YosysRunRequest(
+          sources: [YosysSourceFile(source.path)],
+          topModule: 'p',
+        ),
+      );
+      expect(plain, isA<YosysRunFailure>());
+      final formal = await runner.run(
+        YosysRunRequest(
+          sources: [YosysSourceFile(source.path)],
+          topModule: 'p',
+          frontend: YosysFrontend.verilogFormal,
+        ),
+      );
+      expect(
+        formal,
+        isA<YosysRunSuccess>(),
+        reason: formal is YosysRunFailure ? formal.stderr : '',
+      );
+      // Yosys 0.6x writes an assertion as a `$check` cell of flavour
+      // `assert`; older releases as `$assert`. Either is the assertion kept.
+      final json = (formal as YosysRunSuccess).rawJson;
+      expect(
+        json.contains(r'"type": "$assert"') ||
+            json.contains('"FLAVOR": "assert"'),
+        isTrue,
+      );
+    },
+    skip: skip,
+  );
+
+  test(
+    'a script reads a Liberty library before the gate-level design',
+    () async {
+      final lib = File('${tempDir.path}/cells.lib')
+        ..writeAsStringSync('''
+library (cells) {
+  cell (INVX1) {
+    area : 1;
+    pin (A) { direction : input; }
+    pin (Y) { direction : output; function : "!A"; }
+  }
+}
+''');
+      final netlist = File('${tempDir.path}/top.nl.v')
+        ..writeAsStringSync(
+          'module top(input a, output y);\n'
+          '  INVX1 u0 (.A(a), .Y(y));\n'
+          'endmodule\n',
+        );
+      final result = await YosysRunner(tempDirectory: tempDir).runScript(
+        YosysScriptRequest(
+          commands: [
+            YosysScriptCommands.readLiberty(lib.path),
+            YosysScriptCommands.readVerilog([netlist.path]),
+            YosysScriptCommands.hierarchy('top'),
+          ],
+        ),
+      );
+      expect(
+        result,
+        isA<YosysRunSuccess>(),
+        reason: result is YosysRunFailure ? result.stderr : '',
+      );
+      final json =
+          jsonDecode((result as YosysRunSuccess).rawJson)
+              as Map<String, Object?>;
+      final modules = json['modules']! as Map<String, Object?>;
+      final cell = modules['INVX1']! as Map<String, Object?>;
+      final attributes = cell['attributes']! as Map<String, Object?>;
+      expect(attributes.containsKey('blackbox'), isTrue);
+      final top = modules['top']! as Map<String, Object?>;
+      final cells = top['cells']! as Map<String, Object?>;
+      expect((cells['u0']! as Map<String, Object?>)['type'], 'INVX1');
+      expect(
+        tempDir.listSync().where((e) => e.path.endsWith('.json')),
+        isEmpty,
+      );
+    },
+    skip: skip,
+  );
 }

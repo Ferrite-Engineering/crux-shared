@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- **Added path containment: `containmentKey`, `isPathWithin` and
+  `containingRoot`.** Whether a path resolves inside a directory, with the
+  filesystem doing the reading: the deepest existing prefix is resolved as
+  an open would resolve it, a `..` below a missing directory or an
+  unresolvable prefix has no key, and case folds where the filesystem
+  folds it. This was the CXP receiver's rule alone; `crux_cxp` now calls it,
+  and the flow readers check run roots and recorded paths with it. Fails
+  closed, unlike `canonicalPathKey`, which fails soft because it compares.
+  In a browser a location is its own key, and none with a `..` segment.
+- **Added finding signatures: `CruxSignature` and `cruxFnv1a64`.** The
+  `crux-fnv1a64/1` scheme (FNV-1a 64-bit over UTF-16 code units, 16
+  lowercase hex, over `|`-joined fields and whitespace-normalised text) and
+  its project-relative path and message helpers, lifted from LintCrux's
+  baseline fingerprint byte for byte (its shipped vectors are pinned here,
+  on the VM and in Chrome). Formal property histories and flow findings
+  use the same scheme, so two producers agree on one identity.
+- **`engineSearchDirs` adds the Nix profiles.** `~/.nix-profile/bin` (when
+  `HOME` is an absolute path that cannot split a `PATH`) and
+  `/nix/var/nix/profiles/default/bin`, after Homebrew and MacPorts on macOS
+  and **on Linux, which gained entries for the first time** (it returned
+  none before). A desktop launcher does not read the shell rc file a Nix
+  install adds its profiles from, and LibreLane is installed through Nix.
+  The answer is now cached on every platform; `posixEngineSearchDirs` is
+  the pure form, and `kNixDefaultProfileBin` names the system profile.
+
 - **Added `ossCadSuiteSpawnEnvironment` and `prependPathDirs`.** On Windows
   an OSS CAD Suite binary loads its DLLs from the suite's `lib` directory,
   which the suite's `environment.bat` puts at the front of `PATH`. With

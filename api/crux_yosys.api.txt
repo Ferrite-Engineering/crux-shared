@@ -39,6 +39,22 @@ enum ProcessTermination
   static const cancelled: ProcessTermination
   static const exited: ProcessTermination
   static const timedOut: ProcessTermination
+final class VhdlLowerCancelled extends VhdlLowerResult
+  const VhdlLowerCancelled({required String stderr, required String stdout})
+final class VhdlLowerFailure extends VhdlLowerResult
+  const VhdlLowerFailure({required String stderr, required String stdout, required YosysFailureKind kind, required int exitCode})
+  final exitCode: int
+  final kind: YosysFailureKind
+sealed class VhdlLowerResult
+  const VhdlLowerResult({required String stderr, required String stdout})
+  final stderr: String
+  final stdout: String
+final class VhdlLowerSuccess extends VhdlLowerResult
+  const VhdlLowerSuccess({required String outputPath, required String stderr, required String stdout})
+  final outputPath: String
+final class VhdlLowerTimeout extends VhdlLowerResult
+  const VhdlLowerTimeout({required Duration budget, required String stderr, required String stdout})
+  final budget: Duration
 class YosysAvailability
   const YosysAvailability.available({required String? executablePath, required String? versionString})
   const YosysAvailability.notFound({String? reason})
@@ -77,6 +93,10 @@ enum YosysFailureKind
   static const noOutput: YosysFailureKind
   static const nonZeroExit: YosysFailureKind
   static const outputUnreadable: YosysFailureKind
+enum YosysFrontend
+  static const slang: YosysFrontend
+  static const verilog: YosysFrontend
+  static const verilogFormal: YosysFrontend
 final class YosysRunCancelled extends YosysRunResult
   const YosysRunCancelled({required String stderr, required String stdout})
 final class YosysRunFailure extends YosysRunResult
@@ -84,11 +104,13 @@ final class YosysRunFailure extends YosysRunResult
   final exitCode: int
   get kind -> YosysFailureKind
 class YosysRunRequest
-  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, String? vhdlStandard, String? vhdlTopUnit, required List<YosysSourceFile> sources})
+  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, String? vhdlStandard, String? vhdlTopUnit, YosysFrontend frontend, required List<YosysSourceFile> sources})
   factory YosysRunRequest.fromPaths({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, required List<String> sourceFiles})
   ==(Object other) -> bool
+  copyWith({List<String>? includePaths}) -> YosysRunRequest
   final defines: List<String>
   final extraCommands: List<String>
+  final frontend: YosysFrontend
   final includePaths: List<String>
   final sources: List<YosysSourceFile>
   final topModule: String?
@@ -110,10 +132,24 @@ final class YosysRunTimeout extends YosysRunResult
   final budget: Duration
 class YosysRunner
   YosysRunner({Directory? tempDirectory, ProcessRunner? processRunner, String? executable, String? ghdlExecutable})
+  lowerVhdl(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, required String outputPath}) -> Future<VhdlLowerResult>
   run(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  runScript(YosysScriptRequest request, {Duration? timeout, Future<void>? cancelSignal, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  static buildCallerScript(YosysScriptRequest request, {required String jsonOutputPath}) -> String
   static buildGhdlSynthArguments(YosysRunRequest request) -> List<String>
   static buildScript(YosysRunRequest request, {required String jsonOutputPath}) -> String
   static const launchFailureExitCode: int
+final abstract class YosysScriptCommands
+  static hierarchy(String top) -> String
+  static readLiberty(String path, {bool lib}) -> String
+  static readSlang(List<String> paths, {List<String> defines, List<String> includePaths}) -> String
+  static readVerilog(List<String> paths, {List<String> defines, List<String> includePaths, bool formal, bool systemVerilog}) -> String
+class YosysScriptRequest
+  const YosysScriptRequest({required List<String> commands})
+  ==(Object other) -> bool
+  final commands: List<String>
+  get hashCode -> int
+  toString() -> String
 class YosysSourceFile
   const YosysSourceFile(String path, {YosysSourceLanguage language})
   const YosysSourceFile.systemVerilog(String path)

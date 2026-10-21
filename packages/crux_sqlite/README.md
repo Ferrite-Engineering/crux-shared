@@ -111,6 +111,18 @@ transaction and sqflite runs every migration inside an exclusive one, so
 enforcement would make the 12-step table rebuild impossible from inside this
 shared open path.
 
+## A database the suite does not own
+
+`openForeignSqliteReadOnly(path)` reads a SQLite file another tool wrote (a
+formal engine's `status.sqlite`) and does nothing else: no migration, no
+`schema_meta`, no `user_version`, no backup, no recovery. It opens an SQLite
+URI with `mode=ro&immutable=1`, because a plain read-only open of a WAL-mode
+file still creates the `-shm` beside it and fails in a read-only directory.
+Immutable reads skip the `-wal` too, so a file whose writer left a non-empty
+one is refused rather than read as if complete: read it once the writer has
+exited. Refusals are `CruxForeignDatabaseException`, outside the sealed
+`CruxSqliteException` family, which describes the suite's own stores.
+
 ## Three entry points
 
 ```dart

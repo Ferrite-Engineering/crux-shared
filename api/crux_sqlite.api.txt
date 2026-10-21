@@ -61,6 +61,15 @@ enum CruxDbRecovery
   static const refuse: CruxDbRecovery
   static const renameAside: CruxDbRecovery
 typedef CruxDbRecoveryListener = void Function(CruxDatabaseCorruptionException)
+final class CruxForeignDatabaseException implements Exception
+  const CruxForeignDatabaseException({required CruxForeignDatabaseRefusal refusal, required String path})
+  final path: String
+  final refusal: CruxForeignDatabaseRefusal
+  toString() -> String
+enum CruxForeignDatabaseRefusal
+  static const missing: CruxForeignDatabaseRefusal
+  static const notAFile: CruxForeignDatabaseRefusal
+  static const notCheckpointed: CruxForeignDatabaseRefusal
 typedef CruxFreeDiskProbe = int? Function(String)
 final class CruxMigration
   const CruxMigration({required Future<void> Function(Database) apply, required String description, required int version})
@@ -143,6 +152,7 @@ cruxFreeDiskBytes(String directory) -> int?
 cruxSchemaMetaMigration({required int version}) -> CruxMigration
 cruxSchemaMetaTablesExist(Database db) -> Future<bool>
 ensureCruxSqliteFfiInitialized() -> void
+foreignSqliteUri(String absolute, {required bool windows}) -> String
 formatCruxSchemaTimestamp(DateTime when) -> String
 isSqliteCorruption(Object error) -> bool
 get kCruxBackupFreeSpaceHeadroom -> double
@@ -154,6 +164,7 @@ get kCruxSchemaMetaTable -> String
 get kCruxSchemaMigrationsDdl -> String
 get kCruxSchemaMigrationsTable -> String
 get kCruxSqliteBusyTimeout -> Duration
+openForeignSqliteReadOnly(String path, {DatabaseFactory? factory}) -> Future<Database>
 quarantineDatabaseFile(String dbPath, {DateTime? now}) -> String?
 readCruxSchemaHistory(Database db, {int ledgerLimit}) -> Future<CruxSchemaHistory>
 readCruxSchemaMetaQuietly(Database db) -> Future<CruxSchemaMetaRow?>
