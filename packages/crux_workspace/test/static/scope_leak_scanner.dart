@@ -46,6 +46,20 @@ String? _dartSdkPath() {
   return null;
 }
 
+/// [path] relative to [from] (the working directory by default), written with
+/// forward slashes whatever the host, so the call sites and library paths the
+/// scanner reports match an allowlist written once. [context] is the path
+/// style [path] is in; it defaults to the host's.
+String posixRelative(String path, {p.Context? context, String? from}) {
+  final ctx = context ?? p.context;
+  return p.posix.joinAll(ctx.split(ctx.relative(path, from: from)));
+}
+
+/// [path] with every separator a forward slash, for a path already relative
+/// (or an allowlist key built from one). Either separator is read as one, on
+/// any host.
+String posixSeparators(String path) => path.replaceAll(r'\', '/');
+
 /// One provider-to-provider read edge, with the helper declarations the read
 /// was found behind (empty when it is written in the provider's own body).
 class ProviderRead {
@@ -109,7 +123,7 @@ class ScopeGraph {
           .currentSession
           .getResolvedUnit(file);
       if (result is! ResolvedUnitResult) {
-        graph.unresolved.add(p.relative(file));
+        graph.unresolved.add(posixRelative(file));
         continue;
       }
       graph._units[p.normalize(result.path)] = result;
@@ -376,7 +390,7 @@ class _UnitVisitor extends RecursiveAstVisitor<void> {
         () => ProviderInfo(
           key,
           element!.name!,
-          p.relative(result.libraryElement.firstFragment.source.fullName),
+          posixRelative(result.libraryElement.firstFragment.source.fullName),
         ),
       );
       final initializer = variable.initializer;
@@ -424,7 +438,7 @@ class _UnitVisitor extends RecursiveAstVisitor<void> {
         () => _ClassInfo(
           name,
           declKey,
-          p.relative(result.libraryElement.firstFragment.source.fullName),
+          posixRelative(result.libraryElement.firstFragment.source.fullName),
           element,
         ),
       );
@@ -835,9 +849,7 @@ class _RouteVisitor extends RecursiveAstVisitor<void> {
       if (argument is! NamedExpression) continue;
       if (argument.name.label.name != 'navigator') continue;
       var found = false;
-      argument.expression.accept(
-        _TabNavigatorCallFinder(() => found = true),
-      );
+      argument.expression.accept(_TabNavigatorCallFinder(() => found = true));
       return found;
     }
     return false;
@@ -877,7 +889,7 @@ class _RouteVisitor extends RecursiveAstVisitor<void> {
 
   String _locationOf(int offset) {
     final location = unit.lineInfo.getLocation(offset);
-    return '${p.relative(unit.path)}:${location.lineNumber}';
+    return '${posixRelative(unit.path)}:${location.lineNumber}';
   }
 }
 

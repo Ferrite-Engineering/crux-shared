@@ -74,77 +74,72 @@ void main() {
   }
 
   group('a scan on a slow disk', () {
-    test(
-      'holds the event loop for less than one file operation takes, and '
-      'still reaches every answer',
-      () async {
-        final livePeer = 'netcrux-$pid-1';
-        writeManifest(livePeer, port: 65301);
-        final stale = writeManifest(
-          'lintcrux-$pid-2',
-          port: 65302,
-          product: 'lintcrux',
-          startedAt: DateTime.now().subtract(const Duration(hours: 1)),
+    test('holds the event loop for less than one file operation takes, and '
+        'still reaches every answer', () async {
+      final livePeer = 'netcrux-$pid-1';
+      writeManifest(livePeer, port: 65301);
+      final stale = writeManifest(
+        'lintcrux-$pid-2',
+        port: 65302,
+        product: 'lintcrux',
+        startedAt: DateTime.now().subtract(const Duration(hours: 1)),
+      );
+      final dead = Platform.isWindows
+          ? null
+          : writeManifest(
+              'simcrux-${await deadPid()}-3',
+              port: 65303,
+              product: 'simcrux',
+            );
+      final ancientGarbage = File(p.join(tempDir.path, 'ancient.json'))
+        ..writeAsStringSync('{not json')
+        ..setLastModifiedSync(DateTime.now().subtract(const Duration(days: 2)));
+      final freshGarbage = File(p.join(tempDir.path, 'fresh.json'))
+        ..writeAsStringSync('{not json');
+      final orphan = File(p.join(tempDir.path, 'x.json.1-0.tmp'))
+        ..writeAsStringSync('{"partial": ')
+        ..setLastModifiedSync(
+          DateTime.now().subtract(const Duration(hours: 1)),
         );
-        final dead = Platform.isWindows
-            ? null
-            : writeManifest(
-                'simcrux-${await deadPid()}-3',
-                port: 65303,
-                product: 'simcrux',
-              );
-        final ancientGarbage = File(p.join(tempDir.path, 'ancient.json'))
-          ..writeAsStringSync('{not json')
-          ..setLastModifiedSync(
-            DateTime.now().subtract(const Duration(days: 2)),
-          );
-        final freshGarbage = File(p.join(tempDir.path, 'fresh.json'))
-          ..writeAsStringSync('{not json');
-        final orphan = File(p.join(tempDir.path, 'x.json.1-0.tmp'))
-          ..writeAsStringSync('{"partial": ')
-          ..setLastModifiedSync(
-            DateTime.now().subtract(const Duration(hours: 1)),
-          );
 
-        final disk = _SlowDisk(tempDir.path);
-        final discovery = CxpDiscovery(
-          manifestDirectory: tempDir.path,
-          selfPeerId: 'wavecrux-observer',
-          // One scan — the one start() awaits — is what is measured.
-          scanInterval: const Duration(hours: 1),
-        );
-        addTearDown(discovery.stop);
-        final probe = _LoopProbe()..start();
-        addTearDown(probe.stop);
+      final disk = _SlowDisk(tempDir.path);
+      final discovery = CxpDiscovery(
+        manifestDirectory: tempDir.path,
+        selfPeerId: 'wavecrux-observer',
+        // One scan — the one start() awaits — is what is measured.
+        scanInterval: const Duration(hours: 1),
+      );
+      addTearDown(discovery.stop);
+      final probe = _LoopProbe()..start();
+      addTearDown(probe.stop);
 
-        await disk.run(discovery.start);
-        probe.stop();
+      await disk.run(discovery.start);
+      probe.stop();
 
-        expect(
-          disk.unmodelled,
-          isEmpty,
-          reason: 'the scan used a file operation the slow disk does not model',
-        );
-        expect(
-          disk.fileOperations,
-          greaterThan(0),
-          reason: 'the listing must hand the scan files on the slow disk',
-        );
-        expect(discovery.peers.map((m) => m.identity.peerId), [livePeer]);
-        expect(stale.existsSync(), isTrue);
-        if (dead != null) expect(dead.existsSync(), isFalse);
-        expect(ancientGarbage.existsSync(), isFalse);
-        expect(freshGarbage.existsSync(), isTrue);
-        expect(orphan.existsSync(), isFalse);
-        expect(
-          probe.longest,
-          lessThan(_slowDiskDelay ~/ 2),
-          reason:
-              'the event loop was held for ${probe.longest}; a synchronous '
-              'file operation on this disk holds it for $_slowDiskDelay',
-        );
-      },
-    );
+      expect(
+        disk.unmodelled,
+        isEmpty,
+        reason: 'the scan used a file operation the slow disk does not model',
+      );
+      expect(
+        disk.fileOperations,
+        greaterThan(0),
+        reason: 'the listing must hand the scan files on the slow disk',
+      );
+      expect(discovery.peers.map((m) => m.identity.peerId), [livePeer]);
+      expect(stale.existsSync(), isTrue);
+      if (dead != null) expect(dead.existsSync(), isFalse);
+      expect(ancientGarbage.existsSync(), isFalse);
+      expect(freshGarbage.existsSync(), isTrue);
+      expect(orphan.existsSync(), isFalse);
+      expect(
+        probe.longest,
+        lessThan(_slowDiskDelay ~/ 2),
+        reason:
+            'the event loop was held for ${probe.longest}; a synchronous '
+            'file operation on this disk holds it for $_slowDiskDelay',
+      );
+    });
 
     test('skips a tick that falls due while it is running, rather than '
         'starting another', () async {
@@ -207,11 +202,9 @@ void main() {
       // Longer than the abandoned scan would take to finish every step.
       await Future<void>.delayed(_slowDiskDelay * 10);
 
-      expect(
-        discovery.peers.map((m) => m.identity.peerId),
-        [first],
-        reason: 'a stopped discovery must not update its view',
-      );
+      expect(discovery.peers.map((m) => m.identity.peerId), [
+        first,
+      ], reason: 'a stopped discovery must not update its view');
       expect(events.map((e) => e.added), [true]);
       if (dead != null) {
         expect(
@@ -222,120 +215,181 @@ void main() {
       }
 
       await disk.run(discovery.start);
-      expect(
-        discovery.peers.map((m) => m.identity.peerId).toSet(),
-        {first, second},
-      );
+      expect(discovery.peers.map((m) => m.identity.peerId).toSet(), {
+        first,
+        second,
+      });
       if (dead != null) expect(dead.existsSync(), isFalse);
     });
-  });
 
-  test(
-    'a FIFO named like a manifest is passed over, not opened, and discovery '
-    'goes on around it',
-    () async {
-      final fifo = p.join(tempDir.path, 'aaa-pipe.json');
-      final made = await Process.run('mkfifo', <String>[fifo]);
-      if (made.exitCode != 0) {
-        markTestSkipped('mkfifo unavailable: ${made.stderr}');
-        return;
-      }
-      final first = 'netcrux-$pid-1';
-      writeManifest(first, port: 65331);
+    test('stop() waits for the scan in flight: nothing is running or open '
+        'once it returns, and the directory can be deleted at once', () async {
+      writeManifest('netcrux-$pid-1', port: 65331);
+      writeManifest('lintcrux-$pid-2', port: 65332, product: 'lintcrux');
+      final disk = _SlowDisk(tempDir.path);
       final discovery = CxpDiscovery(
         manifestDirectory: tempDir.path,
         selfPeerId: 'wavecrux-observer',
-        scanInterval: const Duration(milliseconds: 50),
+        scanInterval: const Duration(milliseconds: 300),
       );
-      addTearDown(discovery.stop);
+      await disk.run(discovery.start);
 
-      // Opening a FIFO for reading waits for a writer. Read synchronously, it
-      // froze the isolate for good; read asynchronously, it would leave this
-      // scan — and, since ticks never overlap, every scan — waiting forever.
-      await discovery.start().timeout(const Duration(seconds: 5));
-      expect(discovery.peers.map((m) => m.identity.peerId), [first]);
-
-      final second = 'lintcrux-$pid-2';
-      writeManifest(second, port: 65332, product: 'lintcrux');
       await pollUntil(
-        () => discovery.peers.any((m) => m.identity.peerId == second),
-        reason: 'later scans must complete with the FIFO still present',
+        () => disk.listingsInFlight > 0,
+        reason: 'a periodic scan must begin',
+        interval: const Duration(milliseconds: 2),
       );
-      expect(FileSystemEntity.typeSync(fifo), FileSystemEntityType.pipe);
-    },
-    skip: Platform.isWindows ? 'no FIFOs on Windows' : false,
-  );
+      await discovery.stop();
 
-  group(
-    'the pid probe',
-    () {
-      /// What discovery answered before, when it ran the `kill -0` command
-      /// and read its exit status and message.
-      PidLiveness? killCommandAnswer(int candidate) {
-        final ProcessResult result;
-        try {
-          result = Process.runSync('kill', <String>['-0', '$candidate']);
-        } on ProcessException {
-          return null;
-        }
-        if (result.exitCode == 0) return PidLiveness.alive;
-        final message = '${result.stderr}'.toLowerCase();
-        if (message.contains('no such process')) return PidLiveness.dead;
-        return PidLiveness.indeterminate;
+      expect(
+        disk.listingsInFlight,
+        0,
+        reason: 'stop() returned while a scan still held the directory',
+      );
+      final operationsAtStop = disk.fileOperations;
+      final listingsAtStop = disk.listings;
+      // Longer than an abandoned scan would take to finish every step.
+      await Future<void>.delayed(_slowDiskDelay * 6);
+      expect(
+        disk.fileOperations,
+        operationsAtStop,
+        reason: 'a scan was still reading files after stop() returned',
+      );
+      expect(disk.listings, listingsAtStop);
+
+      await tempDir.delete(recursive: true);
+      expect(tempDir.existsSync(), isFalse);
+    });
+
+    test('stop() reports a scan that outlasts stopTimeout rather than '
+        'swallowing it, and has otherwise stopped', () async {
+      writeManifest('netcrux-$pid-1', port: 65341);
+      final disk = _SlowDisk(tempDir.path);
+      final discovery = CxpDiscovery(
+        manifestDirectory: tempDir.path,
+        selfPeerId: 'wavecrux-observer',
+        scanInterval: const Duration(milliseconds: 300),
+        stopTimeout: const Duration(milliseconds: 20),
+      );
+      await disk.run(discovery.start);
+      await pollUntil(
+        () => disk.listingsInFlight > 0,
+        reason: 'a periodic scan must begin',
+        interval: const Duration(milliseconds: 2),
+      );
+
+      await expectLater(discovery.stop(), throwsA(isA<TimeoutException>()));
+
+      // The scan finishes by itself; a later stop() then has nothing to wait
+      // for and completes quietly.
+      await pollUntil(
+        () => disk.listingsInFlight == 0,
+        reason: 'the abandoned scan must wind down',
+        interval: const Duration(milliseconds: 5),
+      );
+      await Future<void>.delayed(_slowDiskDelay * 4);
+      await discovery.stop();
+    });
+  });
+
+  test('a FIFO named like a manifest is passed over, not opened, and discovery '
+      'goes on around it', () async {
+    final fifo = p.join(tempDir.path, 'aaa-pipe.json');
+    final made = await Process.run('mkfifo', <String>[fifo]);
+    if (made.exitCode != 0) {
+      markTestSkipped('mkfifo unavailable: ${made.stderr}');
+      return;
+    }
+    final first = 'netcrux-$pid-1';
+    writeManifest(first, port: 65331);
+    final discovery = CxpDiscovery(
+      manifestDirectory: tempDir.path,
+      selfPeerId: 'wavecrux-observer',
+      scanInterval: const Duration(milliseconds: 50),
+    );
+    addTearDown(discovery.stop);
+
+    // Opening a FIFO for reading waits for a writer. Read synchronously, it
+    // froze the isolate for good; read asynchronously, it would leave this
+    // scan — and, since ticks never overlap, every scan — waiting forever.
+    await discovery.start().timeout(const Duration(seconds: 5));
+    expect(discovery.peers.map((m) => m.identity.peerId), [first]);
+
+    final second = 'lintcrux-$pid-2';
+    writeManifest(second, port: 65332, product: 'lintcrux');
+    await pollUntil(
+      () => discovery.peers.any((m) => m.identity.peerId == second),
+      reason: 'later scans must complete with the FIFO still present',
+    );
+    expect(FileSystemEntity.typeSync(fifo), FileSystemEntityType.pipe);
+  }, skip: Platform.isWindows ? 'no FIFOs on Windows' : false);
+
+  group('the pid probe', () {
+    /// What discovery answered before, when it ran the `kill -0` command
+    /// and read its exit status and message.
+    PidLiveness? killCommandAnswer(int candidate) {
+      final ProcessResult result;
+      try {
+        result = Process.runSync('kill', <String>['-0', '$candidate']);
+      } on ProcessException {
+        return null;
       }
+      if (result.exitCode == 0) return PidLiveness.alive;
+      final message = '${result.stderr}'.toLowerCase();
+      if (message.contains('no such process')) return PidLiveness.dead;
+      return PidLiveness.indeterminate;
+    }
 
-      test('answers as the kill -0 command did: alive, dead, and another '
-          "user's process", () async {
-        final gone = await deadPid();
-        // This process; one that has exited; pid 1, which belongs to root and
-        // reads as not permitted unless this runs as root; the largest pid.
-        for (final candidate in <int>[pid, gone, 1, 0x7fffffff]) {
-          final expected = killCommandAnswer(candidate);
-          if (expected == null) {
-            markTestSkipped('no kill command to compare with');
-            return;
-          }
-          expect(
-            // The macOS path, which Linux hosts take only when asked to.
-            pidLiveness(candidate, operatingSystem: 'macos'),
-            expected,
-            reason: 'pid $candidate',
-          );
+    test('answers as the kill -0 command did: alive, dead, and another '
+        "user's process", () async {
+      final gone = await deadPid();
+      // This process; one that has exited; pid 1, which belongs to root and
+      // reads as not permitted unless this runs as root; the largest pid.
+      for (final candidate in <int>[pid, gone, 1, 0x7fffffff]) {
+        final expected = killCommandAnswer(candidate);
+        if (expected == null) {
+          markTestSkipped('no kill command to compare with');
+          return;
         }
-        expect(pidLiveness(pid, operatingSystem: 'macos'), PidLiveness.alive);
-        expect(pidLiveness(gone, operatingSystem: 'macos'), PidLiveness.dead);
-      });
-
-      test('cannot tell for a pid no pid_t can hold, which the kill command '
-          'refused as illegal', () {
-        for (final candidate in <int>[0x80000000, 99999999999]) {
-          expect(
-            pidLiveness(candidate, operatingSystem: 'macos'),
-            PidLiveness.indeterminate,
-            reason: 'pid $candidate',
-          );
-        }
-      });
-
-      test('is a system call, not a process launch', () {
-        const probes = 200;
-        final clock = Stopwatch()..start();
-        for (var i = 0; i < probes; i++) {
-          pidLiveness(pid, operatingSystem: 'macos');
-        }
-        clock.stop();
-        // Measured on macOS: a probe takes about a microsecond; launching
-        // the kill command took about four milliseconds, all of it on the
-        // calling isolate.
         expect(
-          clock.elapsed,
-          lessThan(const Duration(milliseconds: 50)),
-          reason: '$probes probes took ${clock.elapsed}',
+          // The macOS path, which Linux hosts take only when asked to.
+          pidLiveness(candidate, operatingSystem: 'macos'),
+          expected,
+          reason: 'pid $candidate',
         );
-      });
-    },
-    skip: Platform.isWindows ? 'no kill(2) on Windows' : false,
-  );
+      }
+      expect(pidLiveness(pid, operatingSystem: 'macos'), PidLiveness.alive);
+      expect(pidLiveness(gone, operatingSystem: 'macos'), PidLiveness.dead);
+    });
+
+    test('cannot tell for a pid no pid_t can hold, which the kill command '
+        'refused as illegal', () {
+      for (final candidate in <int>[0x80000000, 99999999999]) {
+        expect(
+          pidLiveness(candidate, operatingSystem: 'macos'),
+          PidLiveness.indeterminate,
+          reason: 'pid $candidate',
+        );
+      }
+    });
+
+    test('is a system call, not a process launch', () {
+      const probes = 200;
+      final clock = Stopwatch()..start();
+      for (var i = 0; i < probes; i++) {
+        pidLiveness(pid, operatingSystem: 'macos');
+      }
+      clock.stop();
+      // Measured on macOS: a probe takes about a microsecond; launching
+      // the kill command took about four milliseconds, all of it on the
+      // calling isolate.
+      expect(
+        clock.elapsed,
+        lessThan(const Duration(milliseconds: 50)),
+        reason: '$probes probes took ${clock.elapsed}',
+      );
+    });
+  }, skip: Platform.isWindows ? 'no kill(2) on Windows' : false);
 }
 
 /// How long every operation on [_SlowDisk] takes.

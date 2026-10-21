@@ -42,13 +42,14 @@ class CxpDialRefusedException implements Exception
   final reason: String
   toString() -> String
 class CxpDiscovery
-  CxpDiscovery({Duration reapThreshold, Duration scanInterval, Duration staleThreshold, String? operatingSystemOverride, String? selfPeerId, required String manifestDirectory})
+  CxpDiscovery({Duration reapThreshold, Duration scanInterval, Duration staleThreshold, Duration stopTimeout, String? operatingSystemOverride, String? selfPeerId, required String manifestDirectory})
   final manifestDirectory: String
   final operatingSystemOverride: String?
   final reapThreshold: Duration
   final scanInterval: Duration
   final selfPeerId: String?
   final staleThreshold: Duration
+  final stopTimeout: Duration
   get events -> Stream<CxpDiscoveryEvent>
   get peers -> List<CxpPeerManifest>
   start() -> Future<void>

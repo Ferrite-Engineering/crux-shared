@@ -511,4 +511,48 @@ void main() {
     expect(runtime.unreachablePeers, isEmpty);
     expect(runtime.peers, isEmpty);
   });
+
+  test('a discovery scan that outlasts its stop is reported by stop() after '
+      'the manifest is removed and the server is down', () async {
+    final runtime = CruxCxpRuntime(
+      binding: const CruxCxpProductBinding(
+        productName: 'wavecrux',
+        defaultPort: 54322,
+        prefsPrefix: 'settings.',
+      ),
+      productVersion: 'test',
+      manifestDirectory: dir.path,
+      port: 0,
+      handler: () => const CruxCxpRequestHandler(),
+      discoveryFactory: (directory, self) =>
+          _StuckDiscovery(manifestDirectory: directory, selfPeerId: self),
+    );
+    await runtime.start();
+    expect(runtime.isAvailable, isTrue);
+    expect(
+      dir.listSync().whereType<File>().where((f) => f.path.endsWith('.json')),
+      isNotEmpty,
+    );
+
+    await expectLater(runtime.dispose(), throwsA(isA<TimeoutException>()));
+
+    expect(
+      dir.listSync().whereType<File>().where((f) => f.path.endsWith('.json')),
+      isEmpty,
+      reason: 'the manifest must go even when discovery reports a timeout',
+    );
+    expect(runtime.isAvailable, isFalse);
+    expect(runtime.peers, isEmpty);
+  });
+}
+
+/// A discovery whose stop reports a scan that would not finish.
+class _StuckDiscovery extends CxpDiscovery {
+  _StuckDiscovery({required super.manifestDirectory, super.selfPeerId});
+
+  @override
+  Future<void> stop() async {
+    await super.stop();
+    throw TimeoutException('scan still running', const Duration(seconds: 5));
+  }
 }

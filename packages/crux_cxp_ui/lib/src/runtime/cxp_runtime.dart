@@ -264,7 +264,17 @@ class CruxCxpRuntime {
       }
     }
     await connector?.stop();
-    await discovery?.stop();
+    // A discovery scan that outlives its bounded wait is reported, but only
+    // after the rest of the teardown has run: the manifest and the server
+    // must not be left up because a directory listing was slow.
+    Object? discoveryStopError;
+    StackTrace? discoveryStopTrace;
+    try {
+      await discovery?.stop();
+    } on TimeoutException catch (e, s) {
+      discoveryStopError = e;
+      discoveryStopTrace = s;
+    }
     try {
       await writer?.remove();
     } on Object {
@@ -275,15 +285,21 @@ class CruxCxpRuntime {
     if (!_unreachableChanges.isClosed) {
       _unreachableChanges.add(const <CxpDialFailure>[]);
     }
+    if (discoveryStopError != null) {
+      Error.throwWithStackTrace(discoveryStopError, discoveryStopTrace!);
+    }
   }
 
   /// Stops and releases the event streams. The runtime cannot be restarted;
   /// a settings change creates a new one.
   Future<void> dispose() async {
-    await stop();
-    await _events.close();
-    await _peerChanges.close();
-    await _unreachableChanges.close();
+    try {
+      await stop();
+    } finally {
+      await _events.close();
+      await _peerChanges.close();
+      await _unreachableChanges.close();
+    }
   }
 
   /// Announces [message] to every subscribed peer. A no-op when not

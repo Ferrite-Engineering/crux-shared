@@ -226,8 +226,13 @@ class CxpDiscovery {
     this.scanInterval = const Duration(seconds: 2),
     this.staleThreshold = const Duration(minutes: 5),
     this.reapThreshold = const Duration(hours: 24),
+    this.stopTimeout = const Duration(seconds: 5),
     this.operatingSystemOverride,
   });
+
+  /// The longest [stop] waits for a scan in flight to finish before it
+  /// reports that it did not, by throwing a [TimeoutException].
+  final Duration stopTimeout;
 
   /// Operating system used to select the pid-liveness probe. Injectable for
   /// tests; null (the default) uses the live `Platform.operatingSystem`.
@@ -322,21 +327,48 @@ class CxpDiscovery {
   }
 
   /// Stop the periodic scan and close the events stream.
+  ///
+  /// Completes only once no scan is running: a scan already in flight is
+  /// told to give up (it does so at its next step) and is awaited, so when
+  /// this returns discovery holds no directory listing and no manifest file
+  /// open, and the manifest directory can be deleted at once, which on
+  /// Windows an open handle prevents.
+  ///
+  /// The wait is bounded by [stopTimeout]. A scan still running after that
+  /// is reported, not swallowed: the stop is otherwise complete (the timer
+  /// is cancelled and the stream closed), and this throws a
+  /// [TimeoutException] naming the directory. Calling it again waits again.
   Future<void> stop() async {
-    if (!_running) return;
-    _running = false;
-    _session++;
-    _timer?.cancel();
-    _timer = null;
-    await _events.close();
+    if (_running) {
+      _running = false;
+      _session++;
+      _timer?.cancel();
+      _timer = null;
+      await _events.close();
+    }
+    await _awaitIdle();
+  }
+
+  /// Waits for the scan in flight, if any, for at most [stopTimeout].
+  Future<void> _awaitIdle() async {
+    final scan = _scanInFlight;
+    if (scan == null) return;
+    try {
+      await scan.timeout(stopTimeout);
+    } on TimeoutException {
+      throw TimeoutException(
+        'CxpDiscovery.stop: a scan of $manifestDirectory was still running '
+        'after $stopTimeout, so its directory handles may still be open',
+        stopTimeout,
+      );
+    }
   }
 
   /// Creates the manifest directory when it is missing, owner-only — it
   /// holds every local peer's token (§10.1). See
   /// [ensureCxpPrivateDirectory].
-  Future<void> _ensureDirectory() => ensureCxpPrivateDirectory(
-    manifestDirectory,
-  );
+  Future<void> _ensureDirectory() =>
+      ensureCxpPrivateDirectory(manifestDirectory);
 
   /// A timer tick: scans, unless the previous scan has not finished.
   ///
@@ -502,9 +534,7 @@ class CxpDiscovery {
     for (final entry in found.entries) {
       if (!_known.containsKey(entry.key)) {
         if (!_events.isClosed) {
-          _events.add(
-            CxpDiscoveryEvent(added: true, manifest: entry.value),
-          );
+          _events.add(CxpDiscoveryEvent(added: true, manifest: entry.value));
         }
       }
     }
@@ -512,9 +542,7 @@ class CxpDiscovery {
     for (final entry in _known.entries.toList(growable: false)) {
       if (!found.containsKey(entry.key)) {
         if (!_events.isClosed) {
-          _events.add(
-            CxpDiscoveryEvent(added: false, manifest: entry.value),
-          );
+          _events.add(CxpDiscoveryEvent(added: false, manifest: entry.value));
         }
       }
     }

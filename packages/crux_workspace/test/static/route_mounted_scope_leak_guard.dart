@@ -28,7 +28,6 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart' as p;
 
 import 'scope_leak_scanner.dart';
 
@@ -103,7 +102,9 @@ Set<String> routeScopePerTabProviders(
   }
   if (scopeKeyLibrary != null) {
     for (final info in graph.providers.values) {
-      if (p.posix.joinAll(p.split(info.path)).endsWith(scopeKeyLibrary)) {
+      if (posixSeparators(
+        info.path,
+      ).endsWith(posixSeparators(scopeKeyLibrary))) {
         seeds.add(info.key);
       }
     }
@@ -118,6 +119,9 @@ List<RouteScopeViolation> routeScopeViolations(
   Map<String, String> allowlist = const <String, String>{},
 }) {
   final out = <RouteScopeViolation>[];
+  final allowlisted = <String>{
+    for (final key in allowlist.keys) posixSeparators(key),
+  };
   for (final mount in graph.routeMounts()) {
     if (mount.scoped) continue;
     final hits = <String>[];
@@ -128,7 +132,11 @@ List<RouteScopeViolation> routeScopeViolations(
       if (via.isEmpty) via.addAll(read.via);
     }
     if (hits.isEmpty) continue;
-    if (allowlist.containsKey('${mount.widget} @ ${mount.callSite}')) continue;
+    if (allowlisted.contains(
+      posixSeparators('${mount.widget} @ ${mount.callSite}'),
+    )) {
+      continue;
+    }
     hits.sort();
     out.add(
       RouteScopeViolation(
@@ -246,29 +254,26 @@ void defineRouteMountedScopeLeakGuard({
     );
   });
 
-  test(
-    'no route-mounted widget reads per-tab state without an '
-    'UncontrolledProviderScope on the path',
-    () {
-      final violations = routeScopeViolations(
-        graph,
-        perTab,
-        allowlist: allowlist,
-      );
-      if (violations.isEmpty) return;
-      fail(describeRouteScopeViolations(violations));
-    },
-  );
+  test('no route-mounted widget reads per-tab state without an '
+      'UncontrolledProviderScope on the path', () {
+    final violations = routeScopeViolations(
+      graph,
+      perTab,
+      allowlist: allowlist,
+    );
+    if (violations.isEmpty) return;
+    fail(describeRouteScopeViolations(violations));
+  });
 
   test('allowlist entries still name a real route mount', () {
     final live = <String>{
       for (final mount in graph.routeMounts())
-        '${mount.widget} @ ${mount.callSite}',
+        posixSeparators('${mount.widget} @ ${mount.callSite}'),
     };
     for (final entry in allowlist.keys) {
       expect(
         live,
-        contains(entry),
+        contains(posixSeparators(entry)),
         reason:
             'allowlisted route mount `$entry` no longer exists — remove or '
             'update its entry in _allowlist.',
