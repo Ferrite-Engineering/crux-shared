@@ -32,16 +32,17 @@ class CruxContextMenuRegion extends StatelessWidget
   final entries: List<CruxMenuEntry>
   final isTouchLayout: bool
 class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens>
-  const CruxDesktopTokens({double bodyFontSize, double controlHeight, double controlRadius, double denseControlHeight, double dialogRadius, double focusRingWidth, double menuRadius, double rowHeight, double scrimOpacity, double secondaryFontSize, double titleFontSize, double toastBottomInset, double toastMaxWidth, double twoLineRowHeight})
+  const CruxDesktopTokens({double bodyFontSize, double controlHeight, double controlRadius, double denseControlHeight, double dialogRadius, double focusRingWidth, double groupRadius, double menuRadius, double rowHeight, double scrimOpacity, double secondaryFontSize, double titleFontSize, double toastBottomInset, double toastMaxWidth, double twoLineRowHeight})
   const CruxDesktopTokens.highContrast()
   ==(Object other) -> bool
-  copyWith({double? bodyFontSize, double? controlHeight, double? controlRadius, double? denseControlHeight, double? dialogRadius, double? focusRingWidth, double? menuRadius, double? rowHeight, double? scrimOpacity, double? secondaryFontSize, double? titleFontSize, double? toastBottomInset, double? toastMaxWidth, double? twoLineRowHeight}) -> CruxDesktopTokens
+  copyWith({double? bodyFontSize, double? controlHeight, double? controlRadius, double? denseControlHeight, double? dialogRadius, double? focusRingWidth, double? groupRadius, double? menuRadius, double? rowHeight, double? scrimOpacity, double? secondaryFontSize, double? titleFontSize, double? toastBottomInset, double? toastMaxWidth, double? twoLineRowHeight}) -> CruxDesktopTokens
   final bodyFontSize: double
   final controlHeight: double
   final controlRadius: double
   final denseControlHeight: double
   final dialogRadius: double
   final focusRingWidth: double
+  final groupRadius: double
   final menuRadius: double
   final rowHeight: double
   final scrimOpacity: double
@@ -174,6 +175,29 @@ class CruxPanelEmptyState extends StatelessWidget
   final action: Widget?
   final icon: IconData?
   final message: String
+class CruxPopUpButton<T> extends StatefulWidget
+  const CruxPopUpButton({FocusNode? focusNode, Key? key, String? placeholder, String? semanticLabel, TextStyle? valueStyle, bool autofocus, bool dense, bool expand, bool hasError, double? width, required List<CruxPopUpItem<T>> items, required T? value, required void Function(T)? onChanged})
+  createState() -> State<CruxPopUpButton<T>>
+  final autofocus: bool
+  final dense: bool
+  final expand: bool
+  final focusNode: FocusNode?
+  final hasError: bool
+  final items: List<CruxPopUpItem<T>>
+  final onChanged: void Function(T)?
+  final placeholder: String?
+  final semanticLabel: String?
+  final value: T?
+  final valueStyle: TextStyle?
+  final width: double?
+class CruxPopUpFormField<T> extends FormField<T>
+  CruxPopUpFormField({AutovalidateMode? autovalidateMode, Key? key, String? Function(T?)? validator, String? placeholder, String? semanticLabel, T? initialValue, bool dense, bool enabled, bool expand, double? width, required List<CruxPopUpItem<T>> items, void Function(T)? onChanged, void Function(T?)? onSaved})
+class CruxPopUpItem<T>
+  const CruxPopUpItem({IconData? icon, bool enabled, required String label, required T value})
+  final enabled: bool
+  final icon: IconData?
+  final label: String
+  final value: T
 class CruxPreviousRegionIntent extends Intent
   const CruxPreviousRegionIntent()
 class CruxSearchDialog<T> extends StatefulWidget
@@ -197,6 +221,21 @@ class CruxSearchResultTile extends StatelessWidget
   final title: String
   final trailingChipLabel: String?
 typedef CruxSearchRowBuilder<T> = Widget Function(BuildContext, T, {required bool highlighted, required void Function() onActivate})
+class CruxSegment<T>
+  const CruxSegment({IconData? icon, String? tooltip, bool enabled, required String label, required T value})
+  final enabled: bool
+  final icon: IconData?
+  final label: String
+  final tooltip: String?
+  final value: T
+class CruxSegmentedControl<T> extends StatefulWidget
+  const CruxSegmentedControl({Key? key, String? semanticLabel, bool dense, required List<CruxSegment<T>> segments, required T? selected, required void Function(T)? onChanged})
+  createState() -> State<CruxSegmentedControl<T>>
+  final dense: bool
+  final onChanged: void Function(T)?
+  final segments: List<CruxSegment<T>>
+  final selected: T?
+  final semanticLabel: String?
 final class CruxSubmenu extends CruxMenuEntry
   const CruxSubmenu({IconData? icon, Key? key, String? tooltip, bool enabled, required List<CruxMenuEntry> entries, required String label})
   final enabled: bool

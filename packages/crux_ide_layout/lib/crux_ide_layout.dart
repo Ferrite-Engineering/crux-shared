@@ -59,6 +59,11 @@
 ///   the Menu key; `CruxSubmenu` cascades a second menu from one item.
 /// - `cruxTextInputFocused` — whether a text field holds focus, for a
 ///   window-level shortcut that must leave the keystroke to the field.
+/// - `CruxSegmentedControl` / `CruxSegment` — one choice of a few, one Tab
+///   stop with arrow keys between segments and a focus ring per segment.
+/// - `CruxPopUpButton` / `CruxPopUpItem` / `CruxPopUpFormField` — one
+///   choice of a list in a menu: the desktop replacement for
+///   `DropdownButton` and `DropdownButtonFormField`.
 /// - `CruxDesktopTokens` — the layout tokens a Crux Desktop theme carries;
 ///   their presence is how the helpers above know they are on desktop.
 /// - `CruxChromeColors` — the chrome colours Material has no slot for,
@@ -73,7 +78,9 @@ export 'src/crux_dialog.dart';
 export 'src/crux_ide_layout.dart';
 export 'src/crux_ide_layout_theme.dart';
 export 'src/crux_overflow_menu.dart';
+export 'src/crux_pop_up_button.dart';
 export 'src/crux_search_dialog.dart';
+export 'src/crux_segmented_control.dart';
 export 'src/crux_toast.dart' show CruxToastAction, CruxToastCard, CruxToasts;
 export 'src/dock_restore_frame.dart';
 export 'src/escape_dismissible.dart';

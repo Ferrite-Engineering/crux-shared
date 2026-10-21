@@ -1,5 +1,17 @@
 ## Unreleased
 
+- **`cruxDesktopTheme`: the focus ring, neutral secondary buttons, card
+  radius and regular-weight menus.** Keyboard focus on a button or a text
+  field now draws the ring the owned controls draw (a primary stroke 2 px
+  outside, 1.5 px or 2.5 px in high contrast) through the button's focused
+  shape (`CruxFocusRingShape`) and the field's focused border
+  (`CruxFocusRingInputBorder`), instead of recolouring the control's own
+  border. The outlined button (Browse…) is neutral: `onSurface` text on a
+  flat face with a 1 px `outlineVariant` border that lifts to `outline` on
+  hover. A filled button darkens on hover and press in light as in dark.
+  Cards take the 6 px group radius (`CruxDesktopTokens.groupRadius`). Menu,
+  pop-up menu and `DropdownMenu` text is pinned to regular weight.
+
 - **`cruxDesktopTheme`, `cruxThemeForDevice`, `cruxUsesDesktopLayer`.** The
   Crux Desktop `ThemeData` over a product's `ColorScheme`: every component
   theme at the desktop tokens (28 px controls, 4 / 6 / 8 px radii, 13 / 12 /

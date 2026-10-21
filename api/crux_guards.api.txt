@@ -24,8 +24,11 @@ enum CruxDesktopPattern
   final replacement: String
   static const alertDialog: CruxDesktopPattern
   static const checkboxListTile: CruxDesktopPattern
+  static const dropdownButton: CruxDesktopPattern
+  static const dropdownButtonFormField: CruxDesktopPattern
   static const materialSwitch: CruxDesktopPattern
   static const moreVert: CruxDesktopPattern
+  static const segmentedButton: CruxDesktopPattern
   static const showDialog: CruxDesktopPattern
   static const showSnackBar: CruxDesktopPattern
   static const simpleDialog: CruxDesktopPattern

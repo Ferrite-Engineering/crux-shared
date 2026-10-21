@@ -1,0 +1,3 @@
+# Tab walk: 2 stops, cycles
+1. [When a loaded file changes grouping] Ask button selected
+2. Language button collapsed 🇺🇸 English

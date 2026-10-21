@@ -18,6 +18,28 @@ increments that built it. Changes from here on get their own entries.
   pushed route is never where focus goes back to. `CruxFocusRegion` entry
   focuses a control, never a focus scope (a nested navigator's page, which
   sorts first and announces nothing).
+- **`CruxSegmentedControl` / `CruxSegment`: the owned segmented control.**
+  28 px (24 px `dense`), a 4 px radius, one flat bordered track with flush
+  segments and dividers that hide beside the selected one, the selected
+  segment filled (a clear step from the face in light) with a semibold
+  label, no check glyph. One Tab stop on the selected segment; arrows, Home
+  and End move focus between segments, Space and Enter select. The focus
+  ring is drawn per segment, inside it, so it never overlaps a neighbour.
+  One semantics group named `semanticLabel`, a button per segment with its
+  selected state. Single-select.
+- **`CruxPopUpButton` / `CruxPopUpItem` / `CruxPopUpFormField`: the owned
+  pop-up button, replacing `DropdownButton` and `DropdownButtonFormField`
+  on desktop.** The chosen value in regular weight with one plain chevron,
+  sized to the widest item unless `width` or `expand`; an owned menu route
+  below it (above when there is no room) with a check on the chosen item.
+  Space, Enter and Alt+Down open it with focus on the chosen item; arrows,
+  Home, End and type-ahead move; Escape closes with nothing changed and
+  focus returns to the button. A button node with the value and the
+  expanded state. `CruxPopUpFormField` adds validation, saving, reset and
+  the error border for a `Form`.
+- `CruxDesktopTokens.groupRadius` (6 px): the corner radius of group boxes
+  and cards.
+
 - `showCruxInfoSnack` with a `CruxToastAction` now leaves after
   `kCruxActionSnackDuration` on phone and tablet. The Material snack bar it
   uses stays until its action is chosen unless told otherwise, which ignored

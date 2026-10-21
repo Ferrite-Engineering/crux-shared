@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_theme/crux_theme.dart';
+import 'package:crux_theme/src/crux_focus_ring_borders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -57,6 +58,7 @@ void main() {
         expect(tokens.twoLineRowHeight, 40);
         expect(tokens.controlRadius, 4);
         expect(tokens.menuRadius, 6);
+        expect(tokens.groupRadius, 6);
         expect(tokens.dialogRadius, 8);
         expect(tokens.focusRingWidth, ring);
         expect(tokens.scrimOpacity, 0.18);
@@ -115,7 +117,7 @@ void main() {
         expect(style.splashFactory, NoSplash.splashFactory);
       });
 
-      test('radius: 4 controls, 6 menus and toasts, 8 dialogs', () {
+      test('radius: 4 controls, 6 menus, toasts and cards, 8 dialogs', () {
         RoundedRectangleBorder rounded(ShapeBorder? s) =>
             s! as RoundedRectangleBorder;
         BorderRadius radius(ShapeBorder? s) =>
@@ -127,7 +129,8 @@ void main() {
           radius(theme.menuTheme.style!.shape!.resolve({})),
           BorderRadius.circular(6),
         );
-        expect(radius(theme.cardTheme.shape), BorderRadius.circular(4));
+        // A card is a group box, one step above a control.
+        expect(radius(theme.cardTheme.shape), BorderRadius.circular(6));
         for (final style in [
           theme.filledButtonTheme.style!,
           theme.outlinedButtonTheme.style!,
@@ -166,7 +169,8 @@ void main() {
         );
       });
 
-      test('focus: an always-visible ${ring}px primary ring', () {
+      test('focus: a ${ring}px primary ring 2 px outside, as the owned '
+          'controls draw it', () {
         const focused = {WidgetState.focused};
         for (final style in [
           theme.filledButtonTheme.style!,
@@ -174,16 +178,120 @@ void main() {
           theme.textButtonTheme.style!,
           theme.iconButtonTheme.style!,
         ]) {
-          final side = style.side!.resolve(focused)!;
-          expect(side.color, theme.colorScheme.primary);
-          expect(side.width, ring);
+          final shape = style.shape!.resolve(focused)! as CruxFocusRingShape;
+          expect(shape.ring.color, theme.colorScheme.primary);
+          expect(shape.ring.width, ring);
+          expect(shape.gap, 2);
+          expect(shape.borderRadius, BorderRadius.circular(4));
+          // No ring at rest, and none on a disabled control.
+          expect(style.shape!.resolve({}), isNot(isA<CruxFocusRingShape>()));
+          expect(
+            style.shape!.resolve({WidgetState.focused, WidgetState.disabled}),
+            isNot(isA<CruxFocusRingShape>()),
+          );
+          // A button's own border does not change on focus.
+          expect(
+            style.side?.resolve(focused),
+            style.side?.resolve(const <WidgetState>{}),
+          );
         }
         final field =
-            theme.inputDecorationTheme.focusedBorder! as OutlineInputBorder;
-        expect(field.borderSide.width, ring);
+            theme.inputDecorationTheme.focusedBorder!
+                as CruxFocusRingInputBorder;
         expect(field.borderSide.color, theme.colorScheme.primary);
+        expect(field.ring.width, ring);
+        expect(field.ring.color, theme.colorScheme.primary);
+        expect(field.gap, 2);
+        final error =
+            theme.inputDecorationTheme.focusedErrorBorder!
+                as CruxFocusRingInputBorder;
+        expect(error.ring.color, theme.colorScheme.error);
+        expect(
+          theme.dropdownMenuTheme.inputDecorationTheme!.focusedBorder,
+          field,
+        );
         final menuItem = theme.menuButtonTheme.style!.side!.resolve(focused)!;
         expect(menuItem.width, ring);
+      });
+
+      test('the ring shapes survive copyWith and the focus animation', () {
+        final shape =
+            theme.filledButtonTheme.style!.shape!.resolve({
+                  WidgetState.focused,
+                })!
+                as CruxFocusRingShape;
+        // ButtonStyleButton applies its side with copyWith.
+        final sided = shape.copyWith(side: const BorderSide(color: Colors.red));
+        expect(sided.ring, shape.ring);
+        expect(sided.side.color, Colors.red);
+        const rest = RoundedRectangleBorder();
+        expect(ShapeBorder.lerp(rest, shape, 1), shape);
+        expect(ShapeBorder.lerp(rest, shape, 0.6), shape);
+        expect(
+          ShapeBorder.lerp(shape, rest, 0.6),
+          isNot(isA<CruxFocusRingShape>()),
+        );
+        final field =
+            theme.inputDecorationTheme.focusedBorder!
+                as CruxFocusRingInputBorder;
+        expect(
+          field.copyWith(borderSide: const BorderSide(width: 2)),
+          isA<CruxFocusRingInputBorder>(),
+        );
+        expect(
+          ShapeBorder.lerp(theme.inputDecorationTheme.enabledBorder, field, 1),
+          field,
+        );
+      });
+
+      test('the secondary button is neutral, not accent-coloured', () {
+        final style = theme.outlinedButtonTheme.style!;
+        expect(
+          style.foregroundColor!.resolve({}),
+          theme.colorScheme.onSurface,
+        );
+        expect(
+          style.foregroundColor!.resolve({}),
+          isNot(theme.colorScheme.primary),
+        );
+        expect(style.backgroundColor!.resolve({}), isNotNull);
+        final rest = style.side!.resolve({})!;
+        final hover = style.side!.resolve({WidgetState.hovered})!;
+        expect(rest.width, 1);
+        expect(
+          rest.color,
+          v.highContrast
+              ? theme.colorScheme.outline
+              : theme.colorScheme.outlineVariant,
+        );
+        expect(hover.color, isNot(rest.color));
+      });
+
+      test('a pressed accent button goes darker, never lighter', () {
+        final style = theme.filledButtonTheme.style!;
+        final primary = theme.colorScheme.primary;
+        for (final state in [WidgetState.hovered, WidgetState.pressed]) {
+          final overlay = style.overlayColor!.resolve({state})!;
+          final face = Color.alphaBlend(overlay, primary);
+          expect(
+            face.computeLuminance(),
+            lessThan(primary.computeLuminance()),
+            reason: state.name,
+          );
+        }
+      });
+
+      test('menus and menu-like values are regular weight', () {
+        expect(theme.dropdownMenuTheme.textStyle?.fontWeight, FontWeight.w400);
+        expect(theme.popupMenuTheme.textStyle?.fontWeight, FontWeight.w400);
+        expect(
+          theme.popupMenuTheme.labelTextStyle!.resolve({})?.fontWeight,
+          FontWeight.w400,
+        );
+        expect(
+          theme.menuButtonTheme.style!.textStyle!.resolve({})?.fontWeight,
+          FontWeight.w400,
+        );
       });
 
       testWidgets('buttons are 28 px tall', (tester) async {

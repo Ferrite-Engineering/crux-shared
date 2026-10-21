@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_ide_layout/crux_ide_layout.dart';
 import 'package:crux_settings/crux_settings.dart';
 import 'package:crux_settings_ui/src/crux_settings_control_tile.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,25 @@ class CruxAutoReloadSettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The desktop layer draws the owned control; a phone or tablet theme
+    // (no CruxDesktopTokens) keeps Material's.
+    if (CruxDesktopTokens.isDesktop(context)) {
+      return CruxSettingsControlTile(
+        title: label,
+        description: description,
+        control: CruxSegmentedControl<AutoReloadMode>(
+          key: const ValueKey('cruxAutoReloadSegments'),
+          semanticLabel: label,
+          segments: [
+            CruxSegment(value: AutoReloadMode.prompt, label: promptLabel),
+            CruxSegment(value: AutoReloadMode.auto, label: autoLabel),
+            CruxSegment(value: AutoReloadMode.off, label: offLabel),
+          ],
+          selected: value,
+          onChanged: onChanged,
+        ),
+      );
+    }
     return CruxSettingsControlTile(
       title: label,
       description: description,

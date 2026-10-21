@@ -24,6 +24,7 @@ class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens> {
     this.twoLineRowHeight = 40,
     this.controlRadius = 4,
     this.menuRadius = 6,
+    this.groupRadius = 6,
     this.dialogRadius = 8,
     this.focusRingWidth = 1.5,
     this.scrimOpacity = 0.18,
@@ -64,6 +65,10 @@ class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens> {
   /// Corner radius of menus and toasts.
   final double menuRadius;
 
+  /// Corner radius of group boxes and cards: the Settings group, a card
+  /// holding rows. The same as [menuRadius], one step above a control.
+  final double groupRadius;
+
   /// Corner radius of dialogs.
   final double dialogRadius;
 
@@ -100,6 +105,7 @@ class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens> {
     double? twoLineRowHeight,
     double? controlRadius,
     double? menuRadius,
+    double? groupRadius,
     double? dialogRadius,
     double? focusRingWidth,
     double? scrimOpacity,
@@ -115,6 +121,7 @@ class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens> {
     twoLineRowHeight: twoLineRowHeight ?? this.twoLineRowHeight,
     controlRadius: controlRadius ?? this.controlRadius,
     menuRadius: menuRadius ?? this.menuRadius,
+    groupRadius: groupRadius ?? this.groupRadius,
     dialogRadius: dialogRadius ?? this.dialogRadius,
     focusRingWidth: focusRingWidth ?? this.focusRingWidth,
     scrimOpacity: scrimOpacity ?? this.scrimOpacity,
@@ -146,6 +153,7 @@ class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens> {
           other.twoLineRowHeight == twoLineRowHeight &&
           other.controlRadius == controlRadius &&
           other.menuRadius == menuRadius &&
+          other.groupRadius == groupRadius &&
           other.dialogRadius == dialogRadius &&
           other.focusRingWidth == focusRingWidth &&
           other.scrimOpacity == scrimOpacity &&
@@ -163,6 +171,7 @@ class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens> {
     twoLineRowHeight,
     controlRadius,
     menuRadius,
+    groupRadius,
     dialogRadius,
     focusRingWidth,
     scrimOpacity,

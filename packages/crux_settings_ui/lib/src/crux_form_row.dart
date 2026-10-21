@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_a11y/crux_a11y.dart';
-import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDesktopTokens;
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxDesktopTokens, CruxSegmentedControl;
 import 'package:flutter/material.dart';
 
 /// The label column width a [CruxFormSection] gives its rows by default.
@@ -192,7 +193,13 @@ class CruxFormRow extends StatelessWidget {
       color: theme.colorScheme.onSurfaceVariant,
     );
 
-    final labelText = Text(label, style: labelStyle);
+    // A segmented control is not merged into the row (see the end of build)
+    // and names its own group, so the visible label would be a second,
+    // identical name around it.
+    final segmented = child is CruxSegmentedControl;
+    final labelText = segmented
+        ? ExcludeSemantics(child: Text(label, style: labelStyle))
+        : Text(label, style: labelStyle);
     // The whole label area, not only the glyphs, toggles a switch or a
     // checkbox.
     Widget clickable(Widget area) {
@@ -354,7 +361,10 @@ class CruxFormRow extends StatelessWidget {
       );
     }
 
-    if (!mergeSemantics) return row;
+    // A segmented control is a group of buttons, one per segment, each with
+    // its own selected state: merged into the row it would be one node with
+    // three taps. It names its group itself (its semanticLabel).
+    if (!mergeSemantics || segmented) return row;
     return MergeSemantics(
       child: Semantics(hint: help, child: row),
     );

@@ -7,6 +7,26 @@
 # disappears or changes shape is a breaking change for all four
 # products; a line that appears is new public surface to justify.
 
+class CruxFocusRing extends StatelessWidget
+  const CruxFocusRing({Color? color, Key? key, bool inset, double gap, double radius, double? width, required Widget child, required bool focused})
+  build(BuildContext context) -> Widget
+  final child: Widget
+  final color: Color?
+  final focused: bool
+  final gap: double
+  final inset: bool
+  final radius: double
+  final width: double?
+class CruxFocusRingPainter extends CustomPainter
+  const CruxFocusRingPainter({bool inset, double gap, required Color color, required double radius, required double width})
+  final color: Color
+  final gap: double
+  final inset: bool
+  final radius: double
+  final width: double
+  paint(Canvas canvas, Size size) -> void
+  ringFor(Size size) -> RRect
+  shouldRepaint(CruxFocusRingPainter oldDelegate) -> bool
 class CruxModalGate extends StatefulWidget
   const CruxModalGate({Key? key, Widget? modal, required Widget child})
   createState() -> State<CruxModalGate>
@@ -17,6 +37,28 @@ class CruxModalSurface extends StatelessWidget
   build(BuildContext context) -> Widget
   final child: Widget
   final label: String
+typedef CruxPressBuilder = Widget Function(BuildContext, CruxPressState)
+class CruxPressState
+  const CruxPressState({bool enabled, bool focused, bool hovered, bool pressed})
+  ==(Object other) -> bool
+  final enabled: bool
+  final focused: bool
+  final hovered: bool
+  final pressed: bool
+  get hashCode -> int
+  toString() -> String
+class CruxPressable extends StatefulWidget
+  const CruxPressable({FocusNode? focusNode, Key? key, String? semanticLabel, String? semanticValue, bool autofocus, bool? expanded, bool? selected, required Widget Function(BuildContext, CruxPressState) builder, required void Function()? onPressed, void Function(bool)? onFocusChange})
+  createState() -> State<CruxPressable>
+  final autofocus: bool
+  final builder: Widget Function(BuildContext, CruxPressState)
+  final expanded: bool?
+  final focusNode: FocusNode?
+  final onFocusChange: void Function(bool)?
+  final onPressed: void Function()?
+  final selected: bool?
+  final semanticLabel: String?
+  final semanticValue: String?
 class CruxRegionHint extends StatefulWidget
   const CruxRegionHint({Key? key, required String hint, required Widget child})
   createState() -> State<CruxRegionHint>
@@ -61,7 +103,9 @@ class CruxSwitch extends StatefulWidget
   final onChanged: void Function(bool)?
   final semanticLabel: String?
   final value: bool
+cruxFocusRingWidth(BuildContext context) -> double
 cruxRegionHintSemantics({bool container, bool explicitChildNodes, required String? hint, required String? label, required Widget child}) -> Widget
+get kCruxFocusRingGap -> double
 get kCruxSwitchThumbSize -> double
 get kCruxSwitchTrackHeight -> double
 get kCruxSwitchTrackWidth -> double

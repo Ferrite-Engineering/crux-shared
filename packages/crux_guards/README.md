@@ -12,7 +12,7 @@ list and its own exemptions.
 | `cruxAuditRefAfterAwait` | A `ConsumerState`'s `ref`, or a `WidgetRef` parameter, is never used after an `await` without a `mounted` check in between. |
 | `cruxAuditModalGuard` | Every `showDialog` / `showModalBottomSheet` / `showGeneralDialog` / `showCruxDialog` runs inside `ModalGuard.run(...)` (a `showCruxDialog` may pass `modalGuardKey:` instead), or its enclosing member is allowed with the reason it cannot be re-fired. |
 | `cruxAuditDismissibleFormDialogs` | A dialog that holds typed input passes `barrierDismissible: false`; forms the scan cannot infer are declared as known forms. |
-| `cruxAuditCruxDesktop` + `cruxParseDesktopAllowList` / `cruxFormatDesktopAllowList` | No raw Material pattern the Crux Desktop layer replaces (`showDialog`, `AlertDialog`, `SimpleDialog`, `SnackBar`, `showSnackBar`, `Icons.more_vert`, `Switch`, `Switch.adaptive`, `SwitchListTile`, `CheckboxListTile`), outside a phone-only call site or a per-file allow-list with exact counts that shrinks to empty. |
+| `cruxAuditCruxDesktop` + `cruxParseDesktopAllowList` / `cruxFormatDesktopAllowList` | No raw Material pattern the Crux Desktop layer replaces (`showDialog`, `AlertDialog`, `SimpleDialog`, `SnackBar`, `showSnackBar`, `Icons.more_vert`, `Switch`, `Switch.adaptive`, `SwitchListTile`, `CheckboxListTile`, `SegmentedButton`, `DropdownButton`, `DropdownButtonFormField`), outside a phone-only call site or a per-file allow-list with exact counts that shrinks to empty. |
 | `cruxAuditPrivateEmptyStates` | No private `*Empty*` / `*Placeholder*` class duplicates `CruxPanelEmptyState`, unless exempted with a reason. |
 | `cruxAuditProcessExit` | No call or tear-off of `dart:io`'s `exit`: a product ends its own process with `crux_telemetry`'s `cruxExit`, which marks the session's exit clean first, unless the enclosing member is exempted with a reason. |
 
@@ -49,6 +49,9 @@ widgets. Each finding names the pattern and its replacement:
 | `Switch`, `Switch.adaptive` | `CruxSwitch` |
 | `SwitchListTile` (and `.adaptive`) | `CruxFormRow.toggle` |
 | `CheckboxListTile` (and `.adaptive`) | `CruxFormRow.checkbox` |
+| `SegmentedButton` | `CruxSegmentedControl` |
+| `DropdownButton` | `CruxPopUpButton` |
+| `DropdownButtonFormField` | `CruxPopUpButton` (`CruxPopUpFormField` where a `Form` validates or saves it) |
 
 Each product runs it from `test/static/` in the open core and in the Pro
 overlay, over that repo's `lib/`, with an allow-list file of the sites not yet

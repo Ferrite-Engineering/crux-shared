@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_ide_layout/crux_ide_layout.dart';
 import 'package:crux_settings_ui/src/crux_settings_control_tile.dart';
 import 'package:flutter/material.dart';
 
@@ -49,6 +50,25 @@ class CruxLocaleSettingTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = kCruxSupportedLocales.containsKey(locale) ? locale : 'en';
+    // The desktop layer draws the owned pop-up; a phone or tablet theme (no
+    // CruxDesktopTokens) keeps Material's dropdown.
+    if (CruxDesktopTokens.isDesktop(context)) {
+      return CruxSettingsControlTile(
+        title: label,
+        description: description,
+        control: CruxPopUpButton<String>(
+          key: const ValueKey('cruxLocaleDropdown'),
+          // No semanticLabel: the row merges with it and its label names it.
+          width: 200,
+          value: value,
+          onChanged: onChanged,
+          items: [
+            for (final entry in kCruxSupportedLocales.entries)
+              CruxPopUpItem(value: entry.key, label: entry.value),
+          ],
+        ),
+      );
+    }
     return CruxSettingsControlTile(
       title: label,
       description: description,

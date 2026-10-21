@@ -73,7 +73,54 @@ void f(BuildContext c) {
       'Switch': CruxDesktopPattern.materialSwitch,
       'SwitchListTile': CruxDesktopPattern.switchListTile,
       'CheckboxListTile': CruxDesktopPattern.checkboxListTile,
+      'SegmentedButton': CruxDesktopPattern.segmentedButton,
+      'DropdownButton': CruxDesktopPattern.dropdownButton,
+      'DropdownButtonFormField': CruxDesktopPattern.dropdownButtonFormField,
     };
+    test('SegmentedButton, DropdownButton and DropdownButtonFormField with '
+        'type arguments, as nearly every site writes them', () {
+      expect(
+        _ids('''
+final all = [
+  SegmentedButton<int>(segments: s, selected: {0}),
+  const SegmentedButton<Mode>(segments: s, selected: {}),
+  DropdownButton<String?>(items: i, onChanged: f),
+  m.DropdownButton<String>(items: i, onChanged: f),
+  DropdownButtonFormField<T>(items: i, onChanged: f),
+  const DropdownButtonFormField<int>(items: i, onChanged: null),
+];
+'''),
+        [
+          'SegmentedButton',
+          'SegmentedButton',
+          'DropdownButton',
+          'DropdownButton',
+          'DropdownButtonFormField',
+          'DropdownButtonFormField',
+        ],
+      );
+    });
+
+    test('the owned controls and Material helpers around a dropdown are not '
+        'sites', () {
+      expect(
+        _ids('''
+final all = [
+  CruxSegmentedControl<int>(segments: s, selected: 0, onChanged: f),
+  CruxPopUpButton<String>(items: i, value: v, onChanged: f),
+  CruxPopUpFormField<String>(items: i),
+  const ButtonSegment(value: 0, label: Text('a')),
+  const DropdownMenuItem(value: 0, child: Text('a')),
+  DropdownButtonHideUnderline(child: x),
+  DropdownMenu<int>(dropdownMenuEntries: e),
+];
+SegmentedButton<int>? field;
+DropdownButton<String>? other;
+'''),
+        isEmpty,
+      );
+    });
+
     for (final MapEntry(key: type, value: pattern) in constructors.entries) {
       test('$type: bare, const, new, and through an import prefix', () {
         expect(
@@ -434,6 +481,46 @@ lib/a.dart | Icons.more_vert | 2 | the toolbar | the status bar
         );
       });
     }
+
+    test('the dropdown and segmented patterns take allowances and the '
+        'phone-only marker like the rest', () {
+      const source = '''
+Widget toolbar() => Row(children: [
+  SegmentedButton<int>(segments: s, selected: {0}),
+  DropdownButton<String>(items: i, onChanged: f),
+]);
+
+Widget form() => DropdownButtonFormField<int>(items: i, onChanged: f);
+
+// crux-desktop: phone-only, the phone orientation picker keeps Material 3
+Widget phone() => DropdownButton<String>(items: i, onChanged: f);
+''';
+      final parsed = cruxParseDesktopAllowList('''
+lib/a.dart | SegmentedButton | 1 | moves onto CruxSegmentedControl in LK2
+lib/a.dart | DropdownButton | 1 | moves onto CruxPopUpButton in LK2
+lib/a.dart | DropdownButtonFormField | 1 | moves onto CruxPopUpButton in LK2
+''');
+      expect(parsed.map((a) => a.pattern), [
+        CruxDesktopPattern.segmentedButton,
+        CruxDesktopPattern.dropdownButton,
+        CruxDesktopPattern.dropdownButtonFormField,
+      ]);
+      final allowed = cruxAuditCruxDesktop(
+        sources: [_src('lib/a.dart', source)],
+        allowances: parsed,
+      );
+      expect(allowed.isClean, isTrue, reason: allowed.describe());
+      expect(allowed.matchesSeen, 4);
+
+      final bare = cruxAuditCruxDesktop(
+        sources: [_src('lib/a.dart', source)],
+      );
+      final details = bare.findings.map((f) => f.detail).toList();
+      expect(details, hasLength(3), reason: bare.describe());
+      expect(details[0], contains('use CruxSegmentedControl'));
+      expect(details[1], contains('use CruxPopUpButton'));
+      expect(details[2], contains('CruxPopUpFormField'));
+    });
 
     test('fromId knows every id and nothing else', () {
       for (final pattern in CruxDesktopPattern.values) {

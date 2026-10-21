@@ -27,18 +27,26 @@
 /// [CruxSwitch] is the suite's desktop switch, drawn at its 32×18 size rather
 /// than a scaled Material switch, with Space and Enter, a toggled semantics
 /// node named by its row, and an always-visible focus ring.
+///
+/// [CruxPressable] is the interaction core the owned desktop controls are
+/// drawn on (pointer, Space and Enter, hover, press and keyboard-focus
+/// states, one button node), and [CruxFocusRing] is the one focus ring they
+/// draw: 1.5 px (2.5 px in high contrast), 2 px outside the control.
 library;
 
 import 'package:crux_a11y/crux_a11y.dart'
     show
+        CruxFocusRing,
         CruxModalGate,
         CruxModalSurface,
+        CruxPressable,
         CruxRegionHint,
         CruxRegionHintHost,
         CruxScrollRegion,
         CruxSwitch;
 import 'package:flutter/material.dart' show Slider;
 
+export 'src/crux_pressable.dart';
 export 'src/crux_slider.dart';
 export 'src/crux_switch.dart';
 export 'src/modal_gate.dart';

@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDesktopTokens;
 import 'package:flutter/material.dart';
 
 /// A rounded, bordered "grouped list" card for a Settings detail pane.
@@ -8,7 +9,8 @@ import 'package:flutter/material.dart';
 /// Children are stacked and separated by inset hairline dividers, matching
 /// the native grouped-settings idiom on macOS / iOS / Android. This is the
 /// *section grouping* surface, so it uses the quiet
-/// [ColorScheme.surfaceContainerLow] tone with a large (12 dp) radius —
+/// [ColorScheme.surfaceContainerLow] tone with the group-box radius (6 px
+/// on desktop, `CruxDesktopTokens.groupRadius`; 12 dp on phone and tablet),
 /// deliberately distinct from *data / value* surfaces (preset cards,
 /// swatches, text inputs) which sit at [ColorScheme.surfaceContainerHighest].
 ///
@@ -27,6 +29,9 @@ class CruxSettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Desktop: the group-box radius, one step above a control's. Phone and
+    // tablet keep the Material card's.
+    final radius = CruxDesktopTokens.of(context)?.groupRadius ?? 12;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Card(
@@ -35,7 +40,7 @@ class CruxSettingsCard extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radius),
           side: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
         child: ListTileTheme.merge(

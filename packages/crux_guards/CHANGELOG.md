@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `CruxDesktopPattern.segmentedButton`, `.dropdownButton` and
+  `.dropdownButtonFormField`: the Crux Desktop guard flags `SegmentedButton`,
+  `DropdownButton` and `DropdownButtonFormField` constructions (with or
+  without type arguments, `const`, or an import prefix) and names
+  `CruxSegmentedControl` and `CruxPopUpButton` (`CruxPopUpFormField` in a
+  validating form). Allow-list files take the ids `SegmentedButton`,
+  `DropdownButton` and `DropdownButtonFormField`; the phone-only marker
+  covers them as it covers the others.
+
 - `cruxAuditCruxDesktop` + `CruxDesktopPattern`, `CruxDesktopSite`,
   `cruxFindDesktopSites`, `CruxDesktopAllowance`, `cruxParseDesktopAllowList`,
   `cruxFormatDesktopAllowList` and `kCruxDesktopPhoneOnlyMarker`: no raw

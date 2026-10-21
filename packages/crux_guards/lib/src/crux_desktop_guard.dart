@@ -39,7 +39,19 @@ enum CruxDesktopPattern {
   switchAdaptive('Switch.adaptive', 'CruxSwitch'),
 
   /// A `CheckboxListTile` (or `CheckboxListTile.adaptive`) construction.
-  checkboxListTile('CheckboxListTile', 'CruxFormRow.checkbox');
+  checkboxListTile('CheckboxListTile', 'CruxFormRow.checkbox'),
+
+  /// A Material `SegmentedButton` construction.
+  segmentedButton('SegmentedButton', 'CruxSegmentedControl'),
+
+  /// A Material `DropdownButton` construction.
+  dropdownButton('DropdownButton', 'CruxPopUpButton'),
+
+  /// A Material `DropdownButtonFormField` construction.
+  dropdownButtonFormField(
+    'DropdownButtonFormField',
+    'CruxPopUpButton (CruxPopUpFormField where a Form validates or saves it)',
+  );
 
   const CruxDesktopPattern(this.id, this.replacement);
 
@@ -231,7 +243,8 @@ String cruxFormatDesktopAllowList(
 ///
 /// The desktop layout uses the Crux Desktop widgets (`showCruxDialog`,
 /// `CruxDialog`, the Crux snack helpers, `CruxOverflowMenu`, `CruxSwitch`,
-/// `CruxFormRow`); every [CruxDesktopPattern] site in [sources] is a finding
+/// `CruxFormRow`, `CruxSegmentedControl`, `CruxPopUpButton`); every
+/// [CruxDesktopPattern] site in [sources] is a finding
 /// that names its replacement, unless:
 ///
 /// - **it is phone-only**: a `//` or `///` comment holding
@@ -365,6 +378,9 @@ const Map<String, CruxDesktopPattern> _constructorPatterns =
       'Switch': CruxDesktopPattern.materialSwitch,
       'SwitchListTile': CruxDesktopPattern.switchListTile,
       'CheckboxListTile': CruxDesktopPattern.checkboxListTile,
+      'SegmentedButton': CruxDesktopPattern.segmentedButton,
+      'DropdownButton': CruxDesktopPattern.dropdownButton,
+      'DropdownButtonFormField': CruxDesktopPattern.dropdownButtonFormField,
     };
 
 /// The `Icons` members [CruxDesktopPattern.moreVert] matches.

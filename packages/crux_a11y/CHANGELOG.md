@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **`CruxPressable` / `CruxPressState` / `CruxFocusRing`: the interaction
+  core and focus ring of the owned desktop controls.** `CruxPressable` is a
+  Tab stop that a click, Space or Enter activates, reporting pressed,
+  hovered, keyboard-focused and enabled to its builder, with one button
+  semantics node (label, value, selected and expanded states) and the
+  drawn content excluded. `CruxFocusRing` is the one ring: 1.5 px (2.5 px
+  in high contrast, `cruxFocusRingWidth`) primary, 2 px outside the control
+  or inside it with `inset`, painted in the foreground so it never moves
+  layout. `CruxFocusRingPainter` and `kCruxFocusRingGap` are public for the
+  theme's ring shapes and for tests.
+
 - **`CruxSwitch`: the desktop switch.** A 32×18 track with a 14 px thumb,
   drawn at size rather than a scaled Material `Switch`. One Tab stop that
   Space and Enter toggle, one semantics node with the toggled state and

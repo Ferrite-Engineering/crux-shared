@@ -78,16 +78,17 @@ class CruxColorThemeNotifier extends Notifier<CruxColorTheme>
   final initial: CruxColorTheme
   reset() -> void
 class CruxDesktopTokens extends ThemeExtension<CruxDesktopTokens>
-  const CruxDesktopTokens({double bodyFontSize, double controlHeight, double controlRadius, double denseControlHeight, double dialogRadius, double focusRingWidth, double menuRadius, double rowHeight, double scrimOpacity, double secondaryFontSize, double titleFontSize, double toastBottomInset, double toastMaxWidth, double twoLineRowHeight})
+  const CruxDesktopTokens({double bodyFontSize, double controlHeight, double controlRadius, double denseControlHeight, double dialogRadius, double focusRingWidth, double groupRadius, double menuRadius, double rowHeight, double scrimOpacity, double secondaryFontSize, double titleFontSize, double toastBottomInset, double toastMaxWidth, double twoLineRowHeight})
   const CruxDesktopTokens.highContrast()
   ==(Object other) -> bool
-  copyWith({double? bodyFontSize, double? controlHeight, double? controlRadius, double? denseControlHeight, double? dialogRadius, double? focusRingWidth, double? menuRadius, double? rowHeight, double? scrimOpacity, double? secondaryFontSize, double? titleFontSize, double? toastBottomInset, double? toastMaxWidth, double? twoLineRowHeight}) -> CruxDesktopTokens
+  copyWith({double? bodyFontSize, double? controlHeight, double? controlRadius, double? denseControlHeight, double? dialogRadius, double? focusRingWidth, double? groupRadius, double? menuRadius, double? rowHeight, double? scrimOpacity, double? secondaryFontSize, double? titleFontSize, double? toastBottomInset, double? toastMaxWidth, double? twoLineRowHeight}) -> CruxDesktopTokens
   final bodyFontSize: double
   final controlHeight: double
   final controlRadius: double
   final denseControlHeight: double
   final dialogRadius: double
   final focusRingWidth: double
+  final groupRadius: double
   final menuRadius: double
   final rowHeight: double
   final scrimOpacity: double

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDesktopTokens;
+import 'package:crux_theme/src/crux_focus_ring_borders.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -56,16 +57,27 @@ ThemeData cruxThemeForDevice({
 ///   and a theme `minTileHeight` would also raise the single-line rows; and
 ///   a checkbox
 ///   or radio paints its 18 px box in a shrink-wrapped 24 px hit area.
-/// - **Shape.** 4 px controls, 6 px menus and toasts, 8 px dialogs. Surfaces
+/// - **Shape.** 4 px controls, 6 px menus, toasts and cards (a card is a
+///   group box, `CruxDesktopTokens.groupRadius`), 8 px dialogs. Surfaces
 ///   are a 1 px `outlineVariant` border with one shadow; `surfaceTint` is
 ///   transparent, so elevation never tints.
 /// - **Type.** 13 px body, 12 px secondary, 14 px semibold titles, in the
 ///   operating system's UI font: no `fontFamily` is set. Products that use a
 ///   monospace face for technical values (signal values, times, paths) set
 ///   those text slots themselves, after this.
-/// - **Feedback.** Hover and pressed overlays, no ink ripple.
-/// - **Focus.** An always-visible primary ring on keyboard focus, 1.5 px, or
-///   2.5 px when [highContrast].
+///   Values and menu items are regular weight. Material's `DropdownButton`
+///   draws its value in `titleMedium`, the heading slot, which no theme can
+///   lighten without lightening every heading: the desktop replacement is
+///   `CruxPopUpButton`.
+/// - **Feedback.** Hover and pressed overlays, no ink ripple. A filled
+///   (accent) button darkens on hover and press in both brightnesses. The
+///   outlined button is the neutral secondary button: `onSurface` text on a
+///   flat face, never the accent.
+/// - **Focus.** On keyboard focus, the ring the owned controls draw
+///   (`CruxFocusRing`): a primary stroke, 1.5 px or 2.5 px when
+///   [highContrast], 2 px outside the control. Buttons draw it through their
+///   shape ([CruxFocusRingShape]), text fields through their focused border
+///   ([CruxFocusRingInputBorder]), so it never moves layout.
 /// - **Scrim.** 18 % black behind a blocking dialog.
 ///
 /// The result carries [CruxDesktopTokens]. Colour stays the product's: its
@@ -146,20 +158,28 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
         return null;
       });
 
-  // The keyboard-focus ring, drawn as the control's outline so it is always
-  // visible, not a faint overlay.
-  WidgetStateProperty<BorderSide?> focusSide({BorderSide? rest}) =>
+  // The keyboard-focus ring: the shape the owned controls draw with
+  // `CruxFocusRing`, a [ring] px primary stroke 2 px outside the control,
+  // painted by the button's shape so it stays out of layout. The control's
+  // own border is unchanged under it.
+  final focusRing = BorderSide(color: colorScheme.primary, width: ring);
+  WidgetStateProperty<OutlinedBorder?> focusShape() =>
       WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.focused) &&
             !states.contains(WidgetState.disabled)) {
-          return BorderSide(color: colorScheme.primary, width: ring);
+          return CruxFocusRingShape(
+            ring: focusRing,
+            borderRadius: controlRadius,
+          );
         }
-        return rest;
+        return RoundedRectangleBorder(borderRadius: controlRadius);
       });
 
   ButtonStyle buttonStyle({
     required Color overlayBase,
-    BorderSide? restSide,
+    WidgetStateProperty<BorderSide?>? side,
+    WidgetStateProperty<Color?>? foregroundColor,
+    WidgetStateProperty<Color?>? backgroundColor,
     double minWidth = 64,
   }) => ButtonStyle(
     minimumSize: WidgetStatePropertyAll(Size(minWidth, tokens.controlHeight)),
@@ -167,22 +187,38 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
     padding: const WidgetStatePropertyAll(
       EdgeInsets.symmetric(horizontal: 12),
     ),
-    shape: WidgetStatePropertyAll(
-      RoundedRectangleBorder(borderRadius: controlRadius),
-    ),
+    shape: focusShape(),
     textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
     overlayColor: overlay(overlayBase),
-    side: focusSide(rest: restSide),
+    side: side,
+    foregroundColor: foregroundColor,
+    backgroundColor: backgroundColor,
     visualDensity: VisualDensity.compact,
     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     splashFactory: NoSplash.splashFactory,
     elevation: const WidgetStatePropertyAll(0),
   );
 
+  // A neutral push button's face: white with a border in light (it reads as
+  // a button on Windows, GNOME, KDE and macOS alike), the highest container
+  // in dark.
+  final neutralFace = isDark
+      ? colorScheme.surfaceContainerHighest
+      : colorScheme.surfaceContainerLowest;
+
   final outlineBorder = OutlineInputBorder(
     borderRadius: controlRadius,
     borderSide: BorderSide(color: colorScheme.outlineVariant),
   );
+  // Keyboard focus on a field: the primary outline plus the shared ring.
+  final focusedField = CruxFocusRingInputBorder(
+    borderRadius: controlRadius,
+    borderSide: BorderSide(color: colorScheme.primary),
+    ring: focusRing,
+  );
+  // Values and menu items are regular weight, whatever the platform
+  // typography's body weight.
+  final value = body?.copyWith(fontWeight: FontWeight.w400);
 
   final menuSurface = isDark
       ? colorScheme.surfaceContainerHighest
@@ -223,8 +259,10 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
       color: colorScheme.surfaceContainerHighest,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      // A card is a group box: one step above a control's radius, the same
+      // as a menu's (`CruxDesktopTokens.groupRadius`).
       shape: RoundedRectangleBorder(
-        borderRadius: controlRadius,
+        borderRadius: BorderRadius.circular(tokens.groupRadius),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       margin: EdgeInsets.zero,
@@ -255,7 +293,9 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
       color: colorScheme.onSurface.withValues(alpha: 0.8),
     ),
 
-    // 28 px fields, 13 px text, label-left forms: no floating label.
+    // 28 px fields, 13 px text, label-left forms: no floating label. The
+    // fill is a neutral control's face, so a field and a pop-up button side
+    // by side match (white in light, the highest container in dark).
     inputDecorationTheme: InputDecorationThemeData(
       isDense: true,
       constraints: BoxConstraints(minHeight: tokens.controlHeight),
@@ -277,20 +317,18 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
       ),
       enabledBorder: outlineBorder,
       disabledBorder: outlineBorder,
-      focusedBorder: OutlineInputBorder(
-        borderRadius: controlRadius,
-        borderSide: BorderSide(color: colorScheme.primary, width: ring),
-      ),
+      focusedBorder: focusedField,
       errorBorder: OutlineInputBorder(
         borderRadius: controlRadius,
         borderSide: BorderSide(color: colorScheme.error),
       ),
-      focusedErrorBorder: OutlineInputBorder(
+      focusedErrorBorder: CruxFocusRingInputBorder(
         borderRadius: controlRadius,
-        borderSide: BorderSide(color: colorScheme.error, width: ring),
+        borderSide: BorderSide(color: colorScheme.error),
+        ring: BorderSide(color: colorScheme.error, width: ring),
       ),
       filled: true,
-      fillColor: colorScheme.surfaceContainerHighest,
+      fillColor: neutralFace,
       hintStyle: TextStyle(
         color: colorScheme.onSurfaceVariant,
         fontSize: tokens.bodyFontSize,
@@ -308,16 +346,52 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
     textButtonTheme: TextButtonThemeData(
       style: buttonStyle(overlayBase: colorScheme.primary, minWidth: 48),
     ),
+    // The accent face darkens on hover and press in both brightnesses:
+    // black over the light theme's dark accent, the dark on-primary over the
+    // dark theme's light accent. A white overlay would lighten a pressed
+    // light-theme button.
     filledButtonTheme: FilledButtonThemeData(
-      style: buttonStyle(overlayBase: colorScheme.onPrimary),
+      style: buttonStyle(
+        overlayBase: isDark ? colorScheme.onPrimary : Colors.black,
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: buttonStyle(overlayBase: colorScheme.primary),
     ),
+    // The secondary push button (Browse…, Cancel beside a primary): neutral,
+    // never accent-coloured. The (c) normal button: a flat face, a 1 px
+    // outlineVariant border lifting to outline on hover and press.
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: buttonStyle(
         overlayBase: colorScheme.onSurface,
-        restSide: BorderSide(color: colorScheme.outline),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? disabled
+              : colorScheme.onSurface,
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? neutralFace.withValues(alpha: neutralFace.a * 0.5)
+              : neutralFace,
+        ),
+        side: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return BorderSide(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            );
+          }
+          if (states.contains(WidgetState.hovered) ||
+              states.contains(WidgetState.pressed)) {
+            return BorderSide(
+              color: highContrast ? colorScheme.onSurface : colorScheme.outline,
+            );
+          }
+          return BorderSide(
+            color: highContrast
+                ? colorScheme.outline
+                : colorScheme.outlineVariant,
+          );
+        }),
       ),
     ),
     iconButtonTheme: IconButtonThemeData(
@@ -330,11 +404,8 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
         ),
         padding: const WidgetStatePropertyAll(EdgeInsets.zero),
         iconSize: const WidgetStatePropertyAll(18),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: controlRadius),
-        ),
+        shape: focusShape(),
         overlayColor: overlay(colorScheme.onSurface),
-        side: focusSide(),
         // The size above is the size: a density adjustment would take
         // another 8 px off it.
         visualDensity: VisualDensity.standard,
@@ -383,19 +454,16 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
       iconTheme: const IconThemeData(size: 14),
     ),
     dropdownMenuTheme: DropdownMenuThemeData(
-      textStyle: textTheme.bodyMedium,
+      textStyle: value,
       inputDecorationTheme: InputDecorationThemeData(
         isDense: true,
         constraints: BoxConstraints.tightFor(height: tokens.controlHeight),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8),
         border: outlineBorder,
         enabledBorder: outlineBorder,
-        focusedBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: BorderSide(color: colorScheme.primary, width: ring),
-        ),
+        focusedBorder: focusedField,
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
+        fillColor: neutralFace,
       ),
       menuStyle: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(menuSurface),
@@ -541,9 +609,9 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
         borderRadius: menuRadius,
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
-      textStyle: body?.copyWith(color: colorScheme.onSurface),
+      textStyle: value?.copyWith(color: colorScheme.onSurface),
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => body?.copyWith(
+        (states) => value?.copyWith(
           color: states.contains(WidgetState.disabled)
               ? disabled
               : colorScheme.onSurface,
@@ -568,9 +636,7 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
     ),
     menuButtonTheme: MenuButtonThemeData(
       style: ButtonStyle(
-        textStyle: WidgetStatePropertyAll(
-          body?.copyWith(fontWeight: FontWeight.w400),
-        ),
+        textStyle: WidgetStatePropertyAll(value),
         foregroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) return disabled;
           return colorScheme.onSurface;

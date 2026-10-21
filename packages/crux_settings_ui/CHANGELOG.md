@@ -6,6 +6,17 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **The shared tiles draw the owned desktop controls.** Under a desktop
+  theme `CruxAutoReloadSettingTile` is a `CruxSegmentedControl` and
+  `CruxLocaleSettingTile` a `CruxPopUpButton`; a phone or tablet theme keeps
+  Material's `SegmentedButton` and `DropdownButton`. The keys
+  `cruxAutoReloadSegments` and `cruxLocaleDropdown` stay on the control.
+- `CruxFormRow` does not merge a `CruxSegmentedControl` child into the row
+  (it would be one node with a tap per segment); the control names its
+  group and the visible label is excluded from semantics.
+- `CruxSettingsCard` takes the 6 px group radius on desktop
+  (`CruxDesktopTokens.groupRadius`), 12 dp on phone and tablet.
+
 - **`openCruxSettings(navigator:)`.** Pushes Settings on the given navigator
   instead of the root one, so a product whose settings body reads a tab's
   providers can show it on that tab's own navigator (crux_workspace's
