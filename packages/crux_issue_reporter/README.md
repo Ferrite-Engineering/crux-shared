@@ -253,3 +253,12 @@ adapter in the product's suite.
 cd packages/crux_issue_reporter
 flutter test
 ```
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxIssueSubmission` (in `CruxIssueReporterService`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxClipboardWriter`, `CruxUrlLauncherFn`.
+- **Default-locale implementation of an exported strings seam; a host wraps or subclasses it**: `CruxIssueReporterStringsEn`.
+- **Error type the exported config provider's default throws**: `CruxIssueReporterUnconfiguredError`.

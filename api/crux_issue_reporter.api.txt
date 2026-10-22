@@ -185,11 +185,4 @@ get cruxIssueReporterLogBufferProvider -> Provider<CruxIssueReporterLogBuffer>
 get cruxIssueReporterServiceProvider -> Provider<CruxIssueReporterService>
 get cruxIssueReporterStringsProvider -> Provider<CruxIssueReporterStrings>
 get cruxIssueSessionContextProvider -> Provider<CruxIssueSessionContext>
-cruxIssueTileKey(String categoryId) -> Key
-cruxLocaleTag(Locale locale) -> String
 get isCruxDesktopPlatform -> bool
-get kCruxIssuePreviewBodyKey -> Key
-get kCruxIssuePreviewToggleKey -> Key
-get kCruxIssueReporterMinTouchTarget -> double
-get kCruxIssueScreenshotCategoryId -> String
-get kCruxIssueTitleFieldKey -> Key

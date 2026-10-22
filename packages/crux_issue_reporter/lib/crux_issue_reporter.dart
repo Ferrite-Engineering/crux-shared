@@ -56,7 +56,14 @@ export 'src/models/crux_issue_reporter_config.dart';
 export 'src/models/crux_issue_session_context.dart';
 export 'src/models/crux_issue_session_context_builder.dart';
 export 'src/platform_utils.dart';
-export 'src/providers/crux_issue_reporter_providers.dart';
+export 'src/providers/crux_issue_reporter_providers.dart' hide cruxLocaleTag;
 export 'src/services/crux_issue_reporter_log_buffer.dart';
 export 'src/services/crux_issue_reporter_service.dart';
-export 'src/widgets/crux_issue_reporter_dialog.dart';
+export 'src/widgets/crux_issue_reporter_dialog.dart'
+    hide
+        cruxIssueTileKey,
+        kCruxIssuePreviewBodyKey,
+        kCruxIssuePreviewToggleKey,
+        kCruxIssueReporterMinTouchTarget,
+        kCruxIssueScreenshotCategoryId,
+        kCruxIssueTitleFieldKey;

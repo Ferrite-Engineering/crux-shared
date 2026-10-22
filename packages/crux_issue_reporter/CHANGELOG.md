@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 7 symbols.** `cruxIssueTileKey`, `cruxLocaleTag`, `kCruxIssuePreviewBodyKey`, `kCruxIssuePreviewToggleKey`, `kCruxIssueReporterMinTouchTarget`, `kCruxIssueScreenshotCategoryId`, `kCruxIssueTitleFieldKey` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **The category toggles are checkboxes** (`CruxFormRow.checkbox`): the
   choice applies when the report is sent, not at once. The desktop dialog
   opens through `showCruxDialog` in a `CruxDialog` frame and is no longer

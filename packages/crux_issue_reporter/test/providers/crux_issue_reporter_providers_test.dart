@@ -3,6 +3,7 @@
 
 import 'package:crux_app_info/crux_app_info.dart';
 import 'package:crux_issue_reporter/crux_issue_reporter.dart';
+import 'package:crux_issue_reporter/src/providers/crux_issue_reporter_providers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;

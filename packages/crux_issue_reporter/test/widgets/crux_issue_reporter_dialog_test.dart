@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:crux_app_info/crux_app_info.dart';
 import 'package:crux_issue_reporter/crux_issue_reporter.dart';
+import 'package:crux_issue_reporter/src/widgets/crux_issue_reporter_dialog.dart';
 import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
