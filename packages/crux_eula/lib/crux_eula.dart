@@ -17,10 +17,14 @@
 library;
 
 export 'src/crux_eula_strings.dart';
-export 'src/eula_document.dart';
-export 'src/providers/eula_acceptance_store.dart';
+export 'src/eula_document.dart' hide CruxEulaBlock, kCruxEulaDocument;
+export 'src/providers/eula_acceptance_store.dart'
+    hide
+        CruxEulaAcceptanceStore,
+        cruxEulaAcceptanceRequiredProvider,
+        cruxEulaAcceptanceStoreProvider;
 export 'src/providers/eula_seam_providers.dart';
 export 'src/storage/eula_storage.dart';
 export 'src/widgets/crux_eula_gate.dart';
 export 'src/widgets/eula_acceptance_dialog.dart';
-export 'src/widgets/eula_metrics.dart';
+export 'src/widgets/eula_metrics.dart' hide kCruxEulaMinTarget;

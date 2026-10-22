@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_eula/crux_eula.dart';
+import 'package:crux_eula/src/eula_document.dart';
+import 'package:crux_eula/src/providers/eula_acceptance_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

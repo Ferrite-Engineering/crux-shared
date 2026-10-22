@@ -17,15 +17,6 @@ class CruxEulaAcceptanceDialog extends StatefulWidget
   final onDecline: void Function()?
   final onOpenOnline: void Function()?
   final strings: CruxEulaStrings
-class CruxEulaAcceptanceStore extends Notifier<String?>
-  accept([String version]) -> Future<void>
-  build() -> String?
-  get loaded -> Future<void>
-  static const storageKey: String
-class CruxEulaBlock
-  const CruxEulaBlock({required String text, required bool isHeading})
-  final isHeading: bool
-  final text: String
 class CruxEulaGate extends ConsumerStatefulWidget
   const CruxEulaGate({CruxEulaMetrics metrics, CruxEulaStrings strings, Key? key, bool isPhoneLayout, bool presentAgreement, required Widget child})
   createState() -> ConsumerState<CruxEulaGate>
@@ -67,14 +58,10 @@ class InMemoryCruxEulaStorage extends CruxEulaStorage
   read(String key) -> Future<String?>
   remove(String key) -> Future<void>
   write(String key, String value) -> Future<void>
-get cruxEulaAcceptanceRequiredProvider -> Provider<bool>
-get cruxEulaAcceptanceStoreProvider -> NotifierProvider<CruxEulaAcceptanceStore, String?>
 get cruxEulaOnDeclineProvider -> Provider<void Function()?>
 get cruxEulaOpenOnlineProvider -> Provider<Future<void> Function()?>
 get cruxEulaStorageProvider -> Provider<CruxEulaStorage>
 get kCruxEulaAcceptedVersionKey -> String
-get kCruxEulaDocument -> List<CruxEulaBlock>
 get kCruxEulaEffectiveDate -> String
-get kCruxEulaMinTarget -> double
 get kCruxEulaVersion -> String
 resetCruxEulaAcceptance(CruxEulaStorage storage) -> Future<void>

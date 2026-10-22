@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 6 symbols.** `CruxEulaAcceptanceStore`, `CruxEulaBlock`, `cruxEulaAcceptanceRequiredProvider`, `cruxEulaAcceptanceStoreProvider`, `kCruxEulaDocument`, `kCruxEulaMinTarget` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - The agreement draws in the Crux Desktop dialog frame (`CruxDialog` with
   `semanticContainer: false`, since `CruxModalSurface` already names it)
   instead of a `Card`. It stays above the `Navigator`, so it is not opened

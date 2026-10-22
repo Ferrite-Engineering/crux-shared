@@ -101,3 +101,9 @@ translated.
 accepted". Products surface it as `--reset-eula`, because once accepted the
 dialog does not return until the version changes, which makes the one surface
 every reviewer needs to check the hardest one to see twice.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxEulaSeedFinding` (in `cruxAuditEulaSeededBoots`), `CruxEulaStrings` (in `CruxEulaAcceptanceDialog`).
