@@ -143,8 +143,9 @@ void main() {
   test('step logs, step metrics and a step without runtime.txt', () async {
     final copy = _copy(_run('3.0.16', 'sky130A_met'));
     final step = p.join(copy.path, '06-yosys-synthesis');
+    File(p.join(step, 'a-helper.log')).writeAsStringSync('x');
     File(p.join(step, 'z.log')).writeAsStringSync('');
-    File(p.join(step, 'yosys-synthesis.log')).writeAsStringSync('');
+    File(p.join(step, 'yosys-synthesis.log')).writeAsStringSync('xx');
     File(p.join(step, 'or_metrics_out.json')).writeAsStringSync('{}');
     File(p.join(step, 'runtime.txt')).deleteSync();
     final steps = const LibreLaneStepReader().read(copy.path);

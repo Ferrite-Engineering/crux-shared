@@ -34,7 +34,7 @@ export 'src/librelane/librelane_version.dart';
 export 'src/mapping/netlist_src_index.dart' show NetlistSrcIndex, isStorageCell;
 export 'src/mapping/rtl_register_resolver.dart';
 export 'src/mapping/rtl_registers.dart'
-    show RtlRegister, RtlRegisterSet, sameSourceRange;
+    show RtlRegister, RtlRegisterSet, registerNameOfNet, sameSourceRange;
 export 'src/metrics/metric_aggregation.dart' show aggregateMetrics;
 export 'src/metrics/metric_definition.dart';
 export 'src/metrics/metric_diff.dart';

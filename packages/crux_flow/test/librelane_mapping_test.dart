@@ -97,6 +97,39 @@ void main() {
       }
     });
 
+    test(
+      'registers read from the sidecar itself collapse split bits',
+      () async {
+        // LibreLane's synthesis splits vectors into one-bit nets named after
+        // their bits (`sum_q[23]`): each bit belongs to the one register.
+        final sidecar = await RtlRegisterSet.read(
+          p.join(
+            _run('3.0.16', 'sky130A_timing'),
+            reading.run.artifacts['synthesis_netlist'],
+          ),
+        );
+        expect(
+          sidecar.registers.map((r) => r.name).toSet(),
+          (_mapping['registers']! as List<Object?>).toSet(),
+        );
+        final path = reading.run.timing.firstWhere(
+          (t) =>
+              netlist.isStorage(t.startpoint) && netlist.isStorage(t.endpoint),
+        );
+        final mapped = netlist.resolvePath(path, sidecar);
+        expect(mapped.endpoint.register, _mapping['end_register']);
+        expect(mapped.endpoint.fidelity, MappingFidelity.register);
+      },
+    );
+
+    test('registerNameOfNet: only a one-bit net loses its bit selects', () {
+      expect(registerNameOfNet('sum_q[23]', bitCount: 1), 'sum_q');
+      expect(registerNameOfNet('m[2][7]', bitCount: 1), 'm');
+      expect(registerNameOfNet('sum_q', bitCount: 25), 'sum_q');
+      expect(registerNameOfNet('v[3]', bitCount: 4), 'v[3]');
+      expect(registerNameOfNet('[3]', bitCount: 1), '[3]');
+    });
+
     test('registerNet strips bit and word selects', () {
       expect(
         LibreLaneNetlist.registerNet(['nope', 'sum_q[3]'], registers),

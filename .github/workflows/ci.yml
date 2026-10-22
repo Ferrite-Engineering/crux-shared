@@ -184,11 +184,11 @@ jobs:
       # one, so the ceiling rose from two to seven. The runKeepingJson test
       # that drives a real Yosys over awkward temp-directory names is one more
       # skip here: eight. crux_flow's LibreLane readers, OpenSTA reader,
-      # checks, ASIC mapping, compare parity and their fuzz tests added 95:
-      # raised by 94.
+      # checks, ASIC mapping, compare parity and their fuzz tests added 98:
+      # raised by 97.
       - name: Test count did not shrink
         env:
-          MIN_TESTS: '4158'
+          MIN_TESTS: '4161'
           MAX_SKIPPED: '8'
         run: |
           python3 - <<'PY'

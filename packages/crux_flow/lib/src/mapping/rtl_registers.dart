@@ -287,7 +287,7 @@ void _collect(
     final assignments = _assigningSpans(cell, driverOf);
     final blocks = _userSpans(cell.attributes['src']);
     for (final net in named) {
-      final name = '$prefix${net.name}';
+      final name = '$prefix${_registerNameOf(net)}';
       out.putIfAbsent(
         name,
         () => RtlRegister(
@@ -300,6 +300,27 @@ void _collect(
     }
   }
 }
+
+String _registerNameOf(Net net) =>
+    registerNameOfNet(net.name, bitCount: net.bits.length);
+
+/// The register a storage cell's output net [name] of [bitCount] bits names:
+/// the net's own name, or, for a one-bit net a synthesis tool split out of a
+/// vector and named after one of its bits (`sum_q[23]`, as LibreLane's
+/// synthesis writes them), the vector's name with the trailing bit selects
+/// removed, so every bit of a register is one register. A host that keys its
+/// own registers by name uses this to agree with [RtlRegisterSet].
+String registerNameOfNet(String name, {required int bitCount}) {
+  if (bitCount != 1) return name;
+  var current = name;
+  while (true) {
+    final shorter = current.replaceFirst(_trailingBitSelect, '');
+    if (shorter == current || shorter.isEmpty) return current;
+    current = shorter;
+  }
+}
+
+final RegExp _trailingBitSelect = RegExp(r'\[\d+\]$');
 
 List<SrcSpan> _userSpans(String? src) => [
   for (final span in SrcSpan.parseAll(src))

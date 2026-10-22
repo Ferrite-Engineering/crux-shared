@@ -53,6 +53,7 @@ class LibreLaneCheck {
     this.errorOnDefault = true,
     this.cornerVariable,
     this.baseCornerVariable,
+    this.defaultCorners = const <String>['*'],
     this.thresholdVariable,
   });
 
@@ -79,6 +80,12 @@ class LibreLaneCheck {
   /// The variable [cornerVariable] falls back to when unset or empty
   /// (`TIMING_VIOLATION_CORNERS`).
   final String? baseCornerVariable;
+
+  /// The corner wildcards checked when the configuration names neither
+  /// variable (a run whose `resolved.json` lacks them): the checker's own
+  /// default where it has one (`*` for hold, none for slew and capacitance),
+  /// else every corner.
+  final List<String> defaultCorners;
 
   /// The variable holding the threshold, when it is not zero
   /// (`WIRE_LENGTH_THRESHOLD`). A null threshold skips the check, as
@@ -120,6 +127,7 @@ const List<LibreLaneCheck> kLibreLane30Checks = <LibreLaneCheck>[
     checker: 'Checker.MaxSlewViolations',
     cornerVariable: 'MAX_SLEW_VIOLATION_CORNERS',
     baseCornerVariable: 'TIMING_VIOLATION_CORNERS',
+    defaultCorners: <String>[''],
   ),
   LibreLaneCheck(
     metric: 'design__max_cap_violation__count',
@@ -127,6 +135,7 @@ const List<LibreLaneCheck> kLibreLane30Checks = <LibreLaneCheck>[
     checker: 'Checker.MaxCapViolations',
     cornerVariable: 'MAX_CAP_VIOLATION_CORNERS',
     baseCornerVariable: 'TIMING_VIOLATION_CORNERS',
+    defaultCorners: <String>[''],
   ),
   LibreLaneCheck(
     metric: 'route__drc_errors',
@@ -383,6 +392,11 @@ List<String> _cornerWildcards(
 
   var wildcards = read(check.cornerVariable);
   if (wildcards.isEmpty) wildcards = read(check.baseCornerVariable);
+  if (wildcards.isEmpty &&
+      !config.containsKey(check.cornerVariable) &&
+      !config.containsKey(check.baseCornerVariable)) {
+    wildcards = check.defaultCorners;
+  }
   return [
     for (final w in wildcards)
       if (w.isNotEmpty) w,

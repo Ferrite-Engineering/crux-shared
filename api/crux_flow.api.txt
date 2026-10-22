@@ -131,11 +131,12 @@ class LibreLane30RunReader extends LibreLaneRunReader
   get verified -> LibreLaneVersionRange
   read(String runRoot, {LibreLaneVersion? version, String? tag, bool live, int timingPaths}) -> Future<LibreLaneReading>
 class LibreLaneCheck
-  const LibreLaneCheck({String? baseCornerVariable, String? checker, String? cornerVariable, String? errorOnVariable, String? thresholdVariable, bool errorOnDefault, required LibreLaneCheckCategory category, required String metric})
+  const LibreLaneCheck({List<String> defaultCorners, String? baseCornerVariable, String? checker, String? cornerVariable, String? errorOnVariable, String? thresholdVariable, bool errorOnDefault, required LibreLaneCheckCategory category, required String metric})
   final baseCornerVariable: String?
   final category: LibreLaneCheckCategory
   final checker: String?
   final cornerVariable: String?
+  final defaultCorners: List<String>
   final errorOnDefault: bool
   final errorOnVariable: String?
   final metric: String
@@ -576,5 +577,6 @@ get kLibreLaneStepDirectory -> RegExp
 get librelaneMetricsV1 -> MetricDefinitionTable
 matchSourceBySuffix(String recorded, Iterable<String> designSources) -> String?
 readLibreLaneResolved(String runRoot, FlowInputLimits limits) -> Future<Map<String, Object?>?>
+registerNameOfNet(String name, {required int bitCount}) -> String
 sameSourceRange(SrcSpan a, SrcSpan b) -> bool
 writeVerilogAutoNames(Module module) -> Map<String, String>

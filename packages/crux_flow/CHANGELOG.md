@@ -29,6 +29,11 @@
   `checkJsonDepth`, `decodeFlowJson` and `decodeFlowText` are exported.
 - `MetricDiff` is held byte for byte to upstream `compare` output on the
   hand-built pair.
+- `RtlRegisterSet` reads a register whose bits a synthesis tool split into
+  one-bit nets named after the bits (`sum_q[23]`) as the one register
+  (`sum_q`), and `registerNameOfNet` gives hosts the same rule;
+  `LibreLaneCheck.defaultCorners` stands in for corner variables
+  a run's configuration lacks; a LibreLane step's log is its largest.
 - **Export namespace narrowed by 6 symbols.** `isToolLibraryPath`, `kFlowClockConstraintRule`, `kFlowSarifFingerprintKey`, `kFlowSarifSourceRoot`, `kFlowTimingPathRule`, `sharedPathSuffixLength` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **Mapping a tool's cells back to source registers.** `NetlistSrcIndex`

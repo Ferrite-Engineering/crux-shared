@@ -211,18 +211,25 @@ class LibreLaneStepReader {
     r'^(\d{1,6}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?$',
   );
 
-  /// The step's first `*.log` in name order, relative to the run root.
+  /// The step's largest `*.log` (the tool's own; a step keeps small helper
+  /// logs beside it), the first in name order on a tie, relative to the run
+  /// root.
   String? _firstLog(String dir, String name) {
     try {
-      final logs = <String>[];
+      final logs = <(int, String)>[];
       var seen = 0;
       for (final e in Directory(dir).listSync(followLinks: false)) {
         if (++seen > kLibreLaneMaxRootEntries) break;
-        if (e is File && e.path.endsWith('.log')) logs.add(p.basename(e.path));
+        if (e is File && e.path.endsWith('.log')) {
+          logs.add((e.lengthSync(), p.basename(e.path)));
+        }
       }
       if (logs.isEmpty) return null;
-      logs.sort();
-      return p.join(name, logs.first);
+      logs.sort((a, b) {
+        final bySize = b.$1.compareTo(a.$1);
+        return bySize != 0 ? bySize : a.$2.compareTo(b.$2);
+      });
+      return p.join(name, logs.first.$2);
     } on FileSystemException {
       return null;
     }

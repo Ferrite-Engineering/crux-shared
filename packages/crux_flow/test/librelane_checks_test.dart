@@ -123,6 +123,36 @@ void main() {
       expect(denied.enforced, isFalse);
     });
 
+    test("a configuration without the corner variables takes the checker's "
+        'defaults', () {
+      const metrics = {
+        '${setup}__corner:c': 1,
+        'timing__hold_vio__count__corner:c': 1,
+        'design__max_slew_violation__count__corner:c': 1,
+      };
+      expect(finding(metrics, const {}, setup)!.enforced, isTrue);
+      expect(
+        finding(metrics, const {}, 'timing__hold_vio__count')!.enforced,
+        isTrue,
+      );
+      expect(
+        finding(
+          metrics,
+          const {},
+          'design__max_slew_violation__count',
+        )!.enforced,
+        isFalse,
+      );
+      // A variable that is present, even empty, is the configuration's word.
+      expect(
+        finding(metrics, const {
+          'SETUP_VIOLATION_CORNERS': <String>[],
+          'TIMING_VIOLATION_CORNERS': <String>[],
+        }, setup)!.enforced,
+        isFalse,
+      );
+    });
+
     test('the empty wildcard checks no corner', () {
       final f = finding(
         const {'design__max_cap_violation__count__corner:nom_tt': 1},
