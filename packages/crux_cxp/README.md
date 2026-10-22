@@ -356,3 +356,9 @@ and the `cxpProtocolVersion` wire version move independently.
 Apache 2.0 at the post-beta open-core flip, matching the rest of the EDA
 Crux suite (each product's open-core repo follows the same
 `<vendor>/<product>` pattern).
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Pub.dev surface: the package third-party tools build against, so its whole export namespace is the contract**: `CxpClient`, `CxpConnectionEvent`, `CxpDialRefusedException`, `CxpDiscoveryEvent`, `CxpServer`, `Unsubscribe`, `WorkspaceArtifact`, `cxpAuthProof`, `cxpAuthTokensMatch`, `cxpDefaultManifestHeartbeat`, `cxpHelloAckProofLabel`, `cxpHelloProofLabel`, `cxpLoopbackDialAddress`, `cxpSubscribeToAll`, `cxpVersionHasMutualAuth`, `generateCxpAuthNonce`, `generateCxpAuthToken`, `kCxpActiveDocumentMaxLength`, `sharedCxpWorkspaceDirectory`.
