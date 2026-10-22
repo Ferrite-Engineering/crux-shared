@@ -3,6 +3,7 @@
 
 import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_stats_strip/crux_stats_strip.dart';
+import 'package:crux_stats_strip/src/providers/crux_memory_stats_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show FrameTiming;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;

@@ -22,8 +22,13 @@ export 'src/format/crux_byte_format.dart';
 export 'src/models/crux_frame_stats.dart';
 export 'src/models/crux_memory_stats.dart';
 export 'src/models/crux_stat_segment.dart';
-export 'src/providers/crux_frame_stats_provider.dart';
-export 'src/providers/crux_memory_stats_provider.dart';
+export 'src/providers/crux_frame_stats_provider.dart'
+    hide
+        kCruxFrameBudget,
+        kCruxFrameStatsPublishInterval,
+        kCruxFrameStatsWindow;
+export 'src/providers/crux_memory_stats_provider.dart'
+    hide kCruxMemorySampleInterval, kCruxMemoryStatsWindow;
 export 'src/widgets/crux_paint_timing_probe.dart';
 export 'src/widgets/crux_sparkline.dart';
 export 'src/widgets/crux_stats_strip.dart';

@@ -90,3 +90,10 @@ would be a permanent yellow-and-black stripe across the bottom of the app.
 that, but flagging every frame between 8 and 16 ms would cry wolf
 constantly when 16 ms still renders smoothly. This is an ambient signal,
 not a profiler.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxFrameStatsNotifier` (in `cruxFrameStatsProvider`), `CruxMemoryStatsNotifier` (in `cruxMemoryStatsProvider`), `CruxStatsStripVisibilityNotifier` (in `cruxStatsStripExpandedProvider`), `RenderCruxPaintTimingProbe` (in `CruxPaintTimingProbe`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxResidentBytesReader`.

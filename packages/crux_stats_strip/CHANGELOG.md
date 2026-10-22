@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Export namespace narrowed by 5 symbols.** `kCruxFrameBudget`, `kCruxFrameStatsPublishInterval`, `kCruxFrameStatsWindow`, `kCruxMemorySampleInterval`, `kCruxMemoryStatsWindow` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 ## 0.1.0
 
 - Initial release. `CruxStatsStrip` — the collapsed-by-default live statistics

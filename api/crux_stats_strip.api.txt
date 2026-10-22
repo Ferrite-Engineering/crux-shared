@@ -92,10 +92,5 @@ get cruxMemoryPollingActiveProvider -> Provider<bool>
 get cruxMemoryStatsProvider -> NotifierProvider<CruxMemoryStatsNotifier, CruxMemoryStats>
 get cruxResidentBytesReaderProvider -> Provider<int Function()>
 get cruxStatsStripExpandedProvider -> NotifierProvider<CruxStatsStripVisibilityNotifier, bool>
-get kCruxFrameBudget -> Duration
-get kCruxFrameStatsPublishInterval -> Duration
-get kCruxFrameStatsWindow -> int
-get kCruxMemorySampleInterval -> Duration
-get kCruxMemoryStatsWindow -> int
 get kCruxStatsStripCollapsedHeight -> double
 get kCruxStatsStripHeight -> double
