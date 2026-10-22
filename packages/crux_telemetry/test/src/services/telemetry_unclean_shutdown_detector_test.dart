@@ -7,6 +7,7 @@ import 'dart:isolate';
 import 'dart:ui' show AppExitResponse, AppLifecycleState;
 
 import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/services/telemetry_unclean_shutdown_detector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';

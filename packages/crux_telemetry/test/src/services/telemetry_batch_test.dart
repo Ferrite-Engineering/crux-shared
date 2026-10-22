@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/services/telemetry_batch.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../harness.dart';

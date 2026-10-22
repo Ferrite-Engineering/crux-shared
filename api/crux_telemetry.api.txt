@@ -216,60 +216,33 @@ class TelemetryUncleanShutdownDetector
   static const markerSuffix: String
   static final instance: TelemetryUncleanShutdownDetector
 buildTelemetryBatches(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> List<TelemetryBatch>
-canonicalTelemetryProperties(Map<String, Object?> properties) -> Map<String, Object?>
 coalesceTelemetryEvents(Iterable<TelemetryEvent> events) -> List<TelemetryBatchEntry>
 cruxExit([int code]) -> Never
 get cruxTelemetryConfigProvider -> Provider<CruxTelemetryConfig>
 get cruxTelemetryStringsProvider -> Provider<CruxTelemetryStrings>
 get debugCruxExitOverride -> Never Function(int)?
 set debugCruxExitOverride=(Never Function(int)? value)
-encodeTelemetryBatch(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> String
-get kCruxUncleanShutdownEventEnabled -> bool
 get kTelemetryConsentKey -> String
 get kTelemetryConsentMinTarget -> double
 get kTelemetryDev -> bool
-get kTelemetryDocumentationUri -> String
-get kTelemetryEventMaxAge -> Duration
-get kTelemetryFlushInterval -> Duration
-get kTelemetryFlutterLibraryTokens -> Map<String, String>
 get kTelemetryFormFactors -> List<String>
-get kTelemetryInitialRetryDelay -> Duration
 get kTelemetryInstallationIdKey -> String
 get kTelemetryInstallationIdPattern -> RegExp
 get kTelemetryLicenseTiers -> List<String>
-get kTelemetryMaxBatchBytes -> int
-get kTelemetryMaxBatchEvents -> int
-get kTelemetryMaxQueuedEvents -> int
-get kTelemetryMaxRetryDelay -> Duration
 get kTelemetryOperatingSystems -> List<String>
-get kTelemetryOptInCountries -> Set<String>
-get kTelemetryOptInTimeZonePrefix -> String
-get kTelemetryOptInTimeZones -> Set<String>
-get kTelemetryPostTimeout -> Duration
-get kTelemetryProductionEndpoint -> String
-get kTelemetryStagingEndpoint -> String
 get kTelemetryUncaughtErrorEvent -> String
 get kTelemetryUncaughtErrorKinds -> List<String>
 get kTelemetryUncaughtErrorLibraries -> List<String>
-get kTelemetryUncaughtErrorSessionCap -> int
 get kTelemetryUncaughtErrorSources -> List<String>
 get kTelemetryUncleanShutdownEvent -> String
-get kTelemetryVolatileFlushInterval -> Duration
-mintTelemetryInstallationId() -> String
 observeTelemetryLifecycle(void Function() onBackgrounded) -> void Function()
-openTelemetryDocumentation(WidgetRef ref) -> Future<void>
-pruneTelemetryEvents(List<TelemetryEvent> events, {Duration maxAge, int maxEvents, required DateTime now}) -> List<TelemetryEvent>
 resetTelemetryConsent(TelemetryStorage storage) -> Future<void>
-resolveTelemetryEnvelope(Ref ref) -> Future<TelemetryEnvelope?>
 get telemetryAppVersionProvider -> FutureProvider<String?>
 get telemetryBetaPeriodProvider -> Provider<bool>
 get telemetryConsentPromptVisibleProvider -> Provider<bool>
 get telemetryConsentReadyProvider -> FutureProvider<void>
 get telemetryConsentStoreProvider -> NotifierProvider<TelemetryConsentStore, TelemetryConsentState>
 get telemetryConsentUiVisibleProvider -> Provider<bool>
-telemetryCountriesInLocaleId(String localeId) -> Set<String>
-telemetryDefaultConsentFor(Iterable<Locale> locales, {Iterable<String> regions, String? timeZone}) -> bool
-get telemetryDefaultConsentProvider -> Provider<bool>
 get telemetryDevModeProvider -> Provider<bool>
 get telemetryEffectivePolicyProvider -> Provider<TelemetryPolicy>
 get telemetryEnabledProvider -> Provider<bool>
@@ -277,28 +250,15 @@ telemetryEndpointFor({required bool dev}) -> Uri
 get telemetryEndpointProvider -> Provider<Uri>
 telemetryEnumToken<T extends Enum>(T value) -> String
 get telemetryEnvelopeResolverProvider -> Provider<Future<TelemetryEnvelope?> Function()>
-telemetryErrorKindOf(Object? error) -> String
-telemetryErrorLibraryOf(String? library) -> String
 get telemetryFormFactorProvider -> Provider<String?>
 get telemetryGateProvider -> Provider<TelemetryGate>
-telemetryGroupKey(String name, Map<String, Object?> properties) -> String
 get telemetryHttpClientProvider -> Provider<Client>
 get telemetryInstallationIdProvider -> FutureProvider<String>
-telemetryIso8601(DateTime time) -> String
 get telemetryLocaleProvider -> Provider<String>
-telemetryOsSlug() -> String
 telemetryOsSlugFor({required TargetPlatform platform, required bool isWeb}) -> String
 get telemetryPendingBufferProvider -> Provider<List<TelemetryEvent>>
-get telemetryPlatformLocalesProvider -> Provider<List<Locale>>
-get telemetryPlatformRegionsProvider -> Provider<List<String>>
-get telemetryPlatformTimeZoneProvider -> Provider<String?>
 get telemetryPolicyProvider -> Provider<TelemetryPolicy>
-telemetryRequiresOptIn(Iterable<Locale> locales, {Iterable<String> regions, String? timeZone}) -> bool
 get telemetryServiceProvider -> Provider<TelemetryService>
-get telemetrySessionStartProvider -> Provider<DateTime>
 get telemetryStorageProvider -> Provider<TelemetryStorage>
-get telemetryStoredInstallationIdProvider -> FutureProvider<String?>
-telemetryTimeZoneRequiresOptIn(String? timeZone) -> bool
-get telemetryUncaughtErrorCounterProvider -> Provider<TelemetryUncaughtErrorCounter>
 get telemetryUncleanShutdownDetectorProvider -> Provider<TelemetryUncleanShutdownDetector>
 get telemetryUrlLauncherProvider -> Provider<Future<bool> Function(Uri)>

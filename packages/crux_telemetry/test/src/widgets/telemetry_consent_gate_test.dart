@@ -3,6 +3,7 @@
 
 import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
 import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/providers/telemetry_seam_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

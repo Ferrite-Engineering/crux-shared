@@ -33,30 +33,70 @@
 /// Activation is the `kBetaPeriod` flip, not a merge.
 library;
 
-export 'src/crux_telemetry_config.dart';
+export 'src/crux_telemetry_config.dart'
+    hide
+        kTelemetryFlushInterval,
+        kTelemetryInitialRetryDelay,
+        kTelemetryMaxRetryDelay,
+        kTelemetryPostTimeout,
+        kTelemetryVolatileFlushInterval;
 export 'src/crux_telemetry_strings.dart';
 export 'src/models/telemetry_consent_state.dart';
-export 'src/models/telemetry_envelope.dart';
+export 'src/models/telemetry_envelope.dart' hide telemetryIso8601;
 export 'src/models/telemetry_event.dart';
 export 'src/models/telemetry_policy.dart';
 export 'src/providers/telemetry_consent_store.dart';
-export 'src/providers/telemetry_consent_ui_providers.dart';
-export 'src/providers/telemetry_installation_id.dart';
-export 'src/providers/telemetry_seam_providers.dart';
-export 'src/providers/telemetry_service_provider.dart';
+export 'src/providers/telemetry_consent_ui_providers.dart'
+    hide openTelemetryDocumentation;
+export 'src/providers/telemetry_installation_id.dart'
+    hide mintTelemetryInstallationId, telemetryStoredInstallationIdProvider;
+export 'src/providers/telemetry_seam_providers.dart'
+    hide
+        telemetryDefaultConsentProvider,
+        telemetryPlatformLocalesProvider,
+        telemetryPlatformRegionsProvider,
+        telemetryPlatformTimeZoneProvider,
+        telemetrySessionStartProvider;
+export 'src/providers/telemetry_service_provider.dart'
+    hide resolveTelemetryEnvelope, telemetryUncaughtErrorCounterProvider;
 export 'src/services/live_telemetry_service.dart';
 export 'src/services/noop_telemetry_service.dart';
 export 'src/services/pending_telemetry_service.dart';
-export 'src/services/telemetry_batch.dart';
-export 'src/services/telemetry_event_queue.dart';
-export 'src/services/telemetry_uncaught_error_counter.dart';
-export 'src/services/telemetry_unclean_shutdown_detector.dart';
+export 'src/services/telemetry_batch.dart'
+    hide
+        canonicalTelemetryProperties,
+        encodeTelemetryBatch,
+        kTelemetryMaxBatchBytes,
+        kTelemetryMaxBatchEvents,
+        telemetryGroupKey;
+export 'src/services/telemetry_event_queue.dart'
+    hide kTelemetryEventMaxAge, kTelemetryMaxQueuedEvents, pruneTelemetryEvents;
+export 'src/services/telemetry_uncaught_error_counter.dart'
+    hide kTelemetryUncaughtErrorSessionCap;
+export 'src/services/telemetry_unclean_shutdown_detector.dart'
+    hide kCruxUncleanShutdownEventEnabled;
 export 'src/storage/telemetry_storage.dart';
-export 'src/telemetry_endpoint.dart';
+export 'src/telemetry_endpoint.dart'
+    hide
+        kTelemetryDocumentationUri,
+        kTelemetryProductionEndpoint,
+        kTelemetryStagingEndpoint;
 export 'src/telemetry_enum_token.dart';
-export 'src/telemetry_error_vocabulary.dart';
-export 'src/telemetry_platform.dart';
-export 'src/telemetry_region.dart';
+export 'src/telemetry_error_vocabulary.dart'
+    hide
+        kTelemetryFlutterLibraryTokens,
+        telemetryErrorKindOf,
+        telemetryErrorLibraryOf;
+export 'src/telemetry_platform.dart' hide telemetryOsSlug;
+export 'src/telemetry_region.dart'
+    hide
+        kTelemetryOptInCountries,
+        kTelemetryOptInTimeZonePrefix,
+        kTelemetryOptInTimeZones,
+        telemetryCountriesInLocaleId,
+        telemetryDefaultConsentFor,
+        telemetryRequiresOptIn,
+        telemetryTimeZoneRequiresOptIn;
 export 'src/telemetry_service.dart';
 export 'src/widgets/telemetry_consent_disclosure.dart';
 export 'src/widgets/telemetry_consent_gate.dart';

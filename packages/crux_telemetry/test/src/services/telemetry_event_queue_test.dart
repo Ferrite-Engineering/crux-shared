@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/services/telemetry_event_queue.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

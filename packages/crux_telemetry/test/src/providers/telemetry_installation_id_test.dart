@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/providers/telemetry_installation_id.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

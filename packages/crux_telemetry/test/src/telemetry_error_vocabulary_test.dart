@@ -5,7 +5,7 @@ import 'dart:async' show TimeoutException;
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/telemetry_error_vocabulary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

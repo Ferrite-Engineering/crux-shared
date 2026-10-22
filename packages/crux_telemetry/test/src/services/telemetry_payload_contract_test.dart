@@ -6,6 +6,8 @@ import 'dart:io';
 
 import 'package:crux_license/crux_license.dart' show LicenseTier;
 import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/models/telemetry_envelope.dart';
+import 'package:crux_telemetry/src/services/telemetry_batch.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../harness.dart';

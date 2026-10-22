@@ -5,6 +5,8 @@ import 'dart:io';
 
 import 'package:crux_license/crux_license.dart' show kBetaPeriod;
 import 'package:crux_telemetry/crux_telemetry.dart';
+import 'package:crux_telemetry/src/services/telemetry_uncaught_error_counter.dart';
+import 'package:crux_telemetry/src/telemetry_error_vocabulary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 

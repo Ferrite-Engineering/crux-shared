@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 42 symbols.** `canonicalTelemetryProperties`, `debugCruxExitOverride`, `encodeTelemetryBatch`, `kCruxUncleanShutdownEventEnabled`, `kTelemetryDocumentationUri`, `kTelemetryEventMaxAge`, `kTelemetryFlushInterval`, `kTelemetryFlutterLibraryTokens`, `kTelemetryInitialRetryDelay`, `kTelemetryMaxBatchBytes`, `kTelemetryMaxBatchEvents`, `kTelemetryMaxQueuedEvents`, `kTelemetryMaxRetryDelay`, `kTelemetryOptInCountries`, `kTelemetryOptInTimeZonePrefix`, `kTelemetryOptInTimeZones`, `kTelemetryPostTimeout`, `kTelemetryProductionEndpoint`, `kTelemetryStagingEndpoint`, `kTelemetryUncaughtErrorSessionCap`, `kTelemetryVolatileFlushInterval`, `mintTelemetryInstallationId`, `observeTelemetryLifecycle`, `openTelemetryDocumentation`, `pruneTelemetryEvents`, `resolveTelemetryEnvelope`, `telemetryCountriesInLocaleId`, `telemetryDefaultConsentFor`, `telemetryDefaultConsentProvider`, `telemetryErrorKindOf`, `telemetryErrorLibraryOf`, `telemetryGroupKey`, `telemetryIso8601`, `telemetryOsSlug`, `telemetryPlatformLocalesProvider`, `telemetryPlatformRegionsProvider`, `telemetryPlatformTimeZoneProvider`, `telemetryRequiresOptIn`, `telemetrySessionStartProvider`, `telemetryStoredInstallationIdProvider`, `telemetryTimeZoneRequiresOptIn`, `telemetryUncaughtErrorCounterProvider` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **`telemetryEnabledProvider` is deprecated.** Read `telemetryGateProvider`
   and compare it to `TelemetryGate.open`; the gate also says `pending`, which
   the bool folds into `false`. Nothing in the pipeline watched it. The

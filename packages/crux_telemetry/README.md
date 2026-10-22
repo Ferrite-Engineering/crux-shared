@@ -472,3 +472,12 @@ of `TelemetryService` ship in open core deliberately: the honesty
 backstop for collecting from free users is that the entire pipeline is
 readable — and strippable — in the Apache-2.0 source, which it cannot be
 if half of it lives in a closed overlay.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `TelemetryBatch` (in `buildTelemetryBatches`), `TelemetryBatchEntry` (in `buildTelemetryBatches`), `TelemetryEventQueue` (in `LiveTelemetryService`).
+- **Default-locale implementation of an exported strings seam; a host wraps or subclasses it**: `CruxTelemetryStringsEn`.
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxTelemetryUrlLauncher`, `TelemetryEnvelopeResolver`, `TelemetryLifecycleObserver`, `TelemetrySessionMarkerProbe`.
+- **The documented read side: hosts read this, never the raw policy**: `telemetryEffectivePolicyProvider`.
