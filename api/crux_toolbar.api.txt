@@ -113,4 +113,3 @@ final class CruxToolbarWidgetItem<A extends Object> extends CruxToolbarItem<A>
   const CruxToolbarWidgetItem({String? id, required Widget child})
   final child: Widget
   final id: String?
-cruxToolbarTooltip(String label, ShortcutActivator? activator) -> String

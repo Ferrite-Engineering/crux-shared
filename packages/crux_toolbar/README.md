@@ -104,3 +104,9 @@ gave no indication whether any peer was connected; three products' descriptor
 comments explicitly wrestle with "keep it enabled at zero peers so users can
 find out why nothing is connected". A badge answers that without opening the
 panel.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Widget a host places between toolbar groups**: `CruxToolbarDivider`.

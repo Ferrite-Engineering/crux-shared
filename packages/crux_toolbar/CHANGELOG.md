@@ -1,5 +1,7 @@
 ## Unreleased
 
+- **Export namespace narrowed by 1 symbol.** `cruxToolbarTooltip` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - The overflow button is the suite's "⋯" (`Icons.more_horiz`), never "⋮".
 
 - The toolbar surface takes the theme's `toolbar.background` chrome token

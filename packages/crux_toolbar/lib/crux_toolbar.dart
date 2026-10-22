@@ -26,7 +26,7 @@ library;
 
 export 'src/crux_toolbar.dart';
 export 'src/run_stop_button.dart';
-export 'src/toolbar_button.dart';
+export 'src/toolbar_button.dart' hide cruxToolbarTooltip;
 export 'src/toolbar_item.dart';
 export 'src/toolbar_metrics.dart';
 export 'src/toolbar_overflow_menu.dart';
