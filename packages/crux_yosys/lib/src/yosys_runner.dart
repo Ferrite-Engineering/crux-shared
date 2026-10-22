@@ -72,20 +72,42 @@ class YosysRunner {
   /// sources to Verilog before Yosys runs. It defaults to `ghdl` on PATH;
   /// a consuming product can point it at a bundled or user-configured
   /// GHDL. It is only ever spawned for requests that contain VHDL.
+  ///
+  /// [environment] is the child environment every spawn of this runner (Yosys
+  /// and GHDL alike) gets, handed to [ProcessRunner.run] as its `environment`.
+  /// A GUI app uses it to give the child the engine `PATH` it needs (an app
+  /// opened from Finder has launchd's `PATH`) or a per-job `XDG_DATA_HOME`.
+  /// A call's own `environment` is laid over it key by key, so the call wins
+  /// where both set the same variable. Null, with no per-call value either,
+  /// passes no environment, as before.
   YosysRunner({
     ProcessRunner? processRunner,
     String? executable,
     String? ghdlExecutable,
     Directory? tempDirectory,
+    Map<String, String>? environment,
   }) : _processRunner = processRunner ?? const DefaultProcessRunner(),
        _executable = executable ?? _defaultExecutableName(),
        _ghdlExecutable = ghdlExecutable ?? _defaultGhdlExecutableName(),
-       _tempDirectory = tempDirectory ?? Directory.systemTemp;
+       _tempDirectory = tempDirectory ?? Directory.systemTemp,
+       _environment = environment == null
+           ? null
+           : Map<String, String>.unmodifiable(environment);
 
   final ProcessRunner _processRunner;
   final String _executable;
   final String _ghdlExecutable;
   final Directory _tempDirectory;
+  final Map<String, String>? _environment;
+
+  /// The environment one spawn gets: the constructor's environment with
+  /// [perCall] laid over it, or null when neither is set.
+  Map<String, String>? _childEnvironment(Map<String, String>? perCall) {
+    final base = _environment;
+    if (perCall == null) return base;
+    if (base == null) return perCall;
+    return <String, String>{...base, ...perCall};
+  }
 
   static String _defaultExecutableName() =>
       Platform.isWindows ? 'yosys.exe' : 'yosys';
@@ -125,11 +147,16 @@ class YosysRunner {
   /// kills the subprocess when it completes (tab close / superseding
   /// re-elaboration) and yields a [YosysRunCancelled]. In both kill cases
   /// the `write_json` temp file is still cleaned up by the `finally` below.
+  ///
+  /// [environment] is the child environment for this run, laid over the
+  /// constructor's (this call wins per variable); it reaches the GHDL
+  /// lowering step of a VHDL request as well as Yosys.
   Future<YosysRunResult> run(
     YosysRunRequest request, {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
+    Map<String, String>? environment,
   }) async {
     final jsonFile = _allocateJsonFile();
     // Holds the ghdl-emitted Verilog for a VHDL request; cleaned up in the
@@ -156,6 +183,7 @@ class YosysRunner {
           outputPath: loweredVerilogFile.path,
           timeout: timeout,
           cancelSignal: cancelSignal,
+          environment: environment,
         );
         switch (lowered) {
           case VhdlLowerSuccess():
@@ -216,6 +244,7 @@ class YosysRunner {
         timeout: timeout,
         cancelSignal: cancelSignal,
         onStderrLine: onStderrLine,
+        environment: environment,
       );
     } on ProcessException catch (e) {
       return _launchFailure(e);
@@ -266,11 +295,15 @@ class YosysRunner {
   ///
   /// The script runs from this process's working directory, so relative
   /// paths in it resolve there; pass absolute paths.
+  ///
+  /// [environment] is the child environment for this run, laid over the
+  /// constructor's (this call wins per variable).
   Future<YosysRunResult> runScript(
     YosysScriptRequest request, {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
+    Map<String, String>? environment,
   }) async {
     final jsonFile = _allocateJsonFile();
     try {
@@ -281,6 +314,7 @@ class YosysRunner {
         timeout: timeout,
         cancelSignal: cancelSignal,
         onStderrLine: onStderrLine,
+        environment: environment,
       );
     } on ProcessException catch (e) {
       return _launchFailure(e);
@@ -322,11 +356,15 @@ class YosysRunner {
   /// unacceptable unit name or standard is [YosysFailureKind.invalidRequest];
   /// a non-zero exit is [YosysFailureKind.nonZeroExit]; a clean exit with
   /// an empty or missing file is [YosysFailureKind.noOutput].
+  ///
+  /// [environment] is the child environment for the `ghdl` spawn, laid over
+  /// the constructor's (this call wins per variable).
   Future<VhdlLowerResult> lowerVhdl(
     YosysRunRequest request, {
     required String outputPath,
     Duration? timeout,
     Future<void>? cancelSignal,
+    Map<String, String>? environment,
   }) async {
     try {
       if (!request.hasVhdlSources) {
@@ -341,6 +379,7 @@ class YosysRunner {
       final ghdl = await _processRunner.run(
         _ghdlExecutable,
         arguments,
+        environment: _childEnvironment(environment),
         timeout: timeout,
         cancelSignal: cancelSignal,
         stdoutFilePath: outputPath,
@@ -428,6 +467,7 @@ class YosysRunner {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
+    Map<String, String>? environment,
   }) async {
     {
       final processResult = await _runProcess(
@@ -435,6 +475,7 @@ class YosysRunner {
         timeout: timeout,
         cancelSignal: cancelSignal,
         onStderrLine: onStderrLine,
+        environment: environment,
       );
       // A killed process is reported by its termination reason, not its
       // exit code — branch on that before the exit-code / empty-JSON
@@ -594,10 +635,12 @@ class YosysRunner {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
+    Map<String, String>? environment,
   }) {
     return _processRunner.run(
       _executable,
       <String>['-q', '-p', script],
+      environment: _childEnvironment(environment),
       timeout: timeout,
       cancelSignal: cancelSignal,
       onStderrLine: onStderrLine,
@@ -742,11 +785,8 @@ class YosysRunner {
     YosysRunRequest request, {
     required String jsonOutputPath,
     String? slangCommandFile,
-  }) => _buildScript(
-    request,
-    jsonOutputPath,
-    slangCommandFile: slangCommandFile,
-  );
+  }) =>
+      _buildScript(request, jsonOutputPath, slangCommandFile: slangCommandFile);
 
   /// The Verilog and SystemVerilog sources of [request], in order: what the
   /// read command (or a slang command file) names. VHDL sources are

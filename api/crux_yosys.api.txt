@@ -64,7 +64,7 @@ class YosysAvailability
   final unavailableReason: String?
   final versionString: String?
 class YosysAvailabilityService
-  YosysAvailabilityService({Duration probeTimeout, ProcessRunner? runner, String? executableNameOverride})
+  YosysAvailabilityService({Duration probeTimeout, Map<String, String>? environment, ProcessRunner? runner, String? executableNameOverride})
   final probeTimeout: Duration
   probe() -> Future<YosysAvailability>
   probeSlang() -> Future<bool>
@@ -134,10 +134,10 @@ final class YosysRunTimeout extends YosysRunResult
   const YosysRunTimeout({required Duration budget, required String stderr, required String stdout})
   final budget: Duration
 class YosysRunner
-  YosysRunner({Directory? tempDirectory, ProcessRunner? processRunner, String? executable, String? ghdlExecutable})
-  lowerVhdl(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, required String outputPath}) -> Future<VhdlLowerResult>
-  run(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
-  runScript(YosysScriptRequest request, {Duration? timeout, Future<void>? cancelSignal, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  YosysRunner({Directory? tempDirectory, Map<String, String>? environment, ProcessRunner? processRunner, String? executable, String? ghdlExecutable})
+  lowerVhdl(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, required String outputPath}) -> Future<VhdlLowerResult>
+  run(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  runScript(YosysScriptRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
   static buildCallerScript(YosysScriptRequest request, {required String jsonOutputPath}) -> String
   static buildGhdlSynthArguments(YosysRunRequest request) -> List<String>
   static buildScript(YosysRunRequest request, {String? slangCommandFile, required String jsonOutputPath}) -> String

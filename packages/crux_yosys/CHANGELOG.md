@@ -4,6 +4,18 @@
 
 ### Added
 
+- **A child environment for `YosysRunner` and `YosysAvailabilityService`.**
+  `YosysRunner` takes an optional `environment` (`Map<String, String>?`) in
+  its constructor, and `run`, `runScript` and `lowerVhdl` take one per call.
+  It is handed to every `ProcessRunner.run` the runner makes, the `ghdl`
+  lowering spawn of a VHDL request included, so a GUI app can give the Yosys
+  it starts the engine `PATH` it needs (an app opened from Finder has
+  launchd's `PATH`) or a per-job `XDG_DATA_HOME`. A call's environment is
+  laid over the constructor's variable by variable, so the call wins where
+  both set one. `YosysAvailabilityService` takes the same constructor
+  `environment` for `probe` and `probeSlang`. With none given, nothing is
+  passed, as before.
+
 - **`YosysFrontend` on `YosysRunRequest`: a formal read and the yosys-slang
   frontend.** `verilogFormal` reads with `read_verilog -formal` (`-formal
   -sv` for SystemVerilog), so `assert`, `assume`, `cover` and `$past` are

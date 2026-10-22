@@ -17,12 +17,21 @@ import 'package:crux_yosys/src/yosys_availability.dart';
 /// `executableNameOverride` lets the user pin a specific binary.
 class YosysAvailabilityService {
   /// Creates a service.
+  ///
+  /// [environment] is the child environment both probes ([probe] and
+  /// [probeSlang]) spawn Yosys with, so a probe of a Yosys that is found only
+  /// through an augmented `PATH` sees the same environment the runner will
+  /// give it. Null passes no environment.
   YosysAvailabilityService({
     ProcessRunner? runner,
     String? executableNameOverride,
     this.probeTimeout = defaultProbeTimeout,
+    Map<String, String>? environment,
   }) : _runner = runner ?? const DefaultProcessRunner(),
-       _executableName = executableNameOverride ?? _defaultExecutableName();
+       _executableName = executableNameOverride ?? _defaultExecutableName(),
+       _environment = environment == null
+           ? null
+           : Map<String, String>.unmodifiable(environment);
 
   /// Default budget for `yosys -V`.
   ///
@@ -40,6 +49,7 @@ class YosysAvailabilityService {
 
   final ProcessRunner _runner;
   final String _executableName;
+  final Map<String, String>? _environment;
 
   /// Default executable name to invoke. Windows prefers `yosys.exe`;
   /// other platforms use the bare name (`PATH` resolution handles the
@@ -60,6 +70,7 @@ class YosysAvailabilityService {
       final result = await _runner.run(
         _executableName,
         const <String>['-V'],
+        environment: _environment,
         timeout: probeTimeout,
       );
       if (result.termination == ProcessTermination.timedOut) {
@@ -112,16 +123,15 @@ class YosysAvailabilityService {
   /// The answer is cached per
   /// executable path for the life of the process, so a caller may ask before
   /// every elaboration; [resetSlangProbeCacheForTesting] clears it.
-  Future<bool> probeSlang() => _slangByExecutable.putIfAbsent(
-    _executableName,
-    _runSlangProbe,
-  );
+  Future<bool> probeSlang() =>
+      _slangByExecutable.putIfAbsent(_executableName, _runSlangProbe);
 
   Future<bool> _runSlangProbe() async {
     try {
       final result = await _runner.run(
         _executableName,
         const <String>['-Q', '-T', '-p', 'help read_slang'],
+        environment: _environment,
         timeout: probeTimeout,
       );
       final output = '${result.stdout}\n${result.stderr}';
