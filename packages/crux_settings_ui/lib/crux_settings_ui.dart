@@ -22,8 +22,9 @@
 library;
 
 export 'src/crux_auto_reload_setting_tile.dart';
-export 'src/crux_form_row.dart';
-export 'src/crux_locale_setting_tile.dart';
+export 'src/crux_form_row.dart'
+    hide kCruxFormLabelWidth, kCruxFormSpreadControlMaxWidth;
+export 'src/crux_locale_setting_tile.dart' hide kCruxSupportedLocales;
 export 'src/crux_policy_lock.dart';
 export 'src/crux_policy_lock_note.dart';
 export 'src/crux_settings_card.dart';
@@ -33,4 +34,4 @@ export 'src/crux_settings_extra_category.dart';
 export 'src/crux_settings_master_detail.dart';
 export 'src/crux_settings_section_card.dart';
 export 'src/crux_settings_shell.dart';
-export 'src/crux_settings_slider_tile.dart';
+export 'src/crux_settings_slider_tile.dart' hide kCruxSettingsSliderWidth;

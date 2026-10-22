@@ -6,6 +6,8 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Export namespace narrowed by 4 symbols.** `kCruxFormLabelWidth`, `kCruxFormSpreadControlMaxWidth`, `kCruxSettingsSliderWidth`, `kCruxSupportedLocales` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **The shared tiles draw the owned desktop controls.** Under a desktop
   theme `CruxAutoReloadSettingTile` is a `CruxSegmentedControl` and
   `CruxLocaleSettingTile` a `CruxPopUpButton`; a phone or tablet theme keeps

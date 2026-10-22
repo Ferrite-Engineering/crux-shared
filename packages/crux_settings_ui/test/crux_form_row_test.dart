@@ -5,6 +5,7 @@ import 'package:crux_a11y/crux_a11y.dart';
 import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDesktopTokens;
 import 'package:crux_settings_ui/crux_settings_ui.dart';
+import 'package:crux_settings_ui/src/crux_form_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

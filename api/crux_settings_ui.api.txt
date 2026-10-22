@@ -132,9 +132,5 @@ class CruxSettingsSliderTile extends StatelessWidget
   final title: String
   final value: double
   final valueText: String
-get kCruxFormLabelWidth -> double
-get kCruxFormSpreadControlMaxWidth -> double
 get kCruxPolicyLockNoteEn -> String
-get kCruxSettingsSliderWidth -> double
-get kCruxSupportedLocales -> Map<String, String>
 openCruxSettings(BuildContext context, {NavigatorState? navigator, Widget Function(BuildContext, Widget)? wrap, required String closeTooltip, required String title, required Widget Function(BuildContext) bodyBuilder, required bool asDialog}) -> Future<void>
