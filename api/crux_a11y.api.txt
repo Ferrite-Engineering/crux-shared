@@ -103,9 +103,5 @@ class CruxSwitch extends StatefulWidget
   final onChanged: void Function(bool)?
   final semanticLabel: String?
   final value: bool
-cruxFocusRingWidth(BuildContext context) -> double
 cruxRegionHintSemantics({bool container, bool explicitChildNodes, required String? hint, required String? label, required Widget child}) -> Widget
 get kCruxFocusRingGap -> double
-get kCruxSwitchThumbSize -> double
-get kCruxSwitchTrackHeight -> double
-get kCruxSwitchTrackWidth -> double

@@ -90,3 +90,10 @@ void main() {
   });
 }
 ```
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxPressState` (in `CruxPressBuilder`), `FocusWalkProblem` (in `FocusWalk`), `FocusWalkRule` (in `FocusWalk`), `RecordedSemanticsNode` (in `SemanticsOrphan`), `SemanticsOrphan` (in `SemanticsOrphanGuard`), `SemanticsOrphanRecording` (in `SemanticsOrphanTestBinding`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxPressBuilder`, `CruxRegionHintBuilder`, `CruxScrollRegionBuilder`.

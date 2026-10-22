@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 4 symbols.** `cruxFocusRingWidth`, `kCruxSwitchThumbSize`, `kCruxSwitchTrackHeight`, `kCruxSwitchTrackWidth` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **`CruxPressable` / `CruxPressState` / `CruxFocusRing`: the interaction
   core and focus ring of the owned desktop controls.** `CruxPressable` is a
   Tab stop that a click, Space or Enter activates, reporting pressed,

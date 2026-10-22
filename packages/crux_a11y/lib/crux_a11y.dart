@@ -46,9 +46,10 @@ import 'package:crux_a11y/crux_a11y.dart'
         CruxSwitch;
 import 'package:flutter/material.dart' show Slider;
 
-export 'src/crux_pressable.dart';
+export 'src/crux_pressable.dart' hide cruxFocusRingWidth;
 export 'src/crux_slider.dart';
-export 'src/crux_switch.dart';
+export 'src/crux_switch.dart'
+    hide kCruxSwitchThumbSize, kCruxSwitchTrackHeight, kCruxSwitchTrackWidth;
 export 'src/modal_gate.dart';
 export 'src/region_hint.dart';
 export 'src/scroll_region.dart';
