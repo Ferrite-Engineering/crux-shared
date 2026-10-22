@@ -16,4 +16,4 @@ library;
 
 export 'src/crux_project_manifest.dart';
 export 'src/crux_project_open_plan.dart';
-export 'src/crux_project_parser.dart';
+export 'src/crux_project_parser.dart' hide kCruxProjectSchemaVersion;

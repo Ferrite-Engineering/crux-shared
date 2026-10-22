@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 1 symbol.** `kCruxProjectSchemaVersion` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - Removed the deprecated `kCruxProjectFileName`. Recognise a manifest with
   `CruxProjectParser.isManifestPath` and filter pickers with
   `kCruxProjectExtension`. Reading the legacy `.crux-project` is unchanged.

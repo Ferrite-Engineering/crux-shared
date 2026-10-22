@@ -102,3 +102,9 @@ rejected, so a manifest written for a later suite version opens unchanged.
 
 Singular. `crux_projects` is the unrelated multi-project workspace layer behind
 the project switcher.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxProjectOpenPlan` (in `CruxProjectOpenPlanner`).

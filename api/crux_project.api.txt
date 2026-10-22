@@ -57,4 +57,3 @@ class CruxProjectParser
   static isManifestPath(String path) -> bool
   static locate(String path) -> String?
 get kCruxProjectExtension -> String
-get kCruxProjectSchemaVersion -> int
