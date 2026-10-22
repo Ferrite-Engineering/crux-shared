@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 2 symbols.** `buildWindowTitleBar`, `windowAttentionChannel` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **Closing the window on Linux asks the app first.** `window_manager`
   replaces the engine's `delete-event` handler, which turns a window close into
   `System.requestAppExit`, with one that lets GTK destroy the window. No

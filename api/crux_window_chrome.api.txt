@@ -44,12 +44,10 @@ class WindowBounds
 buildWindowChrome({required Widget child, required Widget logo, required Widget menuBar}) -> Widget
 buildWindowFrame(Widget child) -> Widget
 buildWindowGeometryPersister({required Future<void> Function(WindowBounds) onChanged, required Widget child}) -> Widget
-buildWindowTitleBar({required Widget logo, required Widget menuBar}) -> Widget
 initWindowChrome({WindowBounds? restore}) -> Future<void>
 readCurrentWindowBounds() -> Future<WindowBounds?>
 requestUserAttention({WindowAttentionKind kind}) -> Future<void>
 get useCustomWindowChrome -> bool
-get windowAttentionChannel -> MethodChannel
 get windowAttentionRequester -> WindowAttentionRequester
 set windowAttentionRequester=(WindowAttentionRequester requester)
 get windowChromeLeftResizeEdge -> double

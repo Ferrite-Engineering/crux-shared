@@ -84,3 +84,9 @@ if (useCustomWindowChrome) {
 
 Add `window_manager: ^0.5.0` to the host's `pubspec.yaml`, and make its Linux
 runner install no GTK header bar (mirror WaveCrux's `my_application.cc`).
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `WindowAttentionKind` (in `MethodChannelWindowAttentionRequester`), `WindowAttentionRequester` (in `MethodChannelWindowAttentionRequester`).

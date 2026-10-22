@@ -36,7 +36,7 @@ library;
 
 export 'src/widgets/mnemonic_menu_bar.dart'
     show MnemonicMenuBar, MnemonicMenuEntry;
-export 'src/window_attention.dart';
+export 'src/window_attention.dart' hide windowAttentionChannel;
 export 'src/window_bounds.dart';
-export 'src/window_chrome.dart';
+export 'src/window_chrome.dart' hide buildWindowTitleBar;
 export 'src/window_chrome_platform.dart';

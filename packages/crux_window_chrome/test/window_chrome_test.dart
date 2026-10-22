@@ -3,6 +3,8 @@
 
 import 'package:crux_window_chrome/crux_window_chrome.dart';
 import 'package:crux_window_chrome/src/widgets/window_title_bar.dart';
+import 'package:crux_window_chrome/src/window_chrome.dart'
+    show buildWindowTitleBar;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:window_manager/window_manager.dart';
