@@ -290,12 +290,13 @@ final class YosysRunSuccess extends YosysRunResult {
   });
 
   /// UTF-8 contents of the `write_json` output file; empty when the run was
-  /// made with `keepJson`, which leaves the document at [jsonPath] unread.
+  /// made with `YosysRunner.runKeepingJson`, which leaves the document at
+  /// [jsonPath] unread.
   final String rawJson;
 
   /// Where the `write_json` document is, set only for a run made with
-  /// `keepJson: true`; null otherwise (the runner has already read and
-  /// deleted the file).
+  /// `YosysRunner.runKeepingJson`; null otherwise (the runner has already
+  /// read and deleted the file).
   ///
   /// **The caller owns this file and must delete it** when done, on every
   /// path out of its own handling. The runner never removes it after a

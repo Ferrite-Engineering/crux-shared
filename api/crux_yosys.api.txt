@@ -137,8 +137,9 @@ final class YosysRunTimeout extends YosysRunResult
 class YosysRunner
   YosysRunner({Directory? tempDirectory, Map<String, String>? environment, ProcessRunner? processRunner, String? executable, String? ghdlExecutable})
   lowerVhdl(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, required String outputPath}) -> Future<VhdlLowerResult>
-  run(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, bool keepJson, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
-  runScript(YosysScriptRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, bool keepJson, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  run(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  runKeepingJson(YosysRunRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
+  runScript(YosysScriptRequest request, {Duration? timeout, Future<void>? cancelSignal, Map<String, String>? environment, void Function(String)? onStderrLine}) -> Future<YosysRunResult>
   static buildCallerScript(YosysScriptRequest request, {required String jsonOutputPath}) -> String
   static buildGhdlSynthArguments(YosysRunRequest request) -> List<String>
   static buildScript(YosysRunRequest request, {String? slangCommandFile, required String jsonOutputPath}) -> String

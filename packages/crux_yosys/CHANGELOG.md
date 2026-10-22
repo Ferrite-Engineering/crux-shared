@@ -4,24 +4,27 @@
 
 ### Added
 
-- **`keepJson` on `YosysRunner.run` and `runScript`: the `write_json`
-  document as a file path, unread.** With `keepJson: true` a successful run
-  returns a `YosysRunSuccess` whose `jsonPath` names the document and whose
+- **`YosysRunner.runKeepingJson`: the `write_json` document as a file path,
+  unread.** It takes `run`'s parameters; on success it returns a
+  `YosysRunSuccess` whose new `jsonPath` names the document and whose
   `rawJson` is empty, so a consumer can stream a netlist of hundreds of
   megabytes (OpenTitan earlgrey flattened is 864 MB) instead of holding it as
   one string. The file is in the runner's temp directory under a name unique
   to the run, and **the caller must delete it**; the runner removes it only
-  when the run does not succeed (non-zero exit, timeout, cancel, empty
-  output). The path is double-quoted in the `write_json` statement as before,
-  so spaces and punctuation in the temp directory's path work (tested against a
-  real Yosys); a path holding a double quote, `;` or a newline is still an
-  `invalidRequest`. Chosen over a caller-supplied path or a new method because
-  one defaulted parameter and one nullable field change nothing for existing
-  callers, the runner already owns collision-proof naming, and a new
-  `YosysRunResult` subtype would break every consumer's exhaustive `switch`.
-  Without `keepJson` behaviour is unchanged. A class that extends
-  `YosysRunner` and overrides `run` or `runScript` must add the `keepJson`
-  parameter to its override.
+  when the run does not succeed (non-zero exit, timeout, cancel, no or empty
+  output, invalid request). The path is double-quoted in the `write_json`
+  statement as before, so spaces and punctuation in the temp directory's path
+  work (tested against a real Yosys); a path holding a double quote, `;` or a
+  newline is still an `invalidRequest`. `run` and `runScript` are unchanged.
+  A new method rather than a parameter on `run`, because a named parameter
+  added to `run` makes every `extends YosysRunner` test double that overrides
+  `run` an invalid override (SimCrux's `FakeYosysRunner` was one); the method
+  adds nothing for such a double to implement. The runner, not the caller,
+  chooses the path: it already owns collision-proof naming, and a
+  caller-supplied path would need the validation and the cleanup rules twice.
+  `YosysRunSuccess` gains an optional `jsonPath` rather than a new
+  `YosysRunResult` subtype, which would break every consumer's exhaustive
+  `switch`.
 
 - **A child environment for `YosysRunner` and `YosysAvailabilityService`.**
   `YosysRunner` takes an optional `environment` (`Map<String, String>?`) in

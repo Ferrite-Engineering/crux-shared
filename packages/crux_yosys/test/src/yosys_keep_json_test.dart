@@ -39,6 +39,21 @@ class _FakeRunner implements ProcessRunner {
   }
 }
 
+/// A test double of the kind consumers write: it overrides `run` with exactly
+/// the parameters `run` has always had. That this compiles is the guard that
+/// keeping the JSON stays off `run`'s signature, where a new named parameter
+/// would make every such override invalid.
+class _RunOverride extends YosysRunner {
+  @override
+  Future<YosysRunResult> run(
+    YosysRunRequest request, {
+    Duration? timeout,
+    Future<void>? cancelSignal,
+    void Function(String line)? onStderrLine,
+    Map<String, String>? environment,
+  }) async => const YosysRunSuccess(rawJson: '{}', stdout: '', stderr: '');
+}
+
 /// Whether a real `yosys` can be spawned on this machine.
 bool _yosysOnPath() {
   try {
@@ -65,13 +80,13 @@ void main() {
   const request = YosysRunRequest(sources: [YosysSourceFile('/x/a.v')]);
   const script = YosysScriptRequest(commands: ['read_verilog "/x/a.v"']);
 
-  group('keepJson with a fake Yosys', () {
-    test('run: the file is returned unread and left in place', () async {
+  group('runKeepingJson with a fake Yosys', () {
+    test('the file is returned unread and left in place', () async {
       final fake = _FakeRunner(json: '{"modules": {}}');
       final result = await YosysRunner(
         processRunner: fake,
         tempDirectory: tempDir,
-      ).run(request, keepJson: true);
+      ).runKeepingJson(request);
       expect(result, isA<YosysRunSuccess>());
       final success = result as YosysRunSuccess;
       expect(success.rawJson, isEmpty);
@@ -81,17 +96,11 @@ void main() {
       expect(fake.script, endsWith('write_json "$path"'));
     });
 
-    test('runScript: the file is returned unread and left in place', () async {
-      final result = await YosysRunner(
-        processRunner: _FakeRunner(json: '{}'),
-        tempDirectory: tempDir,
-      ).runScript(script, keepJson: true);
-      final success = result as YosysRunSuccess;
-      expect(success.rawJson, isEmpty);
-      expect(File(success.jsonPath!).existsSync(), isTrue);
+    test('an override of run with its existing parameters stays valid', () {
+      expect(_RunOverride(), isA<YosysRunner>());
     });
 
-    test('without it nothing changes: read, deleted, no path', () async {
+    test('run and runScript are unchanged: read, deleted, no path', () async {
       final runner = YosysRunner(
         processRunner: _FakeRunner(json: '{}'),
         tempDirectory: tempDir,
@@ -112,10 +121,8 @@ void main() {
         processRunner: _FakeRunner(json: '{}', exitCode: 1),
         tempDirectory: tempDir,
       );
-      final failed = await runner.run(request, keepJson: true);
+      final failed = await runner.runKeepingJson(request);
       expect(failed, isA<YosysRunFailure>());
-      final failedScript = await runner.runScript(script, keepJson: true);
-      expect(failedScript, isA<YosysRunFailure>());
       expect(_jsonFilesIn(tempDir), isEmpty);
     });
 
@@ -124,7 +131,7 @@ void main() {
         final result = await YosysRunner(
           processRunner: _FakeRunner(json: json),
           tempDirectory: tempDir,
-        ).run(request, keepJson: true);
+        ).runKeepingJson(request);
         expect(result, isA<YosysRunFailure>());
         expect((result as YosysRunFailure).kind, YosysFailureKind.noOutput);
       }
@@ -136,10 +143,8 @@ void main() {
         processRunner: _FakeRunner(json: '{}'),
         tempDirectory: tempDir,
       );
-      final first =
-          (await runner.run(request, keepJson: true)) as YosysRunSuccess;
-      final second =
-          (await runner.run(request, keepJson: true)) as YosysRunSuccess;
+      final first = (await runner.runKeepingJson(request)) as YosysRunSuccess;
+      final second = (await runner.runKeepingJson(request)) as YosysRunSuccess;
       expect(second.jsonPath, isNot(first.jsonPath));
       File(first.jsonPath!).deleteSync();
       File(second.jsonPath!).deleteSync();
@@ -147,7 +152,7 @@ void main() {
     });
   });
 
-  group('keepJson with a real Yosys', () {
+  group('runKeepingJson with a real Yosys', () {
     final skip = _yosysOnPath() ? false : 'yosys is not on PATH';
     // Windows cannot name a directory with most of the punctuation below.
     final skipPunctuation = Platform.isWindows
@@ -181,20 +186,8 @@ void main() {
       final runner = YosysRunner(tempDirectory: dir);
       final source = writeSource(tempDir);
       expectDocument(
-        await runner.run(
+        await runner.runKeepingJson(
           YosysRunRequest(sources: [YosysSourceFile(source.path)]),
-          keepJson: true,
-        ),
-      );
-      expectDocument(
-        await runner.runScript(
-          YosysScriptRequest(
-            commands: [
-              YosysScriptCommands.readVerilog([source.path]),
-              YosysScriptCommands.hierarchy('t'),
-            ],
-          ),
-          keepJson: true,
         ),
       );
     }, skip: skip);
@@ -219,9 +212,8 @@ void main() {
         ];
         for (final name in names) {
           final dir = Directory('${tempDir.path}/$name')..createSync();
-          final result = await YosysRunner(tempDirectory: dir).run(
+          final result = await YosysRunner(tempDirectory: dir).runKeepingJson(
             YosysRunRequest(sources: [YosysSourceFile(source.path)]),
-            keepJson: true,
           );
           expectDocument(result);
         }
@@ -235,9 +227,8 @@ void main() {
         final source = writeSource(tempDir);
         for (final name in ['a"b', 'a;b']) {
           final dir = Directory('${tempDir.path}/$name')..createSync();
-          final result = await YosysRunner(tempDirectory: dir).run(
+          final result = await YosysRunner(tempDirectory: dir).runKeepingJson(
             YosysRunRequest(sources: [YosysSourceFile(source.path)]),
-            keepJson: true,
           );
           expect(result, isA<YosysRunFailure>());
           expect(

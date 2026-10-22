@@ -151,16 +151,61 @@ class YosysRunner {
   /// [environment] is the child environment for this run, laid over the
   /// constructor's (this call wins per variable); it reaches the GHDL
   /// lowering step of a VHDL request as well as Yosys.
-  ///
-  /// [keepJson] hands the document back as a file instead of reading it: see
-  /// [YosysRunSuccess.jsonPath]. The caller deletes that file.
   Future<YosysRunResult> run(
     YosysRunRequest request, {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
     Map<String, String>? environment,
-    bool keepJson = false,
+  }) => _run(
+    request,
+    timeout: timeout,
+    cancelSignal: cancelSignal,
+    onStderrLine: onStderrLine,
+    environment: environment,
+    keepJson: false,
+  );
+
+  /// [run], but the `write_json` document is handed back as a file instead of
+  /// being read: on success the result is a [YosysRunSuccess] whose
+  /// [YosysRunSuccess.jsonPath] names it and whose `rawJson` is empty.
+  ///
+  /// For a consumer that streams the document: a flattened SoC netlist is
+  /// hundreds of megabytes (OpenTitan earlgrey is 864 MB), and [run] would hold
+  /// all of it as one string.
+  ///
+  /// **The caller must delete the file.** It is in this runner's temp
+  /// directory under a name unique to the run, and the runner removes it only
+  /// when the run does not succeed (non-zero exit, timeout, cancel, no or
+  /// empty output, an invalid request). The path is double-quoted in the
+  /// `write_json` statement as it is for [run], so white space and ordinary
+  /// punctuation in the temp directory's path are fine; a path holding a
+  /// double quote, `;` or a newline is an [YosysFailureKind.invalidRequest].
+  ///
+  /// Every other parameter, the never-throws contract and the failure kinds
+  /// are [run]'s.
+  Future<YosysRunResult> runKeepingJson(
+    YosysRunRequest request, {
+    Duration? timeout,
+    Future<void>? cancelSignal,
+    void Function(String line)? onStderrLine,
+    Map<String, String>? environment,
+  }) => _run(
+    request,
+    timeout: timeout,
+    cancelSignal: cancelSignal,
+    onStderrLine: onStderrLine,
+    environment: environment,
+    keepJson: true,
+  );
+
+  Future<YosysRunResult> _run(
+    YosysRunRequest request, {
+    required Duration? timeout,
+    required Future<void>? cancelSignal,
+    required void Function(String line)? onStderrLine,
+    required Map<String, String>? environment,
+    required bool keepJson,
   }) async {
     final jsonFile = _allocateJsonFile();
     // Set once the run succeeds with `keepJson`: the file is then the
@@ -308,32 +353,24 @@ class YosysRunner {
   ///
   /// [environment] is the child environment for this run, laid over the
   /// constructor's (this call wins per variable).
-  ///
-  /// [keepJson] hands the document back as a file instead of reading it: see
-  /// [YosysRunSuccess.jsonPath]. The caller deletes that file.
   Future<YosysRunResult> runScript(
     YosysScriptRequest request, {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
     Map<String, String>? environment,
-    bool keepJson = false,
   }) async {
     final jsonFile = _allocateJsonFile();
-    var keepJsonFile = false;
     try {
       final script = _buildCallerScript(request, jsonFile.path);
-      final result = await _runScriptAndRead(
+      return await _runScriptAndRead(
         script,
         jsonFile,
         timeout: timeout,
         cancelSignal: cancelSignal,
         onStderrLine: onStderrLine,
         environment: environment,
-        keepJson: keepJson,
       );
-      keepJsonFile = result is YosysRunSuccess && result.jsonPath != null;
-      return result;
     } on ProcessException catch (e) {
       return _launchFailure(e);
     } on ProcessOutputIncompleteException catch (e) {
@@ -345,7 +382,7 @@ class YosysRunner {
     } on FileSystemException catch (e) {
       return _unreadableJsonFailure(e);
     } finally {
-      if (!keepJsonFile && jsonFile.existsSync()) {
+      if (jsonFile.existsSync()) {
         try {
           jsonFile.deleteSync();
         } on FileSystemException {
