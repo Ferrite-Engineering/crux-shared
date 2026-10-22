@@ -108,3 +108,9 @@ ProviderScope(
 
 Private during the public beta; Apache 2.0 at the post-beta open-core flip,
 alongside the rest of the suite.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **The read side of the exported `ProjectRegistry` seam**: `activeProjectProvider`.

@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:crux_projects/crux_projects.dart';
+import 'package:crux_projects/src/per_project_scope.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:flutter_riverpod/misc.dart' show Override;

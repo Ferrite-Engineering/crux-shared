@@ -51,7 +51,8 @@
 /// that. A registry that needs the filesystem is the host's to supply.
 library;
 
-export 'src/per_project_scope.dart';
+export 'src/per_project_scope.dart'
+    hide PerProjectScope, perProjectScopeWithFamily;
 export 'src/project_descriptor.dart';
 export 'src/project_registry.dart';
 export 'src/project_registry_provider.dart';

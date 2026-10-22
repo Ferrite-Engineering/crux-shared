@@ -4,6 +4,10 @@ This file was backfilled during the CS documentation sweep, so the entry below
 describes the package's surface as of 0.1.0 rather than reconstructing the
 increments that built it. Changes from here on get their own entries.
 
+## Unreleased
+
+- **Export namespace narrowed by 2 symbols.** `PerProjectScope`, `perProjectScopeWithFamily` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 ## 0.3.0
 
 - **Removed** `JsonFileProjectRegistry` and the `crux_projects_io.dart` entry

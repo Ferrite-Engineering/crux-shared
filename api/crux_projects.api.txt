@@ -19,10 +19,6 @@ class NoopProjectRegistry implements ProjectRegistry
   setActiveProject(String projectId) -> Future<void>
   shutdownAll() -> Future<void>
   watch() -> Stream<ProjectWorkspace>
-class PerProjectScope<T>
-  evictProject(ProviderContainer container, String projectId) -> void
-  final family: ProviderFamily<T, String>
-  final provider: Provider<T>
 class ProjectDescriptor
   const ProjectDescriptor({bool isPinned, required DateTime lastAccessedAt, required DateTime loadedAt, required String displayName, required String id, required String projectPath})
   ==(Object other) -> bool
@@ -75,6 +71,5 @@ get activeProjectIdProvider -> Provider<String?>
 get activeProjectProvider -> Provider<ProjectDescriptor?>
 get emptyWorkspaceProjectId -> String
 perProjectScope<T>(String name, T Function(Ref, String) build) -> Provider<T>
-perProjectScopeWithFamily<T>(String name, T Function(Ref, String) build) -> PerProjectScope<T>
 get projectRegistryProvider -> Provider<ProjectRegistry>
 get projectWorkspaceProvider -> StreamProvider<ProjectWorkspace>
