@@ -6,6 +6,8 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Export namespace narrowed by 3 symbols.** `activatorSignature`, `defaultKeymapSchema`, `formatShortcutSpokenLabel` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - Reset All confirms through `confirmCruxDestructiveAction`: Cancel holds
   focus and the reset is drawn in the error colour. New dependency on
   `crux_ide_layout`.

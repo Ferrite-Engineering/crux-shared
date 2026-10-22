@@ -128,10 +128,7 @@ class ShortcutConflictResolution<A>
   final conflicts: Map<A, ShortcutConflictEntry<A>>
   final effectiveBindings: Map<A, ShortcutActivator>
   get conflictChordCount -> int
-activatorSignature(ShortcutActivator activator) -> String
-get defaultKeymapSchema -> String
 findShortcutConflicts<A>(Map<A, ShortcutActivator> bindings, {Set<Set<A>> intentionalShadows}) -> Map<A, List<A>>
 formatShortcutLabel(ShortcutActivator? activator, {String emptyLabel}) -> String
-formatShortcutSpokenLabel(ShortcutActivator? activator, {String emptyLabel}) -> String
 get kKeymapVersion -> int
 resolveShortcutConflicts<A>(Map<A, ShortcutActivator> bindings, Map<A, ShortcutActivator> defaults, {Iterable<A>? order, Set<Set<A>> intentionalShadows}) -> ShortcutConflictResolution<A>

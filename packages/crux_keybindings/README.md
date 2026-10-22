@@ -43,3 +43,10 @@ controller.setBinding(action, binding.materialize());
 ```
 
 See WaveCrux's `lib/core/shortcuts/` for the reference adopter.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `ShortcutConflictEntry` (in `KeyBindingsEditor`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `KeyBindingsCategoryCardBuilder`.

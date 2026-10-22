@@ -3,6 +3,7 @@
 
 import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_keybindings/crux_keybindings.dart';
+import 'package:crux_keybindings/src/shortcut_label.dart';
 import 'package:crux_shortcut_action/crux_shortcut_action.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

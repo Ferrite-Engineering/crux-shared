@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:crux_keybindings/crux_keybindings.dart';
+import 'package:crux_keybindings/src/keymap_codec.dart';
 import 'package:crux_shortcut_action/crux_shortcut_action.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
