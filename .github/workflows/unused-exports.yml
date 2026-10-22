@@ -1,0 +1,106 @@
+name: Unused exports
+
+# ─── What this is ──────────────────────────────────────────────────────────────
+# A weekly advisory run of tool/unused-exports.py: which exported symbols does
+# no consumer use? It checks out the four open-core products (all public), runs
+# the report, writes the counts to the job summary, and fails ONLY when the
+# `unused` count grows past tool/unused-exports-baseline.json. Nothing else in
+# the report can fail it: `internal` and `test-only` are judgement calls, and a
+# verdict that depends on which checkouts happened to be present is not one to
+# fail a build on.
+#
+# It is advisory on purpose. It is not a pull-request check and has no `push`
+# trigger, so it never blocks a change; it exists to keep the number from
+# drifting between the passes that deliberately shrink it.
+#
+# ─── What it cannot see ────────────────────────────────────────────────────────
+# The Pro overlays and the Pro shared repository also consume these packages,
+# and they are private. A public repository's workflow cannot check them out
+# without a token that reads private repositories, and this workflow adds no
+# secret to get one. So a symbol that only an overlay uses reads here as unused
+# or internal. The committed baseline is therefore measured from the same four
+# public checkouts (`tool/unused-exports.py --write-baseline`), never from a run
+# that included an overlay: a different consumer set is a different count. Before
+# an export is removed on this report's say-so, run the report locally with the
+# overlays passed as `--consumer` too.
+#
+# Moving the baseline down is a hand edit in the commit that removes the
+# symbols; moving it up is a decision, not a refresh.
+on:
+  schedule:
+    # Mondays, early, off the hour.
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+# One run at a time; a manual dispatch queues behind the scheduled one.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Unused-exports report
+    runs-on: ubuntu-latest
+    # Cap runaway jobs — a hung 6 h macOS job once exhausted the Actions budget.
+    timeout-minutes: 15
+    steps:
+      - name: Checkout crux-shared
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: shared
+          persist-credentials: false
+
+      # The cores are public: no token. No submodules either, so the vendored
+      # copy of this repository inside each one is never fetched (the report
+      # skips `crux-shared/` directories regardless).
+      - name: Checkout wavecrux
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Ferrite-Engineering/wavecrux
+          ref: main
+          path: cores/wavecrux
+          persist-credentials: false
+
+      - name: Checkout netcrux
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Ferrite-Engineering/netcrux
+          ref: main
+          path: cores/netcrux
+          persist-credentials: false
+
+      - name: Checkout lintcrux
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Ferrite-Engineering/lintcrux
+          ref: main
+          path: cores/lintcrux
+          persist-credentials: false
+
+      - name: Checkout simcrux
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Ferrite-Engineering/simcrux
+          ref: main
+          path: cores/simcrux
+          persist-credentials: false
+
+      # Every consumer is named explicitly. `--root` points at an empty
+      # directory so the report does not go looking beside the checkout of this
+      # repository, where it would find the copy it is measuring and read every
+      # symbol as used by its own declaration.
+      - name: Run the report
+        run: |
+          mkdir -p "$RUNNER_TEMP/no-root"
+          python3 shared/tool/unused-exports.py \
+            --root "$RUNNER_TEMP/no-root" \
+            --consumer cores/wavecrux \
+            --consumer cores/netcrux \
+            --consumer cores/lintcrux \
+            --consumer cores/simcrux \
+            --markdown \
+            --baseline shared/tool/unused-exports-baseline.json \
+            >> "$GITHUB_STEP_SUMMARY"

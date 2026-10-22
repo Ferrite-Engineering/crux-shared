@@ -10,6 +10,9 @@
     tool/unused-exports.py --package crux_x   # only this package's barrels
     tool/unused-exports.py --json             # machine-readable
     tool/unused-exports.py --check            # exit 1 when anything is unused
+    tool/unused-exports.py --markdown         # the counts as a Markdown table
+    tool/unused-exports.py --baseline FILE    # exit 1 when unused exceeds FILE's count
+    tool/unused-exports.py --write-baseline FILE   # record today's counts in FILE
 
 ## Why this exists
 
@@ -65,10 +68,15 @@ skipped, as are `.dart_tool/` and `build/`.
     `crux_cxp` surface a third-party tool will build against — is `unused`
     here and correct anyway.
 
-It is a report, not a gate. It is not wired into CI: the consumers are other
-repositories, the `consumers` workflow checks out only one open core per job,
-and a verdict that depends on which checkouts happened to be present is not
-one to fail a build on.
+## Advisory, not a gate
+
+It is a report. The consumers are other repositories, and a verdict that
+depends on which checkouts happened to be present is not one to fail a build
+on. `.github/workflows/unused-exports.yml` runs it weekly against the four
+open cores and fails only when the *unused* count grows past the committed
+baseline (`tool/unused-exports-baseline.json`, written by `--write-baseline`
+from the same four checkouts, because a different consumer set is a different
+count). The baseline moves down by hand when a pass removes symbols.
 """
 
 from __future__ import annotations
@@ -288,6 +296,9 @@ def main() -> int:
     ap.add_argument("--package", action="append", default=[])
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--markdown", action="store_true")
+    ap.add_argument("--baseline")
+    ap.add_argument("--write-baseline")
     args = ap.parse_args()
 
     products_root = os.path.abspath(args.root or os.path.join(REPO, ".."))
@@ -365,6 +376,40 @@ def main() -> int:
             seen.add(key)
             unique.append(r)
 
+    counts = {
+        v: sum(1 for r in unique if r["verdict"] == v)
+        for v in ("unused", "test-only", "internal", "used")
+    }
+    counts["total"] = len(unique)
+
+    if args.write_baseline:
+        with open(args.write_baseline, "w", encoding="utf-8") as fh:
+            json.dump(counts, fh, indent=2, sort_keys=True)
+            fh.write("\n")
+        print(f"wrote {args.write_baseline}: {counts}")
+        return 0
+
+    if args.markdown:
+        print("| Verdict | Symbols |")
+        print("|---|---:|")
+        for v in ("unused", "test-only", "internal", "used"):
+            print(f"| {v} | {counts[v]} |")
+        print(f"| total | {counts['total']} |")
+        print()
+        print("Consumers: " + ", ".join(os.path.basename(c) for c in consumers))
+        if args.baseline:
+            with open(args.baseline, encoding="utf-8") as fh:
+                base = json.load(fh)
+            print()
+            print(
+                f"Baseline unused: {base['unused']}; now: {counts['unused']} "
+                f"({counts['unused'] - base['unused']:+d})."
+            )
+            for r in unique:
+                if r["verdict"] == "unused":
+                    print(f"- `{r['package']}`: `{r['symbol']}` ({r['kind']})")
+        return _baseline_status(args.baseline, counts) if args.baseline else 0
+
     if args.json:
         json.dump(
             {
@@ -390,8 +435,23 @@ def main() -> int:
         used = sum(1 for r in unique if r["verdict"] == "used")
         print(f"\nused: {used} of {len(unique)} exported top-level symbols")
 
-    unused = sum(1 for r in unique if r["verdict"] == "unused")
-    return 1 if args.check and unused else 0
+    if args.baseline:
+        return _baseline_status(args.baseline, counts)
+    return 1 if args.check and counts["unused"] else 0
+
+
+def _baseline_status(path: str, counts: dict[str, int]) -> int:
+    """1 when the unused count grew past the baseline's, else 0."""
+    with open(path, encoding="utf-8") as fh:
+        base = json.load(fh)
+    if counts["unused"] > base["unused"]:
+        print(
+            f"unused exports grew: {counts['unused']} against a baseline of "
+            f"{base['unused']}",
+            file=sys.stderr,
+        )
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

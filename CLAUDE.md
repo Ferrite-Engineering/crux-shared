@@ -11,7 +11,7 @@ Melos workspace containing the cross-product Dart packages every product in the 
 - **License:** **Apache License 2.0**, already in the tree — `LICENSE`, `NOTICES`, and an SPDX header on every source file. CI checks the headers (`tool/spdx-headers.py`) and the third-party attributions (`tool/gen-notices.py`) on every run.
 - **Visibility:** private during the public beta, matching every product repo in the suite; public at the post-beta open-core flip, in lockstep with the four open-core product repos. Aligning with the open-core products' license is necessary because each product's open-core repo consumes `crux_shared` from `pubspec.yaml`; once those repos go public, this repo has to go public too or the dependency chain breaks. Apache 2.0 also gives third-party tools a clean legal path to build CXP-compatible products against `crux_cxp`, which is an explicit ecosystem goal.
 
-Packages today (the authoritative list is `ls packages/` — keep this table in step with it):
+Packages today (the authoritative list is `ls packages/` — keep this table in step with it). The symbols named in the table are each package's vocabulary, not a promise that every one is exported: `api/*.api.txt` is the authority on the export namespace, and a symbol that no product and no sibling package uses stays under `lib/src/`, unexported, unless the package README's "Exported on purpose" section says why it stays in the barrel (`tool/unused-exports.py` finds them):
 
 | Package | Flutter? | Purpose |
 |---|---|---|
@@ -189,7 +189,9 @@ last three guard what makes the repo publishable:
   package in the same file, so it cannot quietly become one that reaches
   everything. Cost ~1 s. What it cannot see — a reachable export no consumer
   uses — is `tool/unused-exports.py`'s report, which needs the consumer
-  checkouts and so is not a CI gate.
+  checkouts and so is not a CI gate. `.github/workflows/unused-exports.yml`
+  runs it weekly against the four open cores, advisory only, and fails just
+  when the unused count grows past `tool/unused-exports-baseline.json`.
 - **`open_core_purity_test.dart`** — the property that makes crux-shared
   open-sourceable: no code a product build can reach — every package's `lib/`,
   `bin/` and `tool/` — may be able to *sign* (no keypair type, private seed or
