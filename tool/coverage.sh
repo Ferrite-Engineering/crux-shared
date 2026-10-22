@@ -97,6 +97,7 @@ crux_secrets:94
 crux_settings:97
 crux_settings_ui:97
 crux_shortcut_action:none
+crux_single_instance:88
 crux_signing:98
 crux_sqlite:91
 crux_stats_strip:90

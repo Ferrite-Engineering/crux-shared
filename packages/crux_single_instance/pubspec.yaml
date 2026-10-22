@@ -1,0 +1,18 @@
+name: crux_single_instance
+description: Single-instance link delivery for the EDACrux desktop apps on Windows and Linux — a second launch hands its URL to the running instance over a user-private socket and exits.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  crypto: ^3.0.0
+  meta: ^1.15.0
+  path: ^1.9.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^11.0.0

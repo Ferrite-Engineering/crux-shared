@@ -1,0 +1,50 @@
+# Public API surface of package:crux_single_instance/crux_single_instance.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class SingleInstance
+  SingleInstance({Duration timeout, Map<String, String>? environment, SingleInstanceTransport? transport, String? directory, required SingleInstanceLinkPolicy policy, required String appId})
+  claim({String? link}) -> Future<SingleInstanceClaim>
+  final appId: String
+  final directory: String?
+  final environment: Map<String, String>?
+  final policy: SingleInstanceLinkPolicy
+  final timeout: Duration
+  final transport: SingleInstanceTransport?
+sealed class SingleInstanceClaim
+  const SingleInstanceClaim()
+final class SingleInstanceDelivered extends SingleInstanceClaim
+class SingleInstanceLinkPolicy
+  SingleInstanceLinkPolicy({int maxLinkBytes, required Iterable<String> schemes})
+  accepts(String link) -> bool
+  check(String link) -> SingleInstanceLinkRejection?
+  final maxLinkBytes: int
+  final schemes: Set<String>
+  static const defaultMaxLinkBytes: int
+enum SingleInstanceLinkRejection
+  static const badLength: SingleInstanceLinkRejection
+  static const forbiddenCharacter: SingleInstanceLinkRejection
+  static const notAUrl: SingleInstanceLinkRejection
+  static const schemeNotDeclared: SingleInstanceLinkRejection
+final class SingleInstancePrimary extends SingleInstanceClaim
+  close() -> Future<void>
+  get address -> InternetAddress
+  get links -> Stream<String>
+final class SingleInstanceStandalone extends SingleInstanceClaim
+  final detail: String?
+  final reason: SingleInstanceStandaloneReason
+  toString() -> String
+enum SingleInstanceStandaloneReason
+  static const anotherInstanceRuns: SingleInstanceStandaloneReason
+  static const failed: SingleInstanceStandaloneReason
+  static const linkRejected: SingleInstanceStandaloneReason
+  static const timedOut: SingleInstanceStandaloneReason
+  static const unavailable: SingleInstanceStandaloneReason
+enum SingleInstanceTransport
+  static const loopbackTcp: SingleInstanceTransport
+  static const unixSocket: SingleInstanceTransport

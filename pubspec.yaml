@@ -12,6 +12,7 @@ workspace:
   - packages/crux_io
   - packages/crux_sqlite
   - packages/crux_linux_integration
+  - packages/crux_single_instance
   - packages/crux_license
   - packages/crux_signing
   - packages/crux_audit
