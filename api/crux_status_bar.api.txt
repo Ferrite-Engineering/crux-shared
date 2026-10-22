@@ -33,5 +33,3 @@ class CruxStatusSegment extends StatelessWidget
   build(BuildContext context) -> Widget
   final label: String
   final style: TextStyle?
-get kCruxStatusBarFontSize -> double
-get kCruxStatusBarHeight -> double

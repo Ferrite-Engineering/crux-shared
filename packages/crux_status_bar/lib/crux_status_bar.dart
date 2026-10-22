@@ -17,4 +17,5 @@
 /// for plain-text metric segments.
 library;
 
-export 'src/crux_status_bar.dart';
+export 'src/crux_status_bar.dart'
+    hide kCruxStatusBarFontSize, kCruxStatusBarHeight;

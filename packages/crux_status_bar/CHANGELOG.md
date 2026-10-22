@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 2 symbols.** `kCruxStatusBarFontSize`, `kCruxStatusBarHeight` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - The bar's surface and baseline text follow the theme's
   `statusBar.background` and `statusBar.foreground` chrome tokens, read from
   `crux_theme`'s `CruxChromeColors`; the defaults are unchanged. An explicit
