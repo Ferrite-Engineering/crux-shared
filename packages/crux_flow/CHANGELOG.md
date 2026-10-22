@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 6 symbols.** `isToolLibraryPath`, `kFlowClockConstraintRule`, `kFlowSarifFingerprintKey`, `kFlowSarifSourceRoot`, `kFlowTimingPathRule`, `sharedPathSuffixLength` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **Mapping a tool's cells back to source registers.** `NetlistSrcIndex`
   (cell and net name to `SrcSpan` over a synthesized design, with
   `isStorageCell` judging flip-flops and latches by their ports),

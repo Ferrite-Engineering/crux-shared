@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crux_flow/crux_flow.dart';
+import 'package:crux_flow/src/mapping/rtl_registers.dart';
 import 'package:crux_netlist/crux_netlist.dart' show YosysJsonParser;
 import 'package:test/test.dart';
 

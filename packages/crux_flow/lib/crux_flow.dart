@@ -25,7 +25,7 @@ export 'src/flow_verdict.dart';
 export 'src/mapping/netlist_src_index.dart' show NetlistSrcIndex, isStorageCell;
 export 'src/mapping/rtl_register_resolver.dart';
 export 'src/mapping/rtl_registers.dart'
-    show RtlRegister, RtlRegisterSet, isToolLibraryPath, sameSourceRange;
+    show RtlRegister, RtlRegisterSet, sameSourceRange;
 export 'src/metrics/metric_aggregation.dart' show aggregateMetrics;
 export 'src/metrics/metric_definition.dart';
 export 'src/metrics/metric_diff.dart';
@@ -44,6 +44,11 @@ export 'src/nextpnr/nextpnr_results.dart'
 export 'src/read_limits.dart'
     show FlowInputLimits, FlowReadException, FlowReadFailure;
 export 'src/rtl_mapping.dart';
-export 'src/sarif/flow_sarif_writer.dart';
-export 'src/src_span.dart';
+export 'src/sarif/flow_sarif_writer.dart'
+    hide
+        kFlowClockConstraintRule,
+        kFlowSarifFingerprintKey,
+        kFlowSarifSourceRoot,
+        kFlowTimingPathRule;
+export 'src/src_span.dart' hide sharedPathSuffixLength;
 export 'src/timing_path.dart' hide nanosecondsToPicoseconds;

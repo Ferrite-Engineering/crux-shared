@@ -67,3 +67,9 @@ checked against Python's `decimal` module. The mapping's expectations are
 written from the designed-path RTL (`mapping.expected.json`), over Yosys's
 own elaboration and synthesis of it. `test/fixtures/PROVENANCE.md` has the
 detail.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `ClockEdge` (in `TimingPath`), `MetricAggregator` (in `MetricDefinition`), `MetricChangeClass` (in `MetricComparison`), `MetricDiffStatistics` (in `MetricDiff`), `MetricFilter` (in `MetricDiff`), `NextpnrLog` (in `NextpnrLogReader`), `NextpnrReading` (in `NextpnrLogReader`), `NextpnrResourceUse` (in `NextpnrReport`), `RtlRegister` (in `RtlRegisterSet`).

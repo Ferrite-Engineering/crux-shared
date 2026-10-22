@@ -394,12 +394,6 @@ enum TimingSegmentType
   static fromToolWord(String word) -> TimingSegmentType
 aggregateMetrics(Map<String, Object?> input, {MetricDefinitionTable? table}) -> Map<String, Object?>
 isStorageCell(Cell cell) -> bool
-isToolLibraryPath(String file) -> bool
-get kFlowClockConstraintRule -> String
-get kFlowSarifFingerprintKey -> String
-get kFlowSarifSourceRoot -> String
-get kFlowTimingPathRule -> String
 get librelaneMetricsV1 -> MetricDefinitionTable
 matchSourceBySuffix(String recorded, Iterable<String> designSources) -> String?
 sameSourceRange(SrcSpan a, SrcSpan b) -> bool
-sharedPathSuffixLength(String a, String b) -> int

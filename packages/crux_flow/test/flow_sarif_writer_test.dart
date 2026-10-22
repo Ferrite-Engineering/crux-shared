@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crux_flow/crux_flow.dart';
+import 'package:crux_flow/src/sarif/flow_sarif_writer.dart';
 import 'package:crux_io/crux_io.dart';
 import 'package:test/test.dart';
 
