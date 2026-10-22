@@ -71,11 +71,6 @@ class NoopUpdateCheckService implements UpdateCheckService
   const NoopUpdateCheckService()
   checkForUpdate() -> Future<UpdateInfo?>
 typedef ObservedServerTimeSink = void Function(DateTime)
-class PolicyConstrainedUpdateCheckService implements UpdateCheckService
-  const PolicyConstrainedUpdateCheckService({required UpdateCheckService inner, required UpdatePolicy policy})
-  checkForUpdate() -> Future<UpdateInfo?>
-  final inner: UpdateCheckService
-  final policy: UpdatePolicy
 class UpdateAvailableBanner extends StatelessWidget
   const UpdateAvailableBanner({CruxUpdateBannerMetrics metrics, Key? key, required CruxUpdateStrings strings, required String version, required bool mandatory, required void Function() onUpdateNow, void Function()? onDismiss, void Function()? onViewChanges})
   build(BuildContext context) -> Widget
@@ -130,14 +125,6 @@ final class UpdateInfo
   meetsMinSupported(String current) -> bool
   static fromJson(Object? raw) -> UpdateInfo?
   toString() -> String
-final class UpdateManifest
-  const UpdateManifest({required UpdateInfo latest})
-  ==(Object other) -> bool
-  final latest: UpdateInfo
-  get hashCode -> int
-  static fromJson(Object? raw) -> UpdateManifest?
-  static tryParse(String jsonText) -> UpdateManifest?
-  toString() -> String
 final class UpdatePolicy
   const UpdatePolicy({String? pinnedVersion, UpdateChannelPolicy? channel, Uri? manifestUri})
   factory UpdatePolicy.fromNames({String? channel, String? manifestUrl, String? pinnedVersion})
@@ -180,17 +167,12 @@ class UpdateStatusNotifier extends Notifier<UpdateStatus>
 get autoUpdateCheckEnabledProvider -> FutureProvider<bool>
 get cruxUpdateConfigProvider -> Provider<CruxUpdateConfig>
 get cruxUpdateStringsProvider -> Provider<CruxUpdateStrings>
-get kUpdateCheckInterval -> Duration
-get kUpdateCheckTimeout -> Duration
-get managedInstallMarkerPathProvider -> Provider<String?>
 get managedInstallProvider -> Provider<ManagedInstall>
 get observedServerTimeSinkProvider -> Provider<void Function(DateTime)>
-probeManagedInstall({String? markerPath}) -> ManagedInstall
 runManualUpdateCheck(BuildContext context, WidgetRef ref) -> Future<void>
 get updateBuildInfoProvider -> FutureProvider<ApplicationBuildInfo?>
 get updateCheckServiceProvider -> Provider<UpdateCheckService>
 get updateEditionProvider -> Provider<UpdateEdition>
-get updateHostIsWebProvider -> Provider<bool>
 get updateHttpClientProvider -> Provider<Client>
 get updatePolicyProvider -> Provider<UpdatePolicy>
 get updateStatusProvider -> NotifierProvider<UpdateStatusNotifier, UpdateStatus>

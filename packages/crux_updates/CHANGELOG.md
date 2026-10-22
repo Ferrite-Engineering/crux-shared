@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 7 symbols.** `PolicyConstrainedUpdateCheckService`, `UpdateManifest`, `kUpdateCheckInterval`, `kUpdateCheckTimeout`, `managedInstallMarkerPathProvider`, `probeManagedInstall`, `updateHostIsWebProvider` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - `runManualUpdateCheck` reports through the suite toasts (`showCruxInfoSnack`,
   `showCruxErrorSnack` for a failed check, `hideCruxSnack` to retire the
   in-flight message), so the outcome is spoken and sits bottom-right on

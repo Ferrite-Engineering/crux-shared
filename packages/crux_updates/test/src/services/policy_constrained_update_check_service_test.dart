@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_updates/crux_updates.dart';
+import 'package:crux_updates/src/services/policy_constrained_update_check_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeInner implements UpdateCheckService {

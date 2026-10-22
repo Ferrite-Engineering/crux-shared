@@ -3,7 +3,7 @@
 
 import 'dart:convert';
 
-import 'package:crux_updates/crux_updates.dart';
+import 'package:crux_updates/src/models/update_manifest.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

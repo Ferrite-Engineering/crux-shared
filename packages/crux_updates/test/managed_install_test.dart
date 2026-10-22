@@ -5,6 +5,8 @@ import 'dart:io';
 
 import 'package:crux_app_info/crux_app_info.dart';
 import 'package:crux_updates/crux_updates.dart';
+import 'package:crux_updates/src/providers/managed_install_provider.dart';
+import 'package:crux_updates/src/services/managed_install_probe.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

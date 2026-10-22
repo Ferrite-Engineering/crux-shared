@@ -18,21 +18,24 @@
 /// host overrides. See the package README for the wiring snippet.
 library;
 
-export 'src/crux_update_config.dart';
+export 'src/crux_update_config.dart'
+    hide kUpdateCheckInterval, kUpdateCheckTimeout;
 export 'src/crux_update_strings.dart';
 export 'src/models/managed_install.dart';
 export 'src/models/update_edition.dart';
-export 'src/models/update_manifest.dart';
+export 'src/models/update_manifest.dart' hide UpdateManifest;
 export 'src/models/update_policy.dart';
 export 'src/models/update_status.dart';
-export 'src/providers/managed_install_provider.dart';
+export 'src/providers/managed_install_provider.dart'
+    hide managedInstallMarkerPathProvider;
 export 'src/providers/update_check_service_provider.dart';
-export 'src/providers/update_seam_providers.dart';
+export 'src/providers/update_seam_providers.dart' hide updateHostIsWebProvider;
 export 'src/providers/update_status_provider.dart';
 export 'src/services/http_update_check_service.dart';
-export 'src/services/managed_install_probe.dart';
+export 'src/services/managed_install_probe.dart' hide probeManagedInstall;
 export 'src/services/noop_update_check_service.dart';
-export 'src/services/policy_constrained_update_check_service.dart';
+export 'src/services/policy_constrained_update_check_service.dart'
+    hide PolicyConstrainedUpdateCheckService;
 export 'src/update_check_action.dart';
 export 'src/update_check_service.dart';
 export 'src/widgets/update_available_banner.dart';

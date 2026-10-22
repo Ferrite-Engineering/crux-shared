@@ -326,3 +326,13 @@ Private during the public beta. Apache 2.0 at the post-beta open-core
 flip, alongside every product's open-core repo. Consumed by each
 product's open-core via the `crux-shared` Git submodule plus a `path:`
 dep; the Pro overlays inherit it transitively.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `ManagedInstall` (in `managedInstallProvider`).
+- **Default-locale implementation of an exported strings seam; a host wraps or subclasses it**: `CruxUpdateStringsEn`.
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxUpdateUrlLauncher`, `ObservedServerTimeSink`.
+- **Default implementation of the exported `UpdateCheckService` seam**: `HttpUpdateCheckService`.
+- **Read side of the managed-install signal an About or Updates surface shows**: `managedInstallProvider`.
