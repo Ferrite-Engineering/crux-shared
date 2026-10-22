@@ -61,3 +61,9 @@ CruxDesktopMenuBar<MyAction>(
 product asserts that this set, unioned with `appActions.desktopFolded`, equals
 exactly the set its descriptor table marks menu-visible — so a newly
 menu-visible action fails the test until it is given a home in the layout.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Variant of the exported sealed `CruxMenuEntry`; a host's entry list and any switch over it need every variant**: `CruxActionEntry`, `CruxSeparatorEntry`.

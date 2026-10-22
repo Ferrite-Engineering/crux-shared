@@ -1,5 +1,7 @@
 ## Unreleased
 
+- **Export namespace narrowed by 3 symbols.** `cruxEntriesForGroups`, `displayMenuShortcut`, `nativeMenuShortcut` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - Removed `CruxTopMenu`, which nothing referenced.
 
 ## 0.1.0

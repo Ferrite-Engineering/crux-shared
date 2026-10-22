@@ -40,7 +40,4 @@ sealed class CruxMenuEntry<A extends Object>
 typedef CruxMenuLayout<A extends Object> = Map<ActionCategory, List<List<A>>>
 final class CruxSeparatorEntry<A extends Object> extends CruxMenuEntry<A>
   const CruxSeparatorEntry()
-cruxEntriesForGroups<A extends Object>(List<List<A>> groups, bool Function(A) visible) -> List<CruxMenuEntry<A>>
 cruxMenuLayoutActions<A extends Object>(Map<ActionCategory, List<List<A>>> layout) -> Set<A>
-displayMenuShortcut(ShortcutActivator? activator) -> MenuSerializableShortcut?
-nativeMenuShortcut(ShortcutActivator? activator) -> MenuSerializableShortcut?

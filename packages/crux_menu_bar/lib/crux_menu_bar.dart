@@ -20,5 +20,5 @@
 library;
 
 export 'src/crux_desktop_menu_bar.dart';
-export 'src/menu_layout.dart';
-export 'src/menu_shortcut.dart';
+export 'src/menu_layout.dart' hide cruxEntriesForGroups;
+export 'src/menu_shortcut.dart' hide displayMenuShortcut, nativeMenuShortcut;
