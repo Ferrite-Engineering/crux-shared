@@ -51,14 +51,9 @@
 /// nothing is a finding.
 library;
 
-export 'src/crux_desktop_guard.dart';
+export 'src/crux_desktop_guard.dart' hide kCruxDesktopPhoneOnlyMarker;
 export 'src/dialog_sites.dart'
-    show
-        CruxClassIndex,
-        CruxDialogSite,
-        cruxFindDialogSites,
-        kCruxModalOpeners,
-        kCruxTypedInputMarkers;
+    show CruxClassIndex, CruxDialogSite, cruxFindDialogSites;
 export 'src/dismissible_form_dialog_guard.dart';
 export 'src/guard_types.dart'
     show CruxGuardFinding, CruxGuardResult, CruxGuardSource;

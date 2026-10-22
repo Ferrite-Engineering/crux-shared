@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_guards/crux_guards.dart';
+import 'package:crux_guards/src/dialog_sites.dart';
 import 'package:test/test.dart';
 
 CruxGuardSource _src(String path, String source) =>

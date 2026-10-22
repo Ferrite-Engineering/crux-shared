@@ -125,6 +125,3 @@ cruxFindDesktopSites(Iterable<CruxGuardSource> sources) -> List<CruxDesktopSite>
 cruxFindDialogSites(Iterable<CruxGuardSource> sources) -> List<CruxDialogSite>
 cruxFormatDesktopAllowList(Iterable<CruxDesktopSite> sites, {required String reason}) -> String
 cruxParseDesktopAllowList(String text) -> List<CruxDesktopAllowance>
-get kCruxDesktopPhoneOnlyMarker -> String
-get kCruxModalOpeners -> Set<String>
-get kCruxTypedInputMarkers -> Set<String>

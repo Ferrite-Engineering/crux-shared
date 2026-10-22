@@ -126,3 +126,9 @@ A marker with no reason, and a marker that covers no site, are findings.
   finding, so a list cannot outlive the code it describes.
 - **Pure Dart.** No Flutter dependency, so a guard test can run under
   `dart test` as well as `flutter test`.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxDesktopPattern` (in `CruxDesktopAllowance`), `CruxDesktopSite` (in `cruxFindDesktopSites`), `CruxDialogSite` (in `cruxFindDialogSites`), `CruxGuardResult` (in `cruxAuditCruxDesktop`).

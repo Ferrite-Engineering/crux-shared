@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 3 symbols.** `kCruxDesktopPhoneOnlyMarker`, `kCruxModalOpeners`, `kCruxTypedInputMarkers` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - `CruxDesktopPattern.segmentedButton`, `.dropdownButton` and
   `.dropdownButtonFormField`: the Crux Desktop guard flags `SegmentedButton`,
   `DropdownButton` and `DropdownButtonFormField` constructions (with or
