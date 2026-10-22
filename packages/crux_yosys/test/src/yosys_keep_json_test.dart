@@ -154,10 +154,6 @@ void main() {
 
   group('runKeepingJson with a real Yosys', () {
     final skip = _yosysOnPath() ? false : 'yosys is not on PATH';
-    // Windows cannot name a directory with most of the punctuation below.
-    final skipPunctuation = Platform.isWindows
-        ? 'Windows file names cannot hold this punctuation'
-        : skip;
 
     File writeSource(Directory dir) =>
         File('${dir.path}/t.v')..writeAsStringSync(
@@ -181,21 +177,24 @@ void main() {
       expect((json['modules']! as Map<String, Object?>).containsKey('t'), true);
     }
 
-    test('a temp directory with spaces', () async {
-      final dir = Directory('${tempDir.path}/Getting Started')..createSync();
-      final runner = YosysRunner(tempDirectory: dir);
-      final source = writeSource(tempDir);
-      expectDocument(
-        await runner.runKeepingJson(
-          YosysRunRequest(sources: [YosysSourceFile(source.path)]),
-        ),
-      );
-    }, skip: skip);
-
+    // One test, not three: a runner without Yosys skips every real-Yosys test,
+    // and CI's skip ceiling counts each.
     test(
-      'a temp directory with punctuation Yosys might read as syntax',
+      'the document is kept whatever the temp directory is called',
       () async {
         final source = writeSource(tempDir);
+        final spaced = Directory('${tempDir.path}/Getting Started')
+          ..createSync();
+        expectDocument(
+          await YosysRunner(tempDirectory: spaced).runKeepingJson(
+            YosysRunRequest(sources: [YosysSourceFile(source.path)]),
+          ),
+        );
+
+        // Windows cannot name a directory with most of the punctuation below.
+        if (Platform.isWindows) return;
+
+        // Punctuation Yosys might read as syntax.
         const names = <String>[
           'two  spaces and a tab\there',
           'hash # mark',
@@ -217,14 +216,8 @@ void main() {
           );
           expectDocument(result);
         }
-      },
-      skip: skipPunctuation,
-    );
 
-    test(
-      'a temp directory holding a double quote or semicolon is refused',
-      () async {
-        final source = writeSource(tempDir);
+        // A double quote or semicolon is refused, with nothing left behind.
         for (final name in ['a"b', 'a;b']) {
           final dir = Directory('${tempDir.path}/$name')..createSync();
           final result = await YosysRunner(tempDirectory: dir).runKeepingJson(
@@ -238,7 +231,7 @@ void main() {
           expect(_jsonFilesIn(dir), isEmpty);
         }
       },
-      skip: skipPunctuation,
+      skip: skip,
     );
   });
 }

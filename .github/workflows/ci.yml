@@ -181,11 +181,13 @@ jobs:
       # other five drive a real Yosys (formal and Liberty reads and a
       # yosys-slang read in crux_yosys, two live re-elaborations in crux_flow)
       # and skip on this runner, which installs none, beside the existing
-      # one, so the ceiling rose from two to seven.
+      # one, so the ceiling rose from two to seven. The runKeepingJson test
+      # that drives a real Yosys over awkward temp-directory names is one more
+      # skip here: eight.
       - name: Test count did not shrink
         env:
           MIN_TESTS: '4064'
-          MAX_SKIPPED: '7'
+          MAX_SKIPPED: '8'
         run: |
           python3 - <<'PY'
           import glob, json, os, sys
