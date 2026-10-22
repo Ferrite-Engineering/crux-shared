@@ -14,7 +14,10 @@
   laid over the constructor's variable by variable, so the call wins where
   both set one. `YosysAvailabilityService` takes the same constructor
   `environment` for `probe` and `probeSlang`. With none given, nothing is
-  passed, as before.
+  passed, as before. A class that extends `YosysRunner` and overrides `run`,
+  `runScript` or `lowerVhdl` (a test fake, say) must add the `environment`
+  parameter to its override, since Dart requires an override to accept every
+  named parameter of the method it replaces.
 
 - **`YosysFrontend` on `YosysRunRequest`: a formal read and the yosys-slang
   frontend.** `verilogFormal` reads with `read_verilog -formal` (`-formal
