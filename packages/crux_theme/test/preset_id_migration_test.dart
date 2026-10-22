@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_theme/crux_theme.dart';
+import 'package:crux_theme/src/presets/builtin_presets.dart';
 import 'package:flutter/material.dart' show Brightness;
 import 'package:flutter_test/flutter_test.dart';
 

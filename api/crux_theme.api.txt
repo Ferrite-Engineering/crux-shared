@@ -45,14 +45,6 @@ class CruxChromeColors extends ThemeExtension<CruxChromeColors>
   get isEmpty -> bool
   lerp(ThemeExtension<CruxChromeColors>? other, double t) -> CruxChromeColors
   static of(BuildContext context) -> CruxChromeColors?
-class CruxColorSwatch extends StatelessWidget
-  const CruxColorSwatch({Key? key, String? tooltip, ThemeAppearanceStrings strings, double size, required Color color, void Function(Color)? onColorPicked})
-  build(BuildContext context) -> Widget
-  final color: Color
-  final onColorPicked: void Function(Color)?
-  final size: double
-  final strings: ThemeAppearanceStrings
-  final tooltip: String?
 class CruxColorTheme
   CruxColorTheme({required Brightness brightness, required Map<String, Map<String, Color>> tokens, required String displayName, required String id})
   CruxColorTheme.internalUnsafe({required Brightness brightness, required Map<String, Map<String, Color>> tokens, required String displayName, required String id})
@@ -146,13 +138,6 @@ class PresetPicker extends ConsumerWidget
   final presets: List<CruxColorTheme>
   final previewTokens: List<(String, String)>?
   final strings: ThemeAppearanceStrings
-class PresetPreview extends StatelessWidget
-  const PresetPreview({Key? key, List<(String, String)>? tokens, double swatchSize, int maxSwatches, required CruxColorTheme theme})
-  build(BuildContext context) -> Widget
-  final maxSwatches: int
-  final swatchSize: double
-  final theme: CruxColorTheme
-  final tokens: List<(String, String)>?
 class PresetTokenOverlay
   const PresetTokenOverlay({required Map<String, Map<String, Color>> byPresetId, required String categoryId})
   ==(Object other) -> bool
@@ -361,12 +346,6 @@ class TokenCategorySection extends StatefulWidget
   final initiallyExpanded: bool
   final onExpansionChanged: void Function(bool)?
   final strings: ThemeAppearanceStrings
-class TokenEditor extends ConsumerWidget
-  const TokenEditor({Key? key, ThemeAppearanceStrings strings, required String categoryId, required ThemeTokenDescriptor descriptor})
-  build(BuildContext context, WidgetRef ref) -> Widget
-  final categoryId: String
-  final descriptor: ThemeTokenDescriptor
-  final strings: ThemeAppearanceStrings
 applyChromeTokens(ThemeData base, CruxThemeExtension chrome) -> ThemeData
 builtinPresetById(String id) -> CruxColorTheme?
 builtinPresets() -> Map<String, CruxColorTheme>
@@ -374,13 +353,9 @@ get chromeCategoryId -> String
 get chromeTokens -> ThemeTokenCategory
 get cruxColorThemeProvider -> NotifierProvider<CruxColorThemeNotifier, CruxColorTheme>
 get cruxDarkPresetId -> String
-cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) -> ThemeData
 get cruxLightPresetId -> String
 cruxThemeForDevice({TargetPlatform? platform, bool isWeb, required ColorScheme colorScheme, required ThemeData Function() mobile, required bool highContrast}) -> ThemeData
-cruxUsesDesktopLayer({TargetPlatform? platform, bool isWeb}) -> bool
 defaultBuiltinPreset() -> CruxColorTheme
-get legacyPresetIdAliases -> Map<String, String>
-migratePresetId(String id) -> String
 registerCruxThemeChromeTokens() -> void
 showColorPickerDialog({List<ColorPickerPaletteSection> paletteSections, ThemeAppearanceStrings strings, required BuildContext context, required Color initialColor}) -> Future<Color?>
 themeModeFromBrightness(CruxColorTheme theme) -> ThemeMode

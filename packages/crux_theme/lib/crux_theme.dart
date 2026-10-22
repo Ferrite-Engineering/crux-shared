@@ -46,11 +46,13 @@ export 'package:crux_ide_layout/crux_ide_layout.dart'
 
 export 'src/chrome_theme_data.dart';
 export 'src/crux_color_theme.dart';
-export 'src/crux_desktop_theme.dart';
+export 'src/crux_desktop_theme.dart'
+    hide cruxDesktopTheme, cruxUsesDesktopLayer;
 export 'src/crux_theme_extension.dart';
 export 'src/directory_theme_pack_store.dart';
 export 'src/preset_token_overlay.dart';
-export 'src/presets/builtin_presets.dart';
+export 'src/presets/builtin_presets.dart'
+    hide legacyPresetIdAliases, migratePresetId;
 export 'src/providers.dart';
 export 'src/theme_pack.dart';
 export 'src/theme_pack_codec.dart';
@@ -66,12 +68,12 @@ export 'src/theme_token_category.dart';
 // barrel keeps the Apache-2.0 compatibility surface honest.
 export 'src/widgets/color_picker_dialog.dart'
     hide ColorPickerDialog, colorFromHex, hexFromColor;
-export 'src/widgets/color_swatch.dart';
+export 'src/widgets/color_swatch.dart' hide CruxColorSwatch;
 export 'src/widgets/preset_card.dart';
 export 'src/widgets/preset_picker.dart';
-export 'src/widgets/preset_preview.dart';
+export 'src/widgets/preset_preview.dart' hide PresetPreview;
 export 'src/widgets/theme_appearance_section.dart';
 export 'src/widgets/theme_appearance_strings.dart';
 export 'src/widgets/theme_pack_browser.dart';
 export 'src/widgets/token_category_section.dart';
-export 'src/widgets/token_editor.dart';
+export 'src/widgets/token_editor.dart' hide TokenEditor;

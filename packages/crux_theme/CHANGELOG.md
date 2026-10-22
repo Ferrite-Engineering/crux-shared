@@ -1,5 +1,7 @@
 ## Unreleased
 
+- **Export namespace narrowed by 7 symbols.** `CruxColorSwatch`, `PresetPreview`, `TokenEditor`, `cruxDesktopTheme`, `cruxUsesDesktopLayer`, `legacyPresetIdAliases`, `migratePresetId` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **`PresetPreview`: the built-in Crux Dark and Crux Light presets show
   filled swatches.** They state no tokens, so each swatch resolved to the
   registry's transparent "use the product's value" sentinel and painted

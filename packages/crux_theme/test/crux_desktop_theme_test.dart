@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_theme/crux_theme.dart';
+import 'package:crux_theme/src/crux_desktop_theme.dart';
 import 'package:crux_theme/src/crux_focus_ring_borders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
