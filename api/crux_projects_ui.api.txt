@@ -48,8 +48,5 @@ enum ProjectActivationSource
 get crossProjectSearchOpenerProvider -> Provider<void Function(BuildContext)?>
 get cruxProjectsUiBadgeBuilderProvider -> Provider<Widget? Function(BuildContext)>
 get cruxProjectsUiStringsProvider -> Provider<CruxProjectsUiStrings>
-notifyProjectActivation(void Function(ProjectActivation) observer, {String? projectId, required ProjectActivationSource source, required String projectPath, required int openProjectCount}) -> void
-get projectActivationObserverProvider -> Provider<void Function(ProjectActivation)>
 get recentProjectUnavailableReporterProvider -> Provider<void Function(BuildContext, ProjectDescriptor, ProjectLoadException)?>
 reopenRecentProject({required BuildContext context, required ProjectDescriptor recent, required ProjectRegistry registry, void Function(BuildContext, ProjectDescriptor, ProjectLoadException)? report}) -> Future<bool>
-reportProjectActivation(WidgetRef ref, {String? projectId, required ProjectActivationSource source, required String projectPath, required int openProjectCount}) -> void

@@ -20,7 +20,11 @@
 library;
 
 export 'src/crux_projects_ui_strings.dart';
-export 'src/project_activation_observer.dart';
+export 'src/project_activation_observer.dart'
+    hide
+        notifyProjectActivation,
+        projectActivationObserverProvider,
+        reportProjectActivation;
 export 'src/recent_project_reopen.dart';
 export 'src/widgets/project_switcher_dialog.dart';
 export 'src/widgets/recent_projects_panel.dart';

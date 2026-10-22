@@ -62,3 +62,10 @@ because that is also the thing that can show an upgrade dialog instead.
 **Filter changes reset the keyboard cursor.** Keeping the index across a
 filter change points it at a different project than the one the user was
 looking at, and Enter would open the wrong thing.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `ProjectActivation` (in `ProjectActivationObserver`), `ProjectActivationSource` (in `ProjectActivation`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxProjectsUiBadgeBuilder`, `CruxRecentProjectUnavailableReporter`, `ProjectActivationObserver`.

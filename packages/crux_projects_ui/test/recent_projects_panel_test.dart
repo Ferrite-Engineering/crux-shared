@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:crux_projects/crux_projects.dart';
 import 'package:crux_projects_ui/crux_projects_ui.dart';
+import 'package:crux_projects_ui/src/project_activation_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;

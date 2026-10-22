@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 3 symbols.** `notifyProjectActivation`, `projectActivationObserverProvider`, `reportProjectActivation` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - `CruxProjectSwitcherDialog.show` opens through `showCruxDialog` in a
   `CruxDialog` frame. New dependency on `crux_ide_layout`.
 
