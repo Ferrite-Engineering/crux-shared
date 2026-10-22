@@ -3,7 +3,7 @@
 
 import 'dart:math';
 
-import 'package:crux_io/crux_io.dart';
+import 'package:crux_io/src/signature.dart';
 import 'package:test/test.dart';
 
 import 'signature_vectors.dart';

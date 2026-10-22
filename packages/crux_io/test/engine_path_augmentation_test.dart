@@ -3,7 +3,7 @@
 
 import 'dart:io';
 
-import 'package:crux_io/crux_io.dart';
+import 'package:crux_io/src/engine_path_augmentation.dart';
 import 'package:test/test.dart';
 
 void main() {

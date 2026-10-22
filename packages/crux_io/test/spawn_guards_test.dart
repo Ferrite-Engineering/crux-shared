@@ -17,8 +17,8 @@
 
 import 'dart:io';
 
-import 'package:crux_io/crux_io.dart';
 import 'package:crux_io/src/spawn_environment.dart';
+import 'package:crux_io/src/spawn_guards.dart';
 import 'package:test/test.dart';
 
 void main() {

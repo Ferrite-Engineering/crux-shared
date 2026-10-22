@@ -70,9 +70,14 @@
 library;
 
 export 'src/atomic_write.dart';
-export 'src/engine_path_augmentation.dart';
+export 'src/engine_path_augmentation.dart'
+    hide
+        kNixDefaultProfileBin,
+        parseWindowsPersistentPath,
+        posixEngineSearchDirs,
+        prependPathDirs;
 export 'src/path_identity.dart';
-export 'src/process_output.dart';
+export 'src/process_output.dart' hide kProcessOutputExcerptLines;
 export 'src/reveal_in_file_manager.dart';
-export 'src/signature.dart';
-export 'src/spawn_guards.dart';
+export 'src/signature.dart' hide cruxFnv1a64;
+export 'src/spawn_guards.dart' hide kDefaultWindowsPathExt;

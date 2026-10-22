@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 7 symbols.** `cruxFnv1a64`, `kDefaultWindowsPathExt`, `kNixDefaultProfileBin`, `kProcessOutputExcerptLines`, `parseWindowsPersistentPath`, `posixEngineSearchDirs`, `prependPathDirs` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **Added path containment: `containmentKey`, `isPathWithin` and
   `containingRoot`.** Whether a path resolves inside a directory, with the
   filesystem doing the reading: the deepest existing prefix is resolved as

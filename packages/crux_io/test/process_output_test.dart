@@ -5,7 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crux_io/crux_io.dart';
+import 'package:crux_io/src/process_output.dart';
 import 'package:test/test.dart';
 
 /// A scripted child: two line streams and an exit the test completes by hand,

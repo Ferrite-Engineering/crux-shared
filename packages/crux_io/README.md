@@ -187,3 +187,11 @@ The atomic writes are not web-safe and cannot be: they take a `dart:io` `File`, 
 browser has no filesystem for one to name. Libraries that write files and must also
 compile for web keep that path behind a separate entry point or a host-supplied
 implementation (see `crux_theme`'s `DirectoryThemePackStore`).
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `WriteDurability` (in `writeJsonAtomic`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `RevealCommandRunner`.
+- **The documented lenient twin of `requireSpawnExecutable`**: `resolveSpawnExecutable`.
