@@ -1,14 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:crux_command_palette/crux_command_palette.dart';
-// The scoring counters are diagnostics, deliberately not part of the public
-// barrel, so the cost guards below reach them through the src library.
-import 'package:crux_command_palette/src/command_palette.dart'
-    show
-        commandPaletteKeyHandlerDebugLabel,
-        debugCommandPaletteScoreCount,
-        debugResetCommandPaletteScoreCount;
+import 'package:crux_command_palette/src/command_palette.dart';
 import 'package:crux_shortcut_action/crux_shortcut_action.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

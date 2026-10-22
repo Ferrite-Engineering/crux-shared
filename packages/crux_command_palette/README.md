@@ -83,3 +83,9 @@ class CommandPaletteDialog extends ConsumerStatefulWidget {
 ```
 
 All four products use the generic widget verbatim — each defines its own action enum, gating logic, and L10N keys, but the widget tree is the same.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `ScrollWrapperBuilder`, `ShortcutActivatorLabel`.

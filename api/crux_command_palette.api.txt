@@ -22,4 +22,3 @@ class CommandPalette<T extends CruxAction> extends StatefulWidget
   static show<T extends CruxAction>(BuildContext context, {Map<T, ShortcutActivator?> bindings, String Function(ShortcutActivator?)? activatorLabel, Widget Function(BuildContext, ScrollController, Widget)? scrollWrapperBuilder, Widget? Function(T)? trailingBuilder, required List<T> actions, required String Function(T) labelFor, required String hintText, required String noResultsLabel, required void Function(T) onAction}) -> Future<void>
 typedef ScrollWrapperBuilder = Widget Function(BuildContext, ScrollController, Widget)
 typedef ShortcutActivatorLabel = String Function(ShortcutActivator?)
-defaultShortcutActivatorLabel(ShortcutActivator? activator) -> String

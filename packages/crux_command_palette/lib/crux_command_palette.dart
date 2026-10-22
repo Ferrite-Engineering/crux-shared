@@ -16,4 +16,5 @@ export 'src/command_palette.dart'
     hide
         commandPaletteKeyHandlerDebugLabel,
         debugCommandPaletteScoreCount,
-        debugResetCommandPaletteScoreCount;
+        debugResetCommandPaletteScoreCount,
+        defaultShortcutActivatorLabel;

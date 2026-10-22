@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 1 symbol.** `defaultShortcutActivatorLabel` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **Fix: closing the palette returns keyboard focus.** The palette opens
   through `showCruxDialog`, which now hands focus back to the node that held it
   before the palette opened (or to the navigator's scope) when the route

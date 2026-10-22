@@ -3,7 +3,7 @@
 
 import 'dart:math' as math;
 
-import 'package:crux_command_palette/crux_command_palette.dart';
+import 'package:crux_command_palette/src/command_palette.dart';
 import 'package:crux_shortcut_action/crux_shortcut_action.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
