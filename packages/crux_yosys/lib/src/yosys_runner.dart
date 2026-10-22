@@ -151,14 +151,21 @@ class YosysRunner {
   /// [environment] is the child environment for this run, laid over the
   /// constructor's (this call wins per variable); it reaches the GHDL
   /// lowering step of a VHDL request as well as Yosys.
+  ///
+  /// [keepJson] hands the document back as a file instead of reading it: see
+  /// [YosysRunSuccess.jsonPath]. The caller deletes that file.
   Future<YosysRunResult> run(
     YosysRunRequest request, {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
     Map<String, String>? environment,
+    bool keepJson = false,
   }) async {
     final jsonFile = _allocateJsonFile();
+    // Set once the run succeeds with `keepJson`: the file is then the
+    // caller's and the finally must leave it.
+    var keepJsonFile = false;
     // Holds the ghdl-emitted Verilog for a VHDL request; cleaned up in the
     // finally alongside the JSON temp file. Null for pure-Verilog requests.
     File? loweredVerilogFile;
@@ -238,14 +245,17 @@ class YosysRunner {
         effectiveRequest = linked.request;
         script = _buildScript(effectiveRequest, jsonFile.path);
       }
-      return await _runScriptAndRead(
+      final result = await _runScriptAndRead(
         script,
         jsonFile,
         timeout: timeout,
         cancelSignal: cancelSignal,
         onStderrLine: onStderrLine,
         environment: environment,
+        keepJson: keepJson,
       );
+      keepJsonFile = result is YosysRunSuccess && result.jsonPath != null;
+      return result;
     } on ProcessException catch (e) {
       return _launchFailure(e);
     } on ProcessOutputIncompleteException catch (e) {
@@ -264,7 +274,7 @@ class YosysRunner {
     } finally {
       // Best-effort cleanup; ignore if a file was never created.
       for (final file in <File?>[
-        jsonFile,
+        if (!keepJsonFile) jsonFile,
         loweredVerilogFile,
         slangCommandFile,
       ]) {
@@ -298,24 +308,32 @@ class YosysRunner {
   ///
   /// [environment] is the child environment for this run, laid over the
   /// constructor's (this call wins per variable).
+  ///
+  /// [keepJson] hands the document back as a file instead of reading it: see
+  /// [YosysRunSuccess.jsonPath]. The caller deletes that file.
   Future<YosysRunResult> runScript(
     YosysScriptRequest request, {
     Duration? timeout,
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
     Map<String, String>? environment,
+    bool keepJson = false,
   }) async {
     final jsonFile = _allocateJsonFile();
+    var keepJsonFile = false;
     try {
       final script = _buildCallerScript(request, jsonFile.path);
-      return await _runScriptAndRead(
+      final result = await _runScriptAndRead(
         script,
         jsonFile,
         timeout: timeout,
         cancelSignal: cancelSignal,
         onStderrLine: onStderrLine,
         environment: environment,
+        keepJson: keepJson,
       );
+      keepJsonFile = result is YosysRunSuccess && result.jsonPath != null;
+      return result;
     } on ProcessException catch (e) {
       return _launchFailure(e);
     } on ProcessOutputIncompleteException catch (e) {
@@ -327,7 +345,7 @@ class YosysRunner {
     } on FileSystemException catch (e) {
       return _unreadableJsonFailure(e);
     } finally {
-      if (jsonFile.existsSync()) {
+      if (!keepJsonFile && jsonFile.existsSync()) {
         try {
           jsonFile.deleteSync();
         } on FileSystemException {
@@ -468,6 +486,7 @@ class YosysRunner {
     Future<void>? cancelSignal,
     void Function(String line)? onStderrLine,
     Map<String, String>? environment,
+    bool keepJson = false,
   }) async {
     {
       final processResult = await _runProcess(
@@ -511,6 +530,26 @@ class YosysRunner {
           stderr: processResult.stderr.isEmpty
               ? 'Yosys exited cleanly but produced no JSON output'
               : processResult.stderr,
+        );
+      }
+      if (keepJson) {
+        // Not read: the caller streams it. A file with no bytes is the same
+        // "wrote nothing" the read-back path reports below.
+        if (jsonFile.lengthSync() == 0) {
+          return YosysRunFailure(
+            kind: YosysFailureKind.noOutput,
+            exitCode: processResult.exitCode,
+            stdout: processResult.stdout,
+            stderr: processResult.stderr.isEmpty
+                ? 'Yosys wrote an empty JSON file'
+                : processResult.stderr,
+          );
+        }
+        return YosysRunSuccess(
+          rawJson: '',
+          jsonPath: jsonFile.path,
+          stdout: processResult.stdout,
+          stderr: processResult.stderr,
         );
       }
       final rawJson = jsonFile.readAsStringSync();

@@ -269,10 +269,7 @@ class YosysRunRequest {
 /// without forgetting a case.
 @immutable
 sealed class YosysRunResult {
-  const YosysRunResult({
-    required this.stdout,
-    required this.stderr,
-  });
+  const YosysRunResult({required this.stdout, required this.stderr});
 
   /// Captured stdout from the yosys subprocess.
   final String stdout;
@@ -289,10 +286,23 @@ final class YosysRunSuccess extends YosysRunResult {
     required this.rawJson,
     required super.stdout,
     required super.stderr,
+    this.jsonPath,
   });
 
-  /// UTF-8 contents of the `write_json` output file.
+  /// UTF-8 contents of the `write_json` output file; empty when the run was
+  /// made with `keepJson`, which leaves the document at [jsonPath] unread.
   final String rawJson;
+
+  /// Where the `write_json` document is, set only for a run made with
+  /// `keepJson: true`; null otherwise (the runner has already read and
+  /// deleted the file).
+  ///
+  /// **The caller owns this file and must delete it** when done, on every
+  /// path out of its own handling. The runner never removes it after a
+  /// success, and the path is unique to the run, in the runner's temp
+  /// directory. A consumer streams it (a flattened SoC netlist can be
+  /// hundreds of megabytes) instead of holding the text.
+  final String? jsonPath;
 }
 
 /// Why a [YosysRunFailure] happened.
@@ -410,10 +420,7 @@ final class YosysRunTimeout extends YosysRunResult {
 @immutable
 final class YosysRunCancelled extends YosysRunResult {
   /// Creates a cancelled result.
-  const YosysRunCancelled({
-    required super.stdout,
-    required super.stderr,
-  });
+  const YosysRunCancelled({required super.stdout, required super.stderr});
 }
 
 /// A Yosys script the caller writes, for the steps the fixed elaboration
