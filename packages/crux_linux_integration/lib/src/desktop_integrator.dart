@@ -50,6 +50,7 @@ class DesktopIntegrationResult {
     this.error,
     this.desktopFilePath,
     this.mimePackagePath,
+    this.urlHandlerFilePath,
     this.iconCount = 0,
   });
 
@@ -58,10 +59,12 @@ class DesktopIntegrationResult {
     required String desktopFilePath,
     required int iconCount,
     String? mimePackagePath,
+    String? urlHandlerFilePath,
   }) => DesktopIntegrationResult._(
     DesktopIntegrationStatus.integrated,
     desktopFilePath: desktopFilePath,
     mimePackagePath: mimePackagePath,
+    urlHandlerFilePath: urlHandlerFilePath,
     iconCount: iconCount,
   );
 
@@ -76,10 +79,7 @@ class DesktopIntegrationResult {
   /// Integration was attempted but an unexpected error was caught and
   /// swallowed; [error] carries its string form for logging.
   factory DesktopIntegrationResult.failed(String error) =>
-      DesktopIntegrationResult._(
-        DesktopIntegrationStatus.failed,
-        error: error,
-      );
+      DesktopIntegrationResult._(DesktopIntegrationStatus.failed, error: error);
 
   /// Coarse outcome bucket.
   final DesktopIntegrationStatus status;
@@ -98,6 +98,11 @@ class DesktopIntegrationResult {
   /// package this app had installed before was removed because it no longer
   /// declares any.
   final String? mimePackagePath;
+
+  /// Absolute path of the hidden `<appId>-url-handler.desktop` entry, when
+  /// the app declares URL schemes. Null when it declares none — including when
+  /// an entry an earlier integration wrote was removed.
+  final String? urlHandlerFilePath;
 
   /// Number of icon sizes copied to the host, when integrated.
   final int iconCount;
@@ -194,6 +199,10 @@ class DesktopIntegrator {
         );
       }
 
+      // Built before anything is written, so an invalid scheme fails the
+      // integration without leaving a half-updated pair of entries behind.
+      final urlHandlerText = buildUrlHandlerEntry(app, appImagePath: appImage);
+
       final desktopFile = File(
         p.join(_applicationsDir.path, '${app.appId}.desktop'),
       );
@@ -202,6 +211,7 @@ class DesktopIntegrator {
         buildDesktopEntry(app, appImagePath: appImage),
       );
 
+      final urlHandler = _installUrlHandler(app, urlHandlerText);
       final mimePackage = _installMimePackage(app);
       final iconCount = _installIcons(app);
 
@@ -215,11 +225,78 @@ class DesktopIntegrator {
       return DesktopIntegrationResult.integrated(
         desktopFilePath: desktopFile.path,
         mimePackagePath: mimePackage.path,
+        urlHandlerFilePath: urlHandler,
         iconCount: iconCount,
       );
     } on Object catch (e) {
       return DesktopIntegrationResult.failed(e.toString());
     }
+  }
+
+  /// Removes everything [integrate] installed for [app]: the main entry, the
+  /// hidden URL-handler entry, the MIME package, the copied icons and the
+  /// marker, then refreshes the caches so no launcher, file manager or browser
+  /// keeps offering an application that is gone.
+  ///
+  /// It does not look at `APPIMAGE`, so it works from a native build or a
+  /// script as well as from the AppImage being removed. Returns the paths it
+  /// deleted. Never throws: a file that cannot be deleted is left in place and
+  /// omitted from the list.
+  Future<List<String>> uninstall(LinuxDesktopApp app) async {
+    final removed = <String>[];
+    var mimeChanged = false;
+    void delete(File file, {bool mime = false}) {
+      try {
+        if (!file.existsSync()) return;
+        file.deleteSync();
+        removed.add(file.path);
+        if (mime) mimeChanged = true;
+      } on Object {
+        // Best-effort: a file that cannot be deleted stays, and the rest of
+        // the removal goes ahead.
+      }
+    }
+
+    delete(File(p.join(_applicationsDir.path, '${app.appId}.desktop')));
+    delete(
+      File(p.join(_applicationsDir.path, urlHandlerDesktopFileName(app.appId))),
+    );
+    delete(
+      File(p.join(_mimeDir.path, 'packages', '${app.appId}.xml')),
+      mime: true,
+    );
+    try {
+      if (_hicolorDir.existsSync()) {
+        for (final size in _hicolorDir.listSync().whereType<Directory>()) {
+          delete(File(p.join(size.path, 'apps', '${app.appId}.png')));
+        }
+      }
+    } on Object {
+      // An unreadable icon theme leaves the icons; the entries are gone.
+    }
+    delete(_markerFile(app.appId));
+
+    await _refreshCaches(mimeChanged: mimeChanged);
+    return removed;
+  }
+
+  /// Writes [app]'s hidden URL-handler entry [text], or, when it is null
+  /// because the app declares no scheme, removes the one an earlier
+  /// integration left behind. Returns the entry's path when one was written.
+  ///
+  /// Removal matters for the same reason as the MIME package's: a stale entry
+  /// keeps routing `<scheme>://` links to an AppImage that no longer handles
+  /// them, or no longer exists.
+  String? _installUrlHandler(LinuxDesktopApp app, String? text) {
+    final file = File(
+      p.join(_applicationsDir.path, urlHandlerDesktopFileName(app.appId)),
+    );
+    if (text == null) {
+      if (file.existsSync()) file.deleteSync();
+      return null;
+    }
+    file.writeAsStringSync(text);
+    return file.path;
   }
 
   /// A stable fingerprint of the current AppImage: its path plus size and
@@ -272,9 +349,7 @@ class DesktopIntegrator {
   /// it from, so leaving it behind would keep a `.desktop` entry that no
   /// longer claims the type matched against files nothing opens.
   ({String? path, bool changed}) _installMimePackage(LinuxDesktopApp app) {
-    final file = File(
-      p.join(_mimeDir.path, 'packages', '${app.appId}.xml'),
-    );
+    final file = File(p.join(_mimeDir.path, 'packages', '${app.appId}.xml'));
     final xml = buildMimePackage(app);
     if (xml == null) {
       if (!file.existsSync()) return (path: null, changed: false);

@@ -61,3 +61,23 @@ Future<void> maybeIntegrateDesktopEntry(LinuxDesktopApp app) async {
     // Never let desktop integration abort startup.
   }
 }
+
+/// Removes everything [maybeIntegrateDesktopEntry] installed for [app] — the
+/// main entry, the hidden URL-handler entry, the MIME package, the icons and
+/// the marker — and refreshes the caches. For an "uninstall" action or a
+/// `--remove-desktop-integration` flag; it no-ops off Linux and never throws.
+///
+/// Returns the paths it deleted, empty when there was nothing to remove.
+Future<List<String>> maybeUninstallDesktopEntry(LinuxDesktopApp app) async {
+  try {
+    if (!Platform.isLinux) return const <String>[];
+    final home = Platform.environment['HOME'];
+    if (home == null || home.isEmpty) return const <String>[];
+    return await DesktopIntegrator(
+      homeDir: home,
+      env: Platform.environment,
+    ).uninstall(app);
+  } on Object {
+    return const <String>[];
+  }
+}

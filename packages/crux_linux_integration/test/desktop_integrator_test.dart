@@ -350,4 +350,242 @@ void main() {
       expect(mimeFile().existsSync(), isFalse);
     });
   });
+
+  group('URL schemes', () {
+    final schemeApp = LinuxDesktopApp(
+      appId: app.appId,
+      name: app.name,
+      comment: app.comment,
+      execName: app.execName,
+      urlSchemes: const ['simcrux'],
+    );
+
+    File handlerFile() => File(
+      p.join(
+        home,
+        '.local',
+        'share',
+        'applications',
+        '${app.appId}-url-handler.desktop',
+      ),
+    );
+
+    List<String> applicationsListing() => Directory(
+      p.join(home, '.local', 'share', 'applications'),
+    ).listSync().map((e) => p.basename(e.path)).toList()..sort();
+
+    test('writes the hidden handler entry beside the main one', () async {
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: env(),
+        cacheRunner: (_, _) async {},
+      );
+
+      final result = await integrator.integrate(schemeApp);
+
+      expect(result.status, DesktopIntegrationStatus.integrated);
+      expect(result.urlHandlerFilePath, handlerFile().path);
+      expect(
+        handlerFile().readAsStringSync(),
+        buildUrlHandlerEntry(schemeApp, appImagePath: appImage.path),
+      );
+      expect(
+        handlerFile().readAsStringSync(),
+        contains('Exec="${appImage.path}" %u\n'),
+      );
+      expect(
+        desktopFile().readAsStringSync(),
+        buildDesktopEntry(app, appImagePath: appImage.path),
+      );
+    });
+
+    // With no scheme declared the integrator writes exactly what it wrote
+    // before schemes existed: one entry, the same bytes, the same commands.
+    test('no scheme declared: output is byte-identical', () async {
+      final commands = <String>[];
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: env(),
+        cacheRunner: (executable, arguments) async =>
+            commands.add('$executable ${arguments.join(' ')}'),
+      );
+
+      final result = await integrator.integrate(app);
+
+      expect(result.urlHandlerFilePath, isNull);
+      expect(applicationsListing(), ['${app.appId}.desktop']);
+      expect(
+        desktopFile().readAsBytesSync(),
+        '[Desktop Entry]\n'
+                'Type=Application\n'
+                'Name=SimCrux Pro\n'
+                'Comment=Simulation regression runner and dashboard for HDL '
+                'testbenches\n'
+                'Exec="${appImage.path}" %F\n'
+                'Icon=com.ferriteengineering.simcrux_pro\n'
+                'StartupWMClass=com.ferriteengineering.simcrux_pro\n'
+                'Terminal=false\n'
+                'Categories=Development;Electronics;\n'
+            .codeUnits,
+      );
+      final applications = p.join(home, '.local', 'share', 'applications');
+      final hicolor = p.join(home, '.local', 'share', 'icons', 'hicolor');
+      expect(commands, [
+        'update-desktop-database $applications',
+        'gtk-update-icon-cache -f -t $hicolor',
+      ]);
+    });
+
+    test('refreshes the desktop database after writing it', () async {
+      final events = <String>[];
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: env(),
+        cacheRunner: (executable, _) async =>
+            events.add('$executable:${handlerFile().existsSync()}'),
+      );
+
+      await integrator.integrate(schemeApp);
+
+      expect(events, contains('update-desktop-database:true'));
+    });
+
+    test('removes the handler when a later release drops the scheme', () async {
+      DesktopIntegrator integrator() => DesktopIntegrator(
+        homeDir: home,
+        env: env(),
+        cacheRunner: (_, _) async {},
+      );
+
+      await integrator().integrate(schemeApp);
+      expect(handlerFile().existsSync(), isTrue);
+
+      appImage.writeAsStringSync('appimage-bytes-v2');
+      final result = await integrator().integrate(app);
+
+      expect(result.status, DesktopIntegrationStatus.integrated);
+      expect(result.urlHandlerFilePath, isNull);
+      expect(handlerFile().existsSync(), isFalse);
+      expect(desktopFile().existsSync(), isTrue);
+    });
+
+    test('a malformed scheme fails before anything is written', () async {
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: env(),
+        cacheRunner: (_, _) async {},
+      );
+
+      final result = await integrator.integrate(
+        LinuxDesktopApp(
+          appId: app.appId,
+          name: app.name,
+          comment: app.comment,
+          execName: app.execName,
+          urlSchemes: const ['Sim Crux'],
+        ),
+      );
+
+      expect(result.status, DesktopIntegrationStatus.failed);
+      expect(desktopFile().existsSync(), isFalse);
+      expect(handlerFile().existsSync(), isFalse);
+    });
+
+    test('quotes an AppImage path with reserved characters', () async {
+      final odd = File(p.join(tmp.path, r'Sim $Crux "100%".AppImage'))
+        ..writeAsStringSync('appimage-bytes');
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: {...env(), 'APPIMAGE': odd.path},
+        cacheRunner: (_, _) async {},
+      );
+
+      await integrator.integrate(schemeApp);
+
+      final quoted = quoteDesktopExecArgument(odd.path);
+      expect(quoted, contains(r'Sim \\$Crux \\"100%%\\".AppImage'));
+      expect(handlerFile().readAsStringSync(), contains('Exec=$quoted %u\n'));
+      expect(desktopFile().readAsStringSync(), contains('Exec=$quoted %F\n'));
+    });
+  });
+
+  group('uninstall', () {
+    test('removes every file integrate installed', () async {
+      final commands = <String>[];
+      final full = LinuxDesktopApp(
+        appId: app.appId,
+        name: app.name,
+        comment: app.comment,
+        execName: app.execName,
+        fileTypes: mimeApp.fileTypes,
+        urlSchemes: const ['simcrux'],
+      );
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: env(),
+        cacheRunner: (executable, _) async => commands.add(executable),
+      );
+      final integrated = await integrator.integrate(full);
+      commands.clear();
+
+      final removed = await integrator.uninstall(full);
+
+      expect(
+        removed,
+        containsAll(<String>[
+          integrated.desktopFilePath!,
+          integrated.urlHandlerFilePath!,
+          integrated.mimePackagePath!,
+          iconFile('48x48').path,
+          iconFile('256x256').path,
+        ]),
+      );
+      expect(desktopFile().existsSync(), isFalse);
+      expect(File(integrated.urlHandlerFilePath!).existsSync(), isFalse);
+      expect(mimeFile().existsSync(), isFalse);
+      expect(iconFile('48x48').existsSync(), isFalse);
+      expect(
+        File(
+          p.join(
+            home,
+            '.local',
+            'share',
+            'crux',
+            '${app.appId}.appimage-integrated',
+          ),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(commands, [
+        'update-mime-database',
+        'update-desktop-database',
+        'gtk-update-icon-cache',
+      ]);
+    });
+
+    test('with nothing installed removes nothing and does not throw', () async {
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: const {},
+        cacheRunner: (_, _) async => throw const ProcessException('x', []),
+      );
+
+      expect(await integrator.uninstall(app), isEmpty);
+    });
+
+    test('after uninstall, integrate writes everything again', () async {
+      final integrator = DesktopIntegrator(
+        homeDir: home,
+        env: env(),
+        cacheRunner: (_, _) async {},
+      );
+      await integrator.integrate(app);
+      await integrator.uninstall(app);
+
+      final result = await integrator.integrate(app);
+
+      expect(result.status, DesktopIntegrationStatus.integrated);
+      expect(desktopFile().existsSync(), isTrue);
+    });
+  });
 }

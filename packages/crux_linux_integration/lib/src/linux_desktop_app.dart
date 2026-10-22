@@ -25,6 +25,7 @@ class LinuxDesktopApp {
     this.categories = const ['Development', 'Electronics'],
     this.mimeTypes = const <String>[],
     this.fileTypes = const <LinuxMimeType>[],
+    this.urlSchemes = const <String>[],
   });
 
   /// Reverse-DNS application id, e.g. `com.ferriteengineering.simcrux_pro`.
@@ -93,6 +94,20 @@ class LinuxDesktopApp {
   /// package, and `update-desktop-database` rebuilds `mimeinfo.cache` from
   /// the entries it finds.
   final List<LinuxMimeType> fileTypes;
+
+  /// URL schemes the application handles, without `://`, e.g. `['wavecrux']`.
+  ///
+  /// Each one is claimed as `x-scheme-handler/<scheme>` by a second, hidden
+  /// entry, `<appId>-url-handler.desktop`, written beside the main one (see
+  /// `buildUrlHandlerEntry`). It is a separate entry because a link has to
+  /// arrive as one argument (`%u`), while the main entry passes double-clicked
+  /// files as paths (`%F`). Empty, the default, writes no handler entry and
+  /// removes one an earlier integration left behind.
+  ///
+  /// A scheme is lowercase ASCII as RFC 3986 spells it: a letter, then
+  /// letters, digits, `+`, `-` or `.`. Anything else is rejected when the
+  /// entry is built.
+  final List<String> urlSchemes;
 
   /// Every type the entry claims: [fileTypes] when the host has moved to it,
   /// and the superseded [mimeTypes] otherwise.

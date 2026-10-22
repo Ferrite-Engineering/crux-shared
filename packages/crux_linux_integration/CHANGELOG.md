@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- **An AppImage can register URL schemes.** `LinuxDesktopApp.urlSchemes`
+  (for example `['wavecrux']`) makes the integrator write a hidden
+  `<app id>-url-handler.desktop` beside the main entry, built by
+  `buildUrlHandlerEntry`: `Exec="<AppImage>" %u`, `NoDisplay=true`,
+  `MimeType=x-scheme-handler/<scheme>;` for each scheme, and no
+  `StartupWMClass`, so the dock keeps matching the window to the main entry.
+  It is a separate entry because a link has to arrive as one argument (`%u`)
+  while the main entry passes files as paths (`%F`). The desktop database is
+  refreshed as before; a release that no longer declares a scheme removes the
+  entry; a malformed scheme fails integration before anything is written.
+  With no schemes declared the integrator's output is byte-identical.
+- **`DesktopIntegrator.uninstall` and `maybeUninstallDesktopEntry`** remove
+  what integration installed: both entries, the MIME package, the icons and
+  the marker, then refresh the caches. Never throws; returns the paths it
+  deleted.
+- **The `Exec` path is quoted by the Desktop Entry Specification's rules**
+  (`quoteDesktopExecArgument`): `"`, `` ` ``, `$` and `\` are escaped inside
+  the quotes, `%` is doubled, and the general string escapes are applied on
+  top, so an AppImage under a path holding any of them is still launched as
+  one argument. A path without those characters is written exactly as before.
 - **A Linux file manager can offer the app for the files it opens.** The
   generated `.desktop` entry declared no `MimeType`, so "Open With" never
   listed it and a double-clicked project, waveform or source file went to some

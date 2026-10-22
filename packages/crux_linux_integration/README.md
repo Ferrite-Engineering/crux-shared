@@ -56,17 +56,59 @@ idempotently. That is all this package does.
 3. Write `<data home>/applications/<appId>.desktop` with
    `Exec="<appImagePath>" %F`, `Icon=<appId>`, `StartupWMClass=<appId>` and
    `MimeType=` (every type the app claims, ours and the system's).
-4. Write `<data home>/mime/packages/<appId>.xml` declaring the app's **own**
+4. When the app declares `urlSchemes`, write the hidden
+   `<data home>/applications/<appId>-url-handler.desktop` (see below), or
+   delete the one an earlier integration left when it declares none.
+5. Write `<data home>/mime/packages/<appId>.xml` declaring the app's **own**
    types, or delete the one it left behind when it declares none.
-5. Copy each `<size>/apps/<appId>.png` from the mounted AppDir's hicolor theme
+6. Copy each `<size>/apps/<appId>.png` from the mounted AppDir's hicolor theme
    (`$APPDIR/usr/share/icons/hicolor`) to the matching host path.
-6. Best-effort `update-mime-database` (only when the package changed), then
+7. Best-effort `update-mime-database` (only when the package changed), then
    `update-desktop-database` + `gtk-update-icon-cache` — each may be absent or
    fail, and every error is swallowed.
-7. Write the marker.
+8. Write the marker.
 
 The data home is `$XDG_DATA_HOME`, or `~/.local/share` when the session does
-not set it.
+not set it. `DesktopIntegrator.uninstall` (or `maybeUninstallDesktopEntry`)
+removes everything in steps 3 to 8 and refreshes the caches.
+
+## URL schemes
+
+```dart
+LinuxDesktopApp(
+  appId: 'com.example.viewer',
+  name: 'Viewer',
+  comment: 'Example viewer',
+  execName: 'viewer',
+  urlSchemes: const ['viewer'],
+);
+```
+
+writes, beside `com.example.viewer.desktop`:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=Viewer
+Exec="/home/me/Apps/Viewer.AppImage" %u
+Icon=com.example.viewer
+Terminal=false
+NoDisplay=true
+MimeType=x-scheme-handler/viewer;
+```
+
+It is a second entry because a link has to arrive as one argument (`%u`),
+while the main entry passes double-clicked files as paths (`%F`); `%U` on the
+main entry would deliver every file as a `file://` URI. It carries no
+`StartupWMClass`, so the dock keeps matching the window to the main entry. A
+scheme is lowercase RFC 3986 syntax; anything else fails integration before a
+file is written. With no scheme declared, nothing about integration changes.
+
+Every `Exec` path goes through `quoteDesktopExecArgument`, which applies the
+specification's two layers: inside the double quotes `"`, `` ` ``, `$` and `\`
+are escaped with a backslash and `%` is doubled, and then the general string
+escapes double every backslash. A literal `$` in the path is therefore written
+`\\$`, and a literal backslash as four.
 
 ## Why file associations take two halves
 

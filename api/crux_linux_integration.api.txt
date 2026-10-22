@@ -10,7 +10,7 @@
 typedef DesktopCacheRunner = Future<void> Function(String, List<String>)
 class DesktopIntegrationResult
   factory DesktopIntegrationResult.failed(String error)
-  factory DesktopIntegrationResult.integrated({String? mimePackagePath, required String desktopFilePath, required int iconCount})
+  factory DesktopIntegrationResult.integrated({String? mimePackagePath, String? urlHandlerFilePath, required String desktopFilePath, required int iconCount})
   factory DesktopIntegrationResult.skipped(DesktopIntegrationSkipReason reason)
   final desktopFilePath: String?
   final error: String?
@@ -18,6 +18,7 @@ class DesktopIntegrationResult
   final mimePackagePath: String?
   final skipReason: DesktopIntegrationSkipReason?
   final status: DesktopIntegrationStatus
+  final urlHandlerFilePath: String?
 enum DesktopIntegrationSkipReason
   static const alreadyCurrent: DesktopIntegrationSkipReason
   static const notAppImage: DesktopIntegrationSkipReason
@@ -31,8 +32,9 @@ class DesktopIntegrator
   final env: Map<String, String>
   final homeDir: String
   integrate(LinuxDesktopApp app) -> Future<DesktopIntegrationResult>
+  uninstall(LinuxDesktopApp app) -> Future<List<String>>
 class LinuxDesktopApp
-  const LinuxDesktopApp({List<LinuxMimeType> fileTypes, List<String> categories, List<String> mimeTypes, required String appId, required String comment, required String execName, required String name})
+  const LinuxDesktopApp({List<LinuxMimeType> fileTypes, List<String> categories, List<String> mimeTypes, List<String> urlSchemes, required String appId, required String comment, required String execName, required String name})
   final appId: String
   final categories: List<String>
   final comment: String
@@ -40,6 +42,7 @@ class LinuxDesktopApp
   final fileTypes: List<LinuxMimeType>
   final mimeTypes: List<String>
   final name: String
+  final urlSchemes: List<String>
   get claimedTypeNames -> List<String>
 class LinuxMimeCoverage
   const LinuxMimeCoverage({required List<String> problems, required Map<String, String> deliberatelyUnmapped})
@@ -73,7 +76,11 @@ class LinuxMimeType
   get isNamed -> bool
 buildDesktopEntry(LinuxDesktopApp app, {required String appImagePath}) -> String
 buildMimePackage(LinuxDesktopApp app) -> String?
+buildUrlHandlerEntry(LinuxDesktopApp app, {required String appImagePath}) -> String?
 checkLinuxMimeCoverage(LinuxDesktopApp app, {Map<String, List<String>> registeredExtensionsOf, Set<String> additionalSystemTypes, required Set<String> registeredExtensions}) -> LinuxMimeCoverage
 get kLinuxDefaultGlobWeight -> int
 get kLinuxSystemMimeTypes -> Set<String>
 maybeIntegrateDesktopEntry(LinuxDesktopApp app) -> Future<void>
+maybeUninstallDesktopEntry(LinuxDesktopApp app) -> Future<List<String>>
+quoteDesktopExecArgument(String argument) -> String
+urlHandlerDesktopFileName(String appId) -> String
