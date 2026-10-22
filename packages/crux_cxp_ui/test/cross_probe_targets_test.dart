@@ -3,6 +3,8 @@
 
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:crux_cxp_ui/crux_cxp_ui.dart';
+import 'package:crux_cxp_ui/src/runtime/cxp_product_binding.dart';
+import 'package:crux_cxp_ui/src/send/cross_probe_targets.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 10 symbols.** `DemoCrossProbePanelController`, `crossProbeTargetsFor`, `cruxCxpPeersStreamProvider`, `cruxCxpSettingsServiceProvider`, `kCrossProbeFallbackKinds`, `kCrossProbeSuiteOrder`, `kCrossProbeTargetKinds`, `kCruxCxpAckTimeout`, `kCruxCxpEventLogCapacity`, `kCxpAcceptsCapabilityPrefix` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **CXP 1.3 rev. 9 vocabulary in the send table.** NetCrux's row of
   `kCrossProbeTargetKinds` gains `cell` after `instance`, then `timing_path`
   and `property` after `source`, never first: a directed cross-probe carries

@@ -37,12 +37,22 @@ export 'src/cross_probe_panel.dart';
 export 'src/cross_probe_panel_controller.dart';
 export 'src/cxp_settings_controls.dart';
 export 'src/cxp_strings.dart';
-export 'src/demo_cross_probe_panel_controller.dart';
+export 'src/demo_cross_probe_panel_controller.dart'
+    hide DemoCrossProbePanelController;
 export 'src/runtime/cxp_bound_widgets.dart';
-export 'src/runtime/cxp_product_binding.dart';
-export 'src/runtime/cxp_providers.dart';
-export 'src/runtime/cxp_runtime.dart';
+export 'src/runtime/cxp_product_binding.dart' hide kCxpAcceptsCapabilityPrefix;
+export 'src/runtime/cxp_providers.dart'
+    hide
+        cruxCxpPeersStreamProvider,
+        cruxCxpSettingsServiceProvider,
+        kCruxCxpEventLogCapacity;
+export 'src/runtime/cxp_runtime.dart' hide kCruxCxpAckTimeout;
 export 'src/runtime/cxp_settings.dart';
 export 'src/send/cross_probe_dispatcher.dart';
 export 'src/send/cross_probe_surfaces.dart';
-export 'src/send/cross_probe_targets.dart';
+export 'src/send/cross_probe_targets.dart'
+    hide
+        crossProbeTargetsFor,
+        kCrossProbeFallbackKinds,
+        kCrossProbeSuiteOrder,
+        kCrossProbeTargetKinds;

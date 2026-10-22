@@ -178,3 +178,12 @@ All words come from `CruxCxpStrings` in the suite's locales.
 binds the panel itself. The four products move to the bound
 `CruxCrossProbePanel` and `CruxCxpSettingsSection` and delete their own
 lifecycle providers, panel controllers and cross-probe strings.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CrossProbeGate` (in `crossProbeGateProvider`), `CrossProbePanelStrings` (in `CrossProbePanel`), `CruxCxpSettingsCodec` (in `CruxCxpProductBinding`), `CruxCxpSettingsStrings` (in `CruxCxpSettingsControls`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CrossProbeSendBadgeBuilder`, `CruxCxpHighlightDelivery`.
+- **Override point: a product's say over whether a cross-probe may leave**: `crossProbeGateProvider`.
+- **Override point: a product rewords a shared line that is its own**: `cruxCxpStringsCustomizerProvider`.

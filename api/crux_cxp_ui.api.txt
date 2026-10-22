@@ -298,37 +298,12 @@ class CruxCxpStrings
   get enableHelp -> String
   get panel -> CrossProbePanelStrings
   get settings -> CruxCxpSettingsStrings
-class DemoCrossProbePanelController implements CrossProbePanelController
-  DemoCrossProbePanelController()
-  factory DemoCrossProbePanelController.populated()
-  addEvent(CrossProbeEvent event) -> void
-  addPeer(PeerIdentity peer) -> void
-  addUnreachable(CxpDialFailure failure) -> void
-  dispose() -> void
-  final events: ValueNotifier<List<CrossProbeEvent>>
-  final peers: ValueNotifier<List<PeerIdentity>>
-  final sendFailure: ValueNotifier<CrossProbeSendFailure?>
-  final serverRunning: ValueNotifier<bool>
-  final unreachable: ValueNotifier<List<CxpDialFailure>>
-  get running -> bool
-  onClearEvents() -> void
-  onClose() -> void
-  onOpenPanel() -> void
-  onSendTo(PeerIdentity peer) -> void
-  pushSendFailure(CrossProbeSendFailure failure) -> void
-  set running(bool value)
-  var lastSentTo: PeerIdentity?
-  var onClearEventsCount: int
-  var onCloseCount: int
-  var onOpenPanelCount: int
-  var onSendToCount: int
 broadcastCruxCxpSelection(T Function<T>(ProviderListenable<T>) read, NotifySelection message) -> void
 get crossProbeDispatcherProvider -> Provider<CrossProbeDispatcher>
 crossProbeElementFor(CrossProbeSelection selection, PeerIdentity target) -> ElementId?
 get crossProbeGateProvider -> Provider<CrossProbeGate?>
 crossProbeMenuEntry(BuildContext context, WidgetRef ref, {IconData icon, required CrossProbeSelection? Function() selection}) -> CruxMenuEntry
 get crossProbeSendObserverProvider -> Provider<void Function(({ElementId? element, CrossProbeOutcome outcome, PeerIdentity peer}))?>
-crossProbeTargetsFor(List<PeerIdentity> peers) -> List<CrossProbeTarget>
 get crossProbeTargetsProvider -> Provider<List<CrossProbeTarget>>
 get cruxCxpAttentionRequesterProvider -> Provider<void Function()?>
 get cruxCxpConnectedPeerCountProvider -> Provider<int>
@@ -339,7 +314,6 @@ get cruxCxpLaunchSettingsProvider -> Provider<CruxCxpSettings?>
 get cruxCxpManifestDirectoryProvider -> FutureProvider<String>
 get cruxCxpPeerFilterProvider -> Provider<bool Function(PeerIdentity)>
 get cruxCxpPeersProvider -> Provider<List<PeerIdentity>>
-get cruxCxpPeersStreamProvider -> StreamProvider<List<PeerIdentity>>
 get cruxCxpProductBindingProvider -> Provider<CruxCxpProductBinding>
 get cruxCxpProductVersionProvider -> FutureProvider<String>
 get cruxCxpRequestHandlerProvider -> Provider<CruxCxpRequestHandler>
@@ -347,17 +321,10 @@ get cruxCxpRuntimeProvider -> FutureProvider<CruxCxpRuntime?>
 get cruxCxpServerPolicyProvider -> Provider<bool Function({required bool userEnabled})>
 get cruxCxpServerStatusProvider -> Provider<({int? port, String? problem, bool running})>
 get cruxCxpSettingsProvider -> NotifierProvider<CruxCxpSettingsNotifier, CruxCxpSettings>
-get cruxCxpSettingsServiceProvider -> Provider<SettingsService<CruxCxpSettings>>
 get cruxCxpStringsCustomizerProvider -> Provider<CruxCxpStrings Function(CruxCxpStrings)>
 cruxCxpStringsOf(BuildContext context, T Function<T>(ProviderListenable<T>) read) -> CruxCxpStrings
 get cruxCxpTransportAvailableProvider -> Provider<bool>
 get cruxCxpUnreachablePeersProvider -> StreamProvider<List<CxpDialFailure>>
-get kCrossProbeFallbackKinds -> List<ElementKind>
-get kCrossProbeSuiteOrder -> List<String>
-get kCrossProbeTargetKinds -> Map<String, List<ElementKind>>
-get kCruxCxpAckTimeout -> Duration
-get kCruxCxpEventLogCapacity -> int
-get kCxpAcceptsCapabilityPrefix -> String
 loadCruxCxpLaunchSettings(CruxCxpProductBinding binding) -> Future<CruxCxpSettings>
 reportCrossProbeOutcome(BuildContext context, CrossProbeOutcome outcome, CruxCxpStrings strings) -> void
 runCrossProbeSelection(BuildContext context, WidgetRef ref, {Offset? anchor, required CrossProbeSelection? selection}) -> Future<void>
