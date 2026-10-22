@@ -292,12 +292,12 @@ void main() {
       final container = ProviderScope.containerOf(
         tester.element(_disclosure),
       );
-      expect(container.read(telemetryEnabledProvider), isFalse);
+      expect(container.read(telemetryGateProvider), isNot(TelemetryGate.open));
 
       await tester.tap(_continue);
       await tester.pumpAndSettle();
 
-      expect(container.read(telemetryEnabledProvider), isTrue);
+      expect(container.read(telemetryGateProvider), TelemetryGate.open);
     });
 
     testWidgets('the documentation link opens the suite telemetry page', (

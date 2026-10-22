@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **`telemetryEnabledProvider` is deprecated.** Read `telemetryGateProvider`
+  and compare it to `TelemetryGate.open`; the gate also says `pending`, which
+  the bool folds into `false`. Nothing in the pipeline watched it. The
+  package's own tests read the gate now. Removal follows in a later, separate
+  commit, after 1.2 and once no product references it.
+
 - The Privacy toggle and the first-launch disclosure's toggle are
   `CruxFormRow.toggle` rows (a `CruxSwitch` on desktop), under the same keys;
   the installation-id copy confirms with the suite toast. New dependency on

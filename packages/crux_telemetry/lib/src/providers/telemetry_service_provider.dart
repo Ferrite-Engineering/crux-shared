@@ -23,15 +23,26 @@ import 'package:crux_telemetry/src/telemetry_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Whether the gate is [TelemetryGate.open]: a yes/no view of
-/// [telemetryGateProvider], for tests and diagnostics.
+/// [telemetryGateProvider].
 ///
-/// **This is not the gate, and nothing in the pipeline watches it.**
+/// **Deprecated: read [telemetryGateProvider].** Nothing in the pipeline
+/// watches this, and it folds [TelemetryGate.pending] into `false`, which is
+/// right for "may it transmit now" and wrong for "will an event recorded now
+/// be kept". [telemetryGateProvider] answers both, and its documentation holds
+/// the precedence. Watching
+/// `telemetryGateProvider.select((g) => g == TelemetryGate.open)` gives a
+/// caller that wants the bool exactly this provider's value.
+///
 /// [telemetryServiceProvider] watches [telemetryGateProvider], and that is the
 /// answer that decides whether anything is collected or transmitted. This
-/// cannot disagree with it — it is the gate compared to `open` — but it folds
-/// [TelemetryGate.pending] into `false`, which is right for "may it transmit
-/// now" and wrong for "will an event recorded now be kept". Ask
-/// [telemetryGateProvider] for the second, and read it for the precedence.
+/// cannot disagree with it — it is the gate compared to `open`.
+// Package versions here are informational and the products pin a commit;
+// the deprecation policy keeps this until every product has migrated.
+// ignore: remove_deprecations_in_breaking_versions
+@Deprecated(
+  'Read telemetryGateProvider and compare it to TelemetryGate.open. '
+  'Removed after 1.2.',
+)
 final Provider<bool> telemetryEnabledProvider = Provider<bool>(
   (ref) => ref.watch(telemetryGateProvider) == TelemetryGate.open,
   name: 'telemetryEnabledProvider',

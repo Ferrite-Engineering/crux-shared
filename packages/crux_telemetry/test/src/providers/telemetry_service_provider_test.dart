@@ -219,7 +219,7 @@ void main() {
 
           expect(container.read(telemetryServiceProvider), resolves.matcher);
           expect(
-            container.read(telemetryEnabledProvider),
+            container.read(telemetryGateProvider) == TelemetryGate.open,
             resolves == _Resolves.live,
             reason: 'only the live service transmits; waiting is not consent',
           );
@@ -301,8 +301,8 @@ void main() {
         );
 
         expect(
-          cold.container.read(telemetryEnabledProvider),
-          isFalse,
+          cold.container.read(telemetryGateProvider),
+          isNot(TelemetryGate.open),
           reason:
               'a refusal that has not finished loading is still a refusal — '
               'the gate may not read the placeholder as an open question',
@@ -322,8 +322,8 @@ void main() {
         await cold.container.read(telemetryConsentReadyProvider.future);
 
         expect(
-          cold.container.read(telemetryEnabledProvider),
-          isFalse,
+          cold.container.read(telemetryGateProvider),
+          isNot(TelemetryGate.open),
           reason: 'and it stays a refusal once the value has actually landed',
         );
         expect(
@@ -352,15 +352,15 @@ void main() {
         final cold = coldStart(beta: true, dev: true);
 
         expect(
-          cold.container.read(telemetryEnabledProvider),
-          isFalse,
+          cold.container.read(telemetryGateProvider),
+          isNot(TelemetryGate.open),
           reason: 'nothing is known about this installation yet',
         );
 
         cold.release();
         await cold.container.read(telemetryConsentReadyProvider.future);
 
-        expect(cold.container.read(telemetryEnabledProvider), isTrue);
+        expect(cold.container.read(telemetryGateProvider), TelemetryGate.open);
         expect(
           cold.container.read(telemetryServiceProvider),
           isA<LiveTelemetryService>(),
@@ -628,12 +628,15 @@ void main() {
         stored: TelemetryConsentState.enabled,
       );
 
-      expect(cold.container.read(telemetryEnabledProvider), isFalse);
+      expect(
+        cold.container.read(telemetryGateProvider),
+        isNot(TelemetryGate.open),
+      );
 
       cold.release();
       await cold.container.read(telemetryConsentReadyProvider.future);
 
-      expect(cold.container.read(telemetryEnabledProvider), isTrue);
+      expect(cold.container.read(telemetryGateProvider), TelemetryGate.open);
       expect(
         cold.container.read(telemetryServiceProvider),
         isA<LiveTelemetryService>(),
@@ -656,7 +659,10 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       expect(service, isA<PendingTelemetryService>());
-      expect(cold.container.read(telemetryEnabledProvider), isFalse);
+      expect(
+        cold.container.read(telemetryGateProvider),
+        isNot(TelemetryGate.open),
+      );
       expect(cold.requests, isEmpty);
     });
 
@@ -674,7 +680,7 @@ void main() {
         );
 
         expect(
-          cold.container.read(telemetryEnabledProvider),
+          cold.container.read(telemetryGateProvider) == TelemetryGate.open,
           policy == TelemetryPolicy.allow,
         );
       });
@@ -746,7 +752,7 @@ void main() {
         dev: false,
         consent: TelemetryConsentState.enabled,
       );
-      expect(container.read(telemetryEnabledProvider), isFalse);
+      expect(container.read(telemetryGateProvider), isNot(TelemetryGate.open));
     });
 
     test('an Enterprise `allow` policy does not override the beta gate', () {
@@ -761,7 +767,7 @@ void main() {
         consent: TelemetryConsentState.enabled,
         policy: TelemetryPolicy.allow,
       );
-      expect(container.read(telemetryEnabledProvider), isFalse);
+      expect(container.read(telemetryGateProvider), isNot(TelemetryGate.open));
       expect(
         container.read(telemetryServiceProvider),
         isA<NoopTelemetryService>(),
@@ -806,7 +812,7 @@ void main() {
       // transmits exactly as much as the no-op does.
       final unanswered = await shipping(TelemetryConsentState.unset);
       expect(unanswered.read(telemetryBetaPeriodProvider), isFalse);
-      expect(unanswered.read(telemetryEnabledProvider), isFalse);
+      expect(unanswered.read(telemetryGateProvider), isNot(TelemetryGate.open));
       expect(
         unanswered.read(telemetryServiceProvider),
         isA<PendingTelemetryService>(),
@@ -814,7 +820,7 @@ void main() {
 
       // A user who opted in is counted, with no define and no dev flag.
       final consented = await shipping(TelemetryConsentState.enabled);
-      expect(consented.read(telemetryEnabledProvider), isTrue);
+      expect(consented.read(telemetryGateProvider), TelemetryGate.open);
       expect(
         consented.read(telemetryServiceProvider),
         isA<LiveTelemetryService>(),
@@ -852,7 +858,10 @@ void main() {
         container.read(telemetryConsentStoreProvider.notifier).state =
             TelemetryConsentState.enabled;
 
-        expect(container.read(telemetryEnabledProvider), isFalse);
+        expect(
+          container.read(telemetryGateProvider),
+          isNot(TelemetryGate.open),
+        );
         expect(
           container.read(telemetryServiceProvider),
           isA<NoopTelemetryService>(),
@@ -912,7 +921,7 @@ void main() {
         consent: TelemetryConsentState.disabled,
         policy: TelemetryPolicy.allow,
       );
-      expect(container.read(telemetryEnabledProvider), isTrue);
+      expect(container.read(telemetryGateProvider), TelemetryGate.open);
       expect(
         container.read(telemetryServiceProvider),
         isA<LiveTelemetryService>(),
@@ -1193,6 +1202,26 @@ void main() {
         contains(container.read(telemetryFormFactorProvider)),
       );
     });
+  });
+
+  group('the deprecated yes/no view of the gate', () {
+    // The provider stays until its removal commit; this pins that it is still
+    // exactly "the gate is open" for a consumer that has not migrated.
+    for (final gate in TelemetryGate.values) {
+      test('${gate.name} reads as ${gate == TelemetryGate.open}', () {
+        final container = ProviderContainer(
+          overrides: [telemetryGateProvider.overrideWithValue(gate)],
+        );
+        addTearDown(container.dispose);
+
+        expect(
+          // The one deliberate reader of the deprecated provider.
+          // ignore: deprecated_member_use_from_same_package
+          container.read(telemetryEnabledProvider),
+          gate == TelemetryGate.open,
+        );
+      });
+    }
   });
 
   group('the seam itself', () {
