@@ -59,7 +59,8 @@ export 'src/providers/telemetry_seam_providers.dart'
         telemetrySessionStartProvider;
 export 'src/providers/telemetry_service_provider.dart'
     hide resolveTelemetryEnvelope, telemetryUncaughtErrorCounterProvider;
-export 'src/services/live_telemetry_service.dart';
+export 'src/services/live_telemetry_service.dart'
+    hide observeTelemetryLifecycle;
 export 'src/services/noop_telemetry_service.dart';
 export 'src/services/pending_telemetry_service.dart';
 export 'src/services/telemetry_batch.dart'
@@ -74,7 +75,7 @@ export 'src/services/telemetry_event_queue.dart'
 export 'src/services/telemetry_uncaught_error_counter.dart'
     hide kTelemetryUncaughtErrorSessionCap;
 export 'src/services/telemetry_unclean_shutdown_detector.dart'
-    hide kCruxUncleanShutdownEventEnabled;
+    hide debugCruxExitOverride, kCruxUncleanShutdownEventEnabled;
 export 'src/storage/telemetry_storage.dart';
 export 'src/telemetry_endpoint.dart'
     hide

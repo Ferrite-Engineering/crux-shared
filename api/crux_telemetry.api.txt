@@ -220,8 +220,6 @@ coalesceTelemetryEvents(Iterable<TelemetryEvent> events) -> List<TelemetryBatchE
 cruxExit([int code]) -> Never
 get cruxTelemetryConfigProvider -> Provider<CruxTelemetryConfig>
 get cruxTelemetryStringsProvider -> Provider<CruxTelemetryStrings>
-get debugCruxExitOverride -> Never Function(int)?
-set debugCruxExitOverride=(Never Function(int)? value)
 get kTelemetryConsentKey -> String
 get kTelemetryConsentMinTarget -> double
 get kTelemetryDev -> bool
@@ -235,7 +233,6 @@ get kTelemetryUncaughtErrorKinds -> List<String>
 get kTelemetryUncaughtErrorLibraries -> List<String>
 get kTelemetryUncaughtErrorSources -> List<String>
 get kTelemetryUncleanShutdownEvent -> String
-observeTelemetryLifecycle(void Function() onBackgrounded) -> void Function()
 resetTelemetryConsent(TelemetryStorage storage) -> Future<void>
 get telemetryAppVersionProvider -> FutureProvider<String?>
 get telemetryBetaPeriodProvider -> Provider<bool>
