@@ -46,22 +46,22 @@ Components and versions:
   - code_assets                                2.1.0
   - collection                                 1.19.1
   - convert                                    3.1.2
-  - coverage                                   1.15.1
+  - coverage                                   1.16.0
   - crypto                                     3.0.7
   - ffi                                        2.2.0
   - file                                       7.0.1
   - fixnum                                     1.1.1
-  - frontend_server_client                     4.0.0
+  - frontend_server_client                     4.2.0
   - glob                                       2.2.0
   - graphs                                     2.3.2
   - hooks                                      2.2.0
   - http                                       1.6.0
-  - http_multi_server                          3.2.2
+  - http_multi_server                          3.2.3
   - http_parser                                4.1.2
   - intl                                       0.20.3
   - io                                         1.1.0
-  - jni                                        1.0.3
-  - jni_flutter                                1.0.3
+  - jni                                        1.1.0
+  - jni_flutter                                1.0.4+1
   - jni_util                                   1.0.0
   - json_annotation                            4.12.0
   - leak_tracker                               11.0.2
@@ -72,18 +72,18 @@ Components and versions:
   - meta                                       1.19.0
   - mime                                       2.1.0
   - native_toolchain_c                         0.19.5
-  - objective_c                                9.6.0
+  - objective_c                                9.6.2
   - package_config                             2.2.0
   - path                                       1.9.1
   - platform                                   3.1.6
   - pool                                       1.5.3
   - process                                    5.0.6
   - pub_semver                                 2.2.1
-  - pubspec_parse                              1.6.0
+  - pubspec_parse                              1.7.0
   - record_use                                 1.1.1
-  - shelf                                      1.4.2
+  - shelf                                      1.4.3
   - shelf_packages_handler                     3.0.2
-  - shelf_static                               1.1.3
+  - shelf_static                               1.2.0
   - shelf_web_socket                           3.0.0
   - source_map_stack_trace                     2.1.2
   - source_maps                                0.10.14
@@ -96,7 +96,7 @@ Components and versions:
   - test_api                                   0.7.12
   - test_core                                  0.6.18
   - typed_data                                 1.4.0
-  - vm_service                                 15.3.0
+  - vm_service                                 15.4.0
   - watcher                                    1.2.1
   - web                                        1.1.1
   - web_socket                                 1.0.1
@@ -146,14 +146,14 @@ Components and versions:
   - path_provider_platform_interface           2.1.3
   - path_provider_windows                      2.3.0
   - plugin_platform_interface                  2.1.8
-  - shared_preferences                         2.5.5
-  - shared_preferences_android                 2.4.28
-  - shared_preferences_foundation              2.5.7
+  - shared_preferences                         2.5.6
+  - shared_preferences_android                 2.5.1
+  - shared_preferences_foundation              2.6.0
   - shared_preferences_linux                   2.4.1
   - shared_preferences_platform_interface      2.4.2
   - shared_preferences_web                     2.4.3
   - shared_preferences_windows                 2.4.1
-  - url_launcher                               6.3.2
+  - url_launcher                               6.3.3
   - url_launcher_android                       6.3.33
   - url_launcher_ios                           6.4.2
   - url_launcher_linux                         3.2.3
@@ -245,8 +245,8 @@ License text (as distributed with these packages):
 
 Components and versions:
   - mustache_template                          2.0.6
-  - sqflite_common                             2.5.13
-  - sqflite_common_ffi                         2.4.3
+  - sqflite_common                             2.5.14
+  - sqflite_common_ffi                         2.4.4
 
 License text (as distributed with these packages):
 
@@ -266,7 +266,7 @@ License text (as distributed with these packages):
 Components and versions:
   - cli_launcher                               0.3.4
   - flutter_riverpod                           3.4.3
-  - panes                                      1.3.0
+  - panes                                      1.4.0
   - petitparser                                7.1.0
   - prompts                                    2.0.0
   - pub_updater                                0.6.0
@@ -276,9 +276,9 @@ Components and versions:
   - screen_retriever_macos                     0.2.2
   - screen_retriever_platform_interface        0.2.2
   - screen_retriever_windows                   0.2.2
-  - sqlite3                                    3.7.0
+  - sqlite3                                    3.7.1
   - state_notifier                             1.0.0
-  - synchronized                               3.4.2
+  - synchronized                               3.5.0
   - uuid                                       4.6.0
   - very_good_analysis                         11.0.0
   - window_manager                             0.5.2
