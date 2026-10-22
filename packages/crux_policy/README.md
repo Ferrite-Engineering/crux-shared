@@ -224,3 +224,9 @@ key, so "no key" is never one ticket for four causes.
 - **No Settings UI.** "Show this value as locked, and name its source" lands per
   product; if it ever wants sharing it becomes `crux_policy_ui`, following
   `crux_settings` / `crux_settings_ui`.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `PolicyDiagnostic` (in `PolicyDocument`), `PolicyLicense` (in `DayOnePolicy`), `PolicyPublicKey` (in `PolicyLoader`), `PolicyUpdateChannel` (in `DayOnePolicy`).

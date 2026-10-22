@@ -32,5 +32,5 @@ export 'src/day_one_policy.dart';
 export 'src/policy_document.dart';
 export 'src/policy_loader.dart';
 export 'src/policy_resolver.dart';
-export 'src/policy_value.dart';
-export 'src/product_keys.dart';
+export 'src/policy_value.dart' hide PolicyValue;
+export 'src/product_keys.dart' hide kKnownProducts;

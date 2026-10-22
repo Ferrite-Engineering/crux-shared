@@ -108,19 +108,11 @@ enum PolicyUpdateChannel
   static const beta: PolicyUpdateChannel
   static const pinned: PolicyUpdateChannel
   static const stable: PolicyUpdateChannel
-class PolicyValue<T extends Object>
-  const PolicyValue(T value, {bool locked})
-  ==(Object other) -> bool
-  final locked: bool
-  final value: T
-  get hashCode -> int
-  toString() -> String
 class ResolvedSetting<T extends Object>
   const ResolvedSetting({required PolicySource source, required T value})
   final source: PolicySource
   final value: T
   get locked -> bool
-get kKnownProducts -> Set<String>
 get kPolicyPublicKeyFileName -> String
 get kProductKeys -> Map<String, Map<String, bool>>
 get kSuiteKeys -> Map<String, bool>
