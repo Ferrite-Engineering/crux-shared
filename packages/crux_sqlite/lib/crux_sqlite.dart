@@ -71,11 +71,26 @@
 library;
 
 export 'src/crux_db_recovery.dart';
-export 'src/crux_foreign_database.dart';
+export 'src/crux_foreign_database.dart' hide foreignSqliteUri;
 export 'src/crux_migration.dart';
-export 'src/crux_open_policy.dart';
-export 'src/crux_pre_upgrade_backup.dart';
-export 'src/crux_schema_meta.dart';
+export 'src/crux_open_policy.dart' hide kCruxSqliteBusyTimeout;
+export 'src/crux_pre_upgrade_backup.dart'
+    hide
+        kCruxBackupFreeSpaceHeadroom,
+        kCruxBackupSizeGuardBytes,
+        kCruxBackupsKept;
+export 'src/crux_schema_meta.dart'
+    hide
+        cruxSchemaMetaTablesExist,
+        kCruxSchemaMetaDdl,
+        kCruxSchemaMetaMigrationDescription,
+        kCruxSchemaMetaTable,
+        kCruxSchemaMigrationsDdl,
+        kCruxSchemaMigrationsTable,
+        readCruxSchemaMetaQuietly,
+        readCruxUserVersion,
+        writeCruxSchemaMetaForOpen,
+        writeCruxSchemaMetaForUpgrade;
 export 'src/crux_sqlite_exceptions.dart';
-export 'src/free_disk_space.dart';
+export 'src/free_disk_space.dart' hide cruxFreeDiskBytes;
 export 'src/sqlite_corruption.dart';

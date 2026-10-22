@@ -7,6 +7,7 @@ library;
 import 'dart:io';
 
 import 'package:crux_sqlite/crux_sqlite.dart';
+import 'package:crux_sqlite/src/crux_schema_meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common/sqflite.dart';
 import 'package:test/test.dart';

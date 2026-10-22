@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 22 symbols.** `cruxBalancedParens`, `cruxFreeDiskBytes`, `cruxOpenReachingProviders`, `cruxSchemaMetaTablesExist`, `foreignSqliteUri`, `kCruxBackupFreeSpaceHeadroom`, `kCruxBackupSizeGuardBytes`, `kCruxBackupsKept`, `kCruxDestructiveWaiverMarker`, `kCruxMigrationGuideRef`, `kCruxOpenReachRounds`, `kCruxSchemaMetaDdl`, `kCruxSchemaMetaMigrationDescription`, `kCruxSchemaMetaTable`, `kCruxSchemaMigrationsDdl`, `kCruxSchemaMigrationsTable`, `kCruxSqliteBusyTimeout`, `kCruxWaiverProximityLines`, `readCruxSchemaMetaQuietly`, `readCruxUserVersion`, `writeCruxSchemaMetaForOpen`, `writeCruxSchemaMetaForUpgrade` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **The G4, G5 and G5b pins match across path separators.** A scanned file is
   named with the host's separator, so on Windows `lib\services\foo.dart` never
   ended with a pin written as `lib/services/foo.dart`: G5 reported the open as

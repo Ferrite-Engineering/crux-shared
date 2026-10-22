@@ -7,6 +7,7 @@ library;
 import 'dart:io';
 
 import 'package:crux_sqlite/crux_sqlite.dart';
+import 'package:crux_sqlite/src/free_disk_space.dart';
 import 'package:crux_sqlite/src/free_disk_space_parse.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';

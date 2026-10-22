@@ -21,6 +21,8 @@ import 'dart:io';
 
 import 'package:crux_sqlite/crux_sqlite_guards.dart';
 import 'package:crux_sqlite/src/guards/crux_guard_paths.dart';
+import 'package:crux_sqlite/src/guards/crux_guard_report.dart';
+import 'package:crux_sqlite/src/guards/crux_open_catch_guard.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

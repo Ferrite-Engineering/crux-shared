@@ -315,3 +315,12 @@ run out of any recovery `try`, and treat `SQLITE_BUSY` as none of the three.
 A DERIVABLE store may still degrade to "no cache this session", provided each
 fault class is caught by its own type and reported; anything unrecognised
 propagates. Enforced by G5b.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxAppliedMigration` (in `CruxSchemaHistory`), `CruxBackupNotice` (in `CruxBackupListener`), `CruxGuardReport` (in `cruxAuditAdditiveOnly`), `CruxMigrationFixtureCase` (in `cruxMigrationFixtureCases`), `CruxSchemaMetaRow` (in `CruxSchemaHistory`), `CruxSchemaSnapshot` (in `cruxAuditAdditiveOnly`), `CruxSourceFile` (in `cruxAuditDatabaseDeletes`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxBackupListener`, `CruxDbRecoveryListener`, `CruxFixtureAssert`, `CruxFixtureSeed`, `CruxFreeDiskProbe`, `CruxMigrationStep`.
+- **Documented recovery primitive for a store that opens outside `CruxSqliteOpenPolicy`; it excludes lock contention on purpose**: `isSqliteCorruption`.
+- **Documented recovery primitive for a store that opens outside `CruxSqliteOpenPolicy`; it never deletes**: `quarantineDatabaseFile`.

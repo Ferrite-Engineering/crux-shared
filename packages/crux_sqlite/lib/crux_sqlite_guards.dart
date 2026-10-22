@@ -113,11 +113,13 @@ export 'src/crux_db_recovery.dart' show CruxDbRecovery;
 export 'src/crux_migration.dart' show CruxMigration, CruxMigrationRunner;
 export 'src/guards/crux_additive_only_guard.dart';
 export 'src/guards/crux_database_delete_guard.dart';
-export 'src/guards/crux_destructive_ddl_guard.dart';
+export 'src/guards/crux_destructive_ddl_guard.dart'
+    hide kCruxDestructiveWaiverMarker, kCruxWaiverProximityLines;
 export 'src/guards/crux_fixture_coverage_guard.dart';
-export 'src/guards/crux_guard_report.dart';
-export 'src/guards/crux_guard_sources.dart';
-export 'src/guards/crux_open_catch_guard.dart';
+export 'src/guards/crux_guard_report.dart' hide kCruxMigrationGuideRef;
+export 'src/guards/crux_guard_sources.dart' hide cruxBalancedParens;
+export 'src/guards/crux_open_catch_guard.dart'
+    hide cruxOpenReachingProviders, kCruxOpenReachRounds;
 export 'src/guards/crux_open_options_guard.dart';
 export 'src/guards/crux_schema_fingerprint_guard.dart';
 export 'src/guards/crux_schema_manifest.dart';
