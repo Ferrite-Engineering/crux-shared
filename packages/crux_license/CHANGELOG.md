@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 10 symbols.** `cruxEducationalRequestPage`, `cruxPolicyLoader`, `kAiExperimental`, `kBetaExpiryWarningDays`, `kCruxEducationalRequestPageUrl`, `kCruxLicenseCategoryIcon`, `kKeygenAccountId`, `kKeygenPolicies`, `kLicenseTierOverrideName`, `licenseManagedByOrganizationProvider` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **`CruxUpgradeDialog` is a `CruxDialog`.** `show` opens it through
   `showCruxDialog(modalGuardKey: CruxUpgradeDialog.modalGuardKey)`, which
   holds the same `ModalGuard`; the copy contract is unchanged (OK is still a

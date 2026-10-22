@@ -16,6 +16,7 @@
 import 'dart:io';
 
 import 'package:crux_license/crux_license_core.dart';
+import 'package:crux_license/src/ai_experimental.dart';
 
 void main() {
   final results = <String>[

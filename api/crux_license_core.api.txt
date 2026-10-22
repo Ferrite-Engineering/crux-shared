@@ -382,20 +382,13 @@ class UnsupportedLicenseActions implements CruxLicenseActions
   requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
 applyLicenseTierOverride(LicenseTier resolved) -> LicenseTier
 betaExpiryStatusFor(DateTime now, {DateTime? expiry, int? warningDays}) -> BetaExpiryStatus
-cruxEducationalRequestPage(CruxProduct product) -> Uri
 cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 cruxSeePricingAction(CruxLicenseActions actions) -> Future<void> Function()?
 daysUntilBetaExpiry(DateTime now, {DateTime? expiry}) -> int?
 decodeHexKey(String hex) -> List<int>
-get kAiExperimental -> bool
 get kBetaExpiry -> DateTime?
-get kBetaExpiryWarningDays -> int
 get kBetaPeriod -> bool
-get kCruxEducationalRequestPageUrl -> String
-get kKeygenAccountId -> String
-get kKeygenPolicies -> Map<String, KeygenPolicy>
 get kKeygenVerifyKeyHex -> String
-get kLicenseTierOverrideName -> String
 legacyInstallFingerprintPath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
 get licenseTierOverride -> LicenseTier?
 mintInstallFingerprint([Random? random]) -> String

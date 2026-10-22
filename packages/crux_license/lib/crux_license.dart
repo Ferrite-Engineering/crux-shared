@@ -80,10 +80,10 @@
 ///   through it.
 library;
 
-export 'src/ai_experimental.dart';
+export 'src/ai_experimental.dart' hide kAiExperimental;
 export 'src/ai_experimental_provider.dart';
 export 'src/audit_recorder.dart';
-export 'src/beta_expiry.dart';
+export 'src/beta_expiry.dart' hide kBetaExpiryWarningDays;
 export 'src/beta_expiry_provider.dart';
 export 'src/beta_period.dart';
 export 'src/beta_period_provider.dart';
@@ -91,10 +91,11 @@ export 'src/crux_product.dart';
 export 'src/feature_gate.dart';
 export 'src/install_fingerprint.dart';
 export 'src/keygen_client.dart';
-export 'src/keygen_issuer.dart';
+export 'src/keygen_issuer.dart' hide kKeygenAccountId;
 export 'src/keygen_policy.dart';
-export 'src/keygen_policy_table.dart';
-export 'src/license_actions.dart';
+export 'src/keygen_policy_table.dart' hide kKeygenPolicies;
+export 'src/license_actions.dart'
+    hide cruxEducationalRequestPage, kCruxEducationalRequestPageUrl;
 export 'src/license_claims.dart';
 export 'src/license_controller.dart';
 export 'src/license_credential.dart';
@@ -102,15 +103,16 @@ export 'src/license_edition_line.dart';
 export 'src/license_grace.dart';
 export 'src/license_grant.dart';
 export 'src/license_issuer.dart';
-export 'src/license_panel_providers.dart';
+export 'src/license_panel_providers.dart'
+    hide licenseManagedByOrganizationProvider;
 export 'src/license_status.dart';
 export 'src/license_tier.dart';
-export 'src/license_tier_dev.dart';
+export 'src/license_tier_dev.dart' hide kLicenseTierOverrideName;
 export 'src/license_tier_provider.dart';
 export 'src/license_validation.dart';
 export 'src/license_validator.dart';
 export 'src/machine_release_marker.dart';
-export 'src/policy_binding.dart';
+export 'src/policy_binding.dart' hide cruxPolicyLoader;
 export 'src/widgets/beta_expired_overlay.dart';
 export 'src/widgets/beta_expiry_banner.dart';
 export 'src/widgets/beta_expiry_banner_strings.dart';
@@ -121,6 +123,7 @@ export 'src/widgets/gated_settings_category.dart';
 export 'src/widgets/license_badge_strings.dart';
 export 'src/widgets/license_panel.dart';
 export 'src/widgets/license_panel_strings.dart';
-export 'src/widgets/license_settings_category.dart';
+export 'src/widgets/license_settings_category.dart'
+    hide kCruxLicenseCategoryIcon;
 export 'src/widgets/upgrade_dialog.dart';
 export 'src/widgets/upgrade_dialog_strings.dart';

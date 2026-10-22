@@ -693,12 +693,10 @@ get cruxAuditPeerIdProvider -> Provider<String?>
 get cruxAuditProductIdProvider -> Provider<String>
 get cruxAuditRecorderProvider -> Provider<CruxAuditRecorder>
 get cruxAuditSinkProvider -> Provider<AuditSink>
-cruxEducationalRequestPage(CruxProduct product) -> Uri
 cruxGatedSettingsCategory({CruxUpgradeDialogStrings Function(BuildContext)? strings, LicenseBadgeStrings Function(BuildContext)? badgeStrings, required IconData icon, required LicenseTier requiredTier, required String Function(BuildContext) labelBuilder, required String id, required Widget Function(BuildContext) bodyBuilder}) -> CruxSettingsExtraCategory
 cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 cruxLicenseEditionLine(CruxLicenseStatus status, CruxEditionLineStrings strings) -> String?
 cruxLicenseSettingsCategory({Future<String?> Function(BuildContext)? onPickCredentialFile, LicenseBadgeStrings Function(BuildContext)? badgeStrings, required CruxLicensePanelStrings Function(BuildContext) strings, required CruxProduct product}) -> CruxSettingsExtraCategory
-get cruxPolicyLoader -> PolicyLoader
 cruxPolicyOverrides() -> List<Override>
 get cruxPolicyProvider -> Provider<PolicyLoadResult>
 cruxSeePricingAction(CruxLicenseActions actions) -> Future<void> Function()?
@@ -706,20 +704,12 @@ cruxSeePricingActionFor(BuildContext context) -> Future<void> Function()?
 get dayOnePolicyProvider -> Provider<DayOnePolicy>
 daysUntilBetaExpiry(DateTime now, {DateTime? expiry}) -> int?
 decodeHexKey(String hex) -> List<int>
-get kAiExperimental -> bool
 get kBetaExpiry -> DateTime?
-get kBetaExpiryWarningDays -> int
 get kBetaPeriod -> bool
-get kCruxEducationalRequestPageUrl -> String
-get kCruxLicenseCategoryIcon -> IconData
 get kCruxLicenseCategoryId -> String
-get kKeygenAccountId -> String
-get kKeygenPolicies -> Map<String, KeygenPolicy>
 get kKeygenVerifyKeyHex -> String
-get kLicenseTierOverrideName -> String
 legacyInstallFingerprintPath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
 get licenseActionsProvider -> Provider<CruxLicenseActions>
-get licenseManagedByOrganizationProvider -> Provider<bool>
 get licenseStatusProvider -> Provider<CruxLicenseStatus>
 get licenseTierOverride -> LicenseTier?
 get licenseTierProvider -> Provider<LicenseTier>

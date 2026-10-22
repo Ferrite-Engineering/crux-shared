@@ -1,7 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:crux_license/crux_license.dart';
+import 'package:crux_license/src/ai_experimental.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

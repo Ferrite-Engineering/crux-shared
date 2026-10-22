@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:crux_license/crux_license.dart';
+import 'package:crux_license/src/keygen_issuer.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 

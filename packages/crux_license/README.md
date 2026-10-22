@@ -325,3 +325,14 @@ product's open-core repo. The package is consumed by each product's open core
 via a Git submodule at `<product>/crux-shared/` plus a `path:` dep in
 `pubspec.yaml`; the Pro overlays inherit it transitively through the
 open-core submodule.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxLicenseActionFailure` (in `LicenseActionFailed`), `KeygenAttestation` (in `KeygenLicenseClient`), `KeygenMachineOutcome` (in `KeygenMachineResult`), `KeygenMachineResult` (in `KeygenLicenseClient`), `KeygenValidation` (in `KeygenLicenseClient`), `KeygenValidationCode` (in `KeygenValidation`), `LicenseClaims` (in `KeygenLicenseIssuer`), `LicenseEnvelope` (in `KeygenLicenseIssuer`), `LicenseEnvelopeParse` (in `parseLicenseCredential`), `MachineReleaseMarker` (in `CruxLicenseController`).
+- **Default-locale implementation of an exported strings seam; a host wraps or subclasses it**: `CruxBetaExpiredStringsEn`, `CruxBetaExpiryStringsEn`, `CruxLicensePanelStringsEn`, `CruxUpgradeDialogStringsEn`.
+- **Variant of the sealed result a licence action returns; a host switches over every variant**: `LicenseActionFailed`.
+- **Named null-object default of an exported seam**: `NoMachineReleaseMarker`.
+- **Override point: a product that runs a CXP peer supplies its id here**: `cruxAuditPeerIdProvider`.
+- **Public so a second issuer can decode its key the same way**: `decodeHexKey`.

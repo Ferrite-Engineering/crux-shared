@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_license/crux_license_core.dart';
+import 'package:crux_license/src/license_tier_dev.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// These cover both states of a *compile-time* flag, so the suite is

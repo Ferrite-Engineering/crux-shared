@@ -9,6 +9,8 @@ import 'dart:io';
 
 import 'package:crux_audit/crux_audit.dart';
 import 'package:crux_license/crux_license.dart';
+import 'package:crux_license/src/license_panel_providers.dart';
+import 'package:crux_license/src/policy_binding.dart';
 import 'package:crux_policy/crux_policy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

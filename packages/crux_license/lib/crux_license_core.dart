@@ -70,17 +70,18 @@
 /// apart in meaning.
 library;
 
-export 'src/ai_experimental.dart';
-export 'src/beta_expiry.dart';
+export 'src/ai_experimental.dart' hide kAiExperimental;
+export 'src/beta_expiry.dart' hide kBetaExpiryWarningDays;
 export 'src/beta_period.dart';
 export 'src/crux_product.dart';
 export 'src/feature_gate.dart';
 export 'src/install_fingerprint.dart';
 export 'src/keygen_client.dart';
-export 'src/keygen_issuer.dart';
+export 'src/keygen_issuer.dart' hide kKeygenAccountId;
 export 'src/keygen_policy.dart';
-export 'src/keygen_policy_table.dart';
-export 'src/license_actions.dart';
+export 'src/keygen_policy_table.dart' hide kKeygenPolicies;
+export 'src/license_actions.dart'
+    hide cruxEducationalRequestPage, kCruxEducationalRequestPageUrl;
 export 'src/license_claims.dart';
 export 'src/license_controller.dart';
 export 'src/license_credential.dart';
@@ -89,7 +90,7 @@ export 'src/license_grant.dart';
 export 'src/license_issuer.dart';
 export 'src/license_status.dart';
 export 'src/license_tier.dart';
-export 'src/license_tier_dev.dart';
+export 'src/license_tier_dev.dart' hide kLicenseTierOverrideName;
 export 'src/license_validation.dart';
 export 'src/license_validator.dart';
 export 'src/machine_release_marker.dart';
