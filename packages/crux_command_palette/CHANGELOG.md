@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Fix: closing the palette returns keyboard focus.** The palette opens
+  through `showCruxDialog`, which now hands focus back to the node that held it
+  before the palette opened (or to the navigator's scope) when the route
+  leaves, unless the chosen action opened another dialog. A product that
+  opened the palette through `showCruxDialog` itself and wrapped it in a local
+  focus-return widget no longer needs the wrapper. Tests cover Escape, a scrim
+  click with focus dropped to the window root, and an action that opens a
+  dialog. No API change in this package.
 - `CommandPalette.show` opens through `showCruxDialog`, so the palette takes
   the theme's dialog scrim (18 % under a Crux Desktop theme) rather than a
   fixed one. New dependency on `crux_ide_layout`.

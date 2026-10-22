@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'dart:ui' show SemanticsRole;
 
 import 'package:crux_ide_layout/src/modal_guard.dart';
+import 'package:crux_ide_layout/src/pushed_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -54,6 +55,14 @@ const double kCruxDialogDefaultWidth = 440;
 ///   outside it as well as by Escape, whatever [barrierDismissible] says.
 ///   Focus-in, [modalGuardKey] and the semantics behaviour are unchanged.
 ///
+/// - **Focus on close.** When the route leaves the tree, keyboard focus goes
+///   back to the node that held it when the dialog was opened, or to the
+///   navigator's enclosing scope when that node is gone, so a window-level
+///   shortcut keeps firing without a click into the window. It is left where
+///   it is when it is already under the dialog's navigator (an action that
+///   focused a control) or inside another pushed route
+///   (`cruxFocusIsInPushedRoute`: an action that opened a dialog).
+///
 /// [builder] normally returns a [CruxDialog]. The EULA, which is mounted
 /// above the `Navigator` where no route can be pushed, uses [CruxDialog]
 /// directly instead.
@@ -71,8 +80,13 @@ Future<T?> showCruxDialog<T>({
   // A non-blocking surface has no scrim and closes on a click outside it, so
   // it is always dismissible by the barrier.
   final dismissible = !blocking || barrierDismissible;
-  Widget build(BuildContext dialogContext) =>
-      _CruxDialogRouteScope(child: Builder(builder: builder));
+  // Read before the route is pushed: once it is, the route's own scope has
+  // taken focus and the node the user was on is no longer the primary focus.
+  final focusBefore = FocusManager.instance.primaryFocus;
+  Widget build(BuildContext dialogContext) => _CruxDialogFocusReturn(
+    focusBefore: focusBefore,
+    child: _CruxDialogRouteScope(child: Builder(builder: builder)),
+  );
   Future<T?> open() {
     final target = navigator;
     if (target == null) {
@@ -129,6 +143,82 @@ bool _isAncestor(BuildContext ancestor, BuildContext of) {
     return true;
   });
   return found;
+}
+
+/// Hands keyboard focus back when the dialog's route leaves the tree.
+///
+/// A window-level shortcut hears a key only while some node under the
+/// navigator holds primary focus. When the route is removed and focus has
+/// ended up on a scope above the navigator, or nowhere (the platform can leave
+/// it there while a modal is up), the next chord reaches no one until the user
+/// clicks into the window.
+///
+/// This widget wraps the dialog. When it is disposed, which is when the route
+/// is removed after its exit transition, it checks where focus is on the next
+/// frame:
+///
+/// - Focus under the dialog's own navigator is left alone: a control the
+///   action that closed the dialog focused, or a dialog it opened on that
+///   navigator, keeps the focus it took.
+/// - Focus inside a route pushed on any navigator is left alone
+///   ([cruxFocusIsInPushedRoute]): an action that opened a dialog on another
+///   navigator, such as a tab's own.
+/// - Otherwise focus goes back to the node that held it before the dialog
+///   opened, if that node is still in the tree under the navigator, or else to
+///   the navigator's enclosing scope.
+class _CruxDialogFocusReturn extends StatefulWidget {
+  const _CruxDialogFocusReturn({
+    required this.focusBefore,
+    required this.child,
+  });
+
+  /// The primary focus when the dialog was opened.
+  final FocusNode? focusBefore;
+
+  final Widget child;
+
+  @override
+  State<_CruxDialogFocusReturn> createState() => _CruxDialogFocusReturnState();
+}
+
+class _CruxDialogFocusReturnState extends State<_CruxDialogFocusReturn> {
+  late final NavigatorState _navigator;
+  late final FocusNode? _focusBefore;
+
+  @override
+  void initState() {
+    super.initState();
+    _navigator = Navigator.of(context);
+    _focusBefore = widget.focusBefore;
+  }
+
+  @override
+  void dispose() {
+    final navigator = _navigator;
+    final before = _focusBefore;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!navigator.mounted) return;
+      final navigatorFocus = navigator.focusNode;
+      final primary = FocusManager.instance.primaryFocus;
+      final inNavigator =
+          primary != null &&
+          (primary == navigatorFocus ||
+              primary.ancestors.contains(navigatorFocus));
+      if (inNavigator || cruxFocusIsInPushedRoute(primary)) return;
+      if (before != null &&
+          before.context?.mounted == true &&
+          before.canRequestFocus &&
+          before.ancestors.contains(navigatorFocus)) {
+        before.requestFocus();
+      } else {
+        navigatorFocus.enclosingScope?.requestFocus();
+      }
+    });
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Lets Escape pop the dialog's route even when its barrier is not

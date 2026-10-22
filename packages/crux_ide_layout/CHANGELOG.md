@@ -6,6 +6,18 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Fix: closing a `showCruxDialog` dialog returns keyboard focus.** The
+  platform can leave focus on the window's root scope while a modal is up, and
+  an app-level shortcut then reaches no one until the user clicks into the
+  window. When the dialog's route leaves the tree, focus now goes back to the
+  node that held it when the dialog opened, or to the navigator's enclosing
+  scope when that node is gone. It is left alone when it is already under the
+  dialog's navigator, or inside another pushed route
+  (`cruxFocusIsInPushedRoute`), so an action that focused a control or opened
+  a dialog keeps what it took. The shared command palette, which opens through
+  `showCruxDialog`, gets the fix with it. A dialog on a tab's own navigator
+  already returned focus to the tab's control and still does. No API change.
+
 - `cruxFocusIsInPushedRoute([FocusNode?])`: whether focus is in a route above
   the first page of its navigator, on any navigator. A window-level key
   handler returns early while it is true, so Escape in a tab dialog does not
