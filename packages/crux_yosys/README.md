@@ -88,3 +88,9 @@ Extracted from a single suite product once a second product needed the same
 Yosys invocation, so that neither product had to depend on the other. The
 four original concerns (runner, availability, diagnostic parser, value types)
 were lifted verbatim; `YosysBinaryResolver` is the one added extension hook.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `VhdlLowerResult` (in `VhdlLowerCancelled`), `YosysScriptRequest` (in `YosysRunner`).
