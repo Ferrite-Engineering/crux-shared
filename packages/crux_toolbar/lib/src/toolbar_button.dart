@@ -98,7 +98,14 @@ class CruxToolbarButton extends StatelessWidget {
           ? Tooltip(
               message: tooltip,
               triggerMode: TooltipTriggerMode.manual,
-              child: iconButton,
+              // The tooltip's own semantics land on a separate node above
+              // the button, leaving the button itself nameless: a screen
+              // reader announces a bare "button". State the name on the
+              // button's own node instead.
+              excludeFromSemantics: true,
+              child: MergeSemantics(
+                child: Semantics(label: tooltip, child: iconButton),
+              ),
             )
           : iconButton,
     );

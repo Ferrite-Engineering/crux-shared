@@ -1,6 +1,8 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:ui' as ui;
+
 import 'package:crux_toolbar/crux_toolbar.dart';
 import 'package:flutter/gestures.dart' show kSecondaryButton;
 import 'package:flutter/material.dart';
@@ -149,6 +151,38 @@ void main() {
       expect(find.byTooltip('sarif'), findsOneWidget);
     });
 
+    for (final enabled in [true, false]) {
+      testWidgets("the face is announced under the faced action's name when "
+          "${enabled ? 'enabled' : 'disabled'}", (tester) async {
+        final handle = tester.ensureSemantics();
+        await tester.pumpWidget(
+          _wrapSplit(
+            isEnabled: (_) => enabled,
+            faceTooltip: (a) => 'Export… (${a.name.toUpperCase()} is default)',
+          ),
+        );
+        await tester.pumpAndSettle();
+        final node = tester.getSemantics(
+          find.descendant(
+            of: find.byKey(const ValueKey(_Export.sarif)),
+            matching: find.byType(IconButton),
+          ),
+        );
+        final data = node.getSemanticsData();
+        expect(
+          data.label,
+          'Export… (SARIF is default)',
+          reason: 'a screen reader must not announce a bare "button"',
+        );
+        expect(data.flagsCollection.isButton, isTrue);
+        expect(
+          data.flagsCollection.isEnabled,
+          enabled ? ui.Tristate.isTrue : ui.Tristate.isFalse,
+        );
+        handle.dispose();
+      });
+    }
+
     testWidgets('choosing a sibling dispatches it, re-faces, and notifies', (
       tester,
     ) async {
@@ -176,9 +210,7 @@ void main() {
     testWidgets('a disabled variant is greyed in the sibling menu', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        _wrapSplit(isEnabled: (a) => a != _Export.html),
-      );
+      await tester.pumpWidget(_wrapSplit(isEnabled: (a) => a != _Export.html));
       await tester.pumpAndSettle();
       await tester.longPress(find.byKey(const ValueKey(_Export.sarif)));
       await tester.pumpAndSettle();
@@ -211,9 +243,7 @@ void main() {
 
     testWidgets('idle shows play and offers to run', (tester) async {
       var ran = false;
-      await tester.pumpWidget(
-        wrap(CruxRunState.idle, onRun: () => ran = true),
-      );
+      await tester.pumpWidget(wrap(CruxRunState.idle, onRun: () => ran = true));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
