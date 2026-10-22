@@ -1,0 +1,139 @@
+# Public API surface of package:crux_annotations/crux_annotations.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+interface abstract class CruxAnnotationAnchor
+  get elementId -> String?
+  toJson() -> Map<String, Object?>
+class CruxAnnotationGroup extends StatelessWidget
+  const CruxAnnotationGroup({Key? key, Widget? trailing, required List<Widget> children, required String label})
+  build(BuildContext context) -> Widget
+  final children: List<Widget>
+  final label: String
+  final trailing: Widget?
+enum CruxAnnotationStatus
+  static const drifted: CruxAnnotationStatus
+  static const orphaned: CruxAnnotationStatus
+  static const resolved: CruxAnnotationStatus
+  static const unanchoredToRow: CruxAnnotationStatus
+  static const unresolved: CruxAnnotationStatus
+extension CruxAnnotationStatusDrawing on CruxAnnotationStatus
+  get isDrawable -> bool
+final class CruxAnnotationStatusGroups<T>
+  const CruxAnnotationStatusGroups({required List<T> displayed, required List<T> orphaned, required List<T> unresolved})
+  final displayed: List<T>
+  final orphaned: List<T>
+  final unresolved: List<T>
+  get isEmpty -> bool
+interface abstract class CruxAnnotationWitness
+  toJson() -> Map<String, Object?>
+class CruxCalloutAnchorDot extends StatelessWidget
+  const CruxCalloutAnchorDot({Key? key, required Color color})
+  build(BuildContext context) -> Widget
+  final color: Color
+  static const size: double
+class CruxCalloutBalloon extends StatelessWidget
+  const CruxCalloutBalloon({Key? key, bool selected, int maxLines, required Color color, required Color onSurface, required Color surface, required String collapseTooltip, required String deleteTooltip, required String editHint, required String text, required bool drifted, required bool isEditing, required double touchTarget, required int maxLength, required int number, required void Function()? onBeginEdit, required void Function()? onCollapse, required void Function()? onDelete, required void Function(String) onCommit})
+  build(BuildContext context) -> Widget
+  final collapseTooltip: String
+  final color: Color
+  final deleteTooltip: String
+  final drifted: bool
+  final editHint: String
+  final isEditing: bool
+  final maxLength: int
+  final maxLines: int
+  final number: int
+  final onBeginEdit: void Function()?
+  final onCollapse: void Function()?
+  final onCommit: void Function(String)
+  final onDelete: void Function()?
+  final onSurface: Color
+  final selected: bool
+  final surface: Color
+  final text: String
+  final touchTarget: double
+enum CruxCalloutDetail
+  static const dot: CruxCalloutDetail
+  static const full: CruxCalloutDetail
+  static const hidden: CruxCalloutDetail
+class CruxCalloutDoubleTapRegion extends StatefulWidget
+  const CruxCalloutDoubleTapRegion({HitTestBehavior behavior, Key? key, required Widget child, required void Function()? onDoubleTap})
+  createState() -> State<CruxCalloutDoubleTapRegion>
+  final behavior: HitTestBehavior
+  final child: Widget
+  final onDoubleTap: void Function()?
+class CruxCalloutDraggable extends StatelessWidget
+  const CruxCalloutDraggable({Key? key, MouseCursor? cursor, required Widget child, void Function()? onDragEnd, void Function()? onDragStart, void Function()? onPointerDown, void Function()? onTap, void Function(Offset)? onDragUpdate, void Function(bool)? onClaim})
+  build(BuildContext context) -> Widget
+  final child: Widget
+  final cursor: MouseCursor?
+  final onClaim: void Function(bool)?
+  final onDragEnd: void Function()?
+  final onDragStart: void Function()?
+  final onDragUpdate: void Function(Offset)?
+  final onPointerDown: void Function()?
+  final onTap: void Function()?
+final abstract class CruxCalloutGeometry
+  static isCollapsed({bool alwaysDot, int maxExpanded, required bool collapsed, required bool hasText, required bool isEditing, required int expandedSoFar}) -> bool
+  static labelOrigin(Offset anchor, {required double labelDx, required double labelDy}) -> Offset
+  static leaderEnd(Offset labelOrigin, {double balloonWidth, required bool collapsed}) -> Offset
+class CruxCalloutInlineEditor extends StatefulWidget
+  const CruxCalloutInlineEditor({Key? key, required Color color, required String hint, required String initialText, required int maxLength, required void Function(String) onCommit})
+  createState() -> State<CruxCalloutInlineEditor>
+  final color: Color
+  final hint: String
+  final initialText: String
+  final maxLength: int
+  final onCommit: void Function(String)
+class CruxCalloutLeader
+  const CruxCalloutLeader({required Color color, required Offset from, required Offset to, required bool dashed})
+  ==(Object other) -> bool
+  final color: Color
+  final dashed: bool
+  final from: Offset
+  final to: Offset
+  get hashCode -> int
+class CruxCalloutLeadersPainter extends CustomPainter
+  const CruxCalloutLeadersPainter(List<CruxCalloutLeader> leaders)
+  final leaders: List<CruxCalloutLeader>
+  paint(Canvas canvas, Size size) -> void
+  shouldRepaint(CruxCalloutLeadersPainter oldDelegate) -> bool
+class CruxCalloutNumberDot extends StatelessWidget
+  const CruxCalloutNumberDot({Key? key, bool selected, required Color color, required Color onColor, required int number})
+  build(BuildContext context) -> Widget
+  final color: Color
+  final number: int
+  final onColor: Color
+  final selected: bool
+final class CruxCalloutPlacement
+  const CruxCalloutPlacement({bool collapsed, double labelDx, double labelDy})
+  factory CruxCalloutPlacement.fromJson(Map<Object?, Object?> json)
+  ==(Object other) -> bool
+  copyWith({bool? collapsed, double? labelDx, double? labelDy}) -> CruxCalloutPlacement
+  final collapsed: bool
+  final labelDx: double
+  final labelDy: double
+  get hashCode -> int
+  get isDefault -> bool
+  nudged(double dx, double dy) -> CruxCalloutPlacement
+  static const collapsedKey: String
+  static const defaultLabelDy: double
+  static const labelDxKey: String
+  static const labelDyKey: String
+  toString() -> String
+  writeInto(Map<String, Object?> record) -> void
+cruxAnnotationStatusOf({bool? witnessMatches, required bool anchoredToElement, required bool existsInFile, required bool isDisplayed}) -> CruxAnnotationStatus
+cruxGroupByStatus<T>(Iterable<T> items, CruxAnnotationStatus? Function(T) statusOf) -> CruxAnnotationStatusGroups<T>
+get kCruxAnnotationDriftedColor -> Color
+get kCruxAnnotationWitnessKey -> String
+get kCruxCalloutBalloonTextKey -> ValueKey<String>
+get kCruxCalloutBalloonWidth -> double
+get kCruxCalloutDotRadius -> double
+get kCruxCalloutMaxExpanded -> int
+get kCruxCalloutTopInset -> double

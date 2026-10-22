@@ -68,6 +68,7 @@ set -uo pipefail
 FLOORS="
 crux_a11y:94
 crux_about_dialog:95
+crux_annotations:96
 crux_app_info:98
 crux_async:98
 crux_audit:98

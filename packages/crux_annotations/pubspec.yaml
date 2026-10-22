@@ -1,0 +1,27 @@
+name: crux_annotations
+description: >-
+  The on-canvas annotation layer for the EDACrux suite: the anchor contract in
+  each product's data coordinates, callout geometry and the drag-and-fold model,
+  the drift status vocabulary and its decision table, the persistence shape of a
+  callout's placement, and the widgets that draw balloons, numbered dots and
+  leaders. Anchor resolution, the witness and every string stay with the product.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.15.0
+
+dev_dependencies:
+  crux_a11y:
+    path: ../crux_a11y
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0

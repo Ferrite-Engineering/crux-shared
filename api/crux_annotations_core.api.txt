@@ -1,0 +1,48 @@
+# Public API surface of package:crux_annotations/crux_annotations_core.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+interface abstract class CruxAnnotationAnchor
+  get elementId -> String?
+  toJson() -> Map<String, Object?>
+enum CruxAnnotationStatus
+  static const drifted: CruxAnnotationStatus
+  static const orphaned: CruxAnnotationStatus
+  static const resolved: CruxAnnotationStatus
+  static const unanchoredToRow: CruxAnnotationStatus
+  static const unresolved: CruxAnnotationStatus
+extension CruxAnnotationStatusDrawing on CruxAnnotationStatus
+  get isDrawable -> bool
+final class CruxAnnotationStatusGroups<T>
+  const CruxAnnotationStatusGroups({required List<T> displayed, required List<T> orphaned, required List<T> unresolved})
+  final displayed: List<T>
+  final orphaned: List<T>
+  final unresolved: List<T>
+  get isEmpty -> bool
+interface abstract class CruxAnnotationWitness
+  toJson() -> Map<String, Object?>
+final class CruxCalloutPlacement
+  const CruxCalloutPlacement({bool collapsed, double labelDx, double labelDy})
+  factory CruxCalloutPlacement.fromJson(Map<Object?, Object?> json)
+  ==(Object other) -> bool
+  copyWith({bool? collapsed, double? labelDx, double? labelDy}) -> CruxCalloutPlacement
+  final collapsed: bool
+  final labelDx: double
+  final labelDy: double
+  get hashCode -> int
+  get isDefault -> bool
+  nudged(double dx, double dy) -> CruxCalloutPlacement
+  static const collapsedKey: String
+  static const defaultLabelDy: double
+  static const labelDxKey: String
+  static const labelDyKey: String
+  toString() -> String
+  writeInto(Map<String, Object?> record) -> void
+cruxAnnotationStatusOf({bool? witnessMatches, required bool anchoredToElement, required bool existsInFile, required bool isDisplayed}) -> CruxAnnotationStatus
+cruxGroupByStatus<T>(Iterable<T> items, CruxAnnotationStatus? Function(T) statusOf) -> CruxAnnotationStatusGroups<T>
+get kCruxAnnotationWitnessKey -> String

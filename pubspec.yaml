@@ -50,6 +50,7 @@ workspace:
   - packages/crux_stats_strip
   - packages/crux_a11y
   - packages/crux_table
+  - packages/crux_annotations
 
 dev_dependencies:
   melos: ^8.6.0
