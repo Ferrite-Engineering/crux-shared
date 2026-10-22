@@ -57,7 +57,9 @@ class RtlRegister {
 
 /// The registers of a source design, read from its elaboration: Yosys
 /// `write_json` after `hierarchy` and `proc` and before any synthesis, which
-/// is what NetCrux shows and what `YosysRunner` produces.
+/// is what NetCrux shows and what `YosysRunner` produces. A register is a
+/// flip-flop or latch output with a public name, or a memory (a register
+/// file is one register whatever its words and bits).
 ///
 /// Mapping a synthesized cell back to source asks three questions of it,
 /// and each is answered here: which register a cell's name descends from
@@ -284,7 +286,7 @@ void _collect(
         if (bit is NetBit) ...?publicNetsOf[bit.netId],
     };
     if (named.isEmpty) continue;
-    final assignments = _assigningSpans(cell, driverOf);
+    final assignments = _assigningSpans(cell, driverOf, const ['D', 'AD']);
     final blocks = _userSpans(cell.attributes['src']);
     for (final net in named) {
       final name = '$prefix${_registerNameOf(net)}';
@@ -299,6 +301,86 @@ void _collect(
       );
     }
   }
+  _collectMemories(module, prefix, driverOf, out);
+}
+
+/// Adds [module]'s memories to [out], named under [prefix]: a register file
+/// is one register, whatever its words and bits.
+///
+/// A source elaboration (`hierarchy; proc`) holds each as an entry of the
+/// `memories` section, accessed by `$memrd` and `$memwr` cells that name it
+/// in `MEMID`; once the `memory` passes have run it is a `$mem` or `$mem_v2`
+/// cell instead. Both forms are read. The declaration is the memory's own
+/// span; its blocks are its write ports' spans, and its assignments what
+/// computes the data they write.
+void _collectMemories(
+  Module module,
+  String prefix,
+  Map<int, Cell> driverOf,
+  Map<String, RtlRegister> out,
+) {
+  final declared = <String, List<SrcSpan>>{};
+  for (final memory in module.memories.values) {
+    if (memory.hideName) continue;
+    declared[memory.name] = _userSpans(memory.attributes['src']);
+  }
+  final blocks = <String, List<SrcSpan>>{};
+  final assignments = <String, List<SrcSpan>>{};
+  void addAll(Map<String, List<SrcSpan>> into, String id, List<SrcSpan> spans) {
+    final list = into[id] ??= <SrcSpan>[];
+    for (final span in spans) {
+      if (!list.contains(span)) list.add(span);
+    }
+  }
+
+  for (final cell in module.cells.values) {
+    final dataPorts = _memoryDataPorts[cell.type];
+    if (dataPorts == null) continue;
+    final id = _memoryId(cell);
+    if (id == null) continue;
+    final own = _userSpans(cell.attributes['src']);
+    final isMem = cell.type == r'$mem' || cell.type == r'$mem_v2';
+    // A `$mem` carries the memory's own attributes; a write port only the
+    // statement that wrote it.
+    if (isMem) declared.putIfAbsent(id, () => own);
+    if (isMem || dataPorts.isNotEmpty) addAll(blocks, id, own);
+    if (dataPorts.isNotEmpty) {
+      addAll(assignments, id, _assigningSpans(cell, driverOf, dataPorts));
+    }
+  }
+  for (final id in declared.keys) {
+    final name = '$prefix$id';
+    out.putIfAbsent(
+      name,
+      () => RtlRegister(
+        name: name,
+        declaration: declared[id]!,
+        assignments: assignments[id] ?? const <SrcSpan>[],
+        blocks: blocks[id] ?? const <SrcSpan>[],
+      ),
+    );
+  }
+}
+
+/// The memory cell types, and for each the data ports whose cone is what the
+/// memory is assigned (none for a read port).
+const Map<String, List<String>> _memoryDataPorts = {
+  r'$mem': ['WR_DATA'],
+  r'$mem_v2': ['WR_DATA'],
+  r'$memwr': ['DATA'],
+  r'$memwr_v2': ['DATA'],
+  r'$memrd': <String>[],
+  r'$memrd_v2': <String>[],
+  r'$meminit': <String>[],
+  r'$meminit_v2': <String>[],
+};
+
+/// The memory a memory cell names: its `MEMID` parameter, without the
+/// leading `\` of a public name; null for a missing or auto-generated one.
+String? _memoryId(Cell cell) {
+  final raw = cell.parameters['MEMID'];
+  if (raw == null || raw.isEmpty || raw.startsWith(r'$')) return null;
+  return raw.startsWith(r'\') ? raw.substring(1) : raw;
 }
 
 String _registerNameOf(Net net) =>
@@ -338,9 +420,13 @@ bool _drives(Cell cell, String port) {
 /// The spans of the cells that compute [storage]'s next value: a
 /// breadth-first walk back from its data inputs through combinational
 /// cells, stopping at other storage cells, design inputs and constants.
-List<SrcSpan> _assigningSpans(Cell storage, Map<int, Cell> driverOf) {
+List<SrcSpan> _assigningSpans(
+  Cell storage,
+  Map<int, Cell> driverOf,
+  List<String> dataPorts,
+) {
   final frontier = <int>[
-    for (final port in const ['D', 'AD'])
+    for (final port in dataPorts)
       for (final bit in storage.connections[port] ?? const <BitRef>[])
         if (bit is NetBit) bit.netId,
   ];

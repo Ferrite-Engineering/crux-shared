@@ -67,6 +67,21 @@ paths are the bare file names. Captured 2026-10-21.
   Unedited. A live test re-elaborates both with whatever `yosys` is on
   `PATH` and requires the same registers, lines and files.
 
+- `elaboration/regfile.v`, `elaboration/regfile.json` and
+  `elaboration/regfile_mem.json`: a four-word register file and a plain
+  register, hand-written for the memory cases, elaborated with the Yosys
+  on `PATH` when captured (Yosys 0.69+post, Homebrew), run from inside `elaboration/`
+  so the recorded paths are the bare file name:
+
+  ```
+  yosys -q -p 'read_verilog regfile.v; hierarchy -check -top regfile; proc; write_json regfile.json'
+  yosys -q -p 'read_verilog regfile.v; hierarchy -check -top regfile; proc; memory -nomap; write_json regfile_mem.json'
+  ```
+
+  Unedited. The first keeps the memory in the `memories` section (the
+  suite's Yosys runner script); the second has it as a `$mem_v2` cell. The
+  expected lines in `memory_registers_test.dart` are read off `regfile.v`.
+
 - `synthesized/path_adder_ice40.json`: the iCE40 synthesis of
   `path_adder.v`,
 

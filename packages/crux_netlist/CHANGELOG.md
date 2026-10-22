@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **`Module.memories` and `Memory`.** The `memories` section Yosys writes
+  after `proc` (name, width, size, start offset, attributes) is read instead
+  of dropped, and written back only when non-empty.
 - **The `fromJson` factories throw `FormatException`, as documented.** A
   field of the wrong JSON type (a string where an object belongs, a number
   where a list does, a non-integer `hide_name`) used to be a `TypeError`

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **`RtlRegisterSet` collects memories.** A register file such as PicoRV32's
+  `cpuregs` stays a memory in a source elaboration, so it was no register of
+  the set and a timing endpoint on one of its bits (`cpuregs[21][19]`)
+  mapped to nothing. Each memory is now one register, from the `memories`
+  section a `hierarchy; proc` elaboration writes or from the `$mem` and
+  `$mem_v2` cells the `memory` passes leave, with its own declaration span,
+  its write ports as blocks and the cone of their data as assignments. On
+  the LibreLane PicoRV32 run, 98 of the worst 100 setup endpoints now map to
+  `cpuregs` at register fidelity against the RTL elaboration (0 before).
+  Fixes #52.
 - **LibreLane run readers, one per verified minor line.**
   `LibreLaneReaders` detects the release from `resolved.json`
   (`meta.librelane_version`, then `meta.openlane_version`) and selects

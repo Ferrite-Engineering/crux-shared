@@ -54,13 +54,27 @@ class HierarchyNode
   resolve(NetlistModel model) -> Module?
   static rootOf(NetlistModel model) -> HierarchyNode?
   toString() -> String
+class Memory
+  const Memory({Map<String, String> attributes, bool hideName, int size, int startOffset, int width, required String name})
+  factory Memory.fromJson(String name, Map<String, Object?> json)
+  ==(Object other) -> bool
+  final attributes: Map<String, String>
+  final hideName: bool
+  final name: String
+  final size: int
+  final startOffset: int
+  final width: int
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
 class Module
-  const Module({required Map<String, Cell> cells, required Map<String, Net> nets, required Map<String, Port> ports, required Map<String, String> attributes, required String name})
+  const Module({Map<String, Memory> memories, required Map<String, Cell> cells, required Map<String, Net> nets, required Map<String, Port> ports, required Map<String, String> attributes, required String name})
   factory Module.fromJson(String name, Map<String, Object?> json)
   ==(Object other) -> bool
-  copyWith({Map<String, Cell>? cells, Map<String, Net>? nets, Map<String, Port>? ports, Map<String, String>? attributes, String? name}) -> Module
+  copyWith({Map<String, Cell>? cells, Map<String, Memory>? memories, Map<String, Net>? nets, Map<String, Port>? ports, Map<String, String>? attributes, String? name}) -> Module
   final attributes: Map<String, String>
   final cells: Map<String, Cell>
+  final memories: Map<String, Memory>
   final name: String
   final nets: Map<String, Net>
   final ports: Map<String, Port>

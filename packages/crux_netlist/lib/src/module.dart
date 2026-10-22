@@ -3,6 +3,7 @@
 
 import 'package:crux_netlist/src/cell.dart';
 import 'package:crux_netlist/src/json_shape.dart';
+import 'package:crux_netlist/src/memory.dart';
 import 'package:crux_netlist/src/net.dart';
 import 'package:crux_netlist/src/port.dart';
 import 'package:meta/meta.dart';
@@ -22,6 +23,7 @@ class Module {
     required this.ports,
     required this.cells,
     required this.nets,
+    this.memories = const <String, Memory>{},
   });
 
   /// Parses a module from the JSON shape Yosys writes at
@@ -69,12 +71,24 @@ class Module {
               ),
             ),
         };
+        final memoriesRaw = optionalJsonObject(json, 'memories');
+        final memories = <String, Memory>{
+          for (final entry in memoriesRaw.entries)
+            entry.key: withJsonContext(
+              'memory ${describeJsonValue(entry.key)}',
+              () => Memory.fromJson(
+                entry.key,
+                requireJsonObject(entry.value, 'memories.${entry.key}'),
+              ),
+            ),
+        };
         return Module(
           name: name,
           attributes: attributes,
           ports: ports,
           cells: cells,
           nets: nets,
+          memories: memories,
         );
       });
 
@@ -93,6 +107,12 @@ class Module {
   /// Named nets inside the module, keyed by net name. Anonymous nets (bits
   /// not assigned to any named net) are not represented here.
   final Map<String, Net> nets;
+
+  /// Memories declared in the module, keyed by name: the `memories` section
+  /// of a design that has been through `proc` but not the `memory` passes
+  /// (empty once they have run; the memory is then a `$mem_v2` cell). Empty
+  /// when the document has no such section.
+  final Map<String, Memory> memories;
 
   /// True when Yosys marked this module as the top of the design hierarchy
   /// (`top` attribute set to a non-zero value).
@@ -139,6 +159,7 @@ class Module {
     Map<String, Port>? ports,
     Map<String, Cell>? cells,
     Map<String, Net>? nets,
+    Map<String, Memory>? memories,
   }) {
     return Module(
       name: name ?? this.name,
@@ -146,6 +167,7 @@ class Module {
       ports: ports ?? this.ports,
       cells: cells ?? this.cells,
       nets: nets ?? this.nets,
+      memories: memories ?? this.memories,
     );
   }
 
@@ -162,6 +184,10 @@ class Module {
     'netnames': <String, Object?>{
       for (final entry in nets.entries) entry.key: entry.value.toJson(),
     },
+    if (memories.isNotEmpty)
+      'memories': <String, Object?>{
+        for (final entry in memories.entries) entry.key: entry.value.toJson(),
+      },
   };
 
   @override
@@ -173,6 +199,7 @@ class Module {
     if (!_mapEquals(other.ports, ports)) return false;
     if (!_mapEquals(other.cells, cells)) return false;
     if (!_mapEquals(other.nets, nets)) return false;
+    if (!_mapEquals(other.memories, memories)) return false;
     return true;
   }
 
@@ -183,6 +210,7 @@ class Module {
     _mapHash(ports),
     _mapHash(cells),
     _mapHash(nets),
+    _mapHash(memories),
   );
 
   @override

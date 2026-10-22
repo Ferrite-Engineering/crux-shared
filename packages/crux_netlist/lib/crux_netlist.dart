@@ -23,6 +23,7 @@ library;
 export 'src/bit_ref.dart';
 export 'src/cell.dart';
 export 'src/hierarchy_node.dart';
+export 'src/memory.dart';
 export 'src/module.dart';
 export 'src/net.dart';
 export 'src/netlist_model.dart';
