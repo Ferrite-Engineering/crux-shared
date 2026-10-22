@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_ide_layout/crux_ide_layout.dart';
+import 'package:crux_ide_layout/src/crux_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

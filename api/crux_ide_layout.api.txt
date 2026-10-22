@@ -113,12 +113,6 @@ class CruxFocusRegionScopeState extends State<CruxFocusRegionScope>
   focusNext() -> bool
   focusPrevious() -> bool
   initState() -> void
-class CruxFocusRegionState extends State<CruxFocusRegion>
-  build(BuildContext context) -> Widget
-  contains(FocusNode? node) -> bool
-  didChangeDependencies() -> void
-  dispose() -> void
-  enter() -> bool
 class CruxHelpLink extends StatelessWidget
   const CruxHelpLink({Key? key, required String tooltip, required String url, void Function()? onTap})
   build(BuildContext context) -> Widget
@@ -249,14 +243,6 @@ class CruxToastAction
   const CruxToastAction({required String label, required void Function() onPressed})
   final label: String
   final onPressed: void Function()
-class CruxToastCard extends StatelessWidget
-  const CruxToastCard({CruxToastAction? action, Key? key, required String message, required bool error, void Function()? onAction, void Function()? onClose})
-  build(BuildContext context) -> Widget
-  final action: CruxToastAction?
-  final error: bool
-  final message: String
-  final onAction: void Function()?
-  final onClose: void Function()?
 final abstract class CruxToasts
   static hide(BuildContext context) -> void
   static show(BuildContext context, String message, {CruxToastAction? action, Key? key, required Duration infoDuration, required bool error}) -> bool
@@ -303,18 +289,13 @@ cruxTextInputFocused() -> bool
 hideCruxReloadPrompt(BuildContext context) -> void
 hideCruxSnack(BuildContext context) -> void
 get kCruxActionSnackDuration -> Duration
-get kCruxDialogDefaultWidth -> double
-get kCruxDialogGutter -> double
 get kCruxErrorSnackDuration -> Duration
 get kCruxInfoSnackDuration -> Duration
-get kCruxPaneResizeStep -> double
 get kCruxRegionShortcuts -> Map<ShortcutActivator, Intent>
 get kCruxReloadPromptIgnoreKey -> Key
 get kCruxReloadPromptKey -> Key
 get kCruxReloadPromptReloadKey -> Key
 get kCruxSearchDebounceInterval -> Duration
-get kCruxSearchDialogRowExtent -> double
-get kCruxSearchDialogSize -> Size
 shouldEnableLongPressContextMenu({required TargetPlatform platform, required bool isTouchLayout}) -> bool
 showCruxContextMenu(BuildContext context, {required List<CruxMenuEntry> entries, required Offset globalPosition}) -> Future<void>
 showCruxDialog<T>({NavigatorState? navigator, RouteSettings? routeSettings, String? barrierLabel, String? modalGuardKey, bool barrierDismissible, bool blocking, bool useRootNavigator, required BuildContext context, required Widget Function(BuildContext) builder}) -> Future<T?>

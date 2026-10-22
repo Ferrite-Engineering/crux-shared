@@ -74,18 +74,19 @@ export 'package:panes/panes.dart' show IdePaneBuilder, PaneSize;
 
 export 'src/crux_chrome_colors.dart';
 export 'src/crux_desktop_tokens.dart';
-export 'src/crux_dialog.dart';
-export 'src/crux_ide_layout.dart';
+export 'src/crux_dialog.dart' hide kCruxDialogDefaultWidth, kCruxDialogGutter;
+export 'src/crux_ide_layout.dart' hide kCruxPaneResizeStep;
 export 'src/crux_ide_layout_theme.dart';
 export 'src/crux_overflow_menu.dart';
 export 'src/crux_pop_up_button.dart';
-export 'src/crux_search_dialog.dart';
+export 'src/crux_search_dialog.dart'
+    hide kCruxSearchDialogRowExtent, kCruxSearchDialogSize;
 export 'src/crux_segmented_control.dart';
-export 'src/crux_toast.dart' show CruxToastAction, CruxToastCard, CruxToasts;
+export 'src/crux_toast.dart' show CruxToastAction, CruxToasts;
 export 'src/dock_restore_frame.dart';
 export 'src/escape_dismissible.dart';
 export 'src/feedback.dart';
-export 'src/focus_regions.dart';
+export 'src/focus_regions.dart' hide CruxFocusRegionState;
 export 'src/help_link.dart';
 export 'src/ide_panel_layout.dart';
 export 'src/modal_guard.dart';

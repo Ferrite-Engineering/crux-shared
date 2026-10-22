@@ -105,3 +105,13 @@ it back unless a route is open above that page.
 ## Dependencies
 
 `flutter`, `panes`. No Riverpod dependency — the host drives rebuilds.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxFocusRegionScopeState` (in `CruxFocusRegionScope`).
+- **Variant of the exported sealed `CruxMenuEntry`; a host's entry list and any switch over it need every variant**: `CruxMenuDivider`.
+- **Intent a host binds when it rebinds the region keys instead of taking `kCruxRegionShortcuts`**: `CruxNextRegionIntent`, `CruxPreviousRegionIntent`.
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxSearchRowBuilder`.
+- **The default region-key map a host replaces or extends**: `kCruxRegionShortcuts`.

@@ -6,6 +6,8 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Export namespace narrowed by 7 symbols.** `CruxFocusRegionState`, `CruxToastCard`, `kCruxDialogDefaultWidth`, `kCruxDialogGutter`, `kCruxPaneResizeStep`, `kCruxSearchDialogRowExtent`, `kCruxSearchDialogSize` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **Fix: closing a `showCruxDialog` dialog returns keyboard focus.** The
   platform can leave focus on the window's root scope while a modal is up, and
   an app-level shortcut then reaches no one until the user clicks into the
