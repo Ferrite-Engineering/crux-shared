@@ -77,6 +77,23 @@ const Map<String, bool> kSuiteKeys = {
 ///   simulators a fleet may use. The app and the CI runner refuse any other
 ///   simulator. It names simulators, not executable paths.
 ///
+/// The SimCrux formal and flow keys configure an organization's floor for
+/// results rather than a preference:
+///
+/// - `simcrux.formalForbidAssertionOptOut` refuses a proof whose script reads
+///   the design with assertions turned off (`-noassert`,
+///   `--ignore-assertions`).
+/// - `simcrux.formalRequiredSolvers` is an allow-list of engine lines
+///   (`smtbmc yices`, `abc pdr`) a proof may use.
+/// - `simcrux.formalMinDepth` is the least bound a bounded proof or cover may
+///   be configured with.
+/// - `simcrux.flowGateThresholds` is a list of `<metric><op><value>`
+///   thresholds an implementation run must meet, reported apart from the
+///   user's own.
+///
+/// Which licence tier honours a key is the product's decision, made before the
+/// value is parsed; nothing in this package knows about tiers.
+///
 /// Kept here rather than in the products because the linter is a standalone
 /// CLI in this package and cannot import them. Each product's
 /// `*_policy_keys_test.dart` asserts its registry matches its entry, so the
@@ -105,5 +122,9 @@ const Map<String, Map<String, bool>> kProductKeys = {
     'retentionPolicy': true,
     'distributedExecutionBackend': true,
     'teamDatabaseSubmitter': true,
+    'formalForbidAssertionOptOut': true,
+    'formalRequiredSolvers': true,
+    'formalMinDepth': true,
+    'flowGateThresholds': true,
   },
 };

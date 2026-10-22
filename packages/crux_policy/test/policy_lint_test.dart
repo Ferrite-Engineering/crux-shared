@@ -225,5 +225,42 @@ void main() {
         }
       }
     });
+
+    test('the SimCrux formal and flow floors are registered and honoured', () {
+      const keys = <String>[
+        'formalForbidAssertionOptOut',
+        'formalRequiredSolvers',
+        'formalMinDepth',
+        'flowGateThresholds',
+      ];
+      for (final key in keys) {
+        expect(kProductKeys['simcrux']![key], isTrue, reason: key);
+        expect(RegExp(r'^[a-z][A-Za-z0-9]*$').hasMatch(key), isTrue);
+      }
+      final findings = lint({
+        'schema': 1,
+        'products': {
+          'simcrux': {
+            'formalForbidAssertionOptOut': true,
+            'formalRequiredSolvers': ['smtbmc yices'],
+            'formalMinDepth': 20,
+            'flowGateThresholds': ['timing__setup__wns<0'],
+          },
+        },
+      });
+      expect(findings, isEmpty);
+      // A dotted spelling is not one of them: it is an unknown key.
+      expect(
+        byKey(
+          lint({
+            'schema': 1,
+            'products': {
+              'simcrux': {'formal.minDepth': 20},
+            },
+          }),
+        ),
+        contains('products.simcrux.formal.minDepth'),
+      );
+    });
   });
 }

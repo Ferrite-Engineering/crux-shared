@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `kProductKeys['simcrux']` registers four honoured keys for the formal and
+  implementation-flow floors an organization sets:
+  `formalForbidAssertionOptOut` (refuse a proof that reads the design with
+  assertions off), `formalRequiredSolvers` (an allow-list of engine lines),
+  `formalMinDepth` (the least bound of a bounded proof or cover) and
+  `flowGateThresholds` (`<metric><op><value>` thresholds reported apart from
+  the user's own). Flat camelCase like every registered key. The product
+  decides which licence tier honours them, before parsing the value.
+
 - `kProductKeys`: `lintcrux.mandatoryEngines`, `simcrux.defaultSimulator`,
   `simcrux.ciGateThreshold` and `simcrux.simulatorBinaryPolicy` are `true`;
   every registered product key is now honoured. `simulatorBinaryPolicy` is
