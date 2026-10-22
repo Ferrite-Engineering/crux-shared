@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_sqlite/src/guards/crux_guard_paths.dart';
 import 'package:crux_sqlite/src/guards/crux_guard_report.dart';
 import 'package:crux_sqlite/src/guards/crux_guard_sources.dart';
 
@@ -70,7 +71,7 @@ CruxGuardReport cruxAuditOpenOptions({
       if (receiver.contains('Policy') || receiver.contains('policy')) continue;
       seenDirectOpenFiles.add(file.path);
       final expected = expectedDirectOpenFiles.any(
-        (e) => file.path.endsWith(e) || e.endsWith(file.path),
+        (e) => cruxPathsMatch(file.path, e),
       );
       final finding = CruxGuardFinding(
         location: file.locate(match.start),
@@ -90,7 +91,7 @@ CruxGuardReport cruxAuditOpenOptions({
 
   for (final expected in expectedDirectOpenFiles) {
     final matched = seenDirectOpenFiles.any(
-      (p) => p.endsWith(expected) || expected.endsWith(p),
+      (seen) => cruxPathsMatch(seen, expected),
     );
     if (matched) continue;
     findings.add(

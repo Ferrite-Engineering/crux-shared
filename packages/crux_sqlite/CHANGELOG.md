@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **The G4, G5 and G5b pins match across path separators.** A scanned file is
+  named with the host's separator, so on Windows `lib\services\foo.dart` never
+  ended with a pin written as `lib/services/foo.dart`: G5 reported the open as
+  "not in the pinned set" and the pin as "no direct openDatabase call found
+  there any more" for the same file, and the G4 and G5b allowlists had the same
+  fault. Both sides are now compared in posix form (backslashes read as
+  separators, `.` and doubled separators removed), so a pin or an allowlist
+  entry reads the same on every host. A pin that already works around it by
+  building the path with `package:path` still works.
+
 - **Added `openForeignSqliteReadOnly`**, the one open of a SQLite file the
   suite does not own (a formal engine's `status.sqlite`). It runs no
   migration, writes no `schema_meta`, sets no `user_version` and takes no

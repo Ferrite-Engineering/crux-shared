@@ -7,6 +7,7 @@ import 'package:crux_sqlite/src/crux_db_recovery.dart';
 // allowlist property, and a reader who cannot click through to either has to
 // take both claims on trust.
 import 'package:crux_sqlite/src/guards/crux_database_delete_guard.dart';
+import 'package:crux_sqlite/src/guards/crux_guard_paths.dart';
 import 'package:crux_sqlite/src/guards/crux_guard_report.dart';
 import 'package:crux_sqlite/src/guards/crux_guard_sources.dart';
 import 'package:crux_sqlite/src/guards/crux_open_options_guard.dart';
@@ -230,7 +231,7 @@ CruxGuardReport cruxAuditOpenCatchShapes({
       for (final clause in statement.clauses) {
         if (!clause.isCatchAll) continue;
         final index = entries.indexWhere(
-          (e) => file.path.endsWith(e.file) || e.file.endsWith(file.path),
+          (e) => cruxPathsMatch(file.path, e.file),
         );
         final shape = clause.shape;
         final reached = calls.join(', ');

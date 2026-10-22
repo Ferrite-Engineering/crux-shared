@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_sqlite/src/crux_db_recovery.dart';
+import 'package:crux_sqlite/src/guards/crux_guard_paths.dart';
 import 'package:crux_sqlite/src/guards/crux_guard_report.dart';
 import 'package:crux_sqlite/src/guards/crux_guard_sources.dart';
 import 'package:meta/meta.dart';
@@ -117,7 +118,7 @@ CruxGuardReport cruxAuditDatabaseDeletes({
         continue;
       }
       final index = entries.indexWhere(
-        (w) => file.path.endsWith(w.file) || w.file.endsWith(file.path),
+        (w) => cruxPathsMatch(file.path, w.file),
       );
       if (index < 0) {
         findings.add(

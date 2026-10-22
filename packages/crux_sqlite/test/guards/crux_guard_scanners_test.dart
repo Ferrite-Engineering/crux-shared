@@ -20,6 +20,7 @@
 import 'dart:io';
 
 import 'package:crux_sqlite/crux_sqlite_guards.dart';
+import 'package:crux_sqlite/src/guards/crux_guard_paths.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -834,6 +835,132 @@ try {
           ),
         ),
       );
+    });
+  });
+
+  // A scanned file is named with the host's separator, so on Windows it is
+  // `lib\services\foo.dart`, while a pin or an allowlist entry is written once
+  // in posix form, as every other path in a consuming repo's guard test is.
+  // These cases hand the scanners the Windows spelling on every host, so a
+  // Linux run proves what only the Windows leg of a product's CI used to.
+  group('pins and allowlist entries match across path separators', () {
+    const directOpen =
+        'final db = await databaseFactory.openDatabase(p, options: o);';
+    const catchAll = '''
+try {
+  await Store.open(path: path);
+} on Object {
+  return null;
+}
+''';
+    const storeFactory = '''
+class Store {
+  static Future<Store> open({String? path}) async {
+    final policy = CruxSqliteOpenPolicy(runner: _runner, recovery: dataValue);
+    return Store._(await policy.open(path ?? inMemoryDatabasePath));
+  }
+}
+''';
+    const windowsName = r'lib\services\foo.dart';
+    const posixName = 'lib/services/foo.dart';
+
+    CruxGuardReport openOptions(
+      String name,
+      Set<String> pinned, {
+      String source = directOpen,
+    }) => cruxAuditOpenOptions(
+      sources: [CruxSourceFile.inline(name, source)],
+      subject: 'fixture',
+      expectedDirectOpenFiles: pinned,
+    );
+
+    test('G5: a posix pin matches a scanned backslash path', () {
+      final report = openOptions(windowsName, {posixName});
+      expect(report.isClean, isTrue, reason: report.describe());
+      expect(report.observations, hasLength(1));
+    });
+
+    test('G5: a backslash pin matches a scanned posix path', () {
+      final report = openOptions(posixName, {windowsName});
+      expect(report.isClean, isTrue, reason: report.describe());
+      expect(report.observations, hasLength(1));
+    });
+
+    test('G5: a pin written for a package-level scan still matches', () {
+      final report = openOptions(windowsName, {'services/foo.dart'});
+      expect(report.isClean, isTrue, reason: report.describe());
+    });
+
+    test('G5: a backslash path that is not pinned is still red', () {
+      final report = openOptions(windowsName, {'lib/services/bar.dart'});
+      expect(report.isClean, isFalse);
+      expect(
+        report.findings.map((f) => f.detail).join('\n'),
+        allOf(contains('not in the pinned set'), contains('meant to shrink')),
+      );
+    });
+
+    test(
+      'G5: a pin that no longer matches is still red on a backslash scan',
+      () {
+        final report = openOptions(windowsName, {
+          posixName,
+        }, source: 'const x = 1;');
+        expect(report.isClean, isFalse);
+        expect(report.findings.single.detail, contains('the set is meant to'));
+      },
+    );
+
+    test('G4: a posix allowlist entry matches a scanned backslash path', () {
+      final report = cruxAuditDatabaseDeletes(
+        sources: [
+          CruxSourceFile.inline(
+            windowsName,
+            'await databaseFactory.deleteDatabase(dbPath);',
+          ),
+        ],
+        allowlist: const [
+          CruxDeleteAllowlistEntry(
+            file: posixName,
+            storeName: 'LintCrux lint cache',
+            recovery: CruxDbRecovery.recreate,
+            reason: 'engine output; a fresh lint run reproduces every row',
+          ),
+        ],
+        subject: 'fixture',
+      );
+      expect(report.isClean, isTrue, reason: report.describe());
+    });
+
+    test('G5b: a posix allowlist entry matches a scanned backslash path', () {
+      final report = cruxAuditOpenCatchShapes(
+        sources: [
+          CruxSourceFile.inline(r'lib\store.dart', storeFactory),
+          CruxSourceFile.inline(windowsName, catchAll),
+        ],
+        subject: 'fixture',
+        allowlist: const [
+          CruxOpenCatchAllowlistEntry(
+            file: posixName,
+            storeName: 'LintCrux lint cache',
+            recovery: CruxDbRecovery.recreate,
+            reason: 'engine output; a fresh lint run reproduces every row',
+          ),
+        ],
+      );
+      expect(report.isClean, isTrue, reason: report.describe());
+    });
+
+    test('the path helper compares in posix form', () {
+      expect(cruxPosixPath(r'lib\services\foo.dart'), 'lib/services/foo.dart');
+      expect(cruxPosixPath(r'C:\work\lib\foo.dart'), 'C:/work/lib/foo.dart');
+      expect(
+        cruxPosixPath('lib//services/./foo.dart'),
+        'lib/services/foo.dart',
+      );
+      expect(cruxPathsMatch(r'C:\work\lib\foo.dart', 'lib/foo.dart'), isTrue);
+      expect(cruxPathsMatch('lib/foo.dart', r'C:\work\lib\foo.dart'), isTrue);
+      expect(cruxPathsMatch(r'lib\foo.dart', 'lib/bar.dart'), isFalse);
     });
   });
 
