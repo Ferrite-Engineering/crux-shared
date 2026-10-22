@@ -3,6 +3,7 @@
 
 import 'package:crux_a11y/crux_a11y.dart';
 import 'package:crux_dock/crux_dock.dart';
+import 'package:crux_dock/src/crux_dock_restore_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

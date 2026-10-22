@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 2 symbols.** `kCruxDockRestoreBarThickness`, `kCruxInspectorLabelWidth` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - A dock tab is announced as one button named after its entry, with its
   selected state and its badge count as the value (it was plain text with no
   role or state). Its close button stays a separate named button. Product

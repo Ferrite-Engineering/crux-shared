@@ -14,6 +14,6 @@
 library;
 
 export 'src/crux_dock.dart';
-export 'src/crux_dock_restore_bar.dart';
-export 'src/crux_inspector.dart';
+export 'src/crux_dock_restore_bar.dart' hide kCruxDockRestoreBarThickness;
+export 'src/crux_inspector.dart' hide kCruxInspectorLabelWidth;
 export 'src/dock_entry.dart';

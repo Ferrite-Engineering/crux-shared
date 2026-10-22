@@ -60,3 +60,11 @@ properties is an inspector, not a modal dialog.
   its "Properties" entry, its shortcut) reveals the tab and puts focus on the
   first control, or on the heading of a read-only object. Escape returns
   focus to the canvas through `onEscape`. One controller per editor tab.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxDockPopOut` (in `CruxDock`).
+- **Type of the payload a host callback receives**: `CruxDockDragData`.
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxDockEntryBuilder`.

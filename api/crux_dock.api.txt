@@ -120,6 +120,4 @@ class CruxInspectorValueRow extends StatelessWidget
   final value: String
   final valueStyle: TextStyle?
 get kCruxDockIconSize -> double
-get kCruxDockRestoreBarThickness -> double
 get kCruxDockStripHeight -> double
-get kCruxInspectorLabelWidth -> double
