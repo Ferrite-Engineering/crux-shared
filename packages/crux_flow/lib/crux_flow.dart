@@ -6,7 +6,9 @@
 /// The models a flow run is read into (run, steps, verdict, timing paths,
 /// source spans and their mapping), METRICS2.1 metric keys with the
 /// LibreLane metric table, aggregation and comparison, the readers for
-/// nextpnr's report and log, the mapping of a tool's cells back to source
+/// nextpnr's report and log, the versioned LibreLane run readers
+/// (`LibreLaneReaders`) with their checks and the OpenSTA path listing
+/// reader, the mapping of a tool's cells back to source
 /// registers (`NetlistSrcIndex`, `RtlRegisterSet`, `RtlRegisterResolver`),
 /// SARIF output (`FlowSarifWriter`), and the containment rule for paths a
 /// run names (`FlowContainment`). Pure Dart, so the headless binaries can
@@ -19,9 +21,16 @@ library;
 
 export 'src/flow_containment.dart';
 export 'src/flow_kind.dart';
+export 'src/flow_reader_support.dart';
 export 'src/flow_run.dart';
 export 'src/flow_step.dart';
 export 'src/flow_verdict.dart';
+export 'src/librelane/librelane_checks.dart';
+export 'src/librelane/librelane_metrics_reader.dart';
+export 'src/librelane/librelane_netlist.dart';
+export 'src/librelane/librelane_run_reader.dart';
+export 'src/librelane/librelane_steps.dart' hide readOptionalFlowText;
+export 'src/librelane/librelane_version.dart';
 export 'src/mapping/netlist_src_index.dart' show NetlistSrcIndex, isStorageCell;
 export 'src/mapping/rtl_register_resolver.dart';
 export 'src/mapping/rtl_registers.dart'
@@ -38,17 +47,32 @@ export 'src/nextpnr/nextpnr_results.dart'
     show
         NextpnrClockFrequency,
         NextpnrLog,
+        NextpnrNetEndpoint,
+        NextpnrNetTiming,
         NextpnrReading,
         NextpnrReport,
         NextpnrResourceUse;
+export 'src/opensta/opensta_report_reader.dart';
 export 'src/read_limits.dart'
-    show FlowInputLimits, FlowReadException, FlowReadFailure;
+    show
+        FlowInputLimits,
+        FlowReadException,
+        FlowReadFailure,
+        checkJsonDepth,
+        decodeFlowJson,
+        decodeFlowText;
 export 'src/rtl_mapping.dart';
 export 'src/sarif/flow_sarif_writer.dart'
     hide
+        kFlowAntennaRule,
         kFlowClockConstraintRule,
+        kFlowDrcRule,
+        kFlowLvsRule,
+        kFlowPhysicalRule,
         kFlowSarifFingerprintKey,
         kFlowSarifSourceRoot,
+        kFlowSynthesisRule,
+        kFlowTimingCheckRule,
         kFlowTimingPathRule;
 export 'src/src_span.dart' hide sharedPathSuffixLength;
 export 'src/timing_path.dart' hide nanosecondsToPicoseconds;

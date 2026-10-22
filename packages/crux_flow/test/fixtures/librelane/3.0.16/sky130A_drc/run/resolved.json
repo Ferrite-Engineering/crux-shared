@@ -1,0 +1,43 @@
+{
+    "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+    "DESIGN_NAME": "path_adder",
+    "PDK": "sky130A",
+    "CLOCK_PERIOD": 10,
+    "CLOCK_PORT": "clk",
+    "ERROR_ON_LINTER_TIMING_CONSTRUCTS": true,
+    "ERROR_ON_LINTER_ERRORS": true,
+    "ERROR_ON_LINTER_WARNINGS": false,
+    "ERROR_ON_UNMAPPED_CELLS": true,
+    "ERROR_ON_SYNTH_CHECKS": true,
+    "ERROR_ON_NL_ASSIGN_STATEMENTS": true,
+    "ERROR_ON_PDN_VIOLATIONS": true,
+    "ERROR_ON_TR_DRC": false,
+    "ERROR_ON_DISCONNECTED_PINS": true,
+    "ERROR_ON_LONG_WIRE": true,
+    "WIRE_LENGTH_THRESHOLD": null,
+    "ERROR_ON_XOR_ERROR": true,
+    "ERROR_ON_MAGIC_DRC": true,
+    "ERROR_ON_KLAYOUT_DRC": true,
+    "ERROR_ON_ILLEGAL_OVERLAPS": true,
+    "ERROR_ON_LVS_ERROR": true,
+    "TIMING_VIOLATION_CORNERS": [
+        "*tt*"
+    ],
+    "SETUP_VIOLATION_CORNERS": null,
+    "HOLD_VIOLATION_CORNERS": [
+        "*"
+    ],
+    "MAX_SLEW_VIOLATION_CORNERS": [
+        ""
+    ],
+    "MAX_CAP_VIOLATION_CORNERS": [
+        ""
+    ],
+    "meta": {
+        "version": 2,
+        "flow": null,
+        "substituting_steps": null,
+        "step": null,
+        "librelane_version": "3.0.16"
+    }
+}

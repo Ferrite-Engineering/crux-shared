@@ -18,8 +18,9 @@ import 'package:meta/meta.dart';
 /// as [TimingSegmentType.other] with the word kept, and cell names are kept
 /// verbatim, opaque or not.
 ///
-/// `detailed_net_timings` is not read here; it is large and only the slack
-/// overlay wants it. Unknown keys are ignored.
+/// `detailed_net_timings` is not read by [parse]; it is large and only the
+/// slack overlay wants it, so [parseNetTimings] reads it on its own. Unknown
+/// keys are ignored.
 @immutable
 class NextpnrReportReader {
   /// Creates a reader bounded by [limits].
@@ -72,6 +73,70 @@ class NextpnrReportReader {
       criticalPaths: List.unmodifiable(paths),
       utilization: Map.unmodifiable(utilization),
     );
+  }
+
+  /// The `detailed_net_timings` section of a whole `report.json`; empty when
+  /// the report has none (it was written without
+  /// `--detailed-timing-report`).
+  ///
+  /// The document must be an object and the section, when present, a list;
+  /// otherwise this throws [FlowReadException], as it does for a document
+  /// over a limit. Within the list a net that is not an object or names no
+  /// net is skipped, as is a sink without a finite `delay[1]`: one odd entry
+  /// must not hide the rest.
+  List<NextpnrNetTiming> parseNetTimings(String text) {
+    final json = requireObject(decodeFlowJson(text, limits), 'report');
+    final entries = optionalList(
+      json['detailed_net_timings'],
+      'detailed_net_timings',
+    );
+    final nets = <NextpnrNetTiming>[];
+    for (final entry in entries) {
+      if (entry is! Map<String, Object?>) continue;
+      final net = entry['net'];
+      if (net is! String) continue;
+      final driver = entry['driver'];
+      final port = entry['port'];
+      final sources = entry['sources'];
+      nets.add(
+        NextpnrNetTiming(
+          net: net,
+          driver: driver is String ? driver : null,
+          port: port is String ? port : null,
+          sources: List.unmodifiable(<String>[
+            if (sources is List<Object?>)
+              for (final s in sources)
+                if (s is String) s,
+          ]),
+          endpoints: List.unmodifiable(_netEndpoints(entry['endpoints'])),
+        ),
+      );
+    }
+    return List.unmodifiable(nets);
+  }
+
+  static List<NextpnrNetEndpoint> _netEndpoints(Object? endpoints) {
+    if (endpoints is! List<Object?>) return const <NextpnrNetEndpoint>[];
+    final out = <NextpnrNetEndpoint>[];
+    for (final endpoint in endpoints) {
+      if (endpoint is! Map<String, Object?>) continue;
+      final delay = endpoint['delay'];
+      if (delay is! List<Object?> || delay.length < 2) continue;
+      final max = delay[1];
+      if (max is! num || !max.isFinite) continue;
+      final min = delay[0];
+      final cell = endpoint['cell'];
+      final port = endpoint['port'];
+      out.add(
+        NextpnrNetEndpoint(
+          cell: cell is String ? cell : null,
+          port: port is String ? port : null,
+          minDelayNs: min is num && min.isFinite ? min.toDouble() : null,
+          maxDelayNs: max.toDouble(),
+        ),
+      );
+    }
+    return out;
   }
 
   /// Reads the report at [path]: [FlowVerdict.notRun] when the file is

@@ -89,6 +89,66 @@ paths are the bare file names. Captured 2026-10-21.
 The mapping tests take every expectation from `nextpnr/mapping.expected.json`
 (written from the RTL); these files are inputs only.
 
+## `librelane/`
+
+A slim copy of the SimCrux open core's LibreLane fixtures
+(`verification/fixtures/flow/librelane/` in the `simcrux` repository,
+commit `115cbb9b`), whose `PROVENANCE.md` holds the full provenance: the
+LibreLane releases (3.0.16 at `01ddb25`, 3.0.15 at `d7538ec`, each through
+its own `shell.nix`), the open PDKs (sky130A, gf180mcuD and IHP sg13g2
+through ciel at the versions both releases pin), the designs and
+configurations, the regenerator and the weekly live re-run. Captured
+2026-10-22 on macOS arm64.
+
+Eight cases: on 3.0.16 `sky130A_met`, `sky130A_timing`, `sky130A_drc`,
+`sky130A_antenna`, `sky130A_stopped`, `gf180mcuD_met` and `ihp-sg13g2_met`,
+and on 3.0.15 `sky130A_met`. Copied by a script that reads SimCrux's
+fixtures and writes these; per case:
+
+- `case.expected.json` and `exit_code.txt`, unchanged. The expectations
+  were written by hand from each configuration's intent and from
+  LibreLane's records read with `jq` and `ls`, never by a reader.
+- `run/flow.log`, `run/error.log`, `run/warning.log`,
+  `run/final/metrics.json` and `run/final/metrics.csv`, unchanged.
+- `run/resolved.json`: only the keys the readers read (`meta`, `PDK`,
+  `STD_CELL_LIBRARY`, `DESIGN_NAME`, `CLOCK_PORT`, `CLOCK_PERIOD`, every
+  `*VIOLATION_CORNERS`, every `ERROR_ON_*`, `WIRE_LENGTH_THRESHOLD`), values
+  unchanged.
+- Every step directory, with a zero-byte `config.json` (every step has
+  one), a zero-byte `state_out.json` where the step wrote one (the readers
+  key on its presence), and `runtime.txt` unchanged.
+- The post-PnR STA step's corner directories with `max.rpt` and `min.rpt`:
+  the nominal typical corner's listings unchanged for 3.0.16 `sky130A_met`,
+  `sky130A_timing` and 3.0.15 `sky130A_met`, zero-byte placeholders for
+  every other corner and case (as SimCrux trims them).
+- `06-yosys-synthesis/path_adder.nl.v.json` (the synthesis sidecar),
+  unchanged, for `sky130A_timing` only.
+
+`librelane/mapping.expected.json` is SimCrux's, written from
+`path_adder.v`: the worst register-to-register path starts at `src_a` or
+`src_b` and ends at `sum_q`. The OpenSTA tests count paths and read slacks
+from the listings with plain regular expressions, independently of the
+reader.
+
+## `metric_diff/`
+
+Upstream LibreLane's own `compare` output, the oracle for `MetricDiff`.
+`handbuilt/gold.metrics.json` and `handbuilt/new.metrics.json` are a pair
+written by hand from the metric names and aggregators of LibreLane 3.0.16
+`library.py` (no run data: the upstream librelane-metrics repository has no
+licence, so nothing derived from it is here). Each `compare_py.<v>.md` is
+what LibreLane 3.0.16 (`VERSION`), installed from its tag into a scratch
+virtual environment, printed for
+
+```
+python -m librelane.common.metrics compare --table-verbosity <V> -f <filter> gold.metrics.json new.metrics.json
+```
+
+with `<V>` each of `CRITICAL`, `WORSE`, `CHANGED`, `ALL`, and the filter
+`*` (`handbuilt/`) or `DEFAULT` (`handbuilt_default/`, the same pair).
+Captured 2026-10-22. The regenerator is SimCrux's
+`tool/flow/regen_metric_diff_parity.sh`; it writes only `compare_py.*.md`.
+
 ## `metrics/library-3.0.16.tsv`
 
 The metric definitions of upstream LibreLane 3.0.16

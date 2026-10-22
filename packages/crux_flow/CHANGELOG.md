@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+- **LibreLane run readers, one per verified minor line.**
+  `LibreLaneReaders` detects the release from `resolved.json`
+  (`meta.librelane_version`, then `meta.openlane_version`) and selects
+  `LibreLane30RunReader`, verified for exactly 3.0.15 and 3.0.16
+  (`kLibreLane30Verified`); any other release is read by the nearest older
+  line's reader with `FlowRunRef.verified` false and a
+  `FlowReaderUnsupported` reason. `LibreLaneStepReader` (status from
+  `state_out.json`, ids from `flow.log`, steps turned off listed by name),
+  `LibreLaneMetricsReader` (`final/metrics.json`, `metrics.csv` fallback)
+  and `kLibreLane30Checks`: the metrics of every LibreLane 3.0 checker with
+  its error and corner variables, judged by `evaluateLibreLaneChecks` the
+  way the checker judges them, plus the antenna counts no checker fails on.
+  The verdict comes from these records, never the exit status.
+- **`OpenStaReportReader`**: OpenSTA `report_checks` text listings, read as
+  a stream, sorted by slack, worst paths kept with clock-to-output, routing,
+  logic and setup or hold segments.
+- **`LibreLaneNetlist`**: the synthesis sidecar with `write_verilog`'s
+  `_NNN_` names rebuilt, so timing-report instances map to the source
+  design through their flip-flop's output net ("nearest register").
+- **`FlowSarifWriter.librelane`**: one result per failing check (timing,
+  DRC, LVS, antenna, physical, synthesis), the worst setup path anchored at
+  its endpoint's source; a check the run's configuration only warns about
+  is a `note`.
+- **`NextpnrReportReader.parseNetTimings`** reads `detailed_net_timings`;
+  `checkJsonDepth`, `decodeFlowJson` and `decodeFlowText` are exported.
+- `MetricDiff` is held byte for byte to upstream `compare` output on the
+  hand-built pair.
 - **Export namespace narrowed by 6 symbols.** `isToolLibraryPath`, `kFlowClockConstraintRule`, `kFlowSarifFingerprintKey`, `kFlowSarifSourceRoot`, `kFlowTimingPathRule`, `sharedPathSuffixLength` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **Mapping a tool's cells back to source registers.** `NetlistSrcIndex`

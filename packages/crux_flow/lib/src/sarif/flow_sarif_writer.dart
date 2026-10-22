@@ -3,6 +3,8 @@
 
 import 'dart:convert';
 
+import 'package:crux_flow/src/librelane/librelane_checks.dart';
+import 'package:crux_flow/src/librelane/librelane_run_reader.dart';
 import 'package:crux_flow/src/mapping/rtl_register_resolver.dart';
 import 'package:crux_flow/src/nextpnr/nextpnr_results.dart';
 import 'package:crux_flow/src/rtl_mapping.dart';
@@ -89,6 +91,159 @@ class FlowSarifWriter {
     }
     return _log(results);
   }
+
+  /// The SARIF log for a LibreLane run [reading]: one result per failing
+  /// check, and, when [worstSetupPath] is given and misses its constraint,
+  /// one anchored at its endpoint's source through [worstSetupMapping].
+  ///
+  /// A check LibreLane enforces, or that no checker looks at (antenna
+  /// violations), is a `warning`; one the run's configuration tells
+  /// LibreLane only to warn about is a `note`. Physical checks (design
+  /// rules, LVS, antenna) have no source location: they are findings about
+  /// the layout, not about a line of the design. The corners, the count and
+  /// whether LibreLane enforces the check go in `properties`, never in the
+  /// message.
+  Map<String, Object?> librelane(
+    LibreLaneReading reading, {
+    TimingPath? worstSetupPath,
+    TimingPathMapping? worstSetupMapping,
+  }) {
+    final results = <Map<String, Object?>>[];
+    final findings = reading.checks?.findings ?? const <LibreLaneFinding>[];
+    final path = worstSetupPath;
+    final pathMisses =
+        path != null && path.slackPs != null && path.slackPs! < 0;
+    for (final finding in findings) {
+      final metric = finding.check.metric;
+      final level = finding.violates ? 'warning' : 'note';
+      final properties = <String, Object?>{
+        'metric': metric,
+        'category': finding.check.category.wireName,
+        'value': finding.value,
+        if (finding.corners.isNotEmpty) 'corners': finding.corners,
+        'enforcedByLibreLane': finding.enforced,
+        'checker': ?finding.check.checker,
+      };
+      if (metric == 'timing__setup_vio__count' && pathMisses) {
+        final clock = path.clockTo ?? path.clockFrom ?? reading.clockPort ?? '';
+        results.add(
+          _pathFinding(
+            path,
+            clock,
+            worstSetupMapping,
+            level: level,
+            extra: properties,
+          ),
+        );
+        continue;
+      }
+      final rule = _librelaneRule(finding.check.category);
+      results.add({
+        'ruleId': rule,
+        'level': level,
+        'message': {
+          'text':
+              'LibreLane reports ${_librelaneWhat[metric] ?? metric} in this '
+              'run.',
+        },
+        'partialFingerprints': {
+          kFlowSarifFingerprintKey: CruxSignature.compute([
+            rule,
+            metric,
+            '',
+          ], ''),
+        },
+        'properties': properties,
+      });
+    }
+    return _log(results, rules: [..._rules, ..._librelaneRules]);
+  }
+
+  Map<String, Object?> _pathFinding(
+    TimingPath path,
+    String clock,
+    TimingPathMapping? mapping, {
+    required String level,
+    required Map<String, Object?> extra,
+  }) {
+    final start = mapping?.startpoint ?? RtlMapping.unmapped;
+    final end = mapping?.endpoint ?? RtlMapping.unmapped;
+    final startName = start.register ?? path.startpoint;
+    final endName = end.register ?? path.endpoint;
+    final location = _location(end);
+    final related = _location(start);
+    return {
+      'ruleId': kFlowTimingPathRule,
+      'level': level,
+      'message': {
+        'text':
+            'The worst path from $startName to $endName misses the '
+            'constraint of clock $clock.',
+      },
+      if (location != null) 'locations': [location],
+      if (related != null)
+        'relatedLocations': [
+          {
+            'id': 1,
+            ...related,
+            'message': {'text': 'Path start: $startName'},
+          },
+        ],
+      'partialFingerprints': {
+        kFlowSarifFingerprintKey: CruxSignature.compute([
+          kFlowTimingPathRule,
+          endName,
+          clock,
+        ], ''),
+      },
+      'properties': {
+        ...extra,
+        'clock': clock,
+        'rank': path.rank,
+        'delayPs': path.delayPs,
+        'slackPs': ?path.slackPs,
+        'startpoint': path.startpoint,
+        'endpoint': path.endpoint,
+        'startFidelity': start.fidelity.wireName,
+        'endFidelity': end.fidelity.wireName,
+      },
+    };
+  }
+
+  static String _librelaneRule(LibreLaneCheckCategory category) =>
+      switch (category) {
+        LibreLaneCheckCategory.timing => kFlowTimingCheckRule,
+        LibreLaneCheckCategory.drc => kFlowDrcRule,
+        LibreLaneCheckCategory.lvs => kFlowLvsRule,
+        LibreLaneCheckCategory.antenna => kFlowAntennaRule,
+        LibreLaneCheckCategory.physical => kFlowPhysicalRule,
+        LibreLaneCheckCategory.synthesis => kFlowSynthesisRule,
+      };
+
+  /// What each checked metric counts, as a message names it.
+  static const Map<String, String> _librelaneWhat = {
+    'timing__setup_vio__count': 'setup timing violations',
+    'timing__hold_vio__count': 'hold timing violations',
+    'design__max_slew_violation__count': 'maximum slew violations',
+    'design__max_cap_violation__count': 'maximum capacitance violations',
+    'route__drc_errors': 'routing design rule violations',
+    'magic__drc_error__count': 'Magic design rule violations',
+    'klayout__drc_error__count': 'KLayout design rule violations',
+    'klayout__density_error__count': 'KLayout density violations',
+    'design__lvs_error__count': 'LVS mismatches between layout and circuit',
+    'route__antenna_violation__count': 'routing antenna violations',
+    'antenna__violating__nets': 'nets over their antenna ratio',
+    'klayout__antenna_error__count': 'KLayout antenna violations',
+    'design__xor_difference__count':
+        'differences between the Magic and KLayout layouts',
+    'magic__illegal_overlap__count': 'illegal overlaps',
+    'design__critical_disconnected_pin__count': 'disconnected pins',
+    'design__power_grid_violation__count': 'power grid violations',
+    'route__wirelength__max': 'a wire over the length threshold',
+    'design__instance_unmapped__count': 'unmapped cells after synthesis',
+    'synthesis__check_error__count': 'synthesis check errors',
+    'design__lint_error__count': 'lint errors',
+  };
 
   /// [log] as indented JSON with a trailing newline.
   static String encode(Map<String, Object?> log) =>
@@ -208,7 +363,10 @@ class FlowSarifWriter {
     return Uri(path: normalized).toString();
   }
 
-  Map<String, Object?> _log(List<Map<String, Object?>> results) => {
+  Map<String, Object?> _log(
+    List<Map<String, Object?>> results, {
+    List<Map<String, Object?>> rules = _rules,
+  }) => {
     r'$schema': 'https://json.schemastore.org/sarif-2.1.0.json',
     'version': '2.1.0',
     'runs': [
@@ -217,7 +375,7 @@ class FlowSarifWriter {
           'driver': {
             'name': toolName,
             if (toolVersion != null) 'version': toolVersion,
-            'rules': _rules,
+            'rules': rules,
           },
         },
         'originalUriBaseIds': {
@@ -264,4 +422,83 @@ class FlowSarifWriter {
       'defaultConfiguration': {'level': 'warning'},
     },
   ];
+
+  static const List<Map<String, Object?>> _librelaneRules = [
+    {
+      'id': kFlowTimingCheckRule,
+      'name': 'TimingCheckFails',
+      'shortDescription': {
+        'text': 'A timing check of the implementation run fails.',
+      },
+      'fullDescription': {
+        'text':
+            'Setup, hold, slew or capacitance violations at one or more '
+            'corners the run timed. The corners and whether the flow '
+            'enforces the check are in the properties.',
+      },
+      'defaultConfiguration': {'level': 'warning'},
+    },
+    {
+      'id': kFlowDrcRule,
+      'name': 'DesignRuleViolations',
+      'shortDescription': {
+        'text': 'The layout breaks design rules of the PDK.',
+      },
+      'fullDescription': {
+        'text':
+            "A design rule check of the run's layout reports violations. "
+            "The markers are in the run's DRC reports; open the layout in "
+            'KLayout to see them.',
+      },
+      'defaultConfiguration': {'level': 'warning'},
+    },
+    {
+      'id': kFlowLvsRule,
+      'name': 'LvsMismatch',
+      'shortDescription': {
+        'text': 'The layout does not match the circuit it was built from.',
+      },
+      'defaultConfiguration': {'level': 'warning'},
+    },
+    {
+      'id': kFlowAntennaRule,
+      'name': 'AntennaViolations',
+      'shortDescription': {'text': 'Nets exceed their antenna ratio.'},
+      'defaultConfiguration': {'level': 'warning'},
+    },
+    {
+      'id': kFlowPhysicalRule,
+      'name': 'PhysicalCheckFails',
+      'shortDescription': {
+        'text': 'A physical check of the implementation run fails.',
+      },
+      'defaultConfiguration': {'level': 'warning'},
+    },
+    {
+      'id': kFlowSynthesisRule,
+      'name': 'SynthesisCheckFails',
+      'shortDescription': {
+        'text': 'A lint or synthesis check of the run fails.',
+      },
+      'defaultConfiguration': {'level': 'warning'},
+    },
+  ];
 }
+
+/// The SARIF rule for a failing LibreLane timing check without a path.
+const String kFlowTimingCheckRule = 'flow/timing-check';
+
+/// The SARIF rule for design rule violations.
+const String kFlowDrcRule = 'flow/drc';
+
+/// The SARIF rule for LVS mismatches.
+const String kFlowLvsRule = 'flow/lvs';
+
+/// The SARIF rule for antenna violations.
+const String kFlowAntennaRule = 'flow/antenna';
+
+/// The SARIF rule for the other physical checks.
+const String kFlowPhysicalRule = 'flow/physical';
+
+/// The SARIF rule for lint and synthesis checks.
+const String kFlowSynthesisRule = 'flow/synthesis';

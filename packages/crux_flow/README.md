@@ -3,7 +3,8 @@
 Implementation-flow results for the suite: the models a flow run is read
 into, METRICS2.1 metric keys with the LibreLane metric table, aggregation and
 run-to-run comparison, Yosys source spans, the readers for nextpnr's report
-and log, the mapping of a tool's cells back to source registers, SARIF
+and log, versioned LibreLane run readers with each LibreLane checker's rule,
+the OpenSTA path listing reader, the mapping of a tool's cells back to source registers, SARIF
 output, and the containment rule for the paths a run names. Pure Dart, so
 the headless binaries read a run without Flutter.
 
@@ -41,12 +42,20 @@ print(diff.renderMarkdown(MetricDiffVerbosity.worse));
 | `MetricDiff`, `MetricComparison`, `MetricDiffStatistics`, `MetricDiffVerbosity`, `MetricChangeClass`, `MetricFilter` | Two runs' metrics compared with LibreLane `compare.py` semantics in decimal arithmetic, its four verbosity levels, its wildcard filter, and its Markdown table. |
 | `MetricsDocument` | A `metrics.json` read under the input limits. |
 | `NextpnrReportReader`, `NextpnrLogReader`, `NextpnrReport`, `NextpnrLog`, `NextpnrClockFrequency`, `NextpnrResourceUse`, `NextpnrReading` | nextpnr's `report.json` (one reader for iCE40, ECP5, Gowin and GateMate) and its log (for runs without `--report`). Met iff every clock reaches its constraint. |
+| `NextpnrNetTiming`, `NextpnrNetEndpoint` | `detailed_net_timings` (`NextpnrReportReader.parseNetTimings`), read on its own because it is large. |
+| `LibreLaneReaders`, `LibreLaneRunReader`, `LibreLane30RunReader`, `LibreLaneReading`, `LibreLaneVersion`, `LibreLaneVersionRange`, `kLibreLane30Verified`, `detectLibreLaneVersion`, `readLibreLaneResolved`, `chooseLibreLaneTimingCorner` | A LibreLane run directory, read by the reader of its release's minor line. Verified only for the releases in the reader's range (3.0.15 and 3.0.16 for the 3.0 line); any other release is read by the nearest older line's reader, unverified, with a `FlowReaderUnsupported` reason. LibreLane results are findings, not signoff. |
+| `LibreLaneStepReader`, `LibreLaneFlowLog`, `kLibreLaneStepDirectory` | Steps from `NN-<tool>-<step>` directories: completed with `state_out.json`, failed without (a stopping step or a checker's deferred error), ids from `flow.log`, steps turned off by name. |
+| `LibreLaneMetricsReader`, `LibreLaneMetrics` | `final/metrics.json`, `final/metrics.csv` when only that was kept, aggregated with the line's metric table. |
+| `LibreLaneCheck`, `kLibreLane30Checks`, `evaluateLibreLaneChecks`, `LibreLaneFinding`, `LibreLaneCheckOutcome`, `LibreLaneCheckCategory` | Every LibreLane 3.0 checker's metric, error variable, corner wildcards and threshold, judged as the checker judges them; a finding the configuration only warns about is kept and leaves the verdict alone. |
+| `OpenStaReportReader`, `OpenStaReport`, `OpenStaPathDelay` | OpenSTA `report_checks` text listings (LibreLane's per-corner `max.rpt` and `min.rpt`), streamed, sorted by slack, worst paths kept with their segments. |
+| `LibreLaneNetlist`, `writeVerilogAutoNames` | The synthesis sidecar with `write_verilog`'s `_NNN_` names rebuilt, mapping a timing path's instances to the nearest register. |
+| `FlowReaderUnsupported` | Why a run was read by a reader not verified for it. |
 | `NetlistSrcIndex`, `isStorageCell` | A synthesized design's cell and net names to their `SrcSpan`s, and whether a cell is a flip-flop or latch (by its ports, so an unseen library reads too). |
 | `RtlRegisterSet`, `RtlRegister`, `isToolLibraryPath`, `sameSourceRange` | The source design's registers from its elaboration: declaration, assigning statements and block, named by instance path; the name stem of a synthesized flip-flop (`ra_SB_DFF_Q_2_DFFLC` is `ra`). |
 | `RtlRegisterResolver`, `TimingPathMapping` | A path's start, end and every segment mapped to `register`, `statement`, `span` or `unmapped`, preferring the register. |
 | `FlowSarifWriter` | Timing findings as SARIF 2.1.0 for any SARIF reader: no numbers in messages (baselines survive reruns), `crux-fnv1a64/1` fingerprints, URIs relative to `SRCROOT`, English only. |
 | `FlowContainment`, `FlowContainmentException` | A run root, or a path a run's records name, must resolve inside the allowed directories, symlinks resolved. |
-| `FlowInputLimits`, `FlowReadException`, `FlowReadFailure` | The byte, JSON-depth, key-length and line-length caps every reader applies, and the one exception every reader throws. |
+| `FlowInputLimits`, `FlowReadException`, `FlowReadFailure`, `checkJsonDepth`, `decodeFlowJson`, `decodeFlowText` | The byte, JSON-depth, key-length and line-length caps every reader applies, and the one exception every reader throws; the depth check and bounded decoders for callers reading a section the readers leave alone. |
 
 ## Inputs are hostile until read
 
@@ -65,8 +74,11 @@ extraction of upstream's `library.py`; aggregation and key parsing carry
 upstream's own unit-test vectors; and the comparison's decimal strings were
 checked against Python's `decimal` module. The mapping's expectations are
 written from the designed-path RTL (`mapping.expected.json`), over Yosys's
-own elaboration and synthesis of it. `test/fixtures/PROVENANCE.md` has the
-detail.
+own elaboration and synthesis of it. The LibreLane expectations were written
+by hand from each case's configuration and LibreLane's own records, the
+OpenSTA ones are counted from the listings with plain regular expressions,
+and the comparison is held byte for byte to upstream `compare` output on a
+hand-built pair. `test/fixtures/PROVENANCE.md` has the detail.
 
 ## Exported on purpose
 

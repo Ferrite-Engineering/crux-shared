@@ -46,6 +46,12 @@ enum FlowReadFailure
   static const nonFinite: FlowReadFailure
   static const tooDeep: FlowReadFailure
   static const tooLarge: FlowReadFailure
+enum FlowReaderUnsupported
+  const FlowReaderUnsupported(String wireName)
+  final wireName: String
+  static const layoutUnknown: FlowReaderUnsupported
+  static const schemaUnknown: FlowReaderUnsupported
+  static const versionUnknown: FlowReaderUnsupported
 class FlowRun
   const FlowRun({DateTime? finishedAt, DateTime? startedAt, List<FlowStep> steps, List<TimingPath> timing, Map<String, Object?> metrics, Map<String, String> artifacts, Map<String, String> toolVersions, required FlowRunRef ref, required FlowVerdict verdict})
   factory FlowRun.fromJson(Map<String, Object?> json)
@@ -79,6 +85,7 @@ class FlowSarifWriter
   final sourceRoot: String?
   final toolName: String
   final toolVersion: String?
+  librelane(LibreLaneReading reading, {TimingPath? worstSetupPath, TimingPathMapping? worstSetupMapping}) -> Map<String, Object?>
   nextpnr(NextpnrReport report, {RtlRegisterResolver? resolver}) -> Map<String, Object?>
   relativeUri(String file) -> String?
   static encode(Map<String, Object?> log) -> String
@@ -116,6 +123,133 @@ enum FlowVerdict
   static const unrecognised: FlowVerdict
   static const violated: FlowVerdict
   static fromWireName(String wireName) -> FlowVerdict
+class LibreLane30RunReader extends LibreLaneRunReader
+  const LibreLane30RunReader({FlowInputLimits limits})
+  get checks -> List<LibreLaneCheck>
+  get line -> String
+  get metricTable -> MetricDefinitionTable
+  get verified -> LibreLaneVersionRange
+  read(String runRoot, {LibreLaneVersion? version, String? tag, bool live, int timingPaths}) -> Future<LibreLaneReading>
+class LibreLaneCheck
+  const LibreLaneCheck({String? baseCornerVariable, String? checker, String? cornerVariable, String? errorOnVariable, String? thresholdVariable, bool errorOnDefault, required LibreLaneCheckCategory category, required String metric})
+  final baseCornerVariable: String?
+  final category: LibreLaneCheckCategory
+  final checker: String?
+  final cornerVariable: String?
+  final errorOnDefault: bool
+  final errorOnVariable: String?
+  final metric: String
+  final thresholdVariable: String?
+  get perCorner -> bool
+enum LibreLaneCheckCategory
+  const LibreLaneCheckCategory(String wireName)
+  final wireName: String
+  static const antenna: LibreLaneCheckCategory
+  static const drc: LibreLaneCheckCategory
+  static const lvs: LibreLaneCheckCategory
+  static const physical: LibreLaneCheckCategory
+  static const synthesis: LibreLaneCheckCategory
+  static const timing: LibreLaneCheckCategory
+class LibreLaneCheckOutcome
+  const LibreLaneCheckOutcome({required List<LibreLaneFinding> findings, required List<String> absent, required List<String> evaluated})
+  final absent: List<String>
+  final evaluated: List<String>
+  final findings: List<LibreLaneFinding>
+class LibreLaneFinding
+  const LibreLaneFinding({List<String> corners, bool enforced, required LibreLaneCheck check, required num value})
+  final check: LibreLaneCheck
+  final corners: List<String>
+  final enforced: bool
+  final value: num
+  get violates -> bool
+  toString() -> String
+class LibreLaneFlowLog
+  const LibreLaneFlowLog({List<String> skipped, Map<String, String> stepIds})
+  factory LibreLaneFlowLog.parse(String text, {int maxLineLength})
+  final skipped: List<String>
+  final stepIds: Map<String, String>
+class LibreLaneMetrics
+  const LibreLaneMetrics({int droppedLongKeys, int droppedValues, required Map<String, Object?> values, required Set<String> aggregatedKeys, required String source})
+  final aggregatedKeys: Set<String>
+  final droppedLongKeys: int
+  final droppedValues: int
+  final source: String
+  final values: Map<String, Object?>
+class LibreLaneMetricsReader
+  const LibreLaneMetricsReader({FlowInputLimits limits, MetricDefinitionTable? table})
+  final limits: FlowInputLimits
+  final table: MetricDefinitionTable?
+  parseCsv(String text) -> MetricsDocument
+  read(String runRoot) -> LibreLaneMetrics?
+class LibreLaneNetlist
+  factory LibreLaneNetlist.fromModel(NetlistModel design, {String? module})
+  factory LibreLaneNetlist.parse(String text, {FlowInputLimits limits, String? module})
+  final index: NetlistSrcIndex
+  isStorage(String instance) -> bool
+  outputNets(String instance) -> List<String>
+  resolvePath(TimingPath path, RtlRegisterSet registers) -> TimingPathMapping
+  sidecarName(String instance) -> String?
+  static read(String path, {FlowInputLimits limits, String? module}) -> Future<LibreLaneNetlist>
+  static registerNet(List<String> labels, RtlRegisterSet registers) -> String?
+class LibreLaneReaders
+  const LibreLaneReaders(List<LibreLaneRunReader> readers)
+  factory LibreLaneReaders.standard({FlowInputLimits limits})
+  final readers: List<LibreLaneRunReader>
+  read(String runRoot, {String? tag, bool live, int timingPaths}) -> Future<LibreLaneReading>
+  select(LibreLaneVersion? version) -> (LibreLaneRunReader, bool)
+  static looksLikeRun(String dir) -> bool
+class LibreLaneReading
+  const LibreLaneReading({FlowReaderUnsupported? unsupported, LibreLaneCheckOutcome? checks, LibreLaneMetrics? metrics, LibreLaneVersion? version, List<String> errorRecords, List<String> skippedSteps, String? clockPort, String? designName, String? pdk, String? problem, String? stdCellLibrary, String? stoppedStep, String? timingCorner, String? timingProblem, double? clockPeriodNs, int timingPathCount, required FlowRun run})
+  final checks: LibreLaneCheckOutcome?
+  final clockPeriodNs: double?
+  final clockPort: String?
+  final designName: String?
+  final errorRecords: List<String>
+  final metrics: LibreLaneMetrics?
+  final pdk: String?
+  final problem: String?
+  final run: FlowRun
+  final skippedSteps: List<String>
+  final stdCellLibrary: String?
+  final stoppedStep: String?
+  final timingCorner: String?
+  final timingPathCount: int
+  final timingProblem: String?
+  final unsupported: FlowReaderUnsupported?
+  final version: LibreLaneVersion?
+  get verdict -> FlowVerdict
+  get verified -> bool
+abstract class LibreLaneRunReader
+  const LibreLaneRunReader({FlowInputLimits limits})
+  final limits: FlowInputLimits
+  get checks -> List<LibreLaneCheck>
+  get line -> String
+  get metricTable -> MetricDefinitionTable
+  get verified -> LibreLaneVersionRange
+  read(String runRoot, {LibreLaneVersion? version, String? tag, bool live, int timingPaths}) -> Future<LibreLaneReading>
+class LibreLaneStepReader
+  const LibreLaneStepReader({FlowInputLimits limits})
+  final limits: FlowInputLimits
+  read(String runRoot, {LibreLaneFlowLog log, bool live}) -> List<FlowStep>
+class LibreLaneVersion implements Comparable<LibreLaneVersion>
+  const LibreLaneVersion(int major, int minor, int patch, {String? raw})
+  ==(Object other) -> bool
+  compareTo(LibreLaneVersion other) -> int
+  final major: int
+  final minor: int
+  final patch: int
+  final raw: String
+  get hashCode -> int
+  get isRelease -> bool
+  get line -> String
+  static tryParse(String? text) -> LibreLaneVersion?
+  toString() -> String
+class LibreLaneVersionRange
+  const LibreLaneVersionRange(LibreLaneVersion first, LibreLaneVersion last)
+  contains(LibreLaneVersion version) -> bool
+  final first: LibreLaneVersion
+  final last: LibreLaneVersion
+  toString() -> String
 enum MappingFidelity
   const MappingFidelity(String wireName)
   final wireName: String
@@ -255,6 +389,22 @@ class NextpnrLogReader
   final limits: FlowInputLimits
   parse(String text) -> NextpnrLog
   readFile(String path) -> Future<NextpnrReading<NextpnrLog>>
+class NextpnrNetEndpoint
+  const NextpnrNetEndpoint({String? cell, String? port, double? minDelayNs, required double maxDelayNs})
+  ==(Object other) -> bool
+  final cell: String?
+  final maxDelayNs: double
+  final minDelayNs: double?
+  final port: String?
+  get hashCode -> int
+class NextpnrNetTiming
+  const NextpnrNetTiming({List<String> sources, String? driver, String? port, required List<NextpnrNetEndpoint> endpoints, required String net})
+  final driver: String?
+  final endpoints: List<NextpnrNetEndpoint>
+  final net: String
+  final port: String?
+  final sources: List<String>
+  get maxDelayNs -> double?
 class NextpnrReading<T extends Object>
   const NextpnrReading({String? problem, T? result, required FlowVerdict verdict})
   final problem: String?
@@ -270,6 +420,7 @@ class NextpnrReportReader
   const NextpnrReportReader({FlowInputLimits limits})
   final limits: FlowInputLimits
   parse(String text) -> NextpnrReport
+  parseNetTimings(String text) -> List<NextpnrNetTiming>
   readFile(String path) -> Future<NextpnrReading<NextpnrReport>>
 class NextpnrResourceUse
   const NextpnrResourceUse({required int available, required int used})
@@ -278,6 +429,24 @@ class NextpnrResourceUse
   final used: int
   get hashCode -> int
   toString() -> String
+enum OpenStaPathDelay
+  const OpenStaPathDelay(String wireName)
+  final wireName: String
+  static const max: OpenStaPathDelay
+  static const min: OpenStaPathDelay
+class OpenStaReport
+  const OpenStaReport({OpenStaPathDelay? pathDelay, String? corner, required List<TimingPath> paths, required int pathCount, required int skipped})
+  final corner: String?
+  final pathCount: int
+  final pathDelay: OpenStaPathDelay?
+  final paths: List<TimingPath>
+  final skipped: int
+class OpenStaReportReader
+  const OpenStaReportReader({FlowInputLimits limits, int maxPaths})
+  final limits: FlowInputLimits
+  final maxPaths: int
+  parse(String text) -> OpenStaReport
+  readFile(String path) -> Future<OpenStaReport>
 class RtlMapping
   const RtlMapping({List<SrcSpan> spans, String? register, required MappingFidelity fidelity})
   factory RtlMapping.fromJson(Map<String, Object?> json)
@@ -393,7 +562,19 @@ enum TimingSegmentType
   static const setup: TimingSegmentType
   static fromToolWord(String word) -> TimingSegmentType
 aggregateMetrics(Map<String, Object?> input, {MetricDefinitionTable? table}) -> Map<String, Object?>
+checkJsonDepth(String text, int maxDepth) -> void
+chooseLibreLaneTimingCorner(List<String> corners, Map<String, Object?> config) -> String?
+decodeFlowJson(String text, FlowInputLimits limits) -> Object?
+decodeFlowText(List<int> bytes, FlowInputLimits limits) -> String
+detectLibreLaneVersion(Map<String, Object?>? resolved) -> LibreLaneVersion?
+evaluateLibreLaneChecks(Map<String, Object?> metrics, Map<String, Object?> config, {List<LibreLaneCheck> checks}) -> LibreLaneCheckOutcome
 isStorageCell(Cell cell) -> bool
+get kLibreLane30Checks -> List<LibreLaneCheck>
+get kLibreLane30Verified -> LibreLaneVersionRange
+get kLibreLaneMaxRootEntries -> int
+get kLibreLaneStepDirectory -> RegExp
 get librelaneMetricsV1 -> MetricDefinitionTable
 matchSourceBySuffix(String recorded, Iterable<String> designSources) -> String?
+readLibreLaneResolved(String runRoot, FlowInputLimits limits) -> Future<Map<String, Object?>?>
 sameSourceRange(SrcSpan a, SrcSpan b) -> bool
+writeVerilogAutoNames(Module module) -> Map<String, String>

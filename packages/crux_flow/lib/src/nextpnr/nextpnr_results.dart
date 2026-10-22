@@ -138,6 +138,80 @@ class NextpnrLog {
   }
 }
 
+/// One sink of a net in nextpnr's `detailed_net_timings`.
+@immutable
+class NextpnrNetEndpoint {
+  /// Creates an endpoint.
+  const NextpnrNetEndpoint({
+    required this.maxDelayNs,
+    this.cell,
+    this.port,
+    this.minDelayNs,
+  });
+
+  /// The cell the net reaches, as nextpnr names it.
+  final String? cell;
+
+  /// The port on [cell].
+  final String? port;
+
+  /// The smallest delay to this sink, in nanoseconds (`delay[0]`).
+  final double? minDelayNs;
+
+  /// The largest delay to this sink, in nanoseconds (`delay[1]`).
+  final double maxDelayNs;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NextpnrNetEndpoint &&
+      other.cell == cell &&
+      other.port == port &&
+      other.minDelayNs == minDelayNs &&
+      other.maxDelayNs == maxDelayNs;
+
+  @override
+  int get hashCode => Object.hash(cell, port, minDelayNs, maxDelayNs);
+}
+
+/// One net of nextpnr's `detailed_net_timings` (`--detailed-timing-report`):
+/// the cell that drives it and the delay to each of its sinks.
+@immutable
+class NextpnrNetTiming {
+  /// Creates a net timing.
+  const NextpnrNetTiming({
+    required this.net,
+    required this.endpoints,
+    this.driver,
+    this.port,
+    this.sources = const <String>[],
+  });
+
+  /// The net, as nextpnr names it.
+  final String net;
+
+  /// The cell that drives the net.
+  final String? driver;
+
+  /// The driving port on [driver].
+  final String? port;
+
+  /// The Yosys `src` spans nextpnr attached to the net, verbatim; matched by
+  /// suffix against a design's own sources and never opened.
+  final List<String> sources;
+
+  /// The sinks that carry a finite delay, in report order.
+  final List<NextpnrNetEndpoint> endpoints;
+
+  /// The largest delay to any sink, or null when no sink lists one.
+  double? get maxDelayNs {
+    double? largest;
+    for (final e in endpoints) {
+      if (largest == null || e.maxDelayNs > largest) largest = e.maxDelayNs;
+    }
+    return largest;
+  }
+}
+
 /// The outcome of reading one nextpnr file from disk.
 @immutable
 class NextpnrReading<T extends Object> {

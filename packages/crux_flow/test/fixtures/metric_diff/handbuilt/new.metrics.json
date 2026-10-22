@@ -1,0 +1,15 @@
+{
+  "design__instance__count": 110,
+  "design__instance__area": 1234.5,
+  "timing__setup__ws__corner:nom_tt": 0.2,
+  "timing__setup__ws__corner:max_ss": -0.15,
+  "timing__setup_vio__count": 2,
+  "route__drc_errors": 0,
+  "power__total": 0.0013,
+  "design__instance__utilization": 0.5,
+  "magic__drc_error__count": 3,
+  "unknown__metric": 7,
+  "design__die__area": 2500.0,
+  "ir__drop__worst": 0,
+  "clock__skew__worst_hold": 0.3
+}
