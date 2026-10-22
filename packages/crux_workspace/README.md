@@ -266,3 +266,13 @@ Window" entry.
 
 Apache 2.0 (at the public flip — currently private alongside the other
 `crux-shared` packages).
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxRecentListNotifier` (in `CruxRecentList`), `PanelPopOutDelegate` (in `NoopPanelPopOutDelegate`), `ScopedContainerManager` (in `PaneContainerManager`), `TabDetachingDelegate` (in `NoopTabDetachingDelegate`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxRecentEntryExists`, `PaneBorderBuilder`, `PaneSplitLayoutBuilder`, `PaneStackBuilder`, `PaneTrailingActionsBuilder`, `ScopeOverridesFactory`, `TabContentBuilder`, `TabContextMenuBuilder`, `TabContextMenuItemsBuilder`, `TabTooltipBuilder`.
+- **Named null-object default of an exported seam**: `NoopPanelPopOutDelegate`, `NoopTabDetachingDelegate`.
+- **Vocabulary of the exported tab-context-menu builders**: `TabContextAction`.
+- **Default-locale implementation of an exported strings seam; a host wraps or subclasses it**: `ViewerTabBarStringsEn`.

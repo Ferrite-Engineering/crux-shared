@@ -1,5 +1,7 @@
 ## Unreleased
 
+- **Export namespace narrowed by 1 symbol.** `openCruxRecentEntry` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **Tab navigators and assistive technology.** `CruxTabNavigatorHost` makes
   each tab's navigator its own semantics container, so a route's modal
   barrier (the page's, or a tab dialog's) no longer hides the window's

@@ -20,7 +20,7 @@ export 'src/multi_window.dart';
 export 'src/pane_container_manager.dart';
 export 'src/pane_id.dart';
 export 'src/recent/crux_recent_list.dart';
-export 'src/recent/crux_recent_list_section.dart';
+export 'src/recent/crux_recent_list_section.dart' hide openCruxRecentEntry;
 export 'src/recent/crux_recent_list_strings.dart';
 export 'src/scoped_container_manager.dart';
 export 'src/tab_container_manager.dart';

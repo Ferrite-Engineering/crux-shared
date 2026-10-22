@@ -409,7 +409,6 @@ cruxTabNavigatorOf(BuildContext context) -> NavigatorState?
 get kMultiWindowAvailable -> bool
 get kWorkspaceAutoSaveDebounce -> Duration
 get kWorkspaceSchemaVersion -> int
-openCruxRecentEntry(BuildContext context, WidgetRef ref, {bool reportFailure, required CruxRecentList list, required CruxRecentListStrings strings, required Future<bool> Function(String) open, required String path}) -> Future<CruxRecentOpenResult>
 get paneIdProvider -> Provider<PaneId>
 get panelPopOutDelegateProvider -> Provider<PanelPopOutDelegate>
 get tabDetachingDelegateProvider -> Provider<TabDetachingDelegate>
