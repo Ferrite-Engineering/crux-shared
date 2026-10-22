@@ -27,8 +27,13 @@ library;
 export 'src/column_layout.dart';
 export 'src/column_layout_codec.dart';
 export 'src/column_layout_providers.dart';
-export 'src/column_resize_handle.dart';
+export 'src/column_resize_handle.dart' hide CruxColumnResizeHandle;
 export 'src/sortable_header_cell.dart';
 export 'src/table_cell.dart';
 export 'src/table_header.dart';
-export 'src/table_metrics.dart';
+export 'src/table_metrics.dart'
+    hide
+        cruxTableResizeKey,
+        kCruxTableMinColumnWidth,
+        kCruxTableResizeHandleWidth,
+        kCruxTableSortArrowSize;

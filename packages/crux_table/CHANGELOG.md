@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 5 symbols.** `CruxColumnResizeHandle`, `cruxTableResizeKey`, `kCruxTableMinColumnWidth`, `kCruxTableResizeHandleWidth`, `kCruxTableSortArrowSize` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **A sorted column narrower than its arrow no longer overflows.**
   `CruxSortableHeaderCell` drew the arrow in a fixed 18 dp slot, so a
   squeezed pane that lays a sorted column out below 18 dp of content (9 px

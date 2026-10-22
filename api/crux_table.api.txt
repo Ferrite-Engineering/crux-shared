@@ -43,13 +43,6 @@ interface abstract class CruxColumnResizeController<C extends Enum>
   commit() -> void
   reset() -> void
   resize(C column, double dx, double tableWidth) -> void
-class CruxColumnResizeHandle<C extends Enum> extends StatelessWidget
-  const CruxColumnResizeHandle({Key? key, double height, required C column, required CruxColumnResizeController<C> controller, required double tableWidth})
-  build(BuildContext context) -> Widget
-  final column: C
-  final controller: CruxColumnResizeController<C>
-  final height: double
-  final tableWidth: double
 class CruxSortableHeaderCell extends StatelessWidget
   const CruxSortableHeaderCell({Key? key, bool ascending, bool sorted, required String label, required void Function() onTap})
   build(BuildContext context) -> Widget
@@ -89,9 +82,5 @@ class CruxTableHeader<C extends Enum> extends StatelessWidget
   final tableId: String
 typedef CruxTableHeaderCellBuilder<C extends Enum> = Widget Function(BuildContext, C)
 cruxTableHeaderKey(String tableId, Enum column) -> Key
-cruxTableResizeKey(String tableId, Enum column) -> Key
 get kCruxTableCellPadding -> double
-get kCruxTableMinColumnWidth -> double
-get kCruxTableResizeHandleWidth -> double
 get kCruxTableRowHeight -> double
-get kCruxTableSortArrowSize -> double

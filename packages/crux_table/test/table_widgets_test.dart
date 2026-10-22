@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_settings/crux_settings.dart';
 import 'package:crux_table/crux_table.dart';
+import 'package:crux_table/src/column_resize_handle.dart';
+import 'package:crux_table/src/table_metrics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

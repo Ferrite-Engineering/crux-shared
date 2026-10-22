@@ -95,3 +95,10 @@ they already use.
 - **One announcement per row** is the host's job (its check box carries the
   sentence); `CruxTableCell` keeps its text out of semantics so it cannot become a
   second fragment.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `CruxColumnLayoutCodec` (in `CruxColumnLayoutProviders`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `CruxTableHeaderCellBuilder`.
