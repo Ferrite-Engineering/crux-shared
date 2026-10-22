@@ -76,11 +76,6 @@ class LinuxMimeType
   get isNamed -> bool
 buildDesktopEntry(LinuxDesktopApp app, {required String appImagePath}) -> String
 buildMimePackage(LinuxDesktopApp app) -> String?
-buildUrlHandlerEntry(LinuxDesktopApp app, {required String appImagePath}) -> String?
 checkLinuxMimeCoverage(LinuxDesktopApp app, {Map<String, List<String>> registeredExtensionsOf, Set<String> additionalSystemTypes, required Set<String> registeredExtensions}) -> LinuxMimeCoverage
-get kLinuxDefaultGlobWeight -> int
-get kLinuxSystemMimeTypes -> Set<String>
 maybeIntegrateDesktopEntry(LinuxDesktopApp app) -> Future<void>
 maybeUninstallDesktopEntry(LinuxDesktopApp app) -> Future<List<String>>
-quoteDesktopExecArgument(String argument) -> String
-urlHandlerDesktopFileName(String appId) -> String

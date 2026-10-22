@@ -168,3 +168,11 @@ All logic is injectable — `homeDir`, `env`, and the cache-refresh runner — s
 the whole flow is unit-tested off-Linux against a fake `HOME`/`APPDIR` tree.
 `maybeIntegrateDesktopEntry` is the only symbol that touches the real
 `Platform`, and it no-ops unless `Platform.isLinux`.
+
+## Exported on purpose
+
+`tool/unused-exports.py` reports a symbol as *internal* when no other package and no product references it. These stay in the export namespace, for the reason given:
+
+- **Named by an exported signature** (a host can receive or must name the type): `DesktopIntegrationResult` (in `DesktopIntegrator`), `DesktopIntegrationSkipReason` (in `DesktopIntegrationResult`), `DesktopIntegrationStatus` (in `DesktopIntegrationResult`).
+- **Callback type named in an exported signature; a host passing a closure never writes it**: `DesktopCacheRunner`.
+- **Documented entry point: the uninstall path is reached only through it**: `DesktopIntegrator`.

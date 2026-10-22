@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_linux_integration/crux_linux_integration.dart';
+import 'package:crux_linux_integration/src/desktop_entry.dart';
 import 'package:test/test.dart';
 
 void main() {

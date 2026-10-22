@@ -7,6 +7,7 @@
 // is never offered, however completely the entry lists it.
 
 import 'package:crux_linux_integration/crux_linux_integration.dart';
+import 'package:crux_linux_integration/src/linux_mime_type.dart';
 import 'package:test/test.dart';
 
 LinuxDesktopApp _app(List<LinuxMimeType> types) => LinuxDesktopApp(

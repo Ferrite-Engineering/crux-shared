@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:crux_linux_integration/crux_linux_integration.dart';
+import 'package:crux_linux_integration/src/desktop_entry.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

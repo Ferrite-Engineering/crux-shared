@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Export namespace narrowed by 5 symbols.** `buildUrlHandlerEntry`, `kLinuxDefaultGlobWeight`, `kLinuxSystemMimeTypes`, `quoteDesktopExecArgument`, `urlHandlerDesktopFileName` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
+
 - **An AppImage can register URL schemes.** `LinuxDesktopApp.urlSchemes`
   (for example `['wavecrux']`) makes the integrator write a hidden
   `<app id>-url-handler.desktop` beside the main entry, built by

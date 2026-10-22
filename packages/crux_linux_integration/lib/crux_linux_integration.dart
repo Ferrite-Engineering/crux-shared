@@ -26,10 +26,15 @@ import 'dart:io';
 import 'package:crux_linux_integration/src/desktop_integrator.dart';
 import 'package:crux_linux_integration/src/linux_desktop_app.dart';
 
-export 'src/desktop_entry.dart';
+export 'src/desktop_entry.dart'
+    hide
+        buildUrlHandlerEntry,
+        quoteDesktopExecArgument,
+        urlHandlerDesktopFileName;
 export 'src/desktop_integrator.dart';
 export 'src/linux_desktop_app.dart';
-export 'src/linux_mime_type.dart';
+export 'src/linux_mime_type.dart'
+    hide kLinuxDefaultGlobWeight, kLinuxSystemMimeTypes;
 export 'src/mime_coverage.dart';
 export 'src/mime_package.dart';
 
