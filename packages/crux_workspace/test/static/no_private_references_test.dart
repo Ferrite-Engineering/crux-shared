@@ -111,10 +111,14 @@ final List<_Rule> _rules = <_Rule>[
     RegExp(
       r'\b(?:crux-upd(?:ates)|wavecrux-upd(?:ates)|crux-comm(?:erce)|'
       'ferrite-web(?:site)|(?:wave|net|lint|sim|eda)crux-web(?:site)|'
-      r'vcd_pars(?:er))\b|\bpulse(?:crux)\b|\banne(?:al)\b',
+      r'vcd_pars(?:er))\b|\bpulse(?:crux)\b|\banne(?:al)\b|\bferro(?:proof)\b',
       caseSensitive: false,
     ),
-    ['`crux-${'updates'}/telemetry`', 'belongs to `crux-${'commerce'}`'],
+    [
+      '`crux-${'updates'}/telemetry`',
+      'belongs to `crux-${'commerce'}`',
+      'open it in ${'Ferro'}Proof',
+    ],
   ),
   _Rule(
     'an unpublished planning document',
