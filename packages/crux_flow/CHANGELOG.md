@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Readers refuse what is not a regular file.** A run directory is someone
+  else's files: a step's `runtime.txt` linked to `/dev/zero` (which reports a
+  length of zero and never ends) made `LibreLaneStepReader` read without
+  bound, and a named pipe in place of a log, a metrics file or an OpenSTA
+  listing blocked the reader for as long as nothing wrote to it. Every file
+  read now goes through one check that it is a regular file once its links
+  are followed, and no read goes more than one byte past the cap, even when
+  the file grows after its length was taken.
 - **`RtlRegisterSet` collects memories.** A register file such as PicoRV32's
   `cpuregs` stays a memory in a source elaboration, so it was no register of
   the set and a timing endpoint on one of its bits (`cpuregs[21][19]`)

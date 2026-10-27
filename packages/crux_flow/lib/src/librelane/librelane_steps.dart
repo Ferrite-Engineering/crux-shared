@@ -191,9 +191,11 @@ class LibreLaneStepReader {
   /// not that shape.
   Duration? _runtime(String path) {
     try {
-      final file = File(path);
-      if (file.lengthSync() > 64) return null;
-      final m = _runtimeShape.firstMatch(file.readAsStringSync().trim());
+      // A link to a device or a named pipe is refused here, unread.
+      final bytes = readFlowBytesSync(path, 64);
+      if (bytes.length > 64) return null;
+      final text = utf8.decode(bytes, allowMalformed: true);
+      final m = _runtimeShape.firstMatch(text.trim());
       if (m == null) return null;
       final ms = (m.group(4) ?? '').padRight(3, '0').substring(0, 3);
       return Duration(
@@ -253,7 +255,7 @@ String? readOptionalFlowText(String path, FlowInputLimits limits) {
         '${limits.maxBytes}',
       );
     }
-    return decodeFlowText(file.readAsBytesSync(), limits);
+    return decodeFlowText(readFlowBytesSync(path, limits.maxBytes), limits);
   } on FileSystemException {
     return null;
   }

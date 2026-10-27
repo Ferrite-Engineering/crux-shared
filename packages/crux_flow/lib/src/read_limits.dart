@@ -3,6 +3,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
@@ -164,12 +165,48 @@ Object? decodeFlowJson(String text, FlowInputLimits limits) {
   }
 }
 
+/// Throws [FileSystemException] unless [path], its links followed, is a
+/// regular file.
+///
+/// A run directory is someone else's files: a named pipe blocks the first
+/// read for as long as nothing writes to it, and a link to a device such as
+/// `/dev/zero` reports a length of zero and never ends. Neither is a report.
+void requireRegularFlowFile(String path) {
+  if (FileSystemEntity.typeSync(path) != FileSystemEntityType.file) {
+    throw FileSystemException('not a regular file', path);
+  }
+}
+
+/// At most `cap + 1` bytes of the regular file at [path], so a caller can
+/// tell a file over [cap] from one at it without reading the rest, even when
+/// the file grows after its length was taken.
+///
+/// Throws [FileSystemException] when [path] is not a regular file
+/// ([requireRegularFlowFile]) or cannot be read.
+List<int> readFlowBytesSync(String path, int cap) {
+  requireRegularFlowFile(path);
+  final raf = File(path).openSync();
+  try {
+    final builder = BytesBuilder(copy: false);
+    while (builder.length <= cap) {
+      final chunk = raf.readSync(cap + 1 - builder.length);
+      if (chunk.isEmpty) break;
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  } finally {
+    raf.closeSync();
+  }
+}
+
 /// Reads the file at [path] whole, refusing it unread when it is larger than
 /// [limits]' byte cap.
 ///
-/// Throws [FileSystemException] when the file is absent or unreadable, which
-/// a reader reports as "not run" rather than as a malformed input.
+/// Throws [FileSystemException] when the file is absent, unreadable or not a
+/// regular file ([requireRegularFlowFile]), which a reader reports as "not
+/// run" rather than as a malformed input.
 Future<String> readFlowFile(String path, FlowInputLimits limits) async {
+  requireRegularFlowFile(path);
   final file = File(path);
   final length = await file.length();
   if (length > limits.maxBytes) {
@@ -178,7 +215,11 @@ Future<String> readFlowFile(String path, FlowInputLimits limits) async {
       '$path is $length bytes, over the cap of ${limits.maxBytes}',
     );
   }
-  return decodeFlowText(await file.readAsBytes(), limits);
+  // Read no further than one byte past the cap: the length was taken before
+  // the read, and a file can grow in between.
+  final builder = BytesBuilder(copy: false);
+  await file.openRead(0, limits.maxBytes + 1).forEach(builder.add);
+  return decodeFlowText(builder.takeBytes(), limits);
 }
 
 Never _wrongType(String field, Object? value, String expected) =>

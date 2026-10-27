@@ -109,9 +109,11 @@ class OpenStaReportReader {
 
   /// Reads the listing at [path] as a stream of lines.
   ///
-  /// Throws [FileSystemException] when the file is absent or unreadable and
+  /// Throws [FileSystemException] when the file is absent, unreadable or not
+  /// a regular file (a named pipe, a link to a device), and
   /// [FlowReadException] when it is over the byte cap or not UTF-8.
   Future<OpenStaReport> readFile(String path) async {
+    requireRegularFlowFile(path);
     final file = File(path);
     final length = await file.length();
     if (length > limits.maxBytes) {
@@ -122,8 +124,10 @@ class OpenStaReportReader {
     }
     final collector = _Collector(maxPaths, limits.maxLineLength);
     try {
+      // No further than the cap, should the listing grow after its length
+      // was taken.
       await file
-          .openRead()
+          .openRead(0, limits.maxBytes)
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .forEach(collector.add);

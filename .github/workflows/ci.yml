@@ -185,10 +185,12 @@ jobs:
       # that drives a real Yosys over awkward temp-directory names is one more
       # skip here: eight. crux_flow's LibreLane readers, OpenSTA reader,
       # checks, ASIC mapping, compare parity and their fuzz tests added 98:
-      # raised by 97.
+      # raised by 97. Re-measured: 5483 ran on this runner, plus five
+      # crux_flow tests for runs holding named pipes and links to devices,
+      # 5488; the floor is that less 0.5%.
       - name: Test count did not shrink
         env:
-          MIN_TESTS: '4161'
+          MIN_TESTS: '5460'
           MAX_SKIPPED: '8'
         run: |
           python3 - <<'PY'
