@@ -11,13 +11,17 @@ import 'package:test/test.dart';
 /// Two things are pinned here.
 ///
 /// **Hostile input is rejected or tolerated, never a crash.** Every document
-/// below either parses or fails with a [YosysJsonParseException]. The model's
-/// `fromJson` factories cast freely, and a failed cast is a `TypeError`; a
-/// value nested deeply enough overflows the stack when stringified, which is a
-/// `StackOverflowError`. Both are `Error`s, which walk straight through an
-/// `on Exception` handler — so the parser is the boundary that must turn every
-/// one of them into an `Exception`, and every case below checks the type of
-/// what came out, not only that something did.
+/// below either parses or fails with a [YosysJsonParseException]. A failed
+/// cast inside a `fromJson` factory would be a `TypeError`, an `Error` that
+/// walks straight through an `on Exception` handler, so the parser is the
+/// boundary that must turn every one of them into an `Exception`, and every
+/// case below checks the type of what came out, not only that something did.
+///
+/// A structured value where an attribute, a parameter or the creator belongs
+/// is refused before anything stringifies it. Stringifying a value nested a
+/// hundred thousand deep is quadratic in the depth; it used to overflow the
+/// stack on most runs and spin for minutes on the rest, which hung CI's
+/// coverage job.
 ///
 /// **Equality means the same netlist.** A model is compared to decide whether
 /// a re-elaboration changed anything, and serialized with `toJson` to be
@@ -85,6 +89,18 @@ void main() {
       ),
       'a creator nested a hundred thousand deep':
           '{"creator":${_deep(100000)},"modules":{}}',
+      'a module attribute that is a list':
+          '{"modules":{"top":{"attributes":{"src":["a.v"]}}}}',
+      'a net attribute that is an object': _nets(
+        '{"n":{"bits":[2],"attributes":{"src":{}}}}',
+      ),
+      'a cell attribute that is a list': _cells(
+        '{"c":{"type":"x","attributes":{"keep":[1]}}}',
+      ),
+      'a cell parameter that is an object': _cells(
+        '{"c":{"type":"x","parameters":{"W":{"v":8}}}}',
+      ),
+      'a creator that is a list': '{"creator":["yosys"],"modules":{}}',
     };
 
     for (final entry in rejected.entries) {
@@ -95,11 +111,9 @@ void main() {
 
     // NetlistModel.fromJson's own contract, for a caller that does not go
     // through the parser and catches only what the documentation promises.
-    // The deeply nested shapes are left out: stringifying them is a stack
-    // overflow, which only the parser's wider handler can turn into an
-    // exception.
+    // The deeply nested shapes are included: they are refused by type before
+    // anything recurses into them.
     for (final entry in rejected.entries) {
-      if (entry.key.contains('deep')) continue;
       test('fromJson throws FormatException: ${entry.key}', () {
         final decoded = jsonDecode(entry.value) as Map<String, Object?>;
         expect(() => NetlistModel.fromJson(decoded), throwsFormatException);

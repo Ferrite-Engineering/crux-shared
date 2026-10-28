@@ -72,6 +72,25 @@ String requireJsonStringValue(Object? value, String field) {
   _wrongType(field, value, 'a string');
 }
 
+/// [value], which was read from [field], as the string the model keeps for
+/// an attribute, a cell parameter or the creator: a string as it is, a
+/// number or a boolean in its JSON spelling, and null as empty.
+///
+/// A list or an object is refused, never stringified. Yosys writes each of
+/// these as a string or a number, so a structured value only comes from a
+/// broken or hostile document, and stringifying one costs time quadratic in
+/// its nesting depth: the core library's cycle check scans every enclosing
+/// collection at each level. A value nested a hundred thousand deep then
+/// either overflowed the stack or, on a thread whose stack held it, spun for
+/// minutes.
+String jsonScalarString(Object? value, String field) => switch (value) {
+  null => '',
+  final String s => s,
+  final num n => '$n',
+  final bool b => '$b',
+  _ => _wrongType(field, value, 'a string or a number'),
+};
+
 /// Yosys's `hide_name` flag at [json]: an integer, absent meaning 0.
 bool readHideName(Map<String, Object?> json) {
   final value = json['hide_name'];

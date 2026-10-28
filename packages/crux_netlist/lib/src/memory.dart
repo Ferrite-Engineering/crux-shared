@@ -39,7 +39,7 @@ class Memory {
       startOffset: _readInt(json['start_offset']),
       attributes: <String, String>{
         for (final entry in attributesRaw.entries)
-          entry.key: entry.value?.toString() ?? '',
+          entry.key: jsonScalarString(entry.value, 'attributes.${entry.key}'),
       },
       hideName: readHideName(json),
     );

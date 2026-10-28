@@ -41,16 +41,36 @@
 # interface and an enum) is listed as `none`; it is still run, and fails the
 # moment it grows code without a floor.
 #
+# ## A package that never finishes fails on its own, by name
+#
+# Each package's run is capped at PACKAGE_TIMEOUT seconds (the slowest
+# package takes under two minutes on a hosted runner). A run that hangs used
+# to hold the job until its 60-minute cap, with nothing in the log to say
+# which package or test was stuck, and a cancelled job blocks the release
+# workflows that need a green ci.yml. Now the package fails at the cap, the
+# whole process group is killed, and the tail of its test output (which
+# names the test that was running) is printed. CRUX_COVERAGE_PACKAGE_TIMEOUT
+# overrides the cap. Where no `timeout` command exists (stock macOS without
+# coreutils) the run is uncapped, as before.
+#
 # Usage:
 #   tool/coverage.sh                 # gate every package
 #   tool/coverage.sh crux_netlist    # gate one package
 set -uo pipefail
 
+PACKAGE_TIMEOUT="${CRUX_COVERAGE_PACKAGE_TIMEOUT:-360}"
+timeout_cmd=""
+if command -v timeout >/dev/null 2>&1; then
+  timeout_cmd="timeout"
+elif command -v gtimeout >/dev/null 2>&1; then
+  timeout_cmd="gtimeout"
+fi
+
 # package:floor, seeded 2026-08-18 from measured minus two points.
 #
 # crux_netlist was seeded low, at 43, and that was not a failure: it had ZERO
 # tests before the gate was written and 23 after, and 45.2% is where that
-# landed, recorded honestly rather than flattered by an aggregate. It was the
+# landed, recorded as measured rather than flattered by an aggregate. It was the
 # first package raised: once its hierarchy navigation and model equality were
 # tested against hostile documents it measured 98.9%, and its floor is now
 # measured minus two like the rest.
@@ -156,7 +176,25 @@ while IFS=: read -r pkg floor; do
 
   # A stale lcov.info from an earlier run must not stand in for this one.
   rm -f "$dir/coverage/lcov.info"
-  ( cd "$dir" && flutter test --coverage >/dev/null 2>&1 )
+  log="$(mktemp)"
+  if [[ -n "$timeout_cmd" ]]; then
+    # GNU timeout puts the command in its own process group and signals the
+    # whole group, so flutter_tester and the frontend server die with the
+    # tool instead of outliving it.
+    ( cd "$dir" && "$timeout_cmd" --kill-after=30 "$PACKAGE_TIMEOUT" \
+        flutter test --coverage >"$log" 2>&1 )
+  else
+    ( cd "$dir" && flutter test --coverage >"$log" 2>&1 )
+  fi
+  status=$?
+  if [[ $status -eq 124 || $status -eq 137 ]]; then
+    echo "::error::$pkg did not finish within ${PACKAGE_TIMEOUT}s, so its coverage run was killed; the last lines of its test output follow"
+    tail -n 40 "$log"
+    rm -f "$log"
+    failed=1
+    continue
+  fi
+  rm -f "$log"
   if [[ ! -f "$dir/coverage/lcov.info" ]]; then
     # A package listed here that stops producing coverage is a hole in the
     # gate, not a package to skip quietly.
@@ -204,7 +242,7 @@ echo "────────────────────────�
 echo "$checked packages gated, $empty with no executable lines"
 
 if [[ $failed -ne 0 ]]; then
-  echo "::error::one or more packages fell below their floor"
+  echo "::error::one or more packages failed the gate (see the errors above)"
   exit 1
 fi
 echo "every package is at or above its floor"

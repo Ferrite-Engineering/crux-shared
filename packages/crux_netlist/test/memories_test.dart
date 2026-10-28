@@ -59,6 +59,54 @@ void main() {
       );
     });
 
+    test('a structured attribute value is refused, naming the field', () {
+      // A list or an object is never stringified: nested deeply enough, that
+      // is quadratic in the depth and can spin for minutes.
+      expect(
+        () => NetlistModel.fromJson(
+          _doc({
+            'memories': {
+              'm': {
+                'attributes': {
+                  'src': [
+                    [1],
+                  ],
+                },
+              },
+            },
+          }),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('attributes.src'),
+              contains('expected a string or a number'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('scalar attribute values keep their JSON spelling', () {
+      final model = NetlistModel.fromJson(
+        _doc({
+          'memories': {
+            'm': {
+              'attributes': {'a': 'x', 'b': 7, 'c': true, 'd': null},
+            },
+          },
+        }),
+      );
+      expect(model.modules['top']!.memories['m']!.attributes, {
+        'a': 'x',
+        'b': '7',
+        'c': 'true',
+        'd': '',
+      });
+    });
+
     test('copyWith replaces memories', () {
       final module = NetlistModel.fromJson(_doc({})).modules['top']!;
       final copy = module.copyWith(

@@ -34,12 +34,13 @@ class Cell {
   ///
   /// Throws [FormatException], naming the field, when a field has the wrong
   /// JSON type or `type` is missing. `parameters` and `attributes` of the
-  /// wrong type read as empty.
+  /// wrong type read as empty; a single parameter or attribute that is a
+  /// list or an object is a [FormatException].
   factory Cell.fromJson(String name, Map<String, Object?> json) {
     final type = requireJsonString(json, 'type');
     final hideName = readHideName(json);
-    final parameters = _readStringMap(json['parameters']);
-    final attributes = _readStringMap(json['attributes']);
+    final parameters = _readStringMap(json['parameters'], 'parameters');
+    final attributes = _readStringMap(json['attributes'], 'attributes');
     final portDirsRaw = optionalJsonObject(json, 'port_directions');
     final portDirections = <String, PortDirection>{
       for (final entry in portDirsRaw.entries)
@@ -173,10 +174,11 @@ class Cell {
   String toString() => 'Cell(name: $name, type: $type)';
 }
 
-Map<String, String> _readStringMap(Object? value) {
+Map<String, String> _readStringMap(Object? value, String field) {
   if (value is! Map<String, Object?>) return const <String, String>{};
   return <String, String>{
-    for (final entry in value.entries) entry.key: entry.value?.toString() ?? '',
+    for (final entry in value.entries)
+      entry.key: jsonScalarString(entry.value, '$field.${entry.key}'),
   };
 }
 

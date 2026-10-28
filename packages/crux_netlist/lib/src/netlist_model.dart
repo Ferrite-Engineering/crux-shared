@@ -34,7 +34,7 @@ class NetlistModel {
   /// than a short prefix of the offending value. Per-module / per-cell parse
   /// errors come from the inner [Module.fromJson] / [BitRef.fromJson] calls.
   factory NetlistModel.fromJson(Map<String, Object?> json) {
-    final creator = json['creator']?.toString() ?? '';
+    final creator = jsonScalarString(json['creator'], 'creator');
     final modulesRaw = json['modules'];
     if (modulesRaw is! Map<String, Object?>) {
       throw const FormatException('Yosys JSON is missing a `modules` object');
