@@ -91,6 +91,7 @@ enum CruxLicenseActionFailure
   static const offline: CruxLicenseActionFailure
   static const refusedByIssuer: CruxLicenseActionFailure
   static const rejected: CruxLicenseActionFailure
+  static const storeUnavailable: CruxLicenseActionFailure
   static const unknown: CruxLicenseActionFailure
 sealed class CruxLicenseActionResult
   const CruxLicenseActionResult()
@@ -119,8 +120,9 @@ enum CruxLicenseActivation
   static const notActivatedOnThisMachine: CruxLicenseActivation
   static const openCore: CruxLicenseActivation
 class CruxLicenseController implements CruxLicenseActions
-  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
+  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseFallbackFile? fallbackFile, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
   activate(String credential) -> Future<CruxLicenseActionResult>
+  activateFromPolicy(String credential) -> Future<CruxLicenseActionResult>
   deactivateThisMachine() -> Future<CruxLicenseActionResult>
   dispose() -> Future<void>
   exportOfflineRequest() -> Future<CruxLicenseActionResult>
@@ -182,6 +184,7 @@ abstract class CruxLicensePanelStrings
   get licenseErrorProduct -> String
   get licenseErrorRefused -> String
   get licenseErrorSignature -> String
+  get licenseErrorStoreUnavailable -> String
   get licenseErrorUnknown -> String
   get licenseErrorUnknownPolicy -> String
   get licenseErrorWrongMachine -> String
@@ -225,6 +228,7 @@ abstract class CruxLicensePanelStrings
   licenseSeatsInUse(int used, int total) -> String
   licenseStateActive(String date) -> String
   licenseStateGrace(int days) -> String
+  licenseStoredInFile(String path) -> String
 class CruxLicensePanelStringsEn extends CruxLicensePanelStrings
   const CruxLicensePanelStringsEn()
   get licenseActivateButton -> String
@@ -299,11 +303,12 @@ class CruxLicensePanelStringsEn extends CruxLicensePanelStrings
   licenseStateActive(String date) -> String
   licenseStateGrace(int days) -> String
 class CruxLicenseStatus
-  const CruxLicenseStatus({CruxLicenseActivation activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool busy, int? seatsTotal, int? seatsUsed})
+  const CruxLicenseStatus({CruxLicenseActivation activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? credentialFile, String? machineLabel, bool busy, int? seatsTotal, int? seatsUsed})
   ==(Object other) -> bool
-  copyWith({CruxLicenseActivation? activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool? busy, int? seatsTotal, int? seatsUsed}) -> CruxLicenseStatus
+  copyWith({CruxLicenseActivation? activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? credentialFile, String? machineLabel, bool? busy, int? seatsTotal, int? seatsUsed}) -> CruxLicenseStatus
   final activation: CruxLicenseActivation
   final busy: bool
+  final credentialFile: String?
   final graceEndsAt: DateTime?
   final grant: LicenseGrant?
   final lastCheckedAt: DateTime?
@@ -560,6 +565,14 @@ final class LicenseExpired extends LicenseValidation
   const LicenseExpired(LicenseGrant grant)
   final grant: LicenseGrant
   toString() -> String
+class LicenseFallbackFile
+  LicenseFallbackFile(String Function() resolvePath)
+  factory LicenseFallbackFile.forProduct(String product, {Map<String, String>? environment, String? operatingSystem})
+  delete() -> Future<bool>
+  exists() -> bool
+  get path -> String?
+  read() -> Future<String?>
+  write(String contents) -> Future<void>
 class LicenseGracePolicy
   const LicenseGracePolicy({Duration edu, Duration enterprise, Duration pro})
   covers({required DateTime expiry, required DateTime now, required LicenseTier tier}) -> bool
@@ -719,6 +732,8 @@ get kKeygenVerifyKeyHex -> String
 get kLicenseTierOverrideName -> String
 legacyInstallFingerprintPath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
 get licenseActionsProvider -> Provider<CruxLicenseActions>
+licenseCredentialMayUseFallbackFile(String credential) -> bool
+licenseFallbackFilePath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
 get licenseManagedByOrganizationProvider -> Provider<bool>
 get licenseStatusProvider -> Provider<CruxLicenseStatus>
 get licenseTierOverride -> LicenseTier?

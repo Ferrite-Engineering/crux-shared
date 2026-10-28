@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+- **A licence works on a machine with no credential store** (crux-shared#59).
+  On Linux with no secret service running (remote X sessions, shared login
+  hosts, minimal installs), every credential-store call throws, and no
+  licence could be activated or kept.
+  - A licence in the organization's policy file needs no store.
+    `applyPolicyLicense` now calls the new
+    `CruxLicenseController.activateFromPolicy`, which is `activate` while the
+    store works; when the store refuses the credential, the controller holds
+    it for the process and the tier resolves from it, every launch.
+  - A licence file or machine file the store refuses is kept by the
+    controller in `<product>.license` beside `install.fingerprint`
+    (`LicenseFallbackFile`, the new `fallbackFile:` on
+    `CruxLicenseController`), created `0600` by `mkstemp` and renamed into
+    place, with its machine id, last check and issuer snapshot. The store is
+    asked first; the file answers when the store fails or holds nothing, and
+    is removed when the store takes a licence or the licence is cleared.
+    `licenseCredentialMayUseFallbackFile` says which credentials may go
+    there: never a key. `CruxLicenseStatus.credentialFile` carries the file,
+    and the panel names it in one line
+    (`CruxLicensePanelStrings.licenseStoredInFile`). The products' stores are
+    unchanged.
+  - A licence key the store cannot keep fails as the new
+    `CruxLicenseActionFailure.storeUnavailable` instead of throwing out of
+    `activate` (or failing as `unknown` at the fingerprint), and grants
+    nothing. The panel renders it as the new
+    `CruxLicensePanelStrings.licenseErrorStoreUnavailable`, which names the
+    cause and the two routes that need no keyring.
+  - On Linux, `SharedInstallFingerprint` reads a legacy fingerprint source
+    that throws as "none", so a machine that has never had a secret service
+    gets a fingerprint. Elsewhere it still propagates.
+  - Both new strings are concrete with English defaults, so an overlay's
+    adapter compiles unchanged and overrides them to localise.
+
 - **Removed `CruxEditionLineStringsEn`.** No product used it: each
   supplies its own `CruxEditionLineStrings` from its ARB files.
 - **The licence panel's educational section is a browser hand-off.** It no

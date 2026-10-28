@@ -31,7 +31,8 @@ edition chip render identically everywhere.
 | `SharedInstallFingerprint`, `InstallFingerprintFile`, `InstallFingerprintSource`, `mintInstallFingerprint`, `cruxLicenseDirectory` | The machine's one fingerprint, shared by every product on it through a plain file so a suite licence's seats count machines rather than installs. See "Machine fingerprint" below. |
 | `MachineReleaseMarker` + `FileMachineReleaseMarker` / `NoMachineReleaseMarker` / `InMemoryMachineReleaseMarker` | The note one product leaves for the others when it releases the machine's seat, so their next check-in does not silently register it again. |
 | `CruxLicensePanel` + `CruxLicensePanelStrings` | The License Settings category. |
-| `cruxPolicyProvider`, `dayOnePolicyProvider`, `cruxPolicyOverrides`, `applyPolicyLicense` | The `.crux-policy.json` binding: a licence the organization deploys goes through the same `activate` path a pasted key does. |
+| `cruxPolicyProvider`, `dayOnePolicyProvider`, `cruxPolicyOverrides`, `applyPolicyLicense` | The `.crux-policy.json` binding: a licence the organization deploys goes through the same `activate` path a pasted key does, and needs no credential store. See "When there is no credential store" below. |
+| `LicenseFallbackFile`, `licenseFallbackFilePath`, `licenseCredentialMayUseFallbackFile` | Where `CruxLicenseController` keeps a licence file or machine file, owner-only, when the product's store cannot. See "When there is no credential store" below. |
 | `LicenseBadgeStrings` + `LicenseBadgeStringsEn` | Caller-supplied localization surface for the chip widgets. |
 | `FeatureTierBadge` | PRO/ENT feature-tier chip rendered next to a feature label — "this feature requires PRO". Takes the tier as an argument; renders nothing for `openCore` / `edu`. |
 | `EditionBadge` | Edition chip — "you are running PRO". Reads `licenseTierProvider` and renders PRO, ENT or EDU; renders nothing at `openCore`, so it can be mounted unconditionally. |
@@ -316,6 +317,56 @@ and `FileMachineReleaseMarker` take an `environment` map and an
 `InMemoryMachineReleaseMarker` need no disk at all. Every product's store
 takes its `InstallFingerprintSource` as a required constructor parameter for
 the same reason.
+
+## When there is no credential store
+
+Each product keeps its licence in the operating system's credential store
+through `crux_secrets`. On Linux that is libsecret, which needs a secret
+service running in the user's session, and remote X sessions (VNC,
+`ssh -X`, ETX, NX), shared login hosts and minimal installs often have none.
+Every store call then throws, and the log shows
+`secret_service_get_sync: Could not connect: Connection refused`. What a
+licence does there:
+
+- **A licence in the organization's policy file needs no store.**
+  `applyPolicyLicense` activates it through
+  `CruxLicenseController.activateFromPolicy`. When the store refuses it, the
+  controller holds it for the process and resolves the tier from it; the
+  policy file supplies it again at the next launch. While the store works
+  nothing changes: the credential is stored, and later launches find it there
+  and do not activate again.
+- **A licence file or a machine file falls back to a file.** When the
+  product's store refuses one, the controller keeps it in `<product>.license`
+  beside `install.fingerprint` in `cruxLicenseDirectory`
+  (`LicenseFallbackFile`, the controller's `fallbackFile:`), with the machine
+  id, last check and issuer snapshot that go with it. On macOS and Linux the
+  file is created by `mkstemp` with mode `0600` and renamed into place, so it
+  never exists with a wider mode; on Windows it is in `%LOCALAPPDATA%`, which
+  only the user can read. The product's store is always asked first, and the
+  file answers only when the store fails or holds no licence for the
+  product. A licence the store later accepts removes the file, and clearing
+  the licence removes it too. The licence panel names the file in one line
+  (`CruxLicenseStatus.credentialFile`). Nothing changes in the products'
+  stores: the controller does this over whatever store it is given.
+- **A licence key does not.** A key is a bearer credential, so it is never
+  written to a file (`licenseCredentialMayUseFallbackFile`). Activation fails
+  with `CruxLicenseActionFailure.storeUnavailable`, which the panel renders as
+  `licenseErrorStoreUnavailable`: no keyring is available, use the licence
+  file or ask the administrator for the policy file. Nothing is granted for
+  the session.
+- **The fingerprint does not depend on the store.** It is the shared
+  `install.fingerprint` file. The one place a store is read for it is the
+  migration from an older per-product fingerprint, and on Linux a store that
+  throws there reads as "none" instead of failing, so a machine that has
+  never had a secret service still gets a fingerprint
+  (`SharedInstallFingerprint`). Elsewhere a store that throws still
+  propagates, because a locked store is "unknown".
+
+This is a decision about licences, not about secrets in general.
+`crux_secrets` still refuses to degrade to a file, and an API key or a
+password stays in the credential store or nowhere. A licence file or machine
+file is signed and checked offline, names its own expiry, and a machine file
+works only on the machine whose fingerprint it names.
 
 ## Visibility & license
 
