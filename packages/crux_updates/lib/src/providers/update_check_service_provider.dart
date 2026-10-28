@@ -34,7 +34,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// * **iOS/Android**, unless `CruxUpdateConfig.checkOnMobile` is set. Mobile
 ///   builds update through their store, so the in-app check is redundant —
 ///   and skipping it keeps the mobile build free of any outbound request,
-///   which the store privacy declarations depend on.
+///   which the store privacy declarations depend on. A `checkOnMobile` build
+///   compares itself with the manifest's `mobile.ios` / `mobile.android`
+///   release (`HttpUpdateCheckService.mobileStore`), never with the desktop
+///   `latest`, and is offered nothing when its store has no entry.
 /// * **Before [updateBuildInfoProvider] resolves**, so a check that races
 ///   startup reports "current" rather than comparing against an unknown
 ///   version. `updateStatusProvider` awaits the build info before reading this
@@ -102,6 +105,13 @@ final Provider<UpdateCheckService> updateCheckServiceProvider =
         osName: info.os,
         client: ref.watch(updateHttpClientProvider),
         onServerTimeObserved: recordServerTime,
+        // A store build compares with its store's release, not the desktop
+        // one (`checkOnMobile` builds only; the others returned above).
+        mobileStore: switch (defaultTargetPlatform) {
+          TargetPlatform.iOS => 'ios',
+          TargetPlatform.android => 'android',
+          _ => null,
+        },
       );
 
       // Unwrapped when nothing is configured, so the overwhelmingly common

@@ -30,6 +30,7 @@ class HttpUpdateCheckService implements UpdateCheckService {
     required this.currentVersion,
     this.osName = '',
     this.onServerTimeObserved,
+    this.mobileStore,
     http.Client? client,
   }) : _client = client ?? http.Client();
 
@@ -48,6 +49,13 @@ class HttpUpdateCheckService implements UpdateCheckService {
   /// time can feed `crux_license`'s beta-expiry clock-tampering hardening.
   /// `null` server times are skipped.
   final void Function(DateTime serverTime)? onServerTimeObserved;
+
+  /// The app store this build ships through (`ios`, `android`), or null for
+  /// a desktop build. A store build compares itself with the manifest's
+  /// `mobile.<store>` release, never with `latest` (the desktop release),
+  /// and is offered nothing when the manifest lists no release for its
+  /// store.
+  final String? mobileStore;
 
   final http.Client _client;
 
@@ -83,16 +91,21 @@ class HttpUpdateCheckService implements UpdateCheckService {
     final serverTime = latest.serverTime;
     if (serverTime != null) onServerTimeObserved?.call(serverTime);
 
-    if (!latest.isNewerThan(currentVersion)) return null;
+    // A store build is offered what its store has live, not the desktop
+    // release: desktop releases ship ahead of, or without, a store release.
+    final offer = manifest.releaseFor(mobileStore);
+    if (offer == null) return null;
+
+    if (!offer.isNewerThan(currentVersion)) return null;
 
     // A newer version always surfaces. When the running build is below the
     // manifest's min_supported_version floor it is no longer supported, so the
     // update is forced (non-dismissible) regardless of the manifest's own
     // `mandatory` flag.
-    if (!latest.meetsMinSupported(currentVersion) && !latest.mandatory) {
-      return latest.copyWith(mandatory: true);
+    if (!offer.meetsMinSupported(currentVersion) && !offer.mandatory) {
+      return offer.copyWith(mandatory: true);
     }
-    return latest;
+    return offer;
   }
 
   String get _userAgent {

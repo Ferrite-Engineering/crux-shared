@@ -53,10 +53,11 @@ class CruxUpdateStringsEn extends CruxUpdateStrings
   get viewChangesAction -> String
 typedef CruxUpdateUrlLauncher = Future<bool> Function(Uri)
 class HttpUpdateCheckService implements UpdateCheckService
-  HttpUpdateCheckService({Client? client, String osName, required CruxUpdateConfig config, required String currentVersion, void Function(DateTime)? onServerTimeObserved})
+  HttpUpdateCheckService({Client? client, String osName, String? mobileStore, required CruxUpdateConfig config, required String currentVersion, void Function(DateTime)? onServerTimeObserved})
   checkForUpdate() -> Future<UpdateInfo?>
   final config: CruxUpdateConfig
   final currentVersion: String
+  final mobileStore: String?
   final onServerTimeObserved: void Function(DateTime)?
   final osName: String
 final class ManagedInstall

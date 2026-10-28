@@ -266,13 +266,19 @@ final class UpdateInfo {
 /// The top-level update manifest document fetched from a product's version
 /// endpoint.
 ///
-/// Wraps the single `latest` release object. [tryParse] decodes a raw JSON
-/// string and fails soft — any decode error, non-object root, or
-/// missing/invalid `latest` yields `null`.
+/// Wraps the `latest` release object and, for a product that ships through
+/// the app stores, the `mobile` object: the release each store has live.
+/// [tryParse] decodes a raw JSON string and fails soft — any decode error,
+/// non-object root, or missing/invalid `latest` yields `null`; a malformed
+/// `mobile` entry is dropped.
 @immutable
 final class UpdateManifest {
-  /// Creates a manifest wrapping its [latest] release.
-  const UpdateManifest({required this.latest});
+  /// Creates a manifest wrapping its [latest] release and the store
+  /// releases in [mobile].
+  const UpdateManifest({
+    required this.latest,
+    this.mobile = const <String, UpdateInfo>{},
+  });
 
   /// Decodes [jsonText] into a manifest, or `null` on any malformed input.
   static UpdateManifest? tryParse(String jsonText) {
@@ -292,24 +298,52 @@ final class UpdateManifest {
     if (json == null) return null;
     final latest = UpdateInfo.fromJson(json['latest']);
     if (latest == null) return null;
-    return UpdateManifest(latest: latest);
+    final mobile = <String, UpdateInfo>{};
+    _asStringMap(json['mobile'])?.forEach((store, entry) {
+      final info = UpdateInfo.fromJson(entry);
+      if (info != null) mobile[store] = info;
+    });
+    return UpdateManifest(
+      latest: latest,
+      mobile: Map<String, UpdateInfo>.unmodifiable(mobile),
+    );
   }
 
-  /// The most recent release advertised by the manifest.
+  /// The most recent release advertised by the manifest: the desktop
+  /// release.
   final UpdateInfo latest;
+
+  /// The release each app store has live, keyed by store (`ios`,
+  /// `android`). Desktop releases ship ahead of, or without, a store
+  /// release, so a store build compares itself with its store's entry, never
+  /// with [latest]. Empty when the manifest lists none.
+  final Map<String, UpdateInfo> mobile;
+
+  /// The release a build should compare itself with: [latest] for a desktop
+  /// build ([store] null), else the [store]'s entry in [mobile], or null
+  /// when the manifest lists none for it (nothing to offer).
+  UpdateInfo? releaseFor(String? store) =>
+      store == null ? latest : mobile[store];
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is UpdateManifest &&
           runtimeType == other.runtimeType &&
-          latest == other.latest;
+          latest == other.latest &&
+          mobile.length == other.mobile.length &&
+          mobile.entries.every((e) => other.mobile[e.key] == e.value);
 
   @override
-  int get hashCode => latest.hashCode;
+  int get hashCode => Object.hash(
+    latest,
+    Object.hashAllUnordered(
+      mobile.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
+  );
 
   @override
-  String toString() => 'UpdateManifest(latest: $latest)';
+  String toString() => 'UpdateManifest(latest: $latest, mobile: $mobile)';
 }
 
 /// Coerces [raw] to a `Map<String, Object?>`, or `null` when it is not a map.

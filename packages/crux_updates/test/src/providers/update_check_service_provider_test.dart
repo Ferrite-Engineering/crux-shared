@@ -107,6 +107,71 @@ void main() {
         );
       },
     );
+
+    for (final (platform, store) in const [
+      (TargetPlatform.iOS, 'ios'),
+      (TargetPlatform.android, 'android'),
+      (TargetPlatform.macOS, null),
+      (TargetPlatform.windows, null),
+    ]) {
+      test(
+        'a ${platform.name} build compares with '
+        '${store == null ? 'the desktop release' : 'mobile.$store'}',
+        () async {
+          debugDefaultTargetPlatformOverride = platform;
+          final c = container(
+            config: _config.copyWith(checkOnMobile: true),
+            extra: [
+              updateBuildInfoProvider.overrideWith((_) async => _buildInfo),
+            ],
+          );
+          await c.read(updateBuildInfoProvider.future);
+          final service =
+              c.read(updateCheckServiceProvider) as HttpUpdateCheckService;
+          expect(service.mobileStore, store);
+        },
+      );
+    }
+
+    test('an iPhone shown a newer desktop latest but its store on the same '
+        'version is offered nothing', () async {
+      // The 1.1.1 desktop release with the App Store still on 1.1.0: before
+      // the store entry was read, every phone offered an update on every
+      // launch with nothing to install.
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final c = container(
+        config: _config.copyWith(checkOnMobile: true),
+        extra: [
+          updateBuildInfoProvider.overrideWith(
+            (_) async => const ApplicationBuildInfo(
+              version: '1.1.0',
+              buildNumber: '12',
+              gitShortSha: 'abc1234',
+              os: 'iOS 26.0',
+              architecture: 'arm64',
+              flutterSdkVersion: '3.44.2',
+              dartSdkVersion: '3.12.2',
+            ),
+          ),
+          updateHttpClientProvider.overrideWithValue(
+            MockClient(
+              (_) async => http.Response(
+                jsonEncode({
+                  'latest': {'version': '1.1.1'},
+                  'mobile': {
+                    'ios': {'version': '1.1.0'},
+                    'android': {'version': '1.1.0'},
+                  },
+                }),
+                200,
+              ),
+            ),
+          ),
+        ],
+      );
+      await c.read(updateBuildInfoProvider.future);
+      expect(await c.read(updateCheckServiceProvider).checkForUpdate(), isNull);
+    });
   });
 
   group('build-info gating', () {

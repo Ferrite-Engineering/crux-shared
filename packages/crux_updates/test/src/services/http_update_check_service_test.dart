@@ -287,6 +287,89 @@ void main() {
       expect(e.toString(), 'UpdateCheckException(parse)');
     });
   });
+
+  group('a store build compares with its store, not the desktop release', () {
+    String withMobile(Map<String, Object?> mobile) => jsonEncode({
+      'latest': {
+        'version': '1.1.1',
+        'server_time': '2026-10-26T12:00:00Z',
+      },
+      'mobile': mobile,
+    });
+
+    HttpUpdateCheckService storeBuild(
+      String store,
+      String body, {
+      void Function(DateTime)? onServerTimeObserved,
+    }) => HttpUpdateCheckService(
+      config: config,
+      currentVersion: '1.1.0',
+      mobileStore: store,
+      onServerTimeObserved: onServerTimeObserved,
+      client: respondWith(body),
+    );
+
+    test('a newer desktop latest with the store on the same version offers '
+        'nothing', () async {
+      DateTime? observed;
+      final info = await storeBuild(
+        'ios',
+        withMobile({
+          'ios': {'version': '1.1.0'},
+          'android': {'version': '1.1.0'},
+        }),
+        onServerTimeObserved: (t) => observed = t,
+      ).checkForUpdate();
+      expect(info, isNull);
+      // The licence clock still hears from the server.
+      expect(observed, DateTime.utc(2026, 10, 26, 12));
+    });
+
+    test('a build behind its store is offered the store release', () async {
+      final info = await storeBuild(
+        'android',
+        withMobile({
+          'ios': {'version': '1.1.0'},
+          'android': {'version': '1.1.1', 'changelog_url': 'https://x.test/a'},
+        }),
+      ).checkForUpdate();
+      expect(info?.version, '1.1.1');
+      expect(info?.changelogUrl, 'https://x.test/a');
+    });
+
+    test('no entry for the store offers nothing', () async {
+      expect(
+        await storeBuild(
+          'ios',
+          withMobile({
+            'android': {'version': '9.0.0'},
+          }),
+        ).checkForUpdate(),
+        isNull,
+      );
+      expect(
+        await storeBuild(
+          'ios',
+          jsonEncode({
+            'latest': {'version': '9.0.0'},
+          }),
+        ).checkForUpdate(),
+        isNull,
+      );
+    });
+
+    test('a desktop build ignores the store entries', () async {
+      final info = await serviceFor(
+        '1.1.0',
+        client: respondWith(
+          withMobile({
+            'ios': {'version': '1.1.0'},
+          }),
+        ),
+      ).checkForUpdate();
+      expect(info?.version, '1.1.1');
+    });
+  });
 }
 
 class _FakeSocketException implements Exception {

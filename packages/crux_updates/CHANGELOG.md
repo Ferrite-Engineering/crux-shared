@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **A store build compares itself with its store's release.** The manifest's
+  `mobile` object lists the release each store has live (`mobile.ios`,
+  `mobile.android`); desktop releases ship ahead of, or without, a store
+  release. On iOS and Android (a `checkOnMobile` build)
+  `HttpUpdateCheckService.mobileStore` is set from the platform, and the check
+  offers `mobile.<store>` when it is newer than the running build, and nothing
+  when the store has no entry, instead of comparing with the desktop `latest`.
+  Desktop builds are unchanged.
 - **Export namespace narrowed by 7 symbols.** `PolicyConstrainedUpdateCheckService`, `UpdateManifest`, `kUpdateCheckInterval`, `kUpdateCheckTimeout`, `managedInstallMarkerPathProvider`, `probeManagedInstall`, `updateHostIsWebProvider` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - `runManualUpdateCheck` reports through the suite toasts (`showCruxInfoSnack`,
