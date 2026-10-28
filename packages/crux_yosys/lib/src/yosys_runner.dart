@@ -277,6 +277,7 @@ class YosysRunner {
             includePaths: effectiveRequest.includePaths,
             defines: effectiveRequest.defines,
             options: effectiveRequest.slangOptions,
+            parameters: effectiveRequest.parameters,
           ),
         );
         script = _buildScript(
@@ -826,8 +827,28 @@ class YosysRunner {
     }
 
     final hierarchy = StringBuffer('hierarchy -check');
-    if (request.topModule != null && request.topModule!.isNotEmpty) {
+    final hasTop = request.topModule != null && request.topModule!.isNotEmpty;
+    // yosys-slang applies the overrides itself, from its command file.
+    final chparams = request.frontend == YosysFrontend.slang
+        ? const <String, String>{}
+        : request.parameters;
+    if (chparams.isNotEmpty && !hasTop) {
+      // `-chparam` applies to the module `-top` names and is ignored under
+      // `-auto-top`, so the overrides would silently not apply.
+      throw ArgumentError.value(
+        chparams.keys.toList(),
+        'parameters',
+        'Parameter overrides need a top module',
+      );
+    }
+    if (hasTop) {
       hierarchy.write(' -top ${_identifier(request.topModule!)}');
+      for (final entry in chparams.entries) {
+        hierarchy.write(
+          ' -chparam ${_identifier(entry.key)} '
+          '${YosysScriptCommands.parameterValue(entry.value)}',
+        );
+      }
     } else {
       // No explicit top: let Yosys pick the top-of-design AND mark it with
       // the `(* top *)` attribute. Without `-auto-top` (or an explicit
@@ -975,6 +996,8 @@ class YosysRunner {
       includePaths: request.includePaths,
       extraCommands: request.extraCommands,
       frontend: request.frontend,
+      slangOptions: request.slangOptions,
+      parameters: request.parameters,
     );
   }
 
@@ -1178,18 +1201,21 @@ abstract final class YosysScriptCommands {
   /// `--single-unit` (always, so macros cross files as they do in one
   /// `read_verilog`), `--top <top>` when [top] is set (so modules the top
   /// never instantiates are not elaborated), the allow-listed [options],
-  /// then `-I "<dir>"`, `-D <define>` and `"<source>"`, paths double-quoted
-  /// so white space in them is kept.
+  /// `-G <name>=<value>` for each of [parameters], then `-I "<dir>"`,
+  /// `-D <define>` and `"<source>"`, paths double-quoted so white space in
+  /// them is kept.
   ///
   /// Throws [ArgumentError] for a path or define holding a double quote,
-  /// `;` or a newline, a define with white space, a top that is not a bare
-  /// identifier, or an option outside [slangOptions].
+  /// `;` or a newline, a define with white space, a top or parameter name
+  /// that is not a bare identifier, a parameter value [parameterValue]
+  /// refuses, or an option outside [slangOptions].
   static String slangCommandFile(
     List<String> sources, {
     String? top,
     List<String> includePaths = const <String>[],
     List<String> defines = const <String>[],
     List<String> options = const <String>[],
+    Map<String, String> parameters = const <String, String>{},
   }) {
     options.forEach(checkSlangOption);
     return <String>[
@@ -1197,12 +1223,38 @@ abstract final class YosysScriptCommands {
       if (top != null && top.isNotEmpty)
         '--top ${YosysRunner._identifier(top)}',
       ...options,
+      for (final entry in parameters.entries) _slangParameter(entry),
       for (final inc in includePaths) '-I "${YosysRunner._escape(inc)}"',
       for (final def in defines) '-D ${YosysRunner._bareOption(def, 'Define')}',
       for (final path in sources) '"${YosysRunner._escape(path)}"',
       '',
     ].join('\n');
   }
+
+  /// `-G <name>=<value>` for one parameter override.
+  static String _slangParameter(MapEntry<String, String> entry) {
+    final name = YosysRunner._identifier(entry.key);
+    return '-G $name=${parameterValue(entry.value)}';
+  }
+
+  /// [value], checked as a parameter override value: one non-empty token
+  /// of letters, digits and `_ ' . + -` (a number such as `1`, `-4` or
+  /// `8'hff`, or an identifier). White space, quotes, `;` and anything else
+  /// are refused, so a value cannot split the script or the command file,
+  /// and a string value, which each reader would need quoted its own way,
+  /// is not accepted.
+  static String parameterValue(String value) {
+    if (!_parameterValue.hasMatch(value)) {
+      throw ArgumentError.value(
+        value,
+        'parameters',
+        'A parameter value must be a number or an identifier',
+      );
+    }
+    return value;
+  }
+
+  static final RegExp _parameterValue = RegExp(r"^[A-Za-z0-9_'.+-]+$");
 
   /// `hierarchy -check -top <top>`, the top name checked as a bare
   /// identifier.

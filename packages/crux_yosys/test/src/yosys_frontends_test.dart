@@ -300,6 +300,144 @@ void main() {
       expect(temp.listSync(), isEmpty);
     });
 
+    group('top-level parameter overrides', () {
+      test('the built-in reader takes them as hierarchy -chparam', () {
+        expect(
+          script(
+            const YosysRunRequest(
+              sources: [YosysSourceFile.systemVerilog('/r/top.sv')],
+              topModule: 'top',
+              parameters: {'EN_WAIT4REGS': '1', 'W': "8'hff"},
+            ),
+          ),
+          'read_verilog -sv "/r/top.sv"; '
+          "hierarchy -check -top top -chparam EN_WAIT4REGS 1 -chparam W 8'hff; "
+          'proc; write_json "/t/out.json"',
+        );
+      });
+
+      test('yosys-slang takes them as -G in its command file', () async {
+        expect(
+          YosysScriptCommands.slangCommandFile(
+            ['/r/top.sv'],
+            top: 'top',
+            parameters: const {'EN_WAIT4REGS': '1'},
+          ),
+          '--single-unit\n--top top\n-G EN_WAIT4REGS=1\n"/r/top.sv"\n',
+        );
+        // Not also on the hierarchy line: slang elaborated with them.
+        expect(
+          YosysRunner.buildScript(
+            const YosysRunRequest(
+              sources: [YosysSourceFile('/r/top.sv')],
+              topModule: 'top',
+              frontend: YosysFrontend.slang,
+              parameters: {'EN_WAIT4REGS': '1'},
+            ),
+            jsonOutputPath: '/t/out.json',
+            slangCommandFile: '/t/read.f',
+          ),
+          isNot(contains('-chparam')),
+        );
+        final runner = _Recorder(json: '{"modules": {}}');
+        await YosysRunner(processRunner: runner, tempDirectory: temp).run(
+          const YosysRunRequest(
+            sources: [YosysSourceFile.systemVerilog('/r/top.sv')],
+            topModule: 'top',
+            frontend: YosysFrontend.slang,
+            parameters: {'EN_WAIT4REGS': '1'},
+          ),
+        );
+        expect(runner.slangCommandFile, contains('-G EN_WAIT4REGS=1\n'));
+      });
+
+      test('the built-in reader refuses them without a top module', () {
+        expect(
+          () => script(
+            const YosysRunRequest(
+              sources: [YosysSourceFile('/r/top.v')],
+              parameters: {'W': '4'},
+            ),
+          ),
+          throwsArgumentError,
+        );
+      });
+
+      test('a value that is not one plain token is refused unrun', () async {
+        for (final bad in ['', '"str"', '1 2', '1;quit', 'a\nb']) {
+          final runner = _Recorder(json: '{}');
+          final result =
+              await YosysRunner(
+                processRunner: runner,
+                tempDirectory: temp,
+              ).run(
+                YosysRunRequest(
+                  sources: const [YosysSourceFile('/r/top.v')],
+                  topModule: 'top',
+                  parameters: {'W': bad},
+                ),
+              );
+          expect(
+            result,
+            isA<YosysRunFailure>().having(
+              (f) => f.kind,
+              'kind',
+              YosysFailureKind.invalidRequest,
+            ),
+            reason: bad,
+          );
+          expect(runner.executables, isEmpty, reason: bad);
+        }
+      });
+
+      test('are part of a request’s identity', () {
+        const a = YosysRunRequest(
+          sources: [YosysSourceFile('/r/top.v')],
+          topModule: 'top',
+          parameters: {'W': '4'},
+        );
+        const b = YosysRunRequest(
+          sources: [YosysSourceFile('/r/top.v')],
+          topModule: 'top',
+          parameters: {'W': '8'},
+        );
+        expect(a, isNot(b));
+        expect(a.copyWith(), a);
+        expect(a.copyWith().hashCode, a.hashCode);
+      });
+
+      test('a name that is not an identifier is refused', () {
+        expect(
+          () => script(
+            const YosysRunRequest(
+              sources: [YosysSourceFile('/r/top.v')],
+              topModule: 'top',
+              parameters: {'W; quit': '4'},
+            ),
+          ),
+          throwsArgumentError,
+        );
+      });
+
+      test('they survive VHDL lowering, as do the slang options', () async {
+        final runner = _Recorder(json: '{"modules": {}}');
+        await YosysRunner(processRunner: runner, tempDirectory: temp).run(
+          const YosysRunRequest(
+            sources: [
+              YosysSourceFile.systemVerilog('/r/top.sv'),
+              YosysSourceFile.vhdl('/r/e.vhd'),
+            ],
+            topModule: 'top',
+            frontend: YosysFrontend.slang,
+            slangOptions: ['--ignore-assertions'],
+            parameters: {'W': '4'},
+          ),
+        );
+        expect(runner.slangCommandFile, contains('--ignore-assertions\n'));
+        expect(runner.slangCommandFile, contains('-G W=4\n'));
+      });
+    });
+
     test('no top, no --top; single-unit always', () {
       expect(
         YosysScriptCommands.slangCommandFile(['/r/a.sv']),

@@ -106,7 +106,7 @@ final class YosysRunFailure extends YosysRunResult
   final exitCode: int
   get kind -> YosysFailureKind
 class YosysRunRequest
-  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, List<String> slangOptions, String? topModule, String? vhdlStandard, String? vhdlTopUnit, YosysFrontend frontend, required List<YosysSourceFile> sources})
+  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, List<String> slangOptions, Map<String, String> parameters, String? topModule, String? vhdlStandard, String? vhdlTopUnit, YosysFrontend frontend, required List<YosysSourceFile> sources})
   factory YosysRunRequest.fromPaths({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, required List<String> sourceFiles})
   ==(Object other) -> bool
   copyWith({List<String>? includePaths}) -> YosysRunRequest
@@ -114,6 +114,7 @@ class YosysRunRequest
   final extraCommands: List<String>
   final frontend: YosysFrontend
   final includePaths: List<String>
+  final parameters: Map<String, String>
   final slangOptions: List<String>
   final sources: List<YosysSourceFile>
   final topModule: String?
@@ -149,10 +150,11 @@ final abstract class YosysScriptCommands
   static checkSlangOption(String option) -> void
   static const slangOptions: List<String>
   static hierarchy(String top) -> String
+  static parameterValue(String value) -> String
   static readLiberty(String path, {bool lib}) -> String
   static readSlangCommandFile(String commandFile) -> String
   static readVerilog(List<String> paths, {List<String> defines, List<String> includePaths, bool formal, bool systemVerilog}) -> String
-  static slangCommandFile(List<String> sources, {List<String> defines, List<String> includePaths, List<String> options, String? top}) -> String
+  static slangCommandFile(List<String> sources, {List<String> defines, List<String> includePaths, List<String> options, Map<String, String> parameters, String? top}) -> String
 class YosysScriptRequest
   const YosysScriptRequest({required List<String> commands})
   ==(Object other) -> bool

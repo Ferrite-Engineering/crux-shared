@@ -4,6 +4,22 @@
 
 ### Added
 
+- **`YosysRunRequest.parameters`: top-level parameter overrides.** A map of
+  parameter name to value, for elaborating one configuration of a
+  parameterised core. The built-in reader takes them as
+  `hierarchy -check -top <top> -chparam <name> <value>`; `-chparam` applies
+  to the module `-top` names and Yosys ignores it under `-auto-top`, so a
+  request with parameters and no `topModule` is an `invalidRequest` rather
+  than a run that silently used the defaults. yosys-slang takes them as
+  `-G <name>=<value>` lines in its command file
+  (`YosysScriptCommands.slangCommandFile` gains a `parameters` argument), and
+  the hierarchy line then carries none. Names must be bare identifiers;
+  values must pass the new `YosysScriptCommands.parameterValue`: one token of
+  letters, digits and `_ ' . + -`, so a number (`1`, `8'hff`) or an
+  identifier. A string value, which each reader would need quoted its own
+  way, is refused. The field is part of the request's equality and is kept
+  by `copyWith`.
+
 - **`YosysRunner.runKeepingJson`: the `write_json` document as a file path,
   unread.** It takes `run`'s parameters; on success it returns a
   `YosysRunSuccess` whose new `jsonPath` names the document and whose
@@ -77,6 +93,11 @@
   sealed. `run` now lowers through it, so the two cannot drift.
 
 ### Fixed
+
+- **A request with VHDL sources kept its `slangOptions`.** Lowering the VHDL
+  to Verilog rebuilt the request without them, so a mixed-language slang read
+  dropped `--ignore-initial`, `--ignore-assertions` and every
+  `--blackboxed-module`.
 
 - **`DefaultProcessRunner` starts an OSS CAD Suite Yosys with the suite's own
   `bin` and `lib` first on its `PATH`** (Windows), through

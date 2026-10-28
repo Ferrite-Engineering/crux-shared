@@ -52,6 +52,7 @@ enum YosysFrontend {
   ///   every module in the file list, including ones the top never
   ///   instantiates.
   /// - The request's allow-listed [YosysRunRequest.slangOptions].
+  /// - `-G <name>=<value>` for each of [YosysRunRequest.parameters].
   /// - Sources, `-I` and `-D` through a temporary command file
   ///   (`read_slang -f`) in the runner's temp directory, removed with the
   ///   run: paths there are quoted, so a path with spaces works (a quoted
@@ -131,6 +132,7 @@ class YosysRunRequest {
     this.vhdlTopUnit,
     this.frontend = YosysFrontend.verilog,
     this.slangOptions = const <String>[],
+    this.parameters = const <String, String>{},
   });
 
   /// Convenience constructor that takes a list of Verilog file paths.
@@ -204,6 +206,18 @@ class YosysRunRequest {
   /// Anything else is an invalid request.
   final List<String> slangOptions;
 
+  /// Top-level parameter overrides, name to value: what selects one
+  /// configuration of a parameterised core.
+  ///
+  /// The built-in reader takes them as `hierarchy -chparam <name> <value>`,
+  /// which applies to the module `-top` names, so a request with parameters
+  /// needs a [topModule]; yosys-slang takes them as `-G <name>=<value>` in its
+  /// command file. Each name must be a bare identifier and each value one
+  /// token without white space, quotes or `;` (a number such as `1` or
+  /// `8'hff`, or an identifier): a string value is refused. A request that
+  /// breaks either rule is an invalid request.
+  final Map<String, String> parameters;
+
   /// A copy with [includePaths] replaced; every other field, [frontend]
   /// included, is carried over.
   YosysRunRequest copyWith({List<String>? includePaths}) => YosysRunRequest(
@@ -216,6 +230,7 @@ class YosysRunRequest {
     vhdlTopUnit: vhdlTopUnit,
     frontend: frontend,
     slangOptions: slangOptions,
+    parameters: parameters,
   );
 
   /// Returns true if any source in [sources] is VHDL.
@@ -248,6 +263,10 @@ class YosysRunRequest {
     if (!_listEq(other.includePaths, includePaths)) return false;
     if (!_listEq(other.extraCommands, extraCommands)) return false;
     if (!_listEq(other.slangOptions, slangOptions)) return false;
+    if (other.parameters.length != parameters.length) return false;
+    for (final entry in parameters.entries) {
+      if (other.parameters[entry.key] != entry.value) return false;
+    }
     return true;
   }
 
@@ -262,6 +281,9 @@ class YosysRunRequest {
     Object.hashAll(includePaths),
     Object.hashAll(extraCommands),
     Object.hashAll(slangOptions),
+    Object.hashAllUnordered(
+      parameters.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
   );
 }
 
