@@ -33,6 +33,17 @@ const double _kClusterMinVisible = 56;
 const double _kContentFloorWidth = 150;
 const double _kContentFloorHeight = 120;
 
+/// Width of the draggable divider between the two panes of a split dock.
+const double _kSplitDividerWidth = 6;
+
+/// The narrowest a pane of a split dock can be dragged, as a fraction of the
+/// dock's width.
+const double _kSplitMinFraction = 0.2;
+
+/// The dock width below which a split dock shows its active tab alone, as
+/// plain tabs: two panes narrower than this half each are not readable.
+const double _kDefaultSplitMinWidth = 640;
+
 /// Which window edge a dock collapses toward — picks the hide glyph
 /// (a double-arrow pointing INTO that edge, the JetBrains-familiar
 /// "hide tool window" affordance, replacing the ambiguous single
@@ -150,6 +161,13 @@ class CruxDockDragData {
 ///   VSCode's panel, and reopening any tab restores the full strip.
 /// - **Maximize** ([onMaximize]) is a host-side size toggle (bottom dock
 ///   only); [isMaximized] flips the glyph between expand and restore.
+/// - **Split** ([onSplitChanged]): the action cluster's split button keeps
+///   the active tab open in a second pane on the right ([splitId]) and
+///   activates another tab on the left, with a draggable divider between
+///   them. Both tabs read as selected in the strip. Choosing the right
+///   pane's tab swaps the two; the button again closes the split. Below
+///   [splitMinWidth] the dock shows its active tab alone, as plain tabs, and
+///   the split comes back when the dock widens.
 class CruxDock extends StatefulWidget {
   /// Creates a dock. [entries] must be non-empty — a region with nothing to
   /// show should not be visible at all.
@@ -169,6 +187,11 @@ class CruxDock extends StatefulWidget {
     this.dockId,
     this.onTabMovedIn,
     this.semanticsLabel,
+    this.splitId,
+    this.onSplitChanged,
+    this.splitTooltip,
+    this.unsplitTooltip,
+    this.splitMinWidth = _kDefaultSplitMinWidth,
     super.key,
   }) : assert(entries.length > 0, 'A CruxDock needs at least one entry');
 
@@ -226,6 +249,25 @@ class CruxDock extends StatefulWidget {
   /// Accessibility label announced for the dock region.
   final String? semanticsLabel;
 
+  /// The tab shown in the right pane of a split dock, beside the active
+  /// tab. Ignored while null, absent from [entries], or the active tab.
+  final String? splitId;
+
+  /// Called with the tab to keep open on the right when the user splits the
+  /// dock, and with null when they close the split. The host persists it as
+  /// [splitId]. Null omits the split button.
+  final ValueChanged<String?>? onSplitChanged;
+
+  /// Localized tooltip for the split button while the dock is not split.
+  final String? splitTooltip;
+
+  /// Localized tooltip for the split button while the dock is split.
+  final String? unsplitTooltip;
+
+  /// The dock width below which a split shows the active tab alone; 640 by
+  /// default.
+  final double splitMinWidth;
+
   @override
   State<CruxDock> createState() => _CruxDockState();
 }
@@ -275,6 +317,77 @@ class _CruxDockState extends State<CruxDock> {
     orElse: () => widget.entries.first,
   );
 
+  /// The right pane's entry, or null when the dock is not split.
+  CruxDockEntry? get _split {
+    final id = widget.splitId;
+    if (id == null || widget.onSplitChanged == null) return null;
+    final active = _active;
+    for (final e in widget.entries) {
+      if (e.id == id && e.id != active.id) return e;
+    }
+    return null;
+  }
+
+  /// Picks [id]. Picking the right pane's tab swaps the two panes, so both
+  /// stay on screen.
+  void _select(String id) {
+    final split = _split;
+    if (split != null && split.id == id) {
+      widget.onSplitChanged!(_active.id);
+    }
+    widget.onSelect(id);
+  }
+
+  /// The split button: keeps the active tab on the right and activates the
+  /// next tab on the left, or closes the split.
+  void _toggleSplit() {
+    if (_split != null) {
+      widget.onSplitChanged!(null);
+      return;
+    }
+    final active = _active;
+    final index = widget.entries.indexOf(active);
+    final others = [
+      ...widget.entries.skip(index + 1),
+      ...widget.entries.take(index),
+    ];
+    if (others.isEmpty) return;
+    widget.onSplitChanged!(active.id);
+    widget.onSelect(others.first.id);
+  }
+
+  /// [entry]'s content, laid out at the floor size when squeezed below it.
+  Widget _pane(CruxDockEntry entry) => KeyedSubtree(
+    // Keyed so switching tabs tears down the outgoing panel rather than
+    // reusing its element for unrelated content.
+    key: ValueKey('cruxDockContent-${entry.id}'),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final squeezedW = constraints.maxWidth < _kContentFloorWidth;
+        final squeezedH = constraints.maxHeight < _kContentFloorHeight;
+        if (!squeezedW && !squeezedH) {
+          return entry.builder(context);
+        }
+        // Below the floor: lay the panel out at the floor size and crop
+        // from the top-left, so mid-animation frames (and ultra-small
+        // resting sizes) can never hand a panel constraints it cannot
+        // satisfy.
+        final width = squeezedW ? _kContentFloorWidth : constraints.maxWidth;
+        final height = squeezedH ? _kContentFloorHeight : constraints.maxHeight;
+        return ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: width,
+            maxWidth: width,
+            minHeight: height,
+            maxHeight: height,
+            child: entry.builder(context),
+          ),
+        );
+      },
+    ),
+  );
+
   /// Wraps a movable tab in a [Draggable] carrying [CruxDockDragData].
   /// Non-movable tabs (or a dock with no [CruxDock.dockId]) render as-is.
   Widget _maybeDraggable(CruxDockEntry entry, Widget tab) {
@@ -305,6 +418,7 @@ class _CruxDockState extends State<CruxDock> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final active = _active;
+    final split = _split;
     // Auto-hide: one pinned entry reads as a titled panel, not a one-tab bar.
     final headerMode =
         widget.entries.length == 1 && !widget.entries.single.closable;
@@ -373,8 +487,12 @@ class _CruxDockState extends State<CruxDock> {
                                             _DockTab(
                                               entry: entry,
                                               selected: entry.id == active.id,
-                                              onSelect: () =>
-                                                  widget.onSelect(entry.id),
+                                              inSplit:
+                                                  split != null &&
+                                                  constraints.maxWidth >=
+                                                      widget.splitMinWidth &&
+                                                  entry.id == split.id,
+                                              onSelect: () => _select(entry.id),
                                             ),
                                           ),
                                       ],
@@ -391,7 +509,15 @@ class _CruxDockState extends State<CruxDock> {
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               reverse: true,
-                              child: _ActionCluster(widget: widget),
+                              child: _ActionCluster(
+                                widget: widget,
+                                split: split != null,
+                                canSplit:
+                                    widget.entries.length > 1 &&
+                                    constraints.maxWidth >=
+                                        widget.splitMinWidth,
+                                onToggleSplit: _toggleSplit,
+                              ),
                             ),
                           ),
                         ),
@@ -403,41 +529,17 @@ class _CruxDockState extends State<CruxDock> {
             ),
           ),
           Expanded(
-            // Keyed so switching tabs tears down the outgoing panel rather
-            // than reusing its element for unrelated content.
-            child: KeyedSubtree(
-              key: ValueKey('cruxDockContent-${active.id}'),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final squeezedW = constraints.maxWidth < _kContentFloorWidth;
-                  final squeezedH =
-                      constraints.maxHeight < _kContentFloorHeight;
-                  if (!squeezedW && !squeezedH) {
-                    return active.builder(context);
-                  }
-                  // Below the floor: lay the panel out at the floor size and
-                  // crop from the top-left, so mid-animation frames (and
-                  // ultra-small resting sizes) can never hand a panel
-                  // constraints it cannot satisfy.
-                  final width = squeezedW
-                      ? _kContentFloorWidth
-                      : constraints.maxWidth;
-                  final height = squeezedH
-                      ? _kContentFloorHeight
-                      : constraints.maxHeight;
-                  return ClipRect(
-                    child: OverflowBox(
-                      alignment: Alignment.topLeft,
-                      minWidth: width,
-                      maxWidth: width,
-                      minHeight: height,
-                      maxHeight: height,
-                      child: active.builder(context),
-                    ),
-                  );
-                },
-              ),
-            ),
+            child: split == null
+                ? _pane(active)
+                : LayoutBuilder(
+                    builder: (context, constraints) =>
+                        constraints.maxWidth < widget.splitMinWidth
+                        ? _pane(active)
+                        : _SplitPanes(
+                            left: _pane(active),
+                            right: _pane(split),
+                          ),
+                  ),
           ),
         ],
       ),
@@ -490,21 +592,27 @@ class _DockTab extends StatelessWidget {
     required this.entry,
     required this.selected,
     required this.onSelect,
+    this.inSplit = false,
   });
 
   final CruxDockEntry entry;
   final bool selected;
   final VoidCallback onSelect;
 
+  /// Whether this tab is on screen in the right pane of a split dock: it
+  /// reads as selected too, with a quieter underline.
+  final bool inSplit;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected
+    final shown = selected || inSplit;
+    final color = shown
         ? theme.colorScheme.onSurface
         : theme.colorScheme.onSurfaceVariant;
     final style = theme.textTheme.bodySmall?.copyWith(
       color: color,
-      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+      fontWeight: shown ? FontWeight.w600 : FontWeight.w400,
     );
     // One node for the tab: a button named after the entry, with its
     // selected state and its badge count as the value. The visible label and
@@ -513,7 +621,7 @@ class _DockTab extends StatelessWidget {
     return Semantics(
       container: true,
       button: true,
-      selected: selected,
+      selected: shown,
       label: entry.label,
       value: entry.badgeCount > 0 ? '${entry.badgeCount}' : null,
       child: InkWell(
@@ -532,7 +640,11 @@ class _DockTab extends StatelessWidget {
         // stepping up to onSurface.
         border: Border(
           bottom: BorderSide(
-            color: selected ? theme.colorScheme.primary : Colors.transparent,
+            color: selected
+                ? theme.colorScheme.primary
+                : inSplit
+                ? theme.colorScheme.outline
+                : Colors.transparent,
             width: 2,
           ),
         ),
@@ -621,9 +733,22 @@ class _DockBadge extends StatelessWidget {
 }
 
 class _ActionCluster extends StatelessWidget {
-  const _ActionCluster({required this.widget});
+  const _ActionCluster({
+    required this.widget,
+    required this.split,
+    required this.canSplit,
+    required this.onToggleSplit,
+  });
 
   final CruxDock widget;
+
+  /// Whether the dock is split now.
+  final bool split;
+
+  /// Whether the dock is wide enough, with tabs enough, to split.
+  final bool canSplit;
+
+  final VoidCallback onToggleSplit;
 
   @override
   Widget build(BuildContext context) {
@@ -639,6 +764,13 @@ class _ActionCluster extends StatelessWidget {
         // actions (the terminal's `+`). They precede the standard cluster and
         // swap when the active tab changes.
         ...active.actions,
+        if (widget.onSplitChanged != null)
+          _DockActionButton(
+            key: const ValueKey('cruxDockSplit'),
+            icon: split ? Icons.view_agenda_outlined : Icons.vertical_split,
+            tooltip: split ? widget.unsplitTooltip : widget.splitTooltip,
+            onPressed: split || canSplit ? onToggleSplit : null,
+          ),
         if (widget.onMaximize != null)
           _DockActionButton(
             key: const ValueKey('cruxDockMaximize'),
@@ -700,4 +832,70 @@ class _DockActionButton extends StatelessWidget {
     padding: EdgeInsets.zero,
     constraints: const BoxConstraints.tightFor(width: 28, height: 28),
   );
+}
+
+/// The two panes of a split dock, with a divider dragged to resize them.
+/// The divider's position is the widget's own state: a resize is a
+/// moment's adjustment, not part of the saved arrangement.
+class _SplitPanes extends StatefulWidget {
+  const _SplitPanes({required this.left, required this.right});
+
+  final Widget left;
+  final Widget right;
+
+  @override
+  State<_SplitPanes> createState() => _SplitPanesState();
+}
+
+class _SplitPanesState extends State<_SplitPanes> {
+  double _fraction = 0.5;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final usable = math.max<double>(
+          0,
+          constraints.maxWidth - _kSplitDividerWidth,
+        );
+        final leftWidth = usable * _fraction;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(width: leftWidth, child: widget.left),
+            MouseRegion(
+              cursor: SystemMouseCursors.resizeColumn,
+              child: GestureDetector(
+                key: const ValueKey('cruxDockSplitDivider'),
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragUpdate: (details) {
+                  if (usable <= 0) return;
+                  setState(() {
+                    _fraction = ((leftWidth + details.delta.dx) / usable).clamp(
+                      _kSplitMinFraction,
+                      1 - _kSplitMinFraction,
+                    );
+                  });
+                },
+                // Double-click puts the divider back in the middle.
+                onDoubleTap: () => setState(() => _fraction = 0.5),
+                child: SizedBox(
+                  width: _kSplitDividerWidth,
+                  child: Center(
+                    child: VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: theme.dividerColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(child: widget.right),
+          ],
+        );
+      },
+    );
+  }
 }

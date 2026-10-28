@@ -8,7 +8,7 @@
 # products; a line that appears is new public surface to justify.
 
 class CruxDock extends StatefulWidget
-  const CruxDock({CruxDockCollapseDirection collapseDirection, CruxDockPopOut? popOut, Key? key, String? activeId, String? collapseTooltip, String? dockId, String? maximizeTooltip, String? restoreTooltip, String? semanticsLabel, bool isMaximized, required List<CruxDockEntry> entries, required void Function(String) onSelect, void Function()? onCollapse, void Function()? onMaximize, void Function(String)? onAutoReveal, void Function(String, String)? onTabMovedIn})
+  const CruxDock({CruxDockCollapseDirection collapseDirection, CruxDockPopOut? popOut, Key? key, String? activeId, String? collapseTooltip, String? dockId, String? maximizeTooltip, String? restoreTooltip, String? semanticsLabel, String? splitId, String? splitTooltip, String? unsplitTooltip, bool isMaximized, double splitMinWidth, required List<CruxDockEntry> entries, required void Function(String) onSelect, void Function()? onCollapse, void Function()? onMaximize, void Function(String)? onAutoReveal, void Function(String, String)? onTabMovedIn, void Function(String?)? onSplitChanged})
   createState() -> State<CruxDock>
   final activeId: String?
   final collapseDirection: CruxDockCollapseDirection
@@ -21,10 +21,15 @@ class CruxDock extends StatefulWidget
   final onCollapse: void Function()?
   final onMaximize: void Function()?
   final onSelect: void Function(String)
+  final onSplitChanged: void Function(String?)?
   final onTabMovedIn: void Function(String, String)?
   final popOut: CruxDockPopOut?
   final restoreTooltip: String?
   final semanticsLabel: String?
+  final splitId: String?
+  final splitMinWidth: double
+  final splitTooltip: String?
+  final unsplitTooltip: String?
 enum CruxDockCollapseDirection
   const CruxDockCollapseDirection(IconData icon)
   final icon: IconData

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `CruxDock` can split: with `onSplitChanged` set, the action cluster's
+  split button keeps the active tab open in a second pane on the right
+  (`splitId`) and activates the next tab on the left, with a draggable
+  divider between the two (double-click centres it). Both tabs read as
+  selected in the strip; choosing the right pane's tab swaps the panes, and
+  the button closes the split again. Below `splitMinWidth`
+  (640 by default) the dock shows its active tab alone
+  and the split returns when it widens. Without `onSplitChanged` nothing
+  changes.
 - **Export namespace narrowed by 2 symbols.** `kCruxDockRestoreBarThickness`, `kCruxInspectorLabelWidth` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - A dock tab is announced as one button named after its entry, with its

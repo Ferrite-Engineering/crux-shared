@@ -890,4 +890,229 @@ void main() {
     expect(data.tooltip, 'Select a test to inspect.');
     handle.dispose();
   });
+
+  group('CruxDock split', () {
+    /// A dock whose active and split ids are held here, as a host would.
+    Widget splitHost({
+      required List<CruxDockEntry> entries,
+      required ValueNotifier<String> active,
+      required ValueNotifier<String?> split,
+      double width = 800,
+    }) => MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: width,
+          height: 400,
+          child: ValueListenableBuilder<String>(
+            valueListenable: active,
+            builder: (_, activeId, _) => ValueListenableBuilder<String?>(
+              valueListenable: split,
+              builder: (_, splitId, _) => CruxDock(
+                entries: entries,
+                activeId: activeId,
+                onSelect: (id) => active.value = id,
+                splitId: splitId,
+                onSplitChanged: (id) => split.value = id,
+                splitTooltip: 'Split',
+                unsplitTooltip: 'Close split',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    testWidgets('the split button keeps the active tab on the right and '
+        'shows the next tab beside it', (tester) async {
+      final active = ValueNotifier<String>('t');
+      final split = ValueNotifier<String?>(null);
+      addTearDown(active.dispose);
+      addTearDown(split.dispose);
+      await tester.pumpWidget(
+        splitHost(
+          entries: [_entry('t'), _entry('s')],
+          active: active,
+          split: split,
+        ),
+      );
+      expect(find.text('content-s'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('cruxDockSplit')));
+      await tester.pumpAndSettle();
+      expect(split.value, 't');
+      expect(active.value, 's');
+      expect(find.text('content-t'), findsOneWidget);
+      expect(find.text('content-s'), findsOneWidget);
+      // The active tab on the left, the split tab on the right.
+      expect(
+        tester.getCenter(find.text('content-s')).dx,
+        lessThan(tester.getCenter(find.text('content-t')).dx),
+      );
+      expect(find.byTooltip('Close split'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('cruxDockSplit')));
+      await tester.pumpAndSettle();
+      expect(split.value, isNull);
+      expect(find.text('content-t'), findsNothing);
+      expect(find.text('content-s'), findsOneWidget);
+    });
+
+    testWidgets("choosing the right pane's tab swaps the panes", (
+      tester,
+    ) async {
+      final active = ValueNotifier<String>('s');
+      final split = ValueNotifier<String?>('t');
+      addTearDown(active.dispose);
+      addTearDown(split.dispose);
+      await tester.pumpWidget(
+        splitHost(
+          entries: [_entry('t'), _entry('s'), _entry('f')],
+          active: active,
+          split: split,
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('cruxDockTab-t')));
+      await tester.pumpAndSettle();
+      expect(active.value, 't');
+      expect(split.value, 's');
+      expect(find.text('content-t'), findsOneWidget);
+      expect(find.text('content-s'), findsOneWidget);
+
+      // Another tab replaces the left pane only.
+      await tester.tap(find.byKey(const ValueKey('cruxDockTab-f')));
+      await tester.pumpAndSettle();
+      expect(split.value, 's');
+      expect(find.text('content-f'), findsOneWidget);
+      expect(find.text('content-s'), findsOneWidget);
+      expect(find.text('content-t'), findsNothing);
+    });
+
+    testWidgets('both shown tabs read as selected', (tester) async {
+      final handle = tester.ensureSemantics();
+      final active = ValueNotifier<String>('s');
+      final split = ValueNotifier<String?>('t');
+      addTearDown(active.dispose);
+      addTearDown(split.dispose);
+      await tester.pumpWidget(
+        splitHost(
+          entries: [_entry('t'), _entry('s'), _entry('f')],
+          active: active,
+          split: split,
+        ),
+      );
+      for (final id in ['t', 's']) {
+        expect(
+          tester.getSemantics(find.byKey(ValueKey('cruxDockTab-$id'))),
+          isSemantics(isSelected: true),
+          reason: id,
+        );
+      }
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('cruxDockTab-f'))),
+        isSemantics(isSelected: false),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a narrow dock shows the active tab alone, and the split '
+        'returns when it widens', (tester) async {
+      final active = ValueNotifier<String>('s');
+      final split = ValueNotifier<String?>('t');
+      addTearDown(active.dispose);
+      addTearDown(split.dispose);
+      await tester.pumpWidget(
+        splitHost(
+          entries: [_entry('t'), _entry('s')],
+          active: active,
+          split: split,
+          width: 500,
+        ),
+      );
+      expect(find.text('content-s'), findsOneWidget);
+      expect(find.text('content-t'), findsNothing);
+
+      await tester.pumpWidget(
+        splitHost(
+          entries: [_entry('t'), _entry('s')],
+          active: active,
+          split: split,
+        ),
+      );
+      expect(find.text('content-s'), findsOneWidget);
+      expect(find.text('content-t'), findsOneWidget);
+    });
+
+    testWidgets('a split tab that is gone leaves the active tab alone', (
+      tester,
+    ) async {
+      final active = ValueNotifier<String>('s');
+      final split = ValueNotifier<String?>('gone');
+      addTearDown(active.dispose);
+      addTearDown(split.dispose);
+      await tester.pumpWidget(
+        splitHost(
+          entries: [_entry('t'), _entry('s')],
+          active: active,
+          split: split,
+        ),
+      );
+      expect(find.text('content-s'), findsOneWidget);
+      expect(find.text('content-t'), findsNothing);
+      expect(find.byTooltip('Split'), findsOneWidget);
+    });
+
+    testWidgets('the divider resizes the panes within bounds', (tester) async {
+      final active = ValueNotifier<String>('s');
+      final split = ValueNotifier<String?>('t');
+      addTearDown(active.dispose);
+      addTearDown(split.dispose);
+      await tester.pumpWidget(
+        splitHost(
+          entries: [_entry('t'), _entry('s')],
+          active: active,
+          split: split,
+        ),
+      );
+      final divider = find.byKey(const ValueKey('cruxDockSplitDivider'));
+      final before = tester.getCenter(divider).dx;
+      expect(before, closeTo(400, 4));
+      await tester.drag(divider, const Offset(-150, 0));
+      await tester.pumpAndSettle();
+      // The drag's start slop is not applied to the panes.
+      expect(tester.getCenter(divider).dx, inInclusiveRange(240, 290));
+      // Clamped: a pane is never dragged below a fifth of the dock.
+      await tester.drag(divider, const Offset(-400, 0));
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(divider).dx, closeTo(160, 4));
+    });
+
+    testWidgets('no split button without onSplitChanged, and a one-tab dock '
+        'cannot split', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          CruxDock(
+            entries: [_entry('a'), _entry('b')],
+            activeId: 'a',
+            onSelect: (_) {},
+          ),
+        ),
+      );
+      expect(find.byKey(const ValueKey('cruxDockSplit')), findsNothing);
+
+      final active = ValueNotifier<String>('t');
+      final split = ValueNotifier<String?>(null);
+      addTearDown(active.dispose);
+      addTearDown(split.dispose);
+      await tester.pumpWidget(
+        splitHost(entries: [_entry('t')], active: active, split: split),
+      );
+      final button = tester.widget<IconButton>(
+        find.descendant(
+          of: find.byKey(const ValueKey('cruxDockSplit')),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(button.onPressed, isNull);
+    });
+  });
 }
