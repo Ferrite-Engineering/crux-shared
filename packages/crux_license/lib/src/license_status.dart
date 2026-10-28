@@ -69,6 +69,7 @@ class CruxLicenseStatus {
     this.lastCheckedAt,
     this.machineLabel,
     this.busy = false,
+    this.clockSetBack = false,
   });
 
   /// The unlicensed state — what a fresh install shows, and the default
@@ -110,6 +111,17 @@ class CruxLicenseStatus {
   /// shows a progress indicator.
   final bool busy;
 
+  /// Whether an evaluation ended early because this machine's clock reads
+  /// earlier than a time the app had already seen (`LicenseClockMark`).
+  ///
+  /// Only ever set with [CruxLicenseActivation.expired] on an evaluation. A
+  /// paid licence is never ended by a wrong clock. Setting the clock right
+  /// resumes the evaluation, if it has not reached its end date.
+  final bool clockSetBack;
+
+  /// Whether the licence is an evaluation (`LicenseGrant.isEvaluation`).
+  bool get isEvaluation => grant?.isEvaluation ?? false;
+
   /// The tier this status runs at.
   ///
   /// Grace keeps the licensed tier — that is what grace *is*. Expired and
@@ -150,6 +162,7 @@ class CruxLicenseStatus {
     DateTime? lastCheckedAt,
     String? machineLabel,
     bool? busy,
+    bool? clockSetBack,
   }) => CruxLicenseStatus(
     activation: activation ?? this.activation,
     grant: grant ?? this.grant,
@@ -160,6 +173,7 @@ class CruxLicenseStatus {
     lastCheckedAt: lastCheckedAt ?? this.lastCheckedAt,
     machineLabel: machineLabel ?? this.machineLabel,
     busy: busy ?? this.busy,
+    clockSetBack: clockSetBack ?? this.clockSetBack,
   );
 
   @override
@@ -174,7 +188,8 @@ class CruxLicenseStatus {
           other.rejection == rejection &&
           other.lastCheckedAt == lastCheckedAt &&
           other.machineLabel == machineLabel &&
-          other.busy == busy;
+          other.busy == busy &&
+          other.clockSetBack == clockSetBack;
 
   @override
   int get hashCode => Object.hash(
@@ -187,6 +202,7 @@ class CruxLicenseStatus {
     lastCheckedAt,
     machineLabel,
     busy,
+    clockSetBack,
   );
 
   @override

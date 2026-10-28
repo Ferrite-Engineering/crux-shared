@@ -6,6 +6,13 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Settings can open at a category.** `CruxSettingsMasterDetail` takes
+  `initialCategoryId`, and `openCruxSettings` takes `initialCategoryId:`,
+  which reaches the body through the new `CruxSettingsInitialCategory`
+  inherited widget, so a host's body builder needs no change. An id no
+  category carries opens the first category, as before; on a narrow layout
+  the named category opens straight into its detail.
+
 - **Export namespace narrowed by 4 symbols.** `kCruxFormLabelWidth`, `kCruxFormSpreadControlMaxWidth`, `kCruxSettingsSliderWidth`, `kCruxSupportedLocales` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **The shared tiles draw the owned desktop controls.** Under a desktop

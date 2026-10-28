@@ -137,4 +137,62 @@ void main() {
       expect(find.text('Appearance'), findsOneWidget);
     });
   });
+
+  group('initial category', () {
+    Future<void> pumpAt(
+      WidgetTester tester, {
+      required Size size,
+      String? initialCategoryId,
+      String? inherited,
+    }) async {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      Widget body = CruxSettingsMasterDetail(
+        categories: _categories(),
+        initialCategoryId: initialCategoryId,
+      );
+      if (inherited != null) {
+        body = CruxSettingsInitialCategory(id: inherited, child: body);
+      }
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: body)));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('opens on the named category when wide', (tester) async {
+      await pumpAt(
+        tester,
+        size: const Size(900, 700),
+        initialCategoryId: CruxSettingsCategoryId.shortcuts,
+      );
+      expect(find.text('shortcuts-body'), findsOneWidget);
+      expect(find.text('appearance-body'), findsNothing);
+    });
+
+    testWidgets('opens straight into the detail when narrow', (tester) async {
+      await pumpAt(
+        tester,
+        size: const Size(420, 800),
+        initialCategoryId: CruxSettingsCategoryId.fileHandling,
+      );
+      expect(find.text('files-body'), findsOneWidget);
+    });
+
+    testWidgets('reads the category from an enclosing scope', (tester) async {
+      await pumpAt(
+        tester,
+        size: const Size(900, 700),
+        inherited: CruxSettingsCategoryId.fileHandling,
+      );
+      expect(find.text('files-body'), findsOneWidget);
+    });
+
+    testWidgets('ignores an id no category carries', (tester) async {
+      await pumpAt(
+        tester,
+        size: const Size(900, 700),
+        initialCategoryId: 'pro.nothing',
+      );
+      expect(find.text('appearance-body'), findsOneWidget);
+    });
+  });
 }

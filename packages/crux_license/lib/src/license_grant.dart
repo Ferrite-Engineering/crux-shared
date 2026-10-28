@@ -27,6 +27,8 @@ class LicenseGrant {
     this.maxMachines,
     this.email,
     this.resolvedFromEntitlements = false,
+    this.isEvaluation = false,
+    this.issued,
   });
 
   /// Id of the trusted issuer whose key verified the credential.
@@ -69,6 +71,18 @@ class LicenseGrant {
   /// current as the build.
   final bool resolvedFromEntitlements;
 
+  /// Whether the credential carries the `EVALUATION` entitlement
+  /// (`kEvaluationEntitlementCode`).
+  ///
+  /// An evaluation runs at [tier] until [expiry] and not a moment longer: it
+  /// gets no grace period, and its expiry is checked against a clock
+  /// high-water mark. A paid licence keeps both.
+  final bool isEvaluation;
+
+  /// When the credential was issued (`LicenseClaims.issued`), or `null` when
+  /// it does not say.
+  final DateTime? issued;
+
   /// Whether this grant covers [product].
   bool grants(CruxProduct product) => products.contains(product);
 
@@ -99,7 +113,9 @@ class LicenseGrant {
           other.expiry == expiry &&
           other.maxMachines == maxMachines &&
           other.email == email &&
-          other.resolvedFromEntitlements == resolvedFromEntitlements;
+          other.resolvedFromEntitlements == resolvedFromEntitlements &&
+          other.isEvaluation == isEvaluation &&
+          other.issued == issued;
 
   @override
   int get hashCode => Object.hash(
@@ -113,11 +129,13 @@ class LicenseGrant {
     maxMachines,
     email,
     resolvedFromEntitlements,
+    isEvaluation,
+    issued,
   );
 
   @override
   String toString() =>
       'LicenseGrant(${tier.name}, ${skuLookupKey ?? policyId}, '
       'products: ${products.map((p) => p.name).join(',')}, '
-      'expiry: $expiry)';
+      'expiry: $expiry${isEvaluation ? ', evaluation' : ''})';
 }

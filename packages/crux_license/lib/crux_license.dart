@@ -78,6 +78,12 @@
 ///   the tier unlocks it, otherwise a locked panel that names the feature,
 ///   the tier, and the way to buy it. The License category never goes
 ///   through it.
+/// - `CruxLicenseExpiryGate` + `cruxLicenseExpiryNoticeFor` — the
+///   non-blocking strip in the main window that says a licence is about to
+///   expire, is in grace, or has dropped to Open Core, with
+///   `kLicenseExpiryWarningDays` and `kEvaluationExpiryWarningDays` as its
+///   lead times. An `EVALUATION` entitlement makes a licence an evaluation:
+///   no grace, and a clock high-water mark (`LicenseClockMark`).
 library;
 
 export 'src/ai_experimental.dart' hide kAiExperimental;
@@ -97,12 +103,15 @@ export 'src/keygen_policy_table.dart' hide kKeygenPolicies;
 export 'src/license_actions.dart'
     hide cruxEducationalRequestPage, kCruxEducationalRequestPageUrl;
 export 'src/license_claims.dart';
+export 'src/license_clock_mark.dart';
 export 'src/license_controller.dart';
 export 'src/license_credential.dart';
 export 'src/license_edition_line.dart';
+export 'src/license_expiry_notice.dart';
 export 'src/license_grace.dart';
 export 'src/license_grant.dart';
 export 'src/license_issuer.dart';
+export 'src/license_notice_memory.dart';
 export 'src/license_panel_providers.dart'
     hide licenseManagedByOrganizationProvider;
 export 'src/license_status.dart';
@@ -121,6 +130,8 @@ export 'src/widgets/feature_tier_badge.dart';
 export 'src/widgets/gated_settings_body.dart';
 export 'src/widgets/gated_settings_category.dart';
 export 'src/widgets/license_badge_strings.dart';
+export 'src/widgets/license_expiry_banner_strings.dart';
+export 'src/widgets/license_expiry_gate.dart';
 export 'src/widgets/license_panel.dart';
 export 'src/widgets/license_panel_strings.dart';
 export 'src/widgets/license_settings_category.dart'

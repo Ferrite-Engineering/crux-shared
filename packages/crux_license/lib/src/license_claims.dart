@@ -3,6 +3,16 @@
 
 import 'package:meta/meta.dart';
 
+/// The entitlement code that marks a licence as an evaluation.
+///
+/// An evaluation is an ordinary Pro or Enterprise licence that also carries
+/// this code. Entitlements travel inside the signed credential, so the marker
+/// cannot be removed without breaking the signature. An evaluation gets no
+/// grace period (`LicenseGracePolicy`) and its expiry is checked against a
+/// clock high-water mark (`LicenseClockMark`), because its end date is the
+/// agreement and nothing is being renewed.
+const String kEvaluationEntitlementCode = 'EVALUATION';
+
 /// What a verified credential *asserts*, in issuer-neutral form.
 ///
 /// This is the boundary between "the bytes are authentic" and "here is what
@@ -28,6 +38,7 @@ class LicenseClaims {
     this.policyDuration,
     this.licenseId,
     this.created,
+    this.issued,
     this.expiry,
     this.expiryUnreadable = false,
     this.email,
@@ -63,6 +74,14 @@ class LicenseClaims {
 
   /// When the licence was created.
   final DateTime? created;
+
+  /// When this credential was issued: the signing time of a licence file or
+  /// machine file, and the licence's creation time for a key, which is signed
+  /// once and carries no other.
+  ///
+  /// The earliest time the credential can have been in anyone's hands, which
+  /// is what makes it the floor of an evaluation's clock check.
+  final DateTime? issued;
 
   /// When the licence expires. `null` means perpetual, which no current SKU
   /// issues.
@@ -101,11 +120,18 @@ class LicenseClaims {
 
   /// Entitlement codes embedded in the credential, upper-case.
   ///
-  /// Empty for a bare Keygen licence key — that format carries no entitlements
-  /// at all, which is the whole reason the offline policy table exists. A
-  /// Keygen *licence file* embeds the full licence object and does populate
-  /// this, and when it is populated it wins over the table.
+  /// Empty for a bare Keygen licence key as Keygen issues it by default: that
+  /// dataset carries no entitlements at all, which is the whole reason the
+  /// offline policy table exists. A key whose signed dataset does list
+  /// entitlements populates this the same way a file does. A Keygen
+  /// *licence file* or *machine file* embeds the full licence object and
+  /// populates this, and when the codes name a tier and a product they win
+  /// over the table.
   final Set<String> entitlementCodes;
+
+  /// Whether the credential carries [kEvaluationEntitlementCode].
+  bool get isEvaluation =>
+      entitlementCodes.contains(kEvaluationEntitlementCode);
 
   /// The decoded payload, for diagnostics and for claims no field models yet.
   final Map<String, Object?> raw;

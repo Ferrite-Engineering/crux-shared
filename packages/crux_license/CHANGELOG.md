@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+- **Licence expiry in the main window** (crux-shared#55).
+  `CruxLicenseExpiryGate` wraps the app content and shows a non-blocking
+  `CruxLicenseExpiryBanner`: from `kLicenseExpiryWarningDays` (30, or
+  `--dart-define=LICENSE_EXPIRY_WARNING_DAYS`) before expiry, during grace
+  worded as overdue, and once on the drop to Open Core. Policy-deployed
+  licences point to the administrator. Dismissible for the session, never
+  modal, never focused, announced once through `announceCrux`. New:
+  `cruxLicenseExpiryNoticeFor`, `CruxLicenseExpiryNotice`,
+  `CruxLicenseNoticeKind`, `CruxLicenseExpiryStrings` +
+  `CruxLicenseExpiryStringsEn`, `licenseExpiryStringsProvider`,
+  `LicenseNoticeMemory` + `FileLicenseNoticeMemory` /
+  `InMemoryLicenseNoticeMemory`, `licenseNoticeMemoryProvider`, and
+  `licenseClockProvider`, the one clock the panel and the strip count days
+  from.
+- **Evaluation licences** (crux-shared#56). The `EVALUATION` entitlement
+  (`kEvaluationEntitlementCode`) is read from licence files, machine files
+  and key datasets alike; `LicenseClaims.isEvaluation`,
+  `LicenseGrant.isEvaluation`, `CruxLicenseStatus.isEvaluation`. An
+  evaluation gets no grace (`LicenseGracePolicy.forTier`, `endsAfter` and
+  `covers` take `evaluation:`), and a clock high-water mark starting at the
+  credential's issue time (`LicenseClaims.issued`, `LicenseGrant.issued`)
+  ends it when the clock reads earlier than the mark by more than
+  `kEvaluationClockTolerance`; `CruxLicenseStatus.clockSetBack` says so.
+  `CruxLicenseController` takes `clockMark:` (default in memory;
+  `FileLicenseClockMark` is the shared file). Paid licences are unchanged.
+  The strip counts an evaluation down from `kEvaluationExpiryWarningDays`
+  (14).
+- **The panel's state line names the date** in grace and for an
+  evaluation. New concrete strings with English defaults, so an adapter
+  that predates them still compiles: `licenseStateGraceSince`,
+  `licenseStateEvaluation`, `licenseStateEvaluationEnded`,
+  `licenseStateEvaluationClock`.
+- A key dataset that lists entitlement codes now populates
+  `LicenseClaims.entitlementCodes`, and resolves from them when they name a
+  tier and a product, exactly as a file does. Keygen's default key dataset
+  lists none, so no key issued today changes.
+
 - **Export namespace narrowed by 10 symbols.** `cruxEducationalRequestPage`, `cruxPolicyLoader`, `kAiExperimental`, `kBetaExpiryWarningDays`, `kCruxEducationalRequestPageUrl`, `kCruxLicenseCategoryIcon`, `kKeygenAccountId`, `kKeygenPolicies`, `kLicenseTierOverrideName`, `licenseManagedByOrganizationProvider` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **`CruxUpgradeDialog` is a `CruxDialog`.** `show` opens it through

@@ -72,6 +72,32 @@ abstract class CruxLicensePanelStrings {
   /// State line while the grace period is running, with [days] left.
   String licenseStateGrace(int days);
 
+  /// State line while the grace period is running, naming the [date] the
+  /// licence expired on and the [days] of grace left, so the panel shows the
+  /// same date as the main window's expiry banner. Concrete so an adapter
+  /// written before it existed still compiles; an overlay overrides it to
+  /// localise.
+  String licenseStateGraceSince(String date, int days) =>
+      'Renewal overdue since $date. '
+      '${days == 1 ? '1 day' : '$days days'} of grace remaining.';
+
+  /// State line for a current evaluation licence, which ends on [date].
+  /// Concrete for the same reason as [licenseStateGraceSince].
+  String licenseStateEvaluation(String date) => 'Evaluation, ends $date';
+
+  /// State line for an evaluation that ended on [date]. An evaluation has no
+  /// grace period, so this follows the end date directly.
+  String licenseStateEvaluationEnded(String date) =>
+      'Evaluation ended on $date. Running as Open Core.';
+
+  /// State line for an evaluation stopped because this computer's clock
+  /// reads earlier than a time the app has already seen. Says what to do:
+  /// setting the clock right resumes it.
+  String get licenseStateEvaluationClock =>
+      "Evaluation stopped: this computer's clock reads earlier than a time "
+      'this app has already seen. Set the clock to the correct time to '
+      'continue. Running as Open Core.';
+
   /// State line once grace has run out.
   String get licenseStateExpired;
 

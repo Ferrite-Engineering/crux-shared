@@ -27,6 +27,16 @@ final licenseStatusProvider = Provider<CruxLicenseStatus>(
   name: 'licenseStatusProvider',
 );
 
+/// The clock the licence surfaces count days from.
+///
+/// One clock for the licence panel's state line and the main window's expiry
+/// banner, so the two never disagree about how many days are left. Defaults
+/// to [DateTime.now]; tests override it with a fixed instant.
+final licenseClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+  name: 'licenseClockProvider',
+);
+
 /// What the licence panel can do, as a seam.
 ///
 /// Defaults to [UnsupportedLicenseActions], so an open-core build — or a

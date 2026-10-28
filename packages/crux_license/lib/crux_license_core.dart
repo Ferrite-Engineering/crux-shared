@@ -83,8 +83,10 @@ export 'src/keygen_policy_table.dart' hide kKeygenPolicies;
 export 'src/license_actions.dart'
     hide cruxEducationalRequestPage, kCruxEducationalRequestPageUrl;
 export 'src/license_claims.dart';
+export 'src/license_clock_mark.dart';
 export 'src/license_controller.dart';
 export 'src/license_credential.dart';
+export 'src/license_expiry_notice.dart';
 export 'src/license_grace.dart';
 export 'src/license_grant.dart';
 export 'src/license_issuer.dart';

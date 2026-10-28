@@ -27,12 +27,22 @@ class CruxSettingsMasterDetail extends StatefulWidget {
     this.railWidth = 236,
     this.scrollableDetail = true,
     this.showDetailTitle = true,
+    this.initialCategoryId,
     super.key,
   });
 
   /// Categories shown in the rail, in display order. The first is selected
   /// by default.
   final List<CruxSettingsCategory> categories;
+
+  /// The [CruxSettingsCategory.id] to open on, instead of the first category.
+  ///
+  /// `null` (the default) defers to an enclosing [CruxSettingsInitialCategory],
+  /// which is how `openCruxSettings(initialCategoryId:)` reaches a body the
+  /// host builds without knowing where it was opened from. An id no category
+  /// carries is ignored and the first category opens, as without one. On a
+  /// narrow layout the named category opens straight into its detail pane.
+  final String? initialCategoryId;
 
   /// Width at/above which the rail and detail pane render side by side.
   final double dualPaneBreakpoint;
@@ -72,6 +82,25 @@ class _CruxSettingsMasterDetailState extends State<CruxSettingsMasterDetail> {
 
   /// Narrow layout only: whether the detail (vs. the list) is showing.
   bool _detailOpenOnNarrow = false;
+
+  /// Whether the initial category has been applied. Read once, on the first
+  /// dependency change, so a later rebuild never moves the user's selection.
+  bool _initialApplied = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialApplied) return;
+    _initialApplied = true;
+    final id =
+        widget.initialCategoryId ??
+        CruxSettingsInitialCategory.maybeOf(context);
+    if (id == null) return;
+    final index = widget.categories.indexWhere((c) => c.id == id);
+    if (index < 0) return;
+    _selected = index;
+    _detailOpenOnNarrow = true;
+  }
 
   @override
   void dispose() {
@@ -182,6 +211,33 @@ class _CruxSettingsMasterDetailState extends State<CruxSettingsMasterDetail> {
       ),
     );
   }
+}
+
+/// Names the category a [CruxSettingsMasterDetail] below it opens on.
+///
+/// `openCruxSettings(initialCategoryId:)` puts one above the body it builds,
+/// so a caller that wants Settings open at one category (a banner's "open the
+/// License settings" action, say) needs nothing from the host's body builder.
+/// Read once, when the master-detail first mounts.
+class CruxSettingsInitialCategory extends InheritedWidget {
+  /// Opens the master-detail below [child] on the category whose id is [id].
+  const CruxSettingsInitialCategory({
+    required this.id,
+    required super.child,
+    super.key,
+  });
+
+  /// The [CruxSettingsCategory.id] to open on.
+  final String id;
+
+  /// The id the nearest enclosing [CruxSettingsInitialCategory] names, or
+  /// `null` when there is none.
+  static String? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<CruxSettingsInitialCategory>()?.id;
+
+  @override
+  bool updateShouldNotify(CruxSettingsInitialCategory oldWidget) =>
+      id != oldWidget.id;
 }
 
 /// Left pane: a vertical list of selectable category rows.

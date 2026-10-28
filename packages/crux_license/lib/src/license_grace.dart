@@ -42,22 +42,34 @@ class LicenseGracePolicy {
   final Duration enterprise;
 
   /// The window for [tier]. Open Core has no licence to be in grace over.
-  Duration forTier(LicenseTier tier) => switch (tier) {
-    LicenseTier.pro => pro,
-    LicenseTier.edu => edu,
-    LicenseTier.enterprise => enterprise,
-    LicenseTier.openCore => Duration.zero,
-  };
+  ///
+  /// An [evaluation] has none either, whatever its tier: grace is for a
+  /// paying customer whose renewal is held up, and an evaluation's end date
+  /// is the agreement, with nothing being renewed.
+  Duration forTier(LicenseTier tier, {bool evaluation = false}) {
+    if (evaluation) return Duration.zero;
+    return switch (tier) {
+      LicenseTier.pro => pro,
+      LicenseTier.edu => edu,
+      LicenseTier.enterprise => enterprise,
+      LicenseTier.openCore => Duration.zero,
+    };
+  }
 
-  /// When grace runs out for a licence of [tier] that expired at [expiry].
-  DateTime endsAfter(DateTime expiry, LicenseTier tier) =>
-      expiry.add(forTier(tier));
+  /// When grace runs out for a licence of [tier] that expired at [expiry];
+  /// [expiry] itself for an [evaluation].
+  DateTime endsAfter(
+    DateTime expiry,
+    LicenseTier tier, {
+    bool evaluation = false,
+  }) => expiry.add(forTier(tier, evaluation: evaluation));
 
   /// Whether a licence of [tier] that expired at [expiry] is still inside its
-  /// grace window at [now].
+  /// grace window at [now]. Never true for an [evaluation].
   bool covers({
     required DateTime expiry,
     required LicenseTier tier,
     required DateTime now,
-  }) => now.isBefore(endsAfter(expiry, tier));
+    bool evaluation = false,
+  }) => now.isBefore(endsAfter(expiry, tier, evaluation: evaluation));
 }

@@ -4,6 +4,7 @@
 import 'dart:math' as math;
 
 import 'package:crux_ide_layout/crux_ide_layout.dart' show showCruxDialog;
+import 'package:crux_settings_ui/src/crux_settings_master_detail.dart';
 import 'package:flutter/material.dart';
 
 /// Opens the suite's Settings surface with the shared chrome: a modal
@@ -29,6 +30,10 @@ import 'package:flutter/material.dart';
 /// the body is built under the tab's provider scope and no second scope over
 /// the tab's container is needed. The dialog then sizes itself to that
 /// navigator's area.
+///
+/// [initialCategoryId], when given, is the category the body's
+/// `CruxSettingsMasterDetail` opens on (through a
+/// `CruxSettingsInitialCategory` above the shell) instead of the first.
 Future<void> openCruxSettings(
   BuildContext context, {
   required String title,
@@ -37,9 +42,14 @@ Future<void> openCruxSettings(
   required bool asDialog,
   Widget Function(BuildContext context, Widget shell)? wrap,
   NavigatorState? navigator,
+  String? initialCategoryId,
 }) async {
-  Widget shellOf(BuildContext ctx, Widget shell) =>
-      wrap == null ? shell : wrap(ctx, shell);
+  Widget shellOf(BuildContext ctx, Widget shell) {
+    final opened = initialCategoryId == null
+        ? shell
+        : CruxSettingsInitialCategory(id: initialCategoryId, child: shell);
+    return wrap == null ? opened : wrap(ctx, opened);
+  }
 
   if (asDialog) {
     await showCruxDialog<void>(

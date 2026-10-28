@@ -48,7 +48,7 @@ enum CruxLicenseActivation
   static const notActivatedOnThisMachine: CruxLicenseActivation
   static const openCore: CruxLicenseActivation
 class CruxLicenseController implements CruxLicenseActions
-  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
+  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
   activate(String credential) -> Future<CruxLicenseActionResult>
   deactivateThisMachine() -> Future<CruxLicenseActionResult>
   dispose() -> Future<void>
@@ -68,12 +68,30 @@ class CruxLicenseController implements CruxLicenseActions
   refresh() -> Future<CruxLicenseActionResult>
   requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
   start() -> Future<void>
-class CruxLicenseStatus
-  const CruxLicenseStatus({CruxLicenseActivation activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool busy, int? seatsTotal, int? seatsUsed})
+class CruxLicenseExpiryNotice
+  const CruxLicenseExpiryNotice({String? licenseId, bool clockSetBack, bool evaluation, int? graceDaysRemaining, required CruxLicenseNoticeKind kind, required DateTime expiry, required LicenseTier tier})
   ==(Object other) -> bool
-  copyWith({CruxLicenseActivation? activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool? busy, int? seatsTotal, int? seatsUsed}) -> CruxLicenseStatus
+  final clockSetBack: bool
+  final evaluation: bool
+  final expiry: DateTime
+  final graceDaysRemaining: int?
+  final kind: CruxLicenseNoticeKind
+  final licenseId: String?
+  final tier: LicenseTier
+  get hashCode -> int
+  get identity -> String
+  toString() -> String
+enum CruxLicenseNoticeKind
+  static const ended: CruxLicenseNoticeKind
+  static const expiringSoon: CruxLicenseNoticeKind
+  static const inGrace: CruxLicenseNoticeKind
+class CruxLicenseStatus
+  const CruxLicenseStatus({CruxLicenseActivation activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool busy, bool clockSetBack, int? seatsTotal, int? seatsUsed})
+  ==(Object other) -> bool
+  copyWith({CruxLicenseActivation? activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool? busy, bool? clockSetBack, int? seatsTotal, int? seatsUsed}) -> CruxLicenseStatus
   final activation: CruxLicenseActivation
   final busy: bool
+  final clockSetBack: bool
   final graceEndsAt: DateTime?
   final grant: LicenseGrant?
   final lastCheckedAt: DateTime?
@@ -83,6 +101,7 @@ class CruxLicenseStatus
   final seatsUsed: int?
   get hasCredential -> bool
   get hashCode -> int
+  get isEvaluation -> bool
   get tier -> LicenseTier
   graceDaysRemainingAt(DateTime now) -> int?
   static const openCore: CruxLicenseStatus
@@ -107,6 +126,10 @@ enum CruxProduct
 class FeatureGate
   static isAvailable(LicenseTier required, LicenseTier current) -> bool
   static satisfiesTier(LicenseTier required, LicenseTier current) -> bool
+class FileLicenseClockMark implements LicenseClockMark
+  FileLicenseClockMark({Map<String, String>? environment, String? operatingSystem})
+  advance({required DateTime at, required String licenseId}) -> Future<void>
+  read({required String licenseId}) -> Future<DateTime?>
 class FileMachineReleaseMarker implements MachineReleaseMarker
   FileMachineReleaseMarker({DateTime Function() now, Map<String, String>? environment, String? operatingSystem})
   clearReleased({required String licenseId}) -> Future<void>
@@ -118,6 +141,11 @@ class InMemoryInstallFingerprintSource implements InstallFingerprintSource
   final usable: bool
   readOrCreate({Iterable<Future<String?> Function()> legacy}) -> Future<String?>
   var value: String?
+class InMemoryLicenseClockMark implements LicenseClockMark
+  InMemoryLicenseClockMark([Map<String, DateTime>? marks])
+  advance({required DateTime at, required String licenseId}) -> Future<void>
+  final marks: Map<String, DateTime>
+  read({required String licenseId}) -> Future<DateTime?>
 class InMemoryMachineReleaseMarker implements MachineReleaseMarker
   InMemoryMachineReleaseMarker([Map<String, String>? released])
   clearReleased({required String licenseId}) -> Future<void>
@@ -234,7 +262,7 @@ final class LicenseActionSucceeded extends CruxLicenseActionResult
   final underReview: bool
   toString() -> String
 class LicenseClaims
-  const LicenseClaims({DateTime? created, DateTime? expiry, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, bool expiryUnreadable, int? maxMachines, required String issuerId})
+  const LicenseClaims({DateTime? created, DateTime? expiry, DateTime? issued, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, bool expiryUnreadable, int? maxMachines, required String issuerId})
   final accountId: String?
   final created: DateTime?
   final email: String?
@@ -242,6 +270,7 @@ class LicenseClaims
   final expiry: DateTime?
   final expiryUnreadable: bool
   final fingerprint: String?
+  final issued: DateTime?
   final issuerId: String
   final licenseId: String?
   final maxMachines: int?
@@ -249,7 +278,11 @@ class LicenseClaims
   final policyId: String?
   final productId: String?
   final raw: Map<String, Object?>
+  get isEvaluation -> bool
   toString() -> String
+abstract class LicenseClockMark
+  advance({required DateTime at, required String licenseId}) -> Future<void>
+  read({required String licenseId}) -> Future<DateTime?>
 enum LicenseCredentialKind
   get signingPrefix -> String
   static const licenseFile: LicenseCredentialKind
@@ -273,18 +306,20 @@ final class LicenseExpired extends LicenseValidation
   toString() -> String
 class LicenseGracePolicy
   const LicenseGracePolicy({Duration edu, Duration enterprise, Duration pro})
-  covers({required DateTime expiry, required DateTime now, required LicenseTier tier}) -> bool
-  endsAfter(DateTime expiry, LicenseTier tier) -> DateTime
+  covers({bool evaluation, required DateTime expiry, required DateTime now, required LicenseTier tier}) -> bool
+  endsAfter(DateTime expiry, LicenseTier tier, {bool evaluation}) -> DateTime
   final edu: Duration
   final enterprise: Duration
   final pro: Duration
-  forTier(LicenseTier tier) -> Duration
+  forTier(LicenseTier tier, {bool evaluation}) -> Duration
   static const standard: LicenseGracePolicy
 class LicenseGrant
-  const LicenseGrant({DateTime? expiry, String? email, String? licenseId, String? policyId, String? skuLookupKey, bool resolvedFromEntitlements, int? maxMachines, required LicenseTier tier, required Set<CruxProduct> products, required String issuerId})
+  const LicenseGrant({DateTime? expiry, DateTime? issued, String? email, String? licenseId, String? policyId, String? skuLookupKey, bool isEvaluation, bool resolvedFromEntitlements, int? maxMachines, required LicenseTier tier, required Set<CruxProduct> products, required String issuerId})
   ==(Object other) -> bool
   final email: String?
   final expiry: DateTime?
+  final isEvaluation: bool
+  final issued: DateTime?
   final issuerId: String
   final licenseId: String?
   final maxMachines: int?
@@ -383,12 +418,17 @@ class UnsupportedLicenseActions implements CruxLicenseActions
 applyLicenseTierOverride(LicenseTier resolved) -> LicenseTier
 betaExpiryStatusFor(DateTime now, {DateTime? expiry, int? warningDays}) -> BetaExpiryStatus
 cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
+cruxLicenseExpiryNoticeFor(CruxLicenseStatus status, {int evaluationWarningDays, int warningDays, required DateTime now}) -> CruxLicenseExpiryNotice?
 cruxSeePricingAction(CruxLicenseActions actions) -> Future<void> Function()?
 daysUntilBetaExpiry(DateTime now, {DateTime? expiry}) -> int?
 decodeHexKey(String hex) -> List<int>
 get kBetaExpiry -> DateTime?
 get kBetaPeriod -> bool
+get kEvaluationClockTolerance -> Duration
+get kEvaluationEntitlementCode -> String
+get kEvaluationExpiryWarningDays -> int
 get kKeygenVerifyKeyHex -> String
+get kLicenseExpiryWarningDays -> int
 legacyInstallFingerprintPath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
 get licenseTierOverride -> LicenseTier?
 mintInstallFingerprint([Random? random]) -> String

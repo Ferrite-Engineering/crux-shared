@@ -15,6 +15,7 @@ import 'package:crux_license/src/crux_product.dart';
 import 'package:crux_license/src/keygen_client.dart';
 import 'package:crux_license/src/keygen_issuer.dart';
 import 'package:crux_license/src/license_actions.dart';
+import 'package:crux_license/src/license_clock_mark.dart';
 import 'package:crux_license/src/license_credential.dart';
 import 'package:crux_license/src/license_grace.dart';
 import 'package:crux_license/src/license_grant.dart';
@@ -154,6 +155,7 @@ class CruxLicenseController implements CruxLicenseActions {
     Duration phoneHomeInterval = const Duration(hours: 24),
     DateTime Function() now = DateTime.now,
     MachineReleaseMarker releaseMarker = const NoMachineReleaseMarker(),
+    LicenseClockMark? clockMark,
   }) : _validator = validator,
        _store = store,
        _client = client,
@@ -165,7 +167,8 @@ class CruxLicenseController implements CruxLicenseActions {
        _grace = grace,
        _phoneHomeInterval = phoneHomeInterval,
        _now = now,
-       _releaseMarker = releaseMarker;
+       _releaseMarker = releaseMarker,
+       _clockMark = clockMark ?? InMemoryLicenseClockMark();
 
   /// The product this build is.
   final CruxProduct product;
@@ -175,6 +178,11 @@ class CruxLicenseController implements CruxLicenseActions {
   final KeygenLicenseClient _client;
   final LicenseMachineIdentity _machine;
   final MachineReleaseMarker _releaseMarker;
+
+  /// The evaluation clock high-water mark. In memory unless the host wires
+  /// the shared file, so the check holds for a session either way and across
+  /// launches when wired.
+  final LicenseClockMark _clockMark;
   final Future<void> Function(Uri url) _openUrl;
   final Uri _purchaseUrl;
   final Uri? _manageUrl;
@@ -1123,11 +1131,20 @@ class CruxLicenseController implements CruxLicenseActions {
       return;
     }
 
+    // An evaluation ends at its expiry, with no grace, and a clock set back
+    // before a time the app has already seen ends it too. A paid licence is
+    // never judged by either: a wrong clock must not take a paying customer's
+    // tier away.
+    final evaluation = grant.isEvaluation;
+    final clockSetBack =
+        evaluation && await _evaluationClockSetBack(grant, now);
     final expired = expiry != null && now.isAfter(expiry);
     final CruxLicenseActivation activation;
     DateTime? graceEndsAt;
-    if (expired) {
-      graceEndsAt = _grace.endsAfter(expiry, tier);
+    if (clockSetBack) {
+      activation = CruxLicenseActivation.expired;
+    } else if (expired) {
+      graceEndsAt = _grace.endsAfter(expiry, tier, evaluation: evaluation);
       activation = now.isBefore(graceEndsAt)
           ? CruxLicenseActivation.grace
           : CruxLicenseActivation.expired;
@@ -1148,8 +1165,39 @@ class CruxLicenseController implements CruxLicenseActions {
         seatsTotal: (fromIssuer ? _issuerSeats : null) ?? grant.maxMachines,
         lastCheckedAt: lastCheck,
         machineLabel: _machine.name,
+        clockSetBack: clockSetBack,
       ),
     );
+  }
+
+  /// Whether [now] reads earlier than the evaluation [grant]'s clock
+  /// high-water mark by more than [kEvaluationClockTolerance], moving the
+  /// mark forward when it does not.
+  ///
+  /// The mark starts at the credential's issue time, which no honest clock
+  /// can precede, and the controller's store of it only ever moves forward.
+  /// A mark that cannot be read or written leaves the issue time to judge.
+  Future<bool> _evaluationClockSetBack(LicenseGrant grant, DateTime now) async {
+    final licenseId = grant.licenseId ?? '';
+    DateTime? seen;
+    try {
+      seen = await _clockMark.read(licenseId: licenseId);
+    } on Object {
+      seen = null;
+    }
+    final mark = _laterOf(seen, grant.issued);
+    if (mark != null &&
+        now.isBefore(mark.subtract(kEvaluationClockTolerance))) {
+      return true;
+    }
+    if (seen == null || now.isAfter(seen)) {
+      try {
+        await _clockMark.advance(licenseId: licenseId, at: now);
+      } on Object {
+        // Best effort; see `LicenseClockMark`.
+      }
+    }
+    return false;
   }
 
   void _publish(CruxLicenseStatus status) {
@@ -1179,4 +1227,6 @@ LicenseGrant _withExpiry(LicenseGrant grant, DateTime? expiry) => LicenseGrant(
   maxMachines: grant.maxMachines,
   email: grant.email,
   resolvedFromEntitlements: grant.resolvedFromEntitlements,
+  isEvaluation: grant.isEvaluation,
+  issued: grant.issued,
 );

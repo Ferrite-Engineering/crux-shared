@@ -112,6 +112,49 @@ void main() {
       );
     });
 
+    testWidgets('initialCategoryId opens the body on that category', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(
+          Builder(
+            builder: (context) => Center(
+              child: FilledButton(
+                onPressed: () => openCruxSettings(
+                  context,
+                  title: 'Settings',
+                  closeTooltip: 'Close',
+                  asDialog: true,
+                  initialCategoryId: 'pro.license',
+                  bodyBuilder: (_) => const CruxSettingsMasterDetail(
+                    categories: [
+                      CruxSettingsCategory(
+                        id: CruxSettingsCategoryId.general,
+                        icon: Icons.tune,
+                        title: 'General',
+                        content: Text('general-body'),
+                      ),
+                      CruxSettingsCategory(
+                        id: 'pro.license',
+                        icon: Icons.vpn_key_outlined,
+                        title: 'License',
+                        content: Text('license-body'),
+                      ),
+                    ],
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.text('license-body'), findsOneWidget);
+      expect(find.text('general-body'), findsNothing);
+    });
+
     testWidgets('the dialog clamps to the viewport with a 48 dp gutter', (
       tester,
     ) async {

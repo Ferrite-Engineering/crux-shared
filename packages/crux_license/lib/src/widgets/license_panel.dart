@@ -20,6 +20,7 @@ import 'package:crux_license/src/license_validation.dart';
 import 'package:crux_license/src/policy_binding.dart';
 import 'package:crux_license/src/widgets/edition_badge.dart';
 import 'package:crux_license/src/widgets/license_badge_strings.dart';
+import 'package:crux_license/src/widgets/license_date_format.dart';
 import 'package:crux_license/src/widgets/license_panel_strings.dart';
 import 'package:crux_policy/crux_policy.dart';
 import 'package:crux_settings_ui/crux_settings_ui.dart';
@@ -138,6 +139,7 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
           strings: _s,
           badgeStrings: widget.badgeStrings,
           product: widget.product,
+          now: ref.watch(licenseClockProvider)(),
         ),
         if (managed) ...[
           const SizedBox(height: 12),
@@ -433,7 +435,7 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
           status.lastCheckedAt == null
               ? _s.licenseNeverChecked
               : _s.licenseLastChecked(
-                  _formatDateTime(status.lastCheckedAt!.toLocal()),
+                  formatLicenseDateTime(status.lastCheckedAt!),
                 ),
         ),
         const SizedBox(height: 8),
@@ -708,9 +710,14 @@ class _StatusSection extends StatelessWidget {
     required this.strings,
     required this.badgeStrings,
     required this.product,
+    required this.now,
   });
 
   final CruxLicenseStatus status;
+
+  /// The clock reading the state line counts days from:
+  /// `licenseClockProvider`, which the expiry banner reads too.
+  final DateTime now;
   final CruxLicensePanelStrings strings;
   final LicenseBadgeStrings badgeStrings;
   final CruxProduct product;
@@ -746,7 +753,8 @@ class _StatusSection extends StatelessWidget {
           style: theme.textTheme.bodyMedium?.copyWith(
             color:
                 status.activation == CruxLicenseActivation.grace ||
-                    status.activation == CruxLicenseActivation.noSeat
+                    status.activation == CruxLicenseActivation.noSeat ||
+                    status.clockSetBack
                 ? theme.colorScheme.error
                 : theme.colorScheme.onSurfaceVariant,
           ),
@@ -784,26 +792,34 @@ class _StatusSection extends StatelessWidget {
 
   String _stateLine(BuildContext context) {
     final grant = status.grant;
+    final expiry = grant?.expiry;
+    final date = expiry == null ? null : formatLicenseDate(expiry);
     switch (status.activation) {
       case CruxLicenseActivation.openCore:
         return strings.licenseStateOpenCoreBody;
       case CruxLicenseActivation.notActivatedOnThisMachine:
         return strings.licenseStateNotActivated;
       case CruxLicenseActivation.grace:
-        return strings.licenseStateGrace(
-          status.graceDaysRemainingAt(DateTime.now()) ?? 0,
-        );
+        // The banner's clock and the banner's computation, so the two agree.
+        final days = status.graceDaysRemainingAt(now) ?? 0;
+        return date == null
+            ? strings.licenseStateGrace(days)
+            : strings.licenseStateGraceSince(date, days);
       case CruxLicenseActivation.expired:
+        if (status.clockSetBack) return strings.licenseStateEvaluationClock;
+        if (status.isEvaluation && date != null) {
+          return strings.licenseStateEvaluationEnded(date);
+        }
         return strings.licenseStateExpired;
       case CruxLicenseActivation.noSeat:
         return strings.licenseErrorNoSeat;
       case CruxLicenseActivation.invalid:
         return strings.licenseStateInvalid;
       case CruxLicenseActivation.active:
-        final expiry = grant?.expiry;
-        return expiry == null
-            ? strings.licenseStatePerpetual
-            : strings.licenseStateActive(_formatDate(expiry.toLocal()));
+        if (date == null) return strings.licenseStatePerpetual;
+        return status.isEvaluation
+            ? strings.licenseStateEvaluation(date)
+            : strings.licenseStateActive(date);
     }
   }
 }
@@ -834,14 +850,3 @@ Widget _row(BuildContext context, String label, String value) {
     ),
   );
 }
-
-String _two(int value) => value.toString().padLeft(2, '0');
-
-/// `yyyy-MM-dd`. Deliberately not localized through `intl`: the package is
-/// dependency-light on purpose, and an ISO date is unambiguous in every
-/// locale the suite ships — which a numeric locale-specific format is not.
-String _formatDate(DateTime at) =>
-    '${at.year}-${_two(at.month)}-${_two(at.day)}';
-
-String _formatDateTime(DateTime at) =>
-    '${_formatDate(at)} ${_two(at.hour)}:${_two(at.minute)}';

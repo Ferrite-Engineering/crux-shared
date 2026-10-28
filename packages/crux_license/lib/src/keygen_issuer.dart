@@ -37,7 +37,10 @@ const String _tierCodePrefix = 'TIER_';
 ///
 /// - A **licence key** carries a policy id and nothing else — no tier, no
 ///   product codes, no email, no seat count. It resolves through
-///   [policies], the table compiled from the SKU catalog.
+///   [policies], the table compiled from the SKU catalog. A key whose signed
+///   dataset does list entitlement codes (an `entitlements` list beside or
+///   on the licence) has them read like a file's, which is how an
+///   evaluation key carries `EVALUATION`.
 /// - A **licence file** embeds the whole licence object, entitlements
 ///   included. It resolves from those directly, and says so on the grant via
 ///   `resolvedFromEntitlements`.
@@ -127,6 +130,8 @@ class KeygenLicenseIssuer implements LicenseIssuer {
         maxMachines: claims.maxMachines,
         email: claims.email,
         resolvedFromEntitlements: true,
+        isEvaluation: claims.isEvaluation,
+        issued: claims.issued,
       );
     }
 
@@ -142,6 +147,8 @@ class KeygenLicenseIssuer implements LicenseIssuer {
       expiry: claims.expiry,
       maxMachines: claims.maxMachines,
       email: claims.email,
+      isEvaluation: claims.isEvaluation,
+      issued: claims.issued,
     );
   }
 
@@ -149,6 +156,7 @@ class KeygenLicenseIssuer implements LicenseIssuer {
     final policy = _object(payload['policy']);
     final license = _object(payload['license']);
     final duration = _int(policy?['duration']);
+    final created = readLicenseTimeOrNull(license?['created']);
     return LicenseClaims(
       issuerId: id,
       accountId: _string(_object(payload['account'])?['id']),
@@ -156,10 +164,17 @@ class KeygenLicenseIssuer implements LicenseIssuer {
       policyId: _string(policy?['id']),
       policyDuration: duration == null ? null : Duration(seconds: duration),
       licenseId: _string(license?['id']),
-      created: readLicenseTimeOrNull(license?['created']),
+      created: created,
+      // A key is signed once, when the licence is made, and says nothing
+      // later; its creation is its issue.
+      issued: created,
       expiry: _expiry(license?['expiry']),
       expiryUnreadable: _expiryUnreadable(license?['expiry']),
       email: _string(_object(payload['user'])?['email']),
+      entitlementCodes: <String>{
+        ..._entitlementCodes(payload['entitlements']),
+        ..._entitlementCodes(license?['entitlements']),
+      },
       raw: payload,
     );
   }
@@ -173,6 +188,7 @@ class KeygenLicenseIssuer implements LicenseIssuer {
         _object(payload['data']),
         included: payload['included'],
         raw: payload,
+        issued: readLicenseTimeOrNull(_object(payload['meta'])?['issued']),
       );
 
   /// Read a Keygen machine-file certificate.
@@ -190,6 +206,7 @@ class KeygenLicenseIssuer implements LicenseIssuer {
       _includedOfType(payload['included'], 'licenses'),
       included: payload['included'],
       raw: payload,
+      issued: readLicenseTimeOrNull(_object(payload['meta'])?['issued']),
       fingerprint: _string(_object(machine?['attributes'])?['fingerprint']),
       accountId: _string(
         _object(_object(relationships?['account'])?['data'])?['id'],
@@ -205,6 +222,7 @@ class KeygenLicenseIssuer implements LicenseIssuer {
     Map<String, Object?>? data, {
     required Object? included,
     required Map<String, Object?> raw,
+    DateTime? issued,
     String? fingerprint,
     String? accountId,
   }) {
@@ -242,6 +260,7 @@ class KeygenLicenseIssuer implements LicenseIssuer {
       policyId: policyId,
       licenseId: _string(data?['id']),
       created: readLicenseTimeOrNull(attributes?['created']),
+      issued: issued ?? readLicenseTimeOrNull(attributes?['created']),
       expiry: _expiry(attributes?['expiry']),
       expiryUnreadable: _expiryUnreadable(attributes?['expiry']),
       email: _string(_object(attributes?['metadata'])?['email']),
@@ -307,6 +326,19 @@ Map<String, Object?>? _includedOfType(Object? included, String type) {
 
 String? _string(Object? value) =>
     value is String && value.isNotEmpty ? value : null;
+
+/// Upper-cased entitlement codes from a key dataset's `entitlements` list,
+/// whose entries may be bare codes or `{"code": …}` objects. Anything else,
+/// including a list that is not a list, reads as no codes.
+Set<String> _entitlementCodes(Object? value) {
+  if (value is! List) return const <String>{};
+  return <String>{
+    for (final entry in value)
+      if (_string(entry) ?? _string(_object(entry)?['code'])
+          case final String code)
+        code.toUpperCase(),
+  };
+}
 
 /// [value] as an int, or `null` when it is not a finite number.
 ///

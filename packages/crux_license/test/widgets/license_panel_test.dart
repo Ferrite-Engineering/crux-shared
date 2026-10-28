@@ -187,7 +187,17 @@ void main() {
       );
 
       expect(find.text(strings.licenseTierPro), findsOneWidget);
-      expect(find.text(strings.licenseStateGrace(12)), findsOneWidget);
+      // The state line names the date the licence expired, the date the
+      // main window's expiry banner shows.
+      expect(
+        find.text(
+          strings.licenseStateGraceSince(
+            localDate(DateTime.utc(2027, 3, 4)),
+            12,
+          ),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an EDU licence shows the edition badge', (tester) async {
@@ -748,6 +758,71 @@ void main() {
       );
       expect(find.byType(CruxLicensePanel), findsOneWidget);
       expect(find.text(strings.licenseTierOpenCore), findsOneWidget);
+    });
+  });
+
+  group('an evaluation', () {
+    final evaluation = LicenseGrant(
+      issuerId: 'keygen',
+      tier: LicenseTier.enterprise,
+      products: const {CruxProduct.waveCrux},
+      expiry: DateTime.utc(2027, 3, 4),
+      isEvaluation: true,
+    );
+
+    testWidgets('reads "Evaluation, ends" and the date while it runs', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          status: CruxLicenseStatus(
+            activation: CruxLicenseActivation.active,
+            grant: evaluation,
+          ),
+        ),
+      );
+      expect(
+        find.text(
+          strings.licenseStateEvaluation(localDate(DateTime.utc(2027, 3, 4))),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        strings.licenseStateEvaluation('2027-03-04'),
+        'Evaluation, ends 2027-03-04',
+      );
+    });
+
+    testWidgets('says when it ended', (tester) async {
+      await tester.pumpWidget(
+        host(
+          status: CruxLicenseStatus(
+            activation: CruxLicenseActivation.expired,
+            grant: evaluation,
+          ),
+        ),
+      );
+      expect(
+        find.text(
+          strings.licenseStateEvaluationEnded(
+            localDate(DateTime.utc(2027, 3, 4)),
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('says the clock ended it, and what to do', (tester) async {
+      await tester.pumpWidget(
+        host(
+          status: CruxLicenseStatus(
+            activation: CruxLicenseActivation.expired,
+            grant: evaluation,
+            clockSetBack: true,
+          ),
+        ),
+      );
+      expect(find.text(strings.licenseStateEvaluationClock), findsOneWidget);
     });
   });
 }

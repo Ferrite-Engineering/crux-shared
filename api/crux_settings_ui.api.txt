@@ -102,11 +102,17 @@ class CruxSettingsExtraCategory
   final id: String
   final labelBuilder: String Function(BuildContext)
   toCategory(BuildContext context) -> CruxSettingsCategory
+class CruxSettingsInitialCategory extends InheritedWidget
+  const CruxSettingsInitialCategory({Key? key, required String id, required Widget child})
+  final id: String
+  static maybeOf(BuildContext context) -> String?
+  updateShouldNotify(CruxSettingsInitialCategory oldWidget) -> bool
 class CruxSettingsMasterDetail extends StatefulWidget
-  const CruxSettingsMasterDetail({Key? key, bool scrollableDetail, bool showDetailTitle, double dualPaneBreakpoint, double railWidth, required List<CruxSettingsCategory> categories})
+  const CruxSettingsMasterDetail({Key? key, String? initialCategoryId, bool scrollableDetail, bool showDetailTitle, double dualPaneBreakpoint, double railWidth, required List<CruxSettingsCategory> categories})
   createState() -> State<CruxSettingsMasterDetail>
   final categories: List<CruxSettingsCategory>
   final dualPaneBreakpoint: double
+  final initialCategoryId: String?
   final railWidth: double
   final scrollableDetail: bool
   final showDetailTitle: bool
@@ -133,4 +139,4 @@ class CruxSettingsSliderTile extends StatelessWidget
   final value: double
   final valueText: String
 get kCruxPolicyLockNoteEn -> String
-openCruxSettings(BuildContext context, {NavigatorState? navigator, Widget Function(BuildContext, Widget)? wrap, required String closeTooltip, required String title, required Widget Function(BuildContext) bodyBuilder, required bool asDialog}) -> Future<void>
+openCruxSettings(BuildContext context, {NavigatorState? navigator, String? initialCategoryId, Widget Function(BuildContext, Widget)? wrap, required String closeTooltip, required String title, required Widget Function(BuildContext) bodyBuilder, required bool asDialog}) -> Future<void>

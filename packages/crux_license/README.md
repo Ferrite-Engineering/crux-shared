@@ -31,6 +31,10 @@ edition chip render identically everywhere.
 | `SharedInstallFingerprint`, `InstallFingerprintFile`, `InstallFingerprintSource`, `mintInstallFingerprint`, `cruxLicenseDirectory` | The machine's one fingerprint, shared by every product on it through a plain file so a suite licence's seats count machines rather than installs. See "Machine fingerprint" below. |
 | `MachineReleaseMarker` + `FileMachineReleaseMarker` / `NoMachineReleaseMarker` / `InMemoryMachineReleaseMarker` | The note one product leaves for the others when it releases the machine's seat, so their next check-in does not silently register it again. |
 | `CruxLicensePanel` + `CruxLicensePanelStrings` | The License Settings category. |
+| `CruxLicenseExpiryGate` + `CruxLicenseExpiryBanner` + `CruxLicenseExpiryStrings` / `CruxLicenseExpiryStringsEn`, `licenseExpiryStringsProvider`, `licenseNoticeMemoryProvider`, `licenseClockProvider` | The non-blocking strip in the main window that says a licence expires soon, is in grace, or has dropped to Open Core. See "Licence expiry in the main window" below. |
+| `cruxLicenseExpiryNoticeFor`, `CruxLicenseExpiryNotice`, `CruxLicenseNoticeKind`, `kLicenseExpiryWarningDays`, `kEvaluationExpiryWarningDays` | What the strip says, as a pure function of the status and the clock. |
+| `kEvaluationEntitlementCode`, `LicenseClockMark` + `FileLicenseClockMark` / `InMemoryLicenseClockMark`, `kEvaluationClockTolerance` | Evaluation licences: no grace, and a clock high-water mark. See "Evaluation licences" below. |
+| `LicenseNoticeMemory` + `FileLicenseNoticeMemory` / `InMemoryLicenseNoticeMemory` | Which one-time notices this machine has shown, shared by every product on it. |
 | `cruxPolicyProvider`, `dayOnePolicyProvider`, `cruxPolicyOverrides`, `applyPolicyLicense` | The `.crux-policy.json` binding: a licence the organization deploys goes through the same `activate` path a pasted key does. |
 | `LicenseBadgeStrings` + `LicenseBadgeStringsEn` | Caller-supplied localization surface for the chip widgets. |
 | `FeatureTierBadge` | PRO/ENT feature-tier chip rendered next to a feature label — "this feature requires PRO". Takes the tier as an argument; renders nothing for `openCore` / `edu`. |
@@ -117,7 +121,53 @@ Row(children: [
 ]);
 ```
 
-## Beta-period semantics
+## Licence expiry in the main window
+
+`CruxLicenseExpiryGate` wraps the app content the way the beta-expiry gate
+does, and reads `licenseStatusProvider`, so the open-core shell mounts it and
+it shows nothing until the Pro overlay supplies a licence:
+
+- from `kLicenseExpiryWarningDays` (30) before expiry, "Your Pro license
+  expires on 2027-01-01" with a button to Settings → License, dismissible
+  for the session;
+- during grace, the same strip worded as overdue, with the days of grace
+  left, counted by `CruxLicenseStatus.graceDaysRemainingAt` on
+  `licenseClockProvider`, the clock the panel reads;
+- after grace, one notice that the app now runs as Open Core and that
+  importing a renewed licence restores the tier at once, remembered through
+  `licenseNoticeMemoryProvider` so it is not repeated every launch;
+- for a licence the organization deployed, wording that points to the
+  administrator.
+
+It never blocks, never takes focus, is never modal, and is announced once.
+Open Core and a licence with no expiry show nothing. The host supplies
+`onOpenLicenseSettings`, typically `openCruxSettings(initialCategoryId:
+kCruxLicenseCategoryId)`; the overlay overrides `licenseExpiryStringsProvider`
+with its ARB adapter and `licenseNoticeMemoryProvider` with
+`FileLicenseNoticeMemory()`. `--dart-define=LICENSE_EXPIRY_WARNING_DAYS=<n>`
+moves the lead time.
+
+## Evaluation licences
+
+A licence carrying the `EVALUATION` entitlement (`kEvaluationEntitlementCode`)
+is an evaluation, whether it arrives as a licence file, a machine file or a
+key whose signed dataset lists it. Entitlements travel inside the signed
+credential, so the marker cannot be removed without breaking the signature.
+
+- **No grace.** `LicenseGracePolicy.forTier(tier, evaluation: true)` is
+  `Duration.zero`: the evaluation drops to Open Core at its expiry. Nothing is
+  deleted, and importing a purchased licence restores the tier at once.
+- **A clock check.** The controller keeps a high-water mark of the latest
+  time it has seen, starting at the credential's `issued` time. A clock that
+  reads earlier than the mark by more than `kEvaluationClockTolerance`
+  (24 hours) ends the evaluation and says why
+  (`CruxLicenseStatus.clockSetBack`); setting the clock right resumes it.
+  The overlay wires `FileLicenseClockMark()` so the mark survives a
+  relaunch. A paid licence keeps neither rule: a wrong clock never takes a
+  paying customer's tier away.
+- **Labelled.** The panel reads "Evaluation, ends <date>", and the strip
+  counts down from `kEvaluationExpiryWarningDays` (14).
+
 
 The public beta has ended: `kBetaPeriod` defaults to `false`, so
 `FeatureGate.isAvailable` compares the active tier against the gate's
@@ -334,5 +384,6 @@ open-core submodule.
 - **Default-locale implementation of an exported strings seam; a host wraps or subclasses it**: `CruxBetaExpiredStringsEn`, `CruxBetaExpiryStringsEn`, `CruxLicensePanelStringsEn`, `CruxUpgradeDialogStringsEn`.
 - **Variant of the sealed result a licence action returns; a host switches over every variant**: `LicenseActionFailed`.
 - **Named null-object default of an exported seam**: `NoMachineReleaseMarker`.
+- **Default-locale and in-memory implementations of exported seams, for hosts and their tests**: `CruxLicenseExpiryStringsEn`, `InMemoryLicenseClockMark`, `InMemoryLicenseNoticeMemory`.
 - **Override point: a product that runs a CXP peer supplies its id here**: `cruxAuditPeerIdProvider`.
 - **Public so a second issuer can decode its key the same way**: `decodeHexKey`.
