@@ -93,6 +93,20 @@ abstract class LicenseStore {
   Future<void> writeIssuerSnapshot(String? snapshot);
 }
 
+/// A [LicenseStore] that can keep the credential in a file when the
+/// operating system's credential store is unavailable, and says when it has.
+///
+/// Separate from [LicenseStore] so a store that never falls back implements
+/// nothing new. The controller asks a store that implements it where the
+/// credential is, and the licence panel names the file in one line
+/// ([CruxLicenseStatus.credentialFile]).
+abstract interface class LicenseStoreFallback {
+  /// The path of the file holding the stored credential, or `null` when the
+  /// credential is in the operating system's credential store, or there is
+  /// none.
+  Future<String?> credentialFilePath();
+}
+
 /// Facts about the machine that Keygen labels an activation with.
 @immutable
 class LicenseMachineIdentity {
@@ -157,7 +171,7 @@ class CruxLicenseController implements CruxLicenseActions {
     MachineReleaseMarker releaseMarker = const NoMachineReleaseMarker(),
     LicenseClockMark? clockMark,
   }) : _validator = validator,
-       _store = store,
+       _store = _PolicyHeldStore(store),
        _client = client,
        _machine = machine,
        _openUrl = openUrl,
@@ -174,7 +188,7 @@ class CruxLicenseController implements CruxLicenseActions {
   final CruxProduct product;
 
   final LicenseValidator _validator;
-  final LicenseStore _store;
+  final _PolicyHeldStore _store;
   final KeygenLicenseClient _client;
   final LicenseMachineIdentity _machine;
   final MachineReleaseMarker _releaseMarker;
@@ -236,7 +250,7 @@ class CruxLicenseController implements CruxLicenseActions {
         fingerprint = await _store.readOrCreateFingerprint();
       } on Object catch (error) {
         return LicenseActionFailed(
-          CruxLicenseActionFailure.unknown,
+          CruxLicenseActionFailure.storeUnavailable,
           detail: 'credential store unavailable: $error',
         );
       }
@@ -262,7 +276,20 @@ class CruxLicenseController implements CruxLicenseActions {
       // Store before the network call: the licence is already cryptographically
       // good, and a customer who activates on a flaky connection should not
       // have to paste a 700-character key twice.
-      await _store.writeCredential(credential.trim());
+      //
+      // A store that cannot keep it refuses the activation, rather than
+      // granting a tier for this session alone that the next launch silently
+      // takes away. The one exception is a credential the organization's
+      // policy file supplied, which the policy file supplies again at every
+      // launch: `_PolicyHeldStore` holds that one for the process.
+      try {
+        await _store.writeCredential(credential.trim());
+      } on Object catch (error) {
+        return LicenseActionFailed(
+          CruxLicenseActionFailure.storeUnavailable,
+          detail: 'credential store unavailable: $error',
+        );
+      }
 
       final licenseId = grant.licenseId;
       // A key the user just pasted is a key the user wants, whatever a sibling
@@ -318,6 +345,24 @@ class CruxLicenseController implements CruxLicenseActions {
     } finally {
       _publish(_status.copyWith(busy: false));
     }
+  }
+
+  /// Activate [credential], which the organization's policy file supplied.
+  ///
+  /// [activate], with one difference: when the store cannot keep this
+  /// credential, the controller holds it for the rest of the process instead
+  /// of refusing it, and resolves the tier from it. The policy file is the
+  /// store for a policy licence. It is read again at every launch and
+  /// supplies the credential again, so a machine with no usable credential
+  /// store (a Linux session with no secret service, typically) is licensed
+  /// from the policy file alone. While the store works, this is exactly
+  /// [activate]: the credential is stored, and the next launch finds it there
+  /// and does not activate again.
+  ///
+  /// `applyPolicyLicense` calls this; nothing else should.
+  Future<CruxLicenseActionResult> activateFromPolicy(String credential) {
+    _store._fromPolicy = credential.trim();
+    return activate(credential);
   }
 
   /// Release this machine's seat — the machine's, suite-wide.
@@ -1062,6 +1107,7 @@ class CruxLicenseController implements CruxLicenseActions {
     final grant = validation.grant;
     final lastCheck = await _store.readLastCheck();
     final machineId = await _store.readMachineId();
+    final credentialFile = await _store.credentialFilePath();
 
     if (grant == null) {
       _publish(
@@ -1072,6 +1118,7 @@ class CruxLicenseController implements CruxLicenseActions {
               : LicenseRejection.malformed,
           lastCheckedAt: lastCheck,
           machineLabel: _machine.name,
+          credentialFile: credentialFile,
         ),
       );
       return;
@@ -1102,6 +1149,7 @@ class CruxLicenseController implements CruxLicenseActions {
           grant: grant,
           lastCheckedAt: lastCheck,
           machineLabel: _machine.name,
+          credentialFile: credentialFile,
         ),
       );
       return;
@@ -1126,6 +1174,7 @@ class CruxLicenseController implements CruxLicenseActions {
           seatsTotal: _issuerSeats ?? grant.maxMachines,
           lastCheckedAt: lastCheck,
           machineLabel: _machine.name,
+          credentialFile: credentialFile,
         ),
       );
       return;
@@ -1166,6 +1215,7 @@ class CruxLicenseController implements CruxLicenseActions {
         lastCheckedAt: lastCheck,
         machineLabel: _machine.name,
         clockSetBack: clockSetBack,
+        credentialFile: credentialFile,
       ),
     );
   }
@@ -1230,3 +1280,120 @@ LicenseGrant _withExpiry(LicenseGrant grant, DateTime? expiry) => LicenseGrant(
   isEvaluation: grant.isEvaluation,
   issued: grant.issued,
 );
+
+/// The product's [LicenseStore], able to hold a credential the
+/// organization's policy file supplied when the store cannot keep it.
+///
+/// A policy licence needs no store: the policy file is read at every launch
+/// and supplies the credential again. So when the store refuses to keep one,
+/// it is held here, in memory, with the few facts that go with it, and every
+/// call the store then fails answers from here instead. Only that credential
+/// is ever held. One the user pasted is the store's to keep or to refuse,
+/// and a refusal reaches the user as
+/// [CruxLicenseActionFailure.storeUnavailable]. While the store works, every
+/// call goes straight through and nothing is held.
+class _PolicyHeldStore implements LicenseStore {
+  _PolicyHeldStore(this._inner);
+
+  final LicenseStore _inner;
+
+  /// The credential the policy file supplied, set by
+  /// [CruxLicenseController.activateFromPolicy], so that a refusal to store
+  /// it is answered by holding it.
+  String? _fromPolicy;
+
+  /// The policy credential the store refused, held for the process. Every
+  /// fallback below is conditional on it.
+  String? _held;
+  String? _machineId;
+  DateTime? _lastCheck;
+  String? _issuerSnapshot;
+
+  /// Where a store that falls back to a file keeps the credential, when it
+  /// does. Never throws: a store that cannot say is a store that does not.
+  Future<String?> credentialFilePath() async {
+    final inner = _inner;
+    if (inner is! LicenseStoreFallback) return null;
+    try {
+      return await (inner as LicenseStoreFallback).credentialFilePath();
+    } on Object {
+      return null;
+    }
+  }
+
+  /// [call] the store, or, when it throws while a policy credential is held,
+  /// answer with [held].
+  Future<T> _or<T>(Future<T> Function() call, T Function() held) async {
+    try {
+      return await call();
+    } on Object {
+      if (_held == null) rethrow;
+      return held();
+    }
+  }
+
+  @override
+  Future<String?> readCredential() => _or(_inner.readCredential, () => _held);
+
+  @override
+  Future<void> writeCredential(String credential) async {
+    try {
+      await _inner.writeCredential(credential);
+    } on Object {
+      if (credential != _fromPolicy) rethrow;
+      if (_held != credential) {
+        _machineId = null;
+        _lastCheck = null;
+        _issuerSnapshot = null;
+      }
+      _held = credential;
+    }
+  }
+
+  @override
+  Future<void> clear() async {
+    final held = _held;
+    _held = null;
+    _fromPolicy = null;
+    _machineId = null;
+    _lastCheck = null;
+    _issuerSnapshot = null;
+    try {
+      await _inner.clear();
+    } on Object {
+      if (held == null) rethrow;
+    }
+  }
+
+  // The fingerprint identifies the machine and must outlive the process, so
+  // nothing is held for it: a fingerprint minted per launch would register a
+  // new machine at the issuer on every launch.
+  @override
+  Future<String> readOrCreateFingerprint() => _inner.readOrCreateFingerprint();
+
+  @override
+  Future<String?> readMachineId() =>
+      _or(_inner.readMachineId, () => _machineId);
+
+  @override
+  Future<void> writeMachineId(String? machineId) =>
+      _or(() => _inner.writeMachineId(machineId), () => _machineId = machineId);
+
+  @override
+  Future<DateTime?> readLastCheck() =>
+      _or(_inner.readLastCheck, () => _lastCheck);
+
+  @override
+  Future<void> writeLastCheck(DateTime at) =>
+      _or(() => _inner.writeLastCheck(at), () => _lastCheck = at);
+
+  @override
+  Future<String?> readIssuerSnapshot() =>
+      _or(_inner.readIssuerSnapshot, () => _issuerSnapshot);
+
+  @override
+  Future<void> writeIssuerSnapshot(String? snapshot) => _or(
+    () => _inner.writeIssuerSnapshot(snapshot),
+    () => _issuerSnapshot = snapshot,
+  );
+}

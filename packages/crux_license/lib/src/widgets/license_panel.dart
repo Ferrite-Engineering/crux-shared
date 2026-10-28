@@ -438,6 +438,8 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
                   formatLicenseDateTime(status.lastCheckedAt!),
                 ),
         ),
+        if (status.credentialFile case final file?)
+          _row(context, '', _s.licenseStoredInFile(file)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -687,6 +689,8 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
     CruxLicenseActionFailure.alreadyRequested =>
       _s.licenseErrorAlreadyRequested,
     CruxLicenseActionFailure.notSupported => _s.licenseErrorNotSupported,
+    CruxLicenseActionFailure.storeUnavailable =>
+      _s.licenseErrorStoreUnavailable,
     CruxLicenseActionFailure.unknown => _s.licenseErrorUnknown,
   };
 

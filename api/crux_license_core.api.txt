@@ -20,6 +20,7 @@ enum CruxLicenseActionFailure
   static const offline: CruxLicenseActionFailure
   static const refusedByIssuer: CruxLicenseActionFailure
   static const rejected: CruxLicenseActionFailure
+  static const storeUnavailable: CruxLicenseActionFailure
   static const unknown: CruxLicenseActionFailure
 sealed class CruxLicenseActionResult
   const CruxLicenseActionResult()
@@ -50,6 +51,7 @@ enum CruxLicenseActivation
 class CruxLicenseController implements CruxLicenseActions
   CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
   activate(String credential) -> Future<CruxLicenseActionResult>
+  activateFromPolicy(String credential) -> Future<CruxLicenseActionResult>
   deactivateThisMachine() -> Future<CruxLicenseActionResult>
   dispose() -> Future<void>
   exportOfflineRequest() -> Future<CruxLicenseActionResult>
@@ -86,12 +88,13 @@ enum CruxLicenseNoticeKind
   static const expiringSoon: CruxLicenseNoticeKind
   static const inGrace: CruxLicenseNoticeKind
 class CruxLicenseStatus
-  const CruxLicenseStatus({CruxLicenseActivation activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool busy, bool clockSetBack, int? seatsTotal, int? seatsUsed})
+  const CruxLicenseStatus({CruxLicenseActivation activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? credentialFile, String? machineLabel, bool busy, bool clockSetBack, int? seatsTotal, int? seatsUsed})
   ==(Object other) -> bool
-  copyWith({CruxLicenseActivation? activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? machineLabel, bool? busy, bool? clockSetBack, int? seatsTotal, int? seatsUsed}) -> CruxLicenseStatus
+  copyWith({CruxLicenseActivation? activation, DateTime? graceEndsAt, DateTime? lastCheckedAt, LicenseGrant? grant, LicenseRejection? rejection, String? credentialFile, String? machineLabel, bool? busy, bool? clockSetBack, int? seatsTotal, int? seatsUsed}) -> CruxLicenseStatus
   final activation: CruxLicenseActivation
   final busy: bool
   final clockSetBack: bool
+  final credentialFile: String?
   final graceEndsAt: DateTime?
   final grant: LicenseGrant?
   final lastCheckedAt: DateTime?
@@ -368,6 +371,8 @@ abstract class LicenseStore
   writeIssuerSnapshot(String? snapshot) -> Future<void>
   writeLastCheck(DateTime at) -> Future<void>
   writeMachineId(String? machineId) -> Future<void>
+interface abstract class LicenseStoreFallback
+  credentialFilePath() -> Future<String?>
 enum LicenseTier
   static const edu: LicenseTier
   static const enterprise: LicenseTier

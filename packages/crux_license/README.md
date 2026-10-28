@@ -35,7 +35,8 @@ edition chip render identically everywhere.
 | `cruxLicenseExpiryNoticeFor`, `CruxLicenseExpiryNotice`, `CruxLicenseNoticeKind`, `kLicenseExpiryWarningDays`, `kEvaluationExpiryWarningDays` | What the strip says, as a pure function of the status and the clock. |
 | `kEvaluationEntitlementCode`, `LicenseClockMark` + `FileLicenseClockMark` / `InMemoryLicenseClockMark`, `kEvaluationClockTolerance` | Evaluation licences: no grace, and a clock high-water mark. See "Evaluation licences" below. |
 | `LicenseNoticeMemory` + `FileLicenseNoticeMemory` / `InMemoryLicenseNoticeMemory` | Which one-time notices this machine has shown, shared by every product on it. |
-| `cruxPolicyProvider`, `dayOnePolicyProvider`, `cruxPolicyOverrides`, `applyPolicyLicense` | The `.crux-policy.json` binding: a licence the organization deploys goes through the same `activate` path a pasted key does. |
+| `cruxPolicyProvider`, `dayOnePolicyProvider`, `cruxPolicyOverrides`, `applyPolicyLicense` | The `.crux-policy.json` binding: a licence the organization deploys goes through the same `activate` path a pasted key does, and needs no credential store. See "When there is no credential store" below. |
+| `LicenseStoreFallback`, `LicenseFallbackFile`, `licenseFallbackFilePath`, `licenseCredentialMayUseFallbackFile` | Keeping a licence file or machine file in an owner-only file when the operating system's credential store is unavailable. See "When there is no credential store" below. |
 | `LicenseBadgeStrings` + `LicenseBadgeStringsEn` | Caller-supplied localization surface for the chip widgets. |
 | `FeatureTierBadge` | PRO/ENT feature-tier chip rendered next to a feature label — "this feature requires PRO". Takes the tier as an argument; renders nothing for `openCore` / `edu`. |
 | `EditionBadge` | Edition chip — "you are running PRO". Reads `licenseTierProvider` and renders PRO, ENT or EDU; renders nothing at `openCore`, so it can be mounted unconditionally. |
@@ -367,6 +368,47 @@ and `FileMachineReleaseMarker` take an `environment` map and an
 takes its `InstallFingerprintSource` as a required constructor parameter for
 the same reason.
 
+## When there is no credential store
+
+Each product keeps its licence in the operating system's credential store
+through `crux_secrets`. On Linux that is libsecret, which needs a secret
+service running in the user's session, and remote X sessions (VNC,
+`ssh -X`, ETX, NX), shared login hosts and minimal installs often have none.
+Every store call then throws, and the log shows
+`secret_service_get_sync: Could not connect: Connection refused`. What a
+licence does there:
+
+- **A licence in the organization's policy file needs no store.**
+  `applyPolicyLicense` activates it through
+  `CruxLicenseController.activateFromPolicy`. When the store refuses it, the
+  controller holds it for the process and resolves the tier from it; the
+  policy file supplies it again at the next launch. While the store works
+  nothing changes: the credential is stored, and later launches find it there
+  and do not activate again.
+- **A licence file or a machine file falls back to a file.** The product's
+  store keeps it in `<product>.license` beside `install.fingerprint` in
+  `cruxLicenseDirectory` (`LicenseFallbackFile`), with the machine id, last
+  check and issuer snapshot that go with it. On macOS and Linux the file is
+  created by `mkstemp` with mode `0600` and renamed into place, so it never
+  exists with a wider mode; on Windows it is in `%LOCALAPPDATA%`, which only
+  the user can read. The store reads it whenever the credential store is
+  unavailable or holds no licence for the product, and clearing the licence
+  removes it. A store that does this implements `LicenseStoreFallback`, and
+  the licence panel names the file in one line
+  (`CruxLicenseStatus.credentialFile`).
+- **A licence key does not.** A key is a bearer credential, so it is never
+  written to a file (`licenseCredentialMayUseFallbackFile`). Activation fails
+  with `CruxLicenseActionFailure.storeUnavailable`, which the panel renders as
+  `licenseErrorStoreUnavailable`: no keyring is available, use the licence
+  file or ask the administrator for the policy file. Nothing is granted for
+  the session.
+
+This is a decision about licences, not about secrets in general.
+`crux_secrets` still refuses to degrade to a file, and an API key or a
+password stays in the credential store or nowhere. A licence file or machine
+file is signed and checked offline, names its own expiry, and a machine file
+works only on the machine whose fingerprint it names.
+
 ## Visibility & license
 
 Licensed under Apache 2.0, like the rest of `crux-shared`. Private during
@@ -387,3 +429,4 @@ open-core submodule.
 - **Default-locale and in-memory implementations of exported seams, for hosts and their tests**: `CruxLicenseExpiryStringsEn`, `InMemoryLicenseClockMark`, `InMemoryLicenseNoticeMemory`.
 - **Override point: a product that runs a CXP peer supplies its id here**: `cruxAuditPeerIdProvider`.
 - **Public so a second issuer can decode its key the same way**: `decodeHexKey`.
+- **Used by the Pro overlays' licence store, which lives outside this repository and the open cores**: `LicenseStoreFallback`, `LicenseFallbackFile`, `licenseFallbackFilePath`, `licenseCredentialMayUseFallbackFile`. They are here, in the open, because the file's location and its owner-only creation are mechanism every product shares; which credentials may use it is decided here too, so the rule cannot drift between products.

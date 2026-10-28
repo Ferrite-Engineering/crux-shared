@@ -52,6 +52,14 @@ enum CruxLicenseActionFailure {
   /// the previous request has not expired.
   alreadyRequested,
 
+  /// The operating system's credential store could not keep the licence: on
+  /// Linux, no secret service is running in this session. Distinguished
+  /// because the user can act on it. A licence file or machine file falls
+  /// back to a file only its owner can read, and a policy licence needs no
+  /// store, so this reaches the user for a licence key, and the panel names
+  /// those two routes.
+  storeUnavailable,
+
   /// Anything else. The detail string is what gets logged.
   unknown,
 }

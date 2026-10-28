@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- **A licence works on a machine with no credential store** (crux-shared#59).
+  On Linux with no secret service running (remote X sessions, shared login
+  hosts, minimal installs), every credential-store call throws, and no
+  licence could be activated or kept.
+  - A licence in the organization's policy file needs no store.
+    `applyPolicyLicense` now calls the new
+    `CruxLicenseController.activateFromPolicy`, which is `activate` while the
+    store works; when the store refuses the credential, the controller holds
+    it for the process and the tier resolves from it, every launch.
+  - A pasted credential the store cannot keep fails as the new
+    `CruxLicenseActionFailure.storeUnavailable` instead of throwing out of
+    `activate` (or failing as `unknown` at the fingerprint), and grants
+    nothing. The panel renders it as the new
+    `CruxLicensePanelStrings.licenseErrorStoreUnavailable`, which names the
+    cause and the two routes that need no keyring.
+  - `LicenseStoreFallback`, `LicenseFallbackFile`, `licenseFallbackFilePath`
+    and `licenseCredentialMayUseFallbackFile`: a product's store may keep a
+    licence file or machine file, never a key, in `<product>.license` beside
+    `install.fingerprint`, created `0600` by `mkstemp` and renamed into place.
+    `CruxLicenseStatus.credentialFile` carries the file, and the panel names
+    it in one line (`CruxLicensePanelStrings.licenseStoredInFile`).
+  - Both new strings are concrete with English defaults, so an overlay's
+    adapter compiles unchanged and overrides them to localise.
 - **Licence expiry in the main window** (crux-shared#55).
   `CruxLicenseExpiryGate` wraps the app content and shows a non-blocking
   `CruxLicenseExpiryBanner`: from `kLicenseExpiryWarningDays` (30, or

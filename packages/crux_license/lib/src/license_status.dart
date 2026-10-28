@@ -70,6 +70,7 @@ class CruxLicenseStatus {
     this.machineLabel,
     this.busy = false,
     this.clockSetBack = false,
+    this.credentialFile,
   });
 
   /// The unlicensed state — what a fresh install shows, and the default
@@ -119,6 +120,12 @@ class CruxLicenseStatus {
   /// resumes the evaluation, if it has not reached its end date.
   final bool clockSetBack;
 
+  /// The file holding the licence, when it is kept in a file rather than in
+  /// the operating system's credential store (`LicenseStoreFallback`), which
+  /// happens when that store was unavailable. `null` otherwise. The panel
+  /// names it, so the user knows where the licence is and why.
+  final String? credentialFile;
+
   /// Whether the licence is an evaluation (`LicenseGrant.isEvaluation`).
   bool get isEvaluation => grant?.isEvaluation ?? false;
 
@@ -163,6 +170,7 @@ class CruxLicenseStatus {
     String? machineLabel,
     bool? busy,
     bool? clockSetBack,
+    String? credentialFile,
   }) => CruxLicenseStatus(
     activation: activation ?? this.activation,
     grant: grant ?? this.grant,
@@ -174,6 +182,7 @@ class CruxLicenseStatus {
     machineLabel: machineLabel ?? this.machineLabel,
     busy: busy ?? this.busy,
     clockSetBack: clockSetBack ?? this.clockSetBack,
+    credentialFile: credentialFile ?? this.credentialFile,
   );
 
   @override
@@ -189,7 +198,8 @@ class CruxLicenseStatus {
           other.lastCheckedAt == lastCheckedAt &&
           other.machineLabel == machineLabel &&
           other.busy == busy &&
-          other.clockSetBack == clockSetBack;
+          other.clockSetBack == clockSetBack &&
+          other.credentialFile == credentialFile;
 
   @override
   int get hashCode => Object.hash(
@@ -203,6 +213,7 @@ class CruxLicenseStatus {
     machineLabel,
     busy,
     clockSetBack,
+    credentialFile,
   );
 
   @override
