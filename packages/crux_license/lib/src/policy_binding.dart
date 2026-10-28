@@ -91,12 +91,24 @@ List<Override> cruxPolicyOverrides() => <Override>[
 ///
 /// ### It goes through the same path a paste does
 ///
-/// [CruxLicenseController.activate] and nothing else. The credential the
-/// organization deployed is a credential; it gets no private route into the
-/// store, no separate validation, and no exemption from the checks a typed key
-/// faces. An Enterprise policy licence therefore resolves with **no network
-/// call at any point**, because `activate` writes the credential before it
-/// tries the issuer and the resolve falls back to the stored value.
+/// [CruxLicenseController.activateFromPolicy], which is
+/// [CruxLicenseController.activate] and nothing else while the credential
+/// store works. The credential the organization deployed is a credential; it
+/// gets no private route into the store, no separate validation, and no
+/// exemption from the checks a typed key faces. An Enterprise policy licence
+/// therefore resolves with **no network call at any point**, because
+/// `activate` writes the credential before it tries the issuer and the
+/// resolve falls back to the stored value.
+///
+/// ### The policy file is the store when there is no other
+///
+/// A machine with no usable credential store (a Linux session with no secret
+/// service is the usual one) cannot keep any credential, and nothing is
+/// stored, so this runs at every launch. The controller holds the policy's
+/// credential for the process instead of refusing it, and the tier resolves
+/// from the policy file each time. The issuer is asked about it on each of
+/// those launches, as it is whenever the last check cannot be remembered; an
+/// unreachable issuer changes nothing.
 ///
 /// Returns whether a policy licence was applied.
 Future<bool> applyPolicyLicense({
@@ -117,7 +129,7 @@ Future<bool> applyPolicyLicense({
   };
   if (credential == null || credential.trim().isEmpty) return false;
 
-  final result = await controller.activate(credential);
+  final result = await controller.activateFromPolicy(credential);
   return result.isOk;
 }
 

@@ -99,6 +99,7 @@ export 'src/license_claims.dart';
 export 'src/license_controller.dart';
 export 'src/license_credential.dart';
 export 'src/license_edition_line.dart';
+export 'src/license_fallback_file.dart';
 export 'src/license_grace.dart';
 export 'src/license_grant.dart';
 export 'src/license_issuer.dart';

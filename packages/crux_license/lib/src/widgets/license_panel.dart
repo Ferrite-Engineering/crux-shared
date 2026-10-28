@@ -428,6 +428,8 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
                   _formatDateTime(status.lastCheckedAt!.toLocal()),
                 ),
         ),
+        if (status.credentialFile case final file?)
+          _row(context, '', _s.licenseStoredInFile(file)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -533,10 +535,7 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
 
   // --- Offline activation ------------------------------------------------
 
-  Widget _offlineSection(
-    CruxLicenseStatus status,
-    CruxLicenseActions actions,
-  ) {
+  Widget _offlineSection(CruxLicenseStatus status, CruxLicenseActions actions) {
     final theme = Theme.of(context);
     return CruxSettingsSectionCard(
       children: [
@@ -648,9 +647,7 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
 
   // --- Shared plumbing ---------------------------------------------------
 
-  Future<void> _run(
-    Future<CruxLicenseActionResult> Function() action,
-  ) async {
+  Future<void> _run(Future<CruxLicenseActionResult> Function() action) async {
     final result = await action();
     if (!mounted || result.isOk) return;
     _announce(_messageFor(result as LicenseActionFailed));
@@ -676,6 +673,8 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
     CruxLicenseActionFailure.alreadyRequested =>
       _s.licenseErrorAlreadyRequested,
     CruxLicenseActionFailure.notSupported => _s.licenseErrorNotSupported,
+    CruxLicenseActionFailure.storeUnavailable =>
+      _s.licenseErrorStoreUnavailable,
     CruxLicenseActionFailure.unknown => _s.licenseErrorUnknown,
   };
 
@@ -716,10 +715,7 @@ class _StatusSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                _tierLabel(tier),
-                style: theme.textTheme.titleMedium,
-              ),
+              child: Text(_tierLabel(tier), style: theme.textTheme.titleMedium),
             ),
             // Passes `tier` explicitly — see EditionBadge.tier. This widget
             // holds status.tier, which licenseTierProvider is DERIVED from, so
@@ -756,10 +752,7 @@ class _StatusSection extends StatelessWidget {
             _row(
               context,
               '',
-              strings.licenseSeatsInUse(
-                status.seatsUsed!,
-                status.seatsTotal!,
-              ),
+              strings.licenseSeatsInUse(status.seatsUsed!, status.seatsTotal!),
             ),
         ],
       ],

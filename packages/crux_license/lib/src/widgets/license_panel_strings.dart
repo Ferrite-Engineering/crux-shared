@@ -366,6 +366,30 @@ abstract class CruxLicensePanelStrings {
 
   /// Anything else.
   String get licenseErrorUnknown;
+
+  /// The licence could not be saved because the operating system's credential
+  /// store is unavailable: on Linux, no secret service is running in the
+  /// session. Says so, and names the two routes that need no keyring: a
+  /// licence file, which is kept in a file only the user can read, and the
+  /// organization's policy file.
+  ///
+  /// Concrete so an adapter that has not localised it yet still compiles; an
+  /// overlay overrides it to localise.
+  String get licenseErrorStoreUnavailable =>
+      'This license key could not be saved because no keyring or system '
+      'keychain is available in this session (on Linux, no secret service is '
+      'running). Load your license file instead, which is kept in a file only '
+      'you can read, or ask your administrator to deploy the license in your '
+      "organization's policy file.";
+
+  /// One line under the machine details when the licence is kept in the file
+  /// at [path] rather than in the operating system's credential store, which
+  /// was unavailable when the licence was activated.
+  ///
+  /// Concrete so an adapter that has not localised it yet still compiles; an
+  /// overlay overrides it to localise.
+  String licenseStoredInFile(String path) =>
+      'Kept in $path, readable only by you, because no keyring was available.';
 }
 
 /// Default English [CruxLicensePanelStrings].

@@ -177,9 +177,7 @@ void main() {
           status: CruxLicenseStatus(
             activation: CruxLicenseActivation.grace,
             grant: grant,
-            graceEndsAt: DateTime.now().add(
-              const Duration(days: 12, hours: 1),
-            ),
+            graceEndsAt: DateTime.now().add(const Duration(days: 12, hours: 1)),
           ),
           actions: _RecordingActions(),
         ),
@@ -290,9 +288,7 @@ void main() {
       }
     });
 
-    testWidgets('being offline says the licence keeps working', (
-      tester,
-    ) async {
+    testWidgets('being offline says the licence keeps working', (tester) async {
       final actions = _RecordingActions(
         result: const LicenseActionFailed(CruxLicenseActionFailure.offline),
       );
@@ -301,6 +297,27 @@ void main() {
       await tapVisible(tester, find.text(strings.licenseActivateButton));
 
       expect(find.textContaining('keeps working'), findsOneWidget);
+    });
+
+    testWidgets('no credential store names the cause and both other routes', (
+      tester,
+    ) async {
+      final actions = _RecordingActions(
+        result: const LicenseActionFailed(
+          CruxLicenseActionFailure.storeUnavailable,
+          detail: 'credential store unavailable: secret service refused',
+        ),
+      );
+      await tester.pumpWidget(host(actions: actions));
+      await tester.enterText(find.byType(TextField).first, 'key/abc.def');
+      await tapVisible(tester, find.text(strings.licenseActivateButton));
+
+      expect(find.text(strings.licenseErrorStoreUnavailable), findsOneWidget);
+      expect(strings.licenseErrorStoreUnavailable, contains('keyring'));
+      expect(strings.licenseErrorStoreUnavailable, contains('license file'));
+      expect(strings.licenseErrorStoreUnavailable, contains('policy file'));
+      expect(find.text(strings.licenseErrorUnknown), findsNothing);
+      expect(find.textContaining('secret service refused'), findsNothing);
     });
   });
 
@@ -609,6 +626,41 @@ void main() {
       );
 
       expect(find.text(strings.licenseNeverChecked), findsOneWidget);
+    });
+
+    testWidgets('a licence kept in a file says where, in one line', (
+      tester,
+    ) async {
+      const path = '/home/eng/.local/share/crux/license/wavecrux.license';
+      final grant = LicenseGrant(
+        issuerId: 'keygen',
+        tier: LicenseTier.pro,
+        products: const <CruxProduct>{CruxProduct.waveCrux},
+        expiry: DateTime.utc(2027),
+      );
+      await tester.pumpWidget(
+        host(
+          status: CruxLicenseStatus(
+            activation: CruxLicenseActivation.active,
+            grant: grant,
+            credentialFile: path,
+          ),
+          actions: _RecordingActions(),
+        ),
+      );
+
+      expect(find.text(strings.licenseStoredInFile(path)), findsOneWidget);
+
+      await tester.pumpWidget(
+        host(
+          status: CruxLicenseStatus(
+            activation: CruxLicenseActivation.active,
+            grant: grant,
+          ),
+          actions: _RecordingActions(),
+        ),
+      );
+      expect(find.textContaining('readable only by you'), findsNothing);
     });
 
     testWidgets('Check now reaches the service', (tester) async {

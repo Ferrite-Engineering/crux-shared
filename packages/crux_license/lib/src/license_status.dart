@@ -69,6 +69,7 @@ class CruxLicenseStatus {
     this.lastCheckedAt,
     this.machineLabel,
     this.busy = false,
+    this.credentialFile,
   });
 
   /// The unlicensed state — what a fresh install shows, and the default
@@ -110,6 +111,12 @@ class CruxLicenseStatus {
   /// shows a progress indicator.
   final bool busy;
 
+  /// The file holding the licence, when it is kept in a file rather than in
+  /// the operating system's credential store (`LicenseStoreFallback`), which
+  /// happens when that store was unavailable. `null` otherwise. The panel
+  /// names it, so the user knows where the licence is and why.
+  final String? credentialFile;
+
   /// The tier this status runs at.
   ///
   /// Grace keeps the licensed tier — that is what grace *is*. Expired and
@@ -150,6 +157,7 @@ class CruxLicenseStatus {
     DateTime? lastCheckedAt,
     String? machineLabel,
     bool? busy,
+    String? credentialFile,
   }) => CruxLicenseStatus(
     activation: activation ?? this.activation,
     grant: grant ?? this.grant,
@@ -160,6 +168,7 @@ class CruxLicenseStatus {
     lastCheckedAt: lastCheckedAt ?? this.lastCheckedAt,
     machineLabel: machineLabel ?? this.machineLabel,
     busy: busy ?? this.busy,
+    credentialFile: credentialFile ?? this.credentialFile,
   );
 
   @override
@@ -174,7 +183,8 @@ class CruxLicenseStatus {
           other.rejection == rejection &&
           other.lastCheckedAt == lastCheckedAt &&
           other.machineLabel == machineLabel &&
-          other.busy == busy;
+          other.busy == busy &&
+          other.credentialFile == credentialFile;
 
   @override
   int get hashCode => Object.hash(
@@ -187,6 +197,7 @@ class CruxLicenseStatus {
     lastCheckedAt,
     machineLabel,
     busy,
+    credentialFile,
   );
 
   @override
