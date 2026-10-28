@@ -89,67 +89,74 @@ class CruxBetaExpiryBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Material(
-      color: scheme.tertiaryContainer,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: Row(
-            children: [
-              Icon(
-                Icons.schedule_outlined,
-                size: sizing.iconSize,
-                color: scheme.onTertiaryContainer,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  strings.bannerMessage(daysRemaining),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: sizing.bodyTextSize,
-                    color: scheme.onTertiaryContainer,
+    // Its own semantics container, so the message is announced as the
+    // strip's name when focus enters it rather than merging into whatever
+    // node lies above the Navigator (the window's, in a product).
+    return Semantics(
+      container: true,
+      child: Material(
+        color: scheme.tertiaryContainer,
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.schedule_outlined,
+                  size: sizing.iconSize,
+                  color: scheme.onTertiaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    strings.bannerMessage(daysRemaining),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: sizing.bodyTextSize,
+                      color: scheme.onTertiaryContainer,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                key: downloadButtonKey,
-                onPressed: onDownload,
-                style: TextButton.styleFrom(
-                  foregroundColor: scheme.onTertiaryContainer,
-                  minimumSize: Size(sizing.touchTarget, sizing.touchTarget),
+                const SizedBox(width: 8),
+                TextButton(
+                  key: downloadButtonKey,
+                  onPressed: onDownload,
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.onTertiaryContainer,
+                    minimumSize: Size(sizing.touchTarget, sizing.touchTarget),
+                  ),
+                  child: Text(strings.bannerAction),
                 ),
-                child: Text(strings.bannerAction),
-              ),
-              // No Tooltip here: this strip renders *above* the app's Navigator
-              // (a sibling of the routed content in `MaterialApp.builder`), so
-              // the Navigator's Overlay is not an ancestor and a Tooltip would
-              // throw "No Overlay widget found" the moment the banner appears.
-              // The accessible name comes from the glyph's semanticLabel, which
-              // merges into the button's own focusable node. A Semantics
-              // wrapper around the IconButton does not: its label lands on a
-              // parent node while focus sits on the button's InkWell, so a
-              // screen reader announced the focused control as "button" with
-              // no name. The close glyph is conventional and the strip's
-              // download action carries a visible text label.
-              //
-              // This is deliberate, load-bearing, and verified correct in all
-              // four products. Do not "fix" it into a tooltip.
-              IconButton(
-                key: dismissButtonKey,
-                onPressed: onDismiss,
-                iconSize: sizing.iconSize,
-                color: scheme.onTertiaryContainer,
-                constraints: BoxConstraints(
-                  minWidth: sizing.touchTarget,
-                  minHeight: sizing.touchTarget,
+                // No Tooltip here: this strip renders *above* the app's
+                // Navigator (a sibling of the routed content in
+                // `MaterialApp.builder`), so the Navigator's Overlay is not an
+                // ancestor and a Tooltip would throw "No Overlay widget found"
+                // the moment the banner appears. The accessible name comes from
+                // the glyph's semanticLabel, which merges into the button's own
+                // focusable node. A Semantics wrapper around the IconButton
+                // does not: its label lands on a parent node while focus sits
+                // on the button's InkWell, so a screen reader announced the
+                // focused control as "button" with no name. The close glyph is
+                // conventional and the strip's download action carries a
+                // visible text label.
+                //
+                // This is deliberate, load-bearing, and verified correct in all
+                // four products. Do not "fix" it into a tooltip.
+                IconButton(
+                  key: dismissButtonKey,
+                  onPressed: onDismiss,
+                  iconSize: sizing.iconSize,
+                  color: scheme.onTertiaryContainer,
+                  constraints: BoxConstraints(
+                    minWidth: sizing.touchTarget,
+                    minHeight: sizing.touchTarget,
+                  ),
+                  icon: Icon(Icons.close, semanticLabel: strings.dismissLabel),
                 ),
-                icon: Icon(Icons.close, semanticLabel: strings.dismissLabel),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

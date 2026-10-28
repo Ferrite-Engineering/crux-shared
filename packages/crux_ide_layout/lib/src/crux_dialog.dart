@@ -55,6 +55,10 @@ const double kCruxDialogDefaultWidth = 440;
 ///   outside it as well as by Escape, whatever [barrierDismissible] says.
 ///   Focus-in, [modalGuardKey] and the semantics behaviour are unchanged.
 ///
+/// - **Tab stays inside.** Every dialog, on either navigator, traverses in a
+///   closed loop, while the app's page routes hand Tab on to the window at
+///   their edges so the strips drawn above the `Navigator` are reachable.
+///
 /// - **Focus on close.** When the route leaves the tree, keyboard focus goes
 ///   back to the node that held it when the dialog was opened, or to the
 ///   navigator's enclosing scope when that node is gone, so a window-level
@@ -97,6 +101,10 @@ Future<T?> showCruxDialog<T>({
         barrierLabel: barrierLabel,
         useRootNavigator: useRootNavigator,
         routeSettings: routeSettings,
+        // The app's routes hand Tab on to the window at their edges, so the
+        // strips above the Navigator are reachable; a dialog keeps it. This
+        // is showDialog's default too, stated so it cannot drift.
+        traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
         builder: build,
       );
     }

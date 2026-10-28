@@ -26,6 +26,9 @@ dependencies:
   meta: ^1.15.0
 
 dev_dependencies:
+  # The focus-walk harness for the strip's keyboard and screen-reader test.
+  crux_a11y:
+    path: ../crux_a11y
   flutter_localizations:
     sdk: flutter
   flutter_test:

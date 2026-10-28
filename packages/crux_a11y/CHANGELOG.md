@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **`CruxRoutedContent`: the strips above the `Navigator` are heard.** Every route the `Navigator` shows, a page included, puts a modal barrier under its content, and the barrier blocks the semantics of everything painted before it in the same container: the window's, for a strip a product draws in `MaterialApp.builder`. Tab reached the strip's buttons but each one was a silent stop. Wrapping the builder's `child` in `CruxRoutedContent` gives the routed content its own semantics container, so the barrier blocks only what lies under it. The router's `Navigator` already hands Tab to the window at a route's edges, so Tab and Shift+Tab run from the page through the strips and back; a dialog still keeps Tab inside itself.
+
 - **Export namespace narrowed by 4 symbols.** `cruxFocusRingWidth`, `kCruxSwitchThumbSize`, `kCruxSwitchTrackHeight`, `kCruxSwitchTrackWidth` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **`CruxPressable` / `CruxPressState` / `CruxFocusRing`: the interaction

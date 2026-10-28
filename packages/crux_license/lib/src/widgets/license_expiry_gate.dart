@@ -385,50 +385,56 @@ class CruxLicenseExpiryBanner extends StatelessWidget {
       style: TextStyle(fontSize: sizing.bodyTextSize, color: foreground),
     );
 
-    return Material(
-      color: background,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth >= compactWidth) {
+    // Its own semantics container, so the message is announced as the
+    // strip's name when focus enters it rather than merging into whatever
+    // node lies above the Navigator (the window's, in a product).
+    return Semantics(
+      container: true,
+      child: Material(
+        color: background,
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth >= compactWidth) {
+                  return Row(
+                    children: [
+                      icon,
+                      const SizedBox(width: 8),
+                      Expanded(child: text),
+                      const SizedBox(width: 8),
+                      ...actions,
+                      dismiss,
+                    ],
+                  );
+                }
                 return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    icon,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: icon,
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: text),
-                    const SizedBox(width: 8),
-                    ...actions,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: text,
+                          ),
+                          Wrap(children: actions),
+                        ],
+                      ),
+                    ),
                     dismiss,
                   ],
                 );
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: icon,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: text,
-                        ),
-                        Wrap(children: actions),
-                      ],
-                    ),
-                  ),
-                  dismiss,
-                ],
-              );
-            },
+              },
+            ),
           ),
         ),
       ),

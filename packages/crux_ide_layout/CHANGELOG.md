@@ -6,6 +6,12 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **`showCruxDialog` states its closed loop on the root navigator too**
+  (crux-shared#58). It relied on `showDialog`'s default; it now passes
+  `TraversalEdgeBehavior.closedLoop` itself, as it already did for a tab's
+  navigator, so Tab stays inside every Crux dialog while the page routes hand
+  it on to the strips above the `Navigator`.
+
 - **Export namespace narrowed by 7 symbols.** `CruxFocusRegionState`, `CruxToastCard`, `kCruxDialogDefaultWidth`, `kCruxDialogGutter`, `kCruxPaneResizeStep`, `kCruxSearchDialogRowExtent`, `kCruxSearchDialogSize` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **Fix: closing a `showCruxDialog` dialog returns keyboard focus.** The

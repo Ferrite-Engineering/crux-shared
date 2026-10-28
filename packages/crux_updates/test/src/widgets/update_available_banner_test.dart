@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_updates/crux_updates.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -175,6 +176,24 @@ void main() {
       find.bySemanticsLabel('ALT-dismiss'),
       findsAtLeastNWidgets(1),
     );
+  });
+
+  testWidgets('each control is one named Tab stop', (tester) async {
+    // The name has to sit on the focused node, the button's own. With the
+    // label on a Semantics wrapper around the IconButton, this walk heard
+    // the dismiss stop as a nameless "button".
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(_wrap(strings: const _AltStrings()));
+    await tester.pumpAndSettle();
+
+    final walk = await walkFocus(tester);
+    expectCleanFocusWalk(walk);
+    expect(walk.stops.map((stop) => stop.name), <String>[
+      'ALT-changes',
+      'ALT-now',
+      'ALT-dismiss',
+    ]);
+    handle.dispose();
   });
 
   group('touch targets', () {

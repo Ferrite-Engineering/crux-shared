@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **The update strip's dismiss button is named on its focused node**
+  (crux-shared#58). The label sat on a `Semantics` wrapper around the
+  `IconButton`, so Tab landed on a nameless "button"; it is now the close
+  glyph's semantic label, as on the beta-expiry strip. The strip is also its
+  own semantics container, so its message is announced when focus enters it.
+
 - **A store build compares itself with its store's release.** The manifest's
   `mobile` object lists the release each store has live (`mobile.ios`,
   `mobile.android`); desktop releases ship ahead of, or without, a store

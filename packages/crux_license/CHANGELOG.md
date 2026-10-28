@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **The beta-expiry and licence-expiry strips are their own semantics
+  containers** (crux-shared#58). The message is announced as the strip's name
+  when focus enters it, instead of merging into the node above the
+  `Navigator`. Mount the routed content in `CruxRoutedContent` (crux_a11y) so
+  a route's modal barrier does not hide the strips.
+
 - **A licence works on a machine with no credential store** (crux-shared#59).
   On Linux with no secret service running (remote X sessions, shared login
   hosts, minimal installs), every credential-store call throws, and no

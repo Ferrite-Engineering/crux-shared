@@ -63,53 +63,59 @@ class UpdateAvailableBanner extends StatelessWidget {
       minimumSize: Size(metrics.touchTarget, metrics.touchTarget),
     );
 
-    return Material(
-      color: scheme.secondaryContainer,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: Row(
-            children: [
-              Icon(
-                Icons.system_update_alt_outlined,
-                size: metrics.iconSize,
-                color: scheme.onSecondaryContainer,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  strings.bannerMessage(version),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: metrics.bodyFontSize,
-                    color: scheme.onSecondaryContainer,
+    // Its own semantics container, so the message is announced as the
+    // strip's name when focus enters it rather than merging into whatever
+    // node lies above the Navigator (the window's, in a product).
+    return Semantics(
+      container: true,
+      child: Material(
+        color: scheme.secondaryContainer,
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.system_update_alt_outlined,
+                  size: metrics.iconSize,
+                  color: scheme.onSecondaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    strings.bannerMessage(version),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: metrics.bodyFontSize,
+                      color: scheme.onSecondaryContainer,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              if (onViewChanges != null)
+                const SizedBox(width: 8),
+                if (onViewChanges != null)
+                  TextButton(
+                    onPressed: onViewChanges,
+                    style: buttonStyle,
+                    child: Text(strings.viewChangesAction),
+                  ),
                 TextButton(
-                  onPressed: onViewChanges,
+                  onPressed: onUpdateNow,
                   style: buttonStyle,
-                  child: Text(strings.viewChangesAction),
+                  child: Text(strings.updateNowAction),
                 ),
-              TextButton(
-                onPressed: onUpdateNow,
-                style: buttonStyle,
-                child: Text(strings.updateNowAction),
-              ),
-              // No Tooltip here: this strip renders *above* the app's Navigator
-              // (a sibling of the routed content in `MaterialApp.builder`), so
-              // the Navigator's Overlay is not an ancestor and a Tooltip would
-              // throw "No Overlay widget found". The accessible name is carried
-              // by Semantics instead.
-              if (showDismiss)
-                Semantics(
-                  label: strings.dismissLabel,
-                  button: true,
-                  child: IconButton(
+                // No Tooltip here: this strip renders *above* the app's
+                // Navigator (a sibling of the routed content in
+                // `MaterialApp.builder`), so the Navigator's Overlay is not an
+                // ancestor and a Tooltip would throw "No Overlay widget found".
+                // The accessible name is the glyph's semantic label, which
+                // merges into the button's own focusable node. A Semantics
+                // wrapper around the IconButton put the name on a parent node
+                // while focus sat on the button, so a screen reader announced
+                // the focused control as a nameless "button".
+                if (showDismiss)
+                  IconButton(
                     onPressed: onDismiss,
                     iconSize: metrics.iconSize,
                     color: scheme.onSecondaryContainer,
@@ -117,10 +123,13 @@ class UpdateAvailableBanner extends StatelessWidget {
                       minWidth: metrics.touchTarget,
                       minHeight: metrics.touchTarget,
                     ),
-                    icon: const Icon(Icons.close),
+                    icon: Icon(
+                      Icons.close,
+                      semanticLabel: strings.dismissLabel,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

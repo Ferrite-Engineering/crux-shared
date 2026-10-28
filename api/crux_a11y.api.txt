@@ -70,6 +70,10 @@ class CruxRegionHintHost extends StatefulWidget
   createState() -> State<CruxRegionHintHost>
   final builder: Widget Function(BuildContext, String?, Widget)
   final child: Widget
+class CruxRoutedContent extends StatelessWidget
+  const CruxRoutedContent({Key? key, required Widget? child})
+  build(BuildContext context) -> Widget
+  final child: Widget?
 class CruxScrollRegion extends StatefulWidget
   const CruxScrollRegion({Key? key, bool autofocus, bool excludeContentSemantics, required String semanticLabel, required Widget Function(BuildContext, ScrollController) builder})
   createState() -> State<CruxScrollRegion>

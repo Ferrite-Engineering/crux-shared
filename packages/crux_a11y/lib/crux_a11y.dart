@@ -20,6 +20,10 @@
 /// focus in the dialog and names it, and [CruxScrollRegion] makes a block of
 /// scrolling text a Tab stop the keyboard can scroll.
 ///
+/// [CruxRoutedContent] wraps the routed content in `MaterialApp.builder`, so
+/// the strips a product draws around the `Navigator` stay in the semantics
+/// tree instead of being blocked by every route's modal barrier.
+///
 /// [CruxRegionHintHost] and [CruxRegionHint] let a region's content describe
 /// the region without renaming it: an empty dock keeps its title as its name
 /// and gains its empty message as its description.
@@ -42,6 +46,7 @@ import 'package:crux_a11y/crux_a11y.dart'
         CruxPressable,
         CruxRegionHint,
         CruxRegionHintHost,
+        CruxRoutedContent,
         CruxScrollRegion,
         CruxSwitch;
 import 'package:flutter/material.dart' show Slider;
@@ -52,4 +57,5 @@ export 'src/crux_switch.dart'
     hide kCruxSwitchThumbSize, kCruxSwitchTrackHeight, kCruxSwitchTrackWidth;
 export 'src/modal_gate.dart';
 export 'src/region_hint.dart';
+export 'src/routed_content.dart';
 export 'src/scroll_region.dart';
