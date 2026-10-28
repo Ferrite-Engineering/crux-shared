@@ -55,7 +55,7 @@ import '../tool/policy_signer.dart';
 
 /// The version `--version` prints. `test/cli_test.dart` holds it to the
 /// `version:` in `pubspec.yaml`, which is also what names the release archive.
-const String kCruxPolicyVersion = '0.1.0';
+const String kCruxPolicyVersion = '0.2.0';
 
 /// Exit codes. Stable: CI steps branch on these.
 const int _ok = 0;
