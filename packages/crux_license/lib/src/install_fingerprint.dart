@@ -257,7 +257,8 @@ abstract class InstallFingerprintSource {
   /// an activation the issuer already holds a machine for keeps its identity.
   /// A legacy reader that throws is not a reader that answered "none": the
   /// exception propagates, because minting past a store that is merely locked
-  /// would burn the seat the store was protecting.
+  /// would burn the seat the store was protecting. [SharedInstallFingerprint]
+  /// makes one exception, on Linux; see there.
   ///
   /// `null` when no fingerprint can be kept, in which case the caller falls
   /// back to a fingerprint of its own.
@@ -289,6 +290,18 @@ abstract class InstallFingerprintSource {
 /// `null` only when the shared file can be neither read nor written; the
 /// caller then falls back to a fingerprint of its own, so a broken profile
 /// costs a seat and not a licence.
+///
+/// ### A legacy source that throws, on Linux
+///
+/// Elsewhere a legacy source that throws propagates, because a locked
+/// credential store is "unknown", not "none". On Linux it reads as none. There
+/// the credential store is libsecret, and one that throws is almost always
+/// one with no secret service running at all (a remote X session, a shared
+/// login host, a minimal install). Propagating would leave such a machine
+/// with no fingerprint, and so with no licence of any kind, for as long as it
+/// has no secret service. The cost, for a Linux machine that activated under
+/// a credential-store fingerprint of its own before the fingerprint was
+/// shared, is one machine record at the issuer that support can release.
 class SharedInstallFingerprint implements InstallFingerprintSource {
   /// Over [file], which defaults to [InstallFingerprintFile.shared] for
   /// [environment] and [operatingSystem].
@@ -296,7 +309,8 @@ class SharedInstallFingerprint implements InstallFingerprintSource {
     InstallFingerprintFile? file,
     Map<String, String>? environment,
     String? operatingSystem,
-  }) : _file =
+  }) : _operatingSystem = operatingSystem ?? Platform.operatingSystem,
+       _file =
            file ??
            InstallFingerprintFile.shared(
              environment: environment,
@@ -305,6 +319,9 @@ class SharedInstallFingerprint implements InstallFingerprintSource {
 
   final InstallFingerprintFile _file;
 
+  /// The platform judged by the Linux allowance above.
+  final String _operatingSystem;
+
   @override
   Future<String?> readOrCreate({
     Iterable<Future<String?> Function()> legacy = const [],
@@ -312,7 +329,15 @@ class SharedInstallFingerprint implements InstallFingerprintSource {
     final existing = await _file.read();
     if (existing != null) return existing;
     for (final source in legacy) {
-      final candidate = await source();
+      final String? candidate;
+      try {
+        candidate = await source();
+      } on Object {
+        // See the class documentation: on Linux, a credential store that
+        // throws is one that is not running.
+        if (_operatingSystem != 'linux') rethrow;
+        continue;
+      }
       if (candidate == null) continue;
       final adopted = await _file.adopt(candidate);
       if (adopted != null) return adopted;
