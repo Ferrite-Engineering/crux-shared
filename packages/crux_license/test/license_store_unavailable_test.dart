@@ -71,7 +71,10 @@ void main() {
   tearDown(() => home.deleteSync(recursive: true));
 
   LicenseFallbackFile fallbackFor(CruxProduct product) =>
-      LicenseFallbackFile.forProduct(product.slug, environment: environment);
+      LicenseFallbackFile.forProduct(
+        product.entitlementCode.toLowerCase(),
+        environment: environment,
+      );
 
   File fallbackOnDisk([CruxProduct product = CruxProduct.waveCrux]) =>
       File(fallbackFor(product).path!);

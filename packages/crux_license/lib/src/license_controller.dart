@@ -162,7 +162,13 @@ class CruxLicenseController implements CruxLicenseActions {
   }) : _validator = validator,
        _store = _FallbackStore(
          store,
-         fallbackFile ?? LicenseFallbackFile.forProduct(product.slug),
+         fallbackFile ??
+             // The slug the products' credential-store keys use
+             // (`crux.<slug>.license_key`), so the file and the keys it
+             // stands in for name the product the same way.
+             LicenseFallbackFile.forProduct(
+               product.entitlementCode.toLowerCase(),
+             ),
        ),
        _client = client,
        _machine = machine,
