@@ -70,9 +70,9 @@ String licenseFallbackFilePath(
 /// for API keys and passwords. This is a decision about licences alone, and
 /// only about the offline forms ([licenseCredentialMayUseFallbackFile]): a
 /// licence file or a machine file is signed, checked offline, names its own
-/// expiry, and a machine file works only on the machine it names. The
-/// product's licence store decides when to use this file; this class only
-/// keeps it.
+/// expiry, and a machine file works only on the machine it names.
+/// `CruxLicenseController` decides when to use this file, when the product's
+/// store refuses one of those; this class only keeps it.
 ///
 /// ### Owner-only from the first byte
 ///

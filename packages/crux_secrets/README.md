@@ -89,9 +89,10 @@ plaintext fallback — a credential store that silently degrades to a file is
 not a credential store. Hosts that must keep working there should bind
 `InMemoryCruxSecretStore` and re-prompt.
 
-The licence is the one exception, and it is made by the licence store, not
-here. A licence file or machine file (signed, checked offline, and for a
-machine file bound to one machine) is kept in an owner-only file when this
-store throws, and a licence in the organization's policy file needs no store
-at all; a licence key is not. `crux_license`'s README, "When there is no
-credential store", has the reasoning. Nothing in this package changed for it.
+The licence is the one exception, and it is made by `crux_license`'s
+licence controller, not here. When this store throws, a licence file or
+machine file (signed, checked offline, and for a machine file bound to one
+machine) is kept in an owner-only file instead, and a licence in the
+organization's policy file needs no store at all; a licence key is neither.
+`crux_license`'s README, "When there is no credential store", has the
+reasoning. Nothing in this package changed for it.

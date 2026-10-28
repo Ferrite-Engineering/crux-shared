@@ -17,6 +17,7 @@ import 'package:crux_license/src/keygen_issuer.dart';
 import 'package:crux_license/src/license_actions.dart';
 import 'package:crux_license/src/license_clock_mark.dart';
 import 'package:crux_license/src/license_credential.dart';
+import 'package:crux_license/src/license_fallback_file.dart';
 import 'package:crux_license/src/license_grace.dart';
 import 'package:crux_license/src/license_grant.dart';
 import 'package:crux_license/src/license_status.dart';
@@ -93,20 +94,6 @@ abstract class LicenseStore {
   Future<void> writeIssuerSnapshot(String? snapshot);
 }
 
-/// A [LicenseStore] that can keep the credential in a file when the
-/// operating system's credential store is unavailable, and says when it has.
-///
-/// Separate from [LicenseStore] so a store that never falls back implements
-/// nothing new. The controller asks a store that implements it where the
-/// credential is, and the licence panel names the file in one line
-/// ([CruxLicenseStatus.credentialFile]).
-abstract interface class LicenseStoreFallback {
-  /// The path of the file holding the stored credential, or `null` when the
-  /// credential is in the operating system's credential store, or there is
-  /// none.
-  Future<String?> credentialFilePath();
-}
-
 /// Facts about the machine that Keygen labels an activation with.
 @immutable
 class LicenseMachineIdentity {
@@ -170,8 +157,15 @@ class CruxLicenseController implements CruxLicenseActions {
     DateTime Function() now = DateTime.now,
     MachineReleaseMarker releaseMarker = const NoMachineReleaseMarker(),
     LicenseClockMark? clockMark,
+    // Where a licence file or machine file goes when [store] cannot keep it.
+    // Defaults to this product's file in the suite's licence directory; a
+    // test passes one under a temporary directory.
+    LicenseFallbackFile? fallbackFile,
   }) : _validator = validator,
-       _store = _PolicyHeldStore(store),
+       _store = _FallbackStore(
+         store,
+         fallbackFile ?? LicenseFallbackFile.forProduct(product.slug),
+       ),
        _client = client,
        _machine = machine,
        _openUrl = openUrl,
@@ -188,7 +182,7 @@ class CruxLicenseController implements CruxLicenseActions {
   final CruxProduct product;
 
   final LicenseValidator _validator;
-  final _PolicyHeldStore _store;
+  final _FallbackStore _store;
   final KeygenLicenseClient _client;
   final LicenseMachineIdentity _machine;
   final MachineReleaseMarker _releaseMarker;
@@ -279,9 +273,10 @@ class CruxLicenseController implements CruxLicenseActions {
       //
       // A store that cannot keep it refuses the activation, rather than
       // granting a tier for this session alone that the next launch silently
-      // takes away. The one exception is a credential the organization's
-      // policy file supplied, which the policy file supplies again at every
-      // launch: `_PolicyHeldStore` holds that one for the process.
+      // takes away. `_FallbackStore` makes the two exceptions: a licence file
+      // or machine file goes to the fallback file, and a credential the
+      // organization's policy file supplied, which the policy file supplies
+      // again at every launch, is held for the process.
       try {
         await _store.writeCredential(credential.trim());
       } on Object catch (error) {
@@ -1105,8 +1100,16 @@ class CruxLicenseController implements CruxLicenseActions {
       fingerprint: fingerprint,
     );
     final grant = validation.grant;
-    final lastCheck = await _store.readLastCheck();
-    final machineId = await _store.readMachineId();
+    final DateTime? lastCheck;
+    final String? machineId;
+    try {
+      lastCheck = await _store.readLastCheck();
+      machineId = await _store.readMachineId();
+    } on Object {
+      // The store stopped answering between the credential and the facts
+      // beside it. As above: keep what was resolved rather than guess.
+      return;
+    }
     final credentialFile = await _store.credentialFilePath();
 
     if (grant == null) {
@@ -1281,119 +1284,313 @@ LicenseGrant _withExpiry(LicenseGrant grant, DateTime? expiry) => LicenseGrant(
   issued: grant.issued,
 );
 
-/// The product's [LicenseStore], able to hold a credential the
-/// organization's policy file supplied when the store cannot keep it.
+/// The product's [LicenseStore], with somewhere to keep a licence when the
+/// operating system's credential store cannot.
 ///
-/// A policy licence needs no store: the policy file is read at every launch
-/// and supplies the credential again. So when the store refuses to keep one,
-/// it is held here, in memory, with the few facts that go with it, and every
-/// call the store then fails answers from here instead. Only that credential
-/// is ever held. One the user pasted is the store's to keep or to refuse,
-/// and a refusal reaches the user as
-/// [CruxLicenseActionFailure.storeUnavailable]. While the store works, every
-/// call goes straight through and nothing is held.
-class _PolicyHeldStore implements LicenseStore {
-  _PolicyHeldStore(this._inner);
+/// On Linux the credential store is libsecret, and a session with no secret
+/// service running (a remote X session, a shared login host, a minimal
+/// install) fails every call. Two kinds of licence still work there:
+///
+/// - **A licence file or machine file** is kept in the [LicenseFallbackFile],
+///   owner-only, with the machine id, last check and issuer snapshot that go
+///   with it ([licenseCredentialMayUseFallbackFile]). A licence key never is:
+///   it is a bearer credential, and its write fails as it always did.
+/// - **A credential the organization's policy file supplied** is held here,
+///   in memory, for the process, when it cannot go to the file either. The
+///   policy file supplies it again at the next launch.
+///
+/// The store is always asked first. The file answers only when the store
+/// fails or holds no licence, so where the store works and holds one,
+/// nothing changes and nothing else is read. A machine whose secret service
+/// runs in one session and not the next still finds a licence the file kept.
+/// A licence the store accepts removes the file, and [clear] removes it too.
+/// When the store fails and neither the file nor the process holds a licence,
+/// the store's exception propagates as before: a store that cannot be read is
+/// "unknown", not "no licence".
+class _FallbackStore implements LicenseStore {
+  _FallbackStore(this._inner, this._file);
 
   final LicenseStore _inner;
+  final LicenseFallbackFile _file;
 
   /// The credential the policy file supplied, set by
   /// [CruxLicenseController.activateFromPolicy], so that a refusal to store
   /// it is answered by holding it.
   String? _fromPolicy;
 
-  /// The policy credential the store refused, held for the process. Every
-  /// fallback below is conditional on it.
+  /// The policy credential neither the store nor the file could keep, held
+  /// for the process, and the facts that go with it.
   String? _held;
-  String? _machineId;
-  DateTime? _lastCheck;
-  String? _issuerSnapshot;
+  String? _heldMachineId;
+  DateTime? _heldLastCheck;
+  String? _heldIssuerSnapshot;
 
-  /// Where a store that falls back to a file keeps the credential, when it
-  /// does. Never throws: a store that cannot say is a store that does not.
+  /// The fallback file's path when the licence is kept there, else `null`.
+  /// Never throws.
   Future<String?> credentialFilePath() async {
-    final inner = _inner;
-    if (inner is! LicenseStoreFallback) return null;
     try {
-      return await (inner as LicenseStoreFallback).credentialFilePath();
+      return (await _where()).file == null ? null : _file.path;
     } on Object {
       return null;
     }
   }
 
-  /// [call] the store, or, when it throws while a policy credential is held,
-  /// answer with [held].
-  Future<T> _or<T>(Future<T> Function() call, T Function() held) async {
-    try {
-      return await call();
-    } on Object {
-      if (_held == null) rethrow;
-      return held();
-    }
-  }
-
   @override
-  Future<String?> readCredential() => _or(_inner.readCredential, () => _held);
+  Future<String?> readCredential() async {
+    final String? inStore;
+    try {
+      inStore = await _inner.readCredential();
+    } on Object {
+      final document = await _readFile();
+      if (document != null) return document.credential;
+      if (_held != null) return _held;
+      rethrow;
+    }
+    return inStore ?? (await _readFile())?.credential;
+  }
 
   @override
   Future<void> writeCredential(String credential) async {
     try {
       await _inner.writeCredential(credential);
-    } on Object {
-      if (credential != _fromPolicy) rethrow;
-      if (_held != credential) {
-        _machineId = null;
-        _lastCheck = null;
-        _issuerSnapshot = null;
+    } on Object catch (error, stack) {
+      if (await _keepInFile(credential)) return;
+      if (credential == _fromPolicy) {
+        _hold(credential);
+        return;
       }
-      _held = credential;
+      Error.throwWithStackTrace(error, stack);
     }
+    _held = null;
+    // In the store now, so a file from a session without one is stale.
+    try {
+      await _file.delete();
+    } on Object {
+      // Best effort: the store holds a licence, so the file is not read.
+    }
+  }
+
+  Future<bool> _keepInFile(String credential) async {
+    if (!licenseCredentialMayUseFallbackFile(credential)) return false;
+    try {
+      await _file.write(_FallbackDocument(credential).encode());
+    } on Object {
+      return false;
+    }
+    _held = null;
+    return true;
+  }
+
+  void _hold(String credential) {
+    if (_held != credential) {
+      _heldMachineId = null;
+      _heldLastCheck = null;
+      _heldIssuerSnapshot = null;
+    }
+    _held = credential;
   }
 
   @override
   Future<void> clear() async {
-    final held = _held;
+    // The file first: a licence the user asked to forget must not stay
+    // behind in it, and a file that cannot be removed fails the clear.
+    final hadFile = await _file.delete();
+    final hadHeld = _held != null;
     _held = null;
     _fromPolicy = null;
-    _machineId = null;
-    _lastCheck = null;
-    _issuerSnapshot = null;
+    _heldMachineId = null;
+    _heldLastCheck = null;
+    _heldIssuerSnapshot = null;
     try {
       await _inner.clear();
     } on Object {
-      if (held == null) rethrow;
+      // The licence was outside the store because the store was
+      // unavailable, and it still is. What was asked to be forgotten is gone.
+      if (!hadFile && !hadHeld) rethrow;
     }
   }
 
   // The fingerprint identifies the machine and must outlive the process, so
-  // nothing is held for it: a fingerprint minted per launch would register a
-  // new machine at the issuer on every launch.
+  // nothing stands in for it here: a fingerprint minted per launch would
+  // register a new machine at the issuer on every launch.
   @override
   Future<String> readOrCreateFingerprint() => _inner.readOrCreateFingerprint();
 
   @override
-  Future<String?> readMachineId() =>
-      _or(_inner.readMachineId, () => _machineId);
+  Future<String?> readMachineId() => _readField(
+    _inner.readMachineId,
+    (document) => document.machineId,
+    () => _heldMachineId,
+  );
 
   @override
-  Future<void> writeMachineId(String? machineId) =>
-      _or(() => _inner.writeMachineId(machineId), () => _machineId = machineId);
+  Future<void> writeMachineId(String? machineId) => _writeField(
+    () => _inner.writeMachineId(machineId),
+    (document) => document.copyWith(machineId: () => machineId),
+    () => _heldMachineId = machineId,
+  );
 
   @override
-  Future<DateTime?> readLastCheck() =>
-      _or(_inner.readLastCheck, () => _lastCheck);
+  Future<DateTime?> readLastCheck() => _readField(
+    _inner.readLastCheck,
+    (document) => DateTime.tryParse(document.lastCheck ?? ''),
+    () => _heldLastCheck,
+  );
 
   @override
-  Future<void> writeLastCheck(DateTime at) =>
-      _or(() => _inner.writeLastCheck(at), () => _lastCheck = at);
+  Future<void> writeLastCheck(DateTime at) => _writeField(
+    () => _inner.writeLastCheck(at),
+    (document) =>
+        document.copyWith(lastCheck: () => at.toUtc().toIso8601String()),
+    () => _heldLastCheck = at,
+  );
 
   @override
-  Future<String?> readIssuerSnapshot() =>
-      _or(_inner.readIssuerSnapshot, () => _issuerSnapshot);
+  Future<String?> readIssuerSnapshot() => _readField(
+    _inner.readIssuerSnapshot,
+    (document) => document.issuerSnapshot,
+    () => _heldIssuerSnapshot,
+  );
 
   @override
-  Future<void> writeIssuerSnapshot(String? snapshot) => _or(
+  Future<void> writeIssuerSnapshot(String? snapshot) => _writeField(
     () => _inner.writeIssuerSnapshot(snapshot),
-    () => _issuerSnapshot = snapshot,
+    (document) => document.copyWith(issuerSnapshot: () => snapshot),
+    () => _heldIssuerSnapshot = snapshot,
+  );
+
+  /// Where the licence is: the store, the file, or this process. Throws the
+  /// store's exception when the store fails and neither of the others holds
+  /// one.
+  Future<_Where> _where() async {
+    final String? inStore;
+    try {
+      inStore = await _inner.readCredential();
+    } on Object {
+      final document = await _readFile();
+      if (document != null) return _Where(file: document);
+      if (_held != null) return const _Where(held: true);
+      rethrow;
+    }
+    if (inStore != null) return const _Where();
+    final document = await _readFile();
+    return document == null ? const _Where() : _Where(file: document);
+  }
+
+  Future<T> _readField<T>(
+    Future<T> Function() fromStore,
+    T Function(_FallbackDocument document) fromFile,
+    T Function() fromHeld,
+  ) async {
+    final where = await _where();
+    if (where.file case final document?) return fromFile(document);
+    if (where.held) return fromHeld();
+    return await fromStore();
+  }
+
+  Future<void> _writeField(
+    Future<void> Function() toStore,
+    _FallbackDocument Function(_FallbackDocument document) inFile,
+    void Function() toHeld,
+  ) async {
+    final where = await _where();
+    if (where.file case final document?) {
+      await _file.write(inFile(document).encode());
+      return;
+    }
+    if (where.held) {
+      toHeld();
+      return;
+    }
+    await toStore();
+  }
+
+  Future<_FallbackDocument?> _readFile() async {
+    final raw = await _file.read();
+    return raw == null ? null : _FallbackDocument.decode(raw);
+  }
+}
+
+/// Which of the three places holds the licence.
+@immutable
+class _Where {
+  const _Where({this.file, this.held = false});
+
+  /// The fallback file's contents, when the licence is there.
+  final _FallbackDocument? file;
+
+  /// Whether the licence is a policy credential held for the process.
+  final bool held;
+}
+
+/// What the fallback file holds: the credential, and the three facts the
+/// credential store would otherwise keep beside it.
+@immutable
+class _FallbackDocument {
+  const _FallbackDocument(
+    this.credential, {
+    this.machineId,
+    this.lastCheck,
+    this.issuerSnapshot,
+  });
+
+  /// The file's format, so a later build can tell its own file from anything
+  /// else.
+  static const String format = 'crux.license-fallback/v1';
+
+  final String credential;
+  final String? machineId;
+  final String? lastCheck;
+  final String? issuerSnapshot;
+
+  /// The document [raw] encodes, or `null` when it is not one, or holds a
+  /// credential that may not be kept in a file: a file edited into something
+  /// else holds no licence.
+  static _FallbackDocument? decode(String raw) {
+    try {
+      final json = jsonDecode(raw);
+      if (json is! Map<String, Object?> || json['format'] != format) {
+        return null;
+      }
+      final credential = json['credential'];
+      if (credential is! String ||
+          !licenseCredentialMayUseFallbackFile(credential)) {
+        return null;
+      }
+      String? text(String name) => switch (json[name]) {
+        final String value => value,
+        _ => null,
+      };
+      return _FallbackDocument(
+        credential,
+        machineId: text('machineId'),
+        lastCheck: text('lastCheck'),
+        issuerSnapshot: text('issuerSnapshot'),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
+  String encode() =>
+      const JsonEncoder.withIndent('  ').convert(<String, Object?>{
+        'format': format,
+        'credential': credential,
+        'machineId': ?machineId,
+        'lastCheck': ?lastCheck,
+        'issuerSnapshot': ?issuerSnapshot,
+      });
+
+  _FallbackDocument copyWith({
+    String? Function()? machineId,
+    String? Function()? lastCheck,
+    String? Function()? issuerSnapshot,
+  }) => _FallbackDocument(
+    credential,
+    machineId: machineId == null ? this.machineId : machineId(),
+    lastCheck: lastCheck == null ? this.lastCheck : lastCheck(),
+    issuerSnapshot: issuerSnapshot == null
+        ? this.issuerSnapshot
+        : issuerSnapshot(),
   );
 }

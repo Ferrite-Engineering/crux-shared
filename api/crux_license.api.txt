@@ -120,7 +120,7 @@ enum CruxLicenseActivation
   static const notActivatedOnThisMachine: CruxLicenseActivation
   static const openCore: CruxLicenseActivation
 class CruxLicenseController implements CruxLicenseActions
-  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
+  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseFallbackFile? fallbackFile, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
   activate(String credential) -> Future<CruxLicenseActionResult>
   activateFromPolicy(String credential) -> Future<CruxLicenseActionResult>
   deactivateThisMachine() -> Future<CruxLicenseActionResult>
@@ -746,8 +746,6 @@ abstract class LicenseStore
   writeIssuerSnapshot(String? snapshot) -> Future<void>
   writeLastCheck(DateTime at) -> Future<void>
   writeMachineId(String? machineId) -> Future<void>
-interface abstract class LicenseStoreFallback
-  credentialFilePath() -> Future<String?>
 enum LicenseTier
   static const edu: LicenseTier
   static const enterprise: LicenseTier

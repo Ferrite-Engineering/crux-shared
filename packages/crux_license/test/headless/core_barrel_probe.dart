@@ -32,6 +32,7 @@ void main() {
     'validator=${const NoopLicenseValidator().name}',
     'fingerprint=${mintInstallFingerprint().length}',
     'marker=${const NoMachineReleaseMarker().runtimeType}',
+    'fallback=${licenseCredentialMayUseFallbackFile('')}',
   ];
   // The exit code is what the guard asserts on; the output is what a human
   // reads when it fails. `stdout` rather than `print` because this is a CLI

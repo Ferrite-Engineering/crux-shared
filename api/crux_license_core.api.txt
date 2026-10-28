@@ -49,7 +49,7 @@ enum CruxLicenseActivation
   static const notActivatedOnThisMachine: CruxLicenseActivation
   static const openCore: CruxLicenseActivation
 class CruxLicenseController implements CruxLicenseActions
-  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
+  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseFallbackFile? fallbackFile, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
   activate(String credential) -> Future<CruxLicenseActionResult>
   activateFromPolicy(String credential) -> Future<CruxLicenseActionResult>
   deactivateThisMachine() -> Future<CruxLicenseActionResult>
@@ -307,6 +307,14 @@ final class LicenseExpired extends LicenseValidation
   const LicenseExpired(LicenseGrant grant)
   final grant: LicenseGrant
   toString() -> String
+class LicenseFallbackFile
+  LicenseFallbackFile(String Function() resolvePath)
+  factory LicenseFallbackFile.forProduct(String product, {Map<String, String>? environment, String? operatingSystem})
+  delete() -> Future<bool>
+  exists() -> bool
+  get path -> String?
+  read() -> Future<String?>
+  write(String contents) -> Future<void>
 class LicenseGracePolicy
   const LicenseGracePolicy({Duration edu, Duration enterprise, Duration pro})
   covers({bool evaluation, required DateTime expiry, required DateTime now, required LicenseTier tier}) -> bool
@@ -371,8 +379,6 @@ abstract class LicenseStore
   writeIssuerSnapshot(String? snapshot) -> Future<void>
   writeLastCheck(DateTime at) -> Future<void>
   writeMachineId(String? machineId) -> Future<void>
-interface abstract class LicenseStoreFallback
-  credentialFilePath() -> Future<String?>
 enum LicenseTier
   static const edu: LicenseTier
   static const enterprise: LicenseTier
@@ -435,6 +441,8 @@ get kEvaluationExpiryWarningDays -> int
 get kKeygenVerifyKeyHex -> String
 get kLicenseExpiryWarningDays -> int
 legacyInstallFingerprintPath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
+licenseCredentialMayUseFallbackFile(String credential) -> bool
+licenseFallbackFilePath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
 get licenseTierOverride -> LicenseTier?
 mintInstallFingerprint([Random? random]) -> String
 parseBetaExpiryDate(int yyyymmdd) -> DateTime?

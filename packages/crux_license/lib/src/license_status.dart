@@ -121,7 +121,7 @@ class CruxLicenseStatus {
   final bool clockSetBack;
 
   /// The file holding the licence, when it is kept in a file rather than in
-  /// the operating system's credential store (`LicenseStoreFallback`), which
+  /// the operating system's credential store (`LicenseFallbackFile`), which
   /// happens when that store was unavailable. `null` otherwise. The panel
   /// names it, so the user knows where the licence is and why.
   final String? credentialFile;
