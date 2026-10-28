@@ -72,24 +72,57 @@ String requireJsonStringValue(Object? value, String field) {
   _wrongType(field, value, 'a string');
 }
 
+/// The deepest list or object nesting an attribute, a cell parameter or the
+/// creator may carry and still be kept as text.
+const int maxJsonValueNesting = 32;
+
 /// [value], which was read from [field], as the string the model keeps for
 /// an attribute, a cell parameter or the creator: a string as it is, a
-/// number or a boolean in its JSON spelling, and null as empty.
+/// number or a boolean in its JSON spelling, null as empty, and a list or an
+/// object as Dart prints it, as these always were.
 ///
-/// A list or an object is refused, never stringified. Yosys writes each of
-/// these as a string or a number, so a structured value only comes from a
-/// broken or hostile document, and stringifying one costs time quadratic in
-/// its nesting depth: the core library's cycle check scans every enclosing
-/// collection at each level. A value nested a hundred thousand deep then
-/// either overflowed the stack or, on a thread whose stack held it, spun for
-/// minutes.
+/// A list or an object nested more than [maxJsonValueNesting] levels deep
+/// is refused before anything prints it. Printing a collection costs time
+/// quadratic in its depth (the core library's cycle check scans every
+/// enclosing collection at each level), so a value nested a hundred thousand
+/// deep either overflowed the stack or, on a thread whose stack held it,
+/// spun for minutes. The depth is measured without recursion, and stops at
+/// the cap. Yosys writes each of these values as a string or a number.
 String jsonScalarString(Object? value, String field) => switch (value) {
   null => '',
   final String s => s,
   final num n => '$n',
   final bool b => '$b',
-  _ => _wrongType(field, value, 'a string or a number'),
+  _ when _nestedDeeperThan(value, maxJsonValueNesting) => throw FormatException(
+    '"$field" is ${describeJsonValue(value)} nested more than '
+    '$maxJsonValueNesting levels deep',
+  ),
+  _ => value.toString(),
 };
+
+/// Whether [value] holds lists or objects more than [limit] levels deep,
+/// walked with an explicit stack so the walk itself cannot overflow.
+bool _nestedDeeperThan(Object? value, int limit) {
+  final pending = <(Object?, int)>[(value, 1)];
+  while (pending.isNotEmpty) {
+    final (node, depth) = pending.removeLast();
+    final Iterable<Object?> children;
+    if (node is List<Object?>) {
+      children = node;
+    } else if (node is Map<Object?, Object?>) {
+      children = node.values;
+    } else {
+      continue;
+    }
+    if (depth > limit) return true;
+    for (final child in children) {
+      if (child is List<Object?> || child is Map<Object?, Object?>) {
+        pending.add((child, depth + 1));
+      }
+    }
+  }
+  return false;
+}
 
 /// Yosys's `hide_name` flag at [json]: an integer, absent meaning 0.
 bool readHideName(Map<String, Object?> json) {

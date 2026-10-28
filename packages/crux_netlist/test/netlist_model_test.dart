@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:crux_netlist/crux_netlist.dart';
+import 'package:crux_netlist/src/json_shape.dart' show maxJsonValueNesting;
 import 'package:test/test.dart';
 
 /// The model layer, where a hostile `write_json` document lands.
@@ -17,11 +18,11 @@ import 'package:test/test.dart';
 /// boundary that must turn every one of them into an `Exception`, and every
 /// case below checks the type of what came out, not only that something did.
 ///
-/// A structured value where an attribute, a parameter or the creator belongs
-/// is refused before anything stringifies it. Stringifying a value nested a
-/// hundred thousand deep is quadratic in the depth; it used to overflow the
-/// stack on most runs and spin for minutes on the rest, which hung CI's
-/// coverage job.
+/// A value nested past the cap where an attribute, a parameter or the
+/// creator belongs is refused before anything prints it. Printing a value
+/// nested a hundred thousand deep is quadratic in the depth; it used to
+/// overflow the stack on most runs and spin for minutes on the rest, which
+/// hung CI's coverage job.
 ///
 /// **Equality means the same netlist.** A model is compared to decide whether
 /// a re-elaboration changed anything, and serialized with `toJson` to be
@@ -89,18 +90,14 @@ void main() {
       ),
       'a creator nested a hundred thousand deep':
           '{"creator":${_deep(100000)},"modules":{}}',
-      'a module attribute that is a list':
-          '{"modules":{"top":{"attributes":{"src":["a.v"]}}}}',
-      'a net attribute that is an object': _nets(
-        '{"n":{"bits":[2],"attributes":{"src":{}}}}',
+      'a module attribute nested one level past the cap':
+          '{"modules":{"top":{"attributes":{"src":$_pastCapList}}}}',
+      'a net attribute nested one level past the cap': _nets(
+        '{"n":{"bits":[2],"attributes":{"src":$_pastCapObject}}}',
       ),
-      'a cell attribute that is a list': _cells(
-        '{"c":{"type":"x","attributes":{"keep":[1]}}}',
-      ),
-      'a cell parameter that is an object': _cells(
-        '{"c":{"type":"x","parameters":{"W":{"v":8}}}}',
-      ),
-      'a creator that is a list': '{"creator":["yosys"],"modules":{}}',
+      'a memory attribute nested a hundred thousand deep':
+          '{"modules":{"top":{"memories":{"m":'
+          '{"attributes":{"src":${_deep(100000)}}}}}}}',
     };
 
     for (final entry in rejected.entries) {
@@ -111,8 +108,8 @@ void main() {
 
     // NetlistModel.fromJson's own contract, for a caller that does not go
     // through the parser and catches only what the documentation promises.
-    // The deeply nested shapes are included: they are refused by type before
-    // anything recurses into them.
+    // The deeply nested shapes are included: their depth is measured, without
+    // recursion, before anything prints them.
     for (final entry in rejected.entries) {
       test('fromJson throws FormatException: ${entry.key}', () {
         final decoded = jsonDecode(entry.value) as Map<String, Object?>;
@@ -191,6 +188,23 @@ void main() {
         '{"modules":{"":{"cells":{"":{"type":""}}}}}',
       );
       expect(emptyNames.modules['']!.cells[''], isNotNull);
+
+      // A structured value within the nesting cap is kept as Dart prints
+      // it, as it always was; only one past the cap is refused.
+      final structured = _parseOk(
+        _cells(
+          '{"c":{"type":"x","attributes":{"keep":[1,"a"],'
+          '"src":${_deep(maxJsonValueNesting)}},'
+          '"parameters":{"W":{"v":8}}}}',
+        ),
+      );
+      final structuredCell = structured.modules['top']!.cells['c']!;
+      expect(structuredCell.attributes['keep'], '[1, a]');
+      expect(structuredCell.parameters['W'], '{v: 8}');
+      expect(
+        structuredCell.attributes['src'],
+        '${'[' * maxJsonValueNesting}${']' * maxJsonValueNesting}',
+      );
 
       final deepElsewhere = _parseOk(
         '{"modules":{},"unrelated":${_deep(100000)}}',
@@ -498,6 +512,12 @@ NetlistModel _parseOk(String raw) {
 }
 
 String _deep(int depth) => '${'[' * depth}${']' * depth}';
+
+String _deepObject(int depth) => '${'{"a":' * depth}0${'}' * depth}';
+
+final String _pastCapList = _deep(maxJsonValueNesting + 1);
+
+final String _pastCapObject = _deepObject(maxJsonValueNesting + 1);
 
 String _cells(String cells) => '{"modules":{"top":{"cells":$cells}}}';
 

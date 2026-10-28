@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:crux_netlist/crux_netlist.dart';
+import 'package:crux_netlist/src/json_shape.dart' show maxJsonValueNesting;
 import 'package:test/test.dart';
 
 Map<String, Object?> _doc(Map<String, Object?> module) => {
@@ -59,19 +60,20 @@ void main() {
       );
     });
 
-    test('a structured attribute value is refused, naming the field', () {
-      // A list or an object is never stringified: nested deeply enough, that
-      // is quadratic in the depth and can spin for minutes.
+    test('an attribute nested past the cap is refused, naming the field', () {
+      // Printing a collection is quadratic in its depth, so a value nested
+      // deeply enough could spin for minutes. Past the cap it is refused
+      // before anything prints it.
+      Object? nested = 0;
+      for (var i = 0; i <= maxJsonValueNesting; i++) {
+        nested = <Object?>[nested];
+      }
       expect(
         () => NetlistModel.fromJson(
           _doc({
             'memories': {
               'm': {
-                'attributes': {
-                  'src': [
-                    [1],
-                  ],
-                },
+                'attributes': {'src': nested},
               },
             },
           }),
@@ -82,30 +84,40 @@ void main() {
             'message',
             allOf(
               contains('attributes.src'),
-              contains('expected a string or a number'),
+              contains('nested more than $maxJsonValueNesting levels deep'),
             ),
           ),
         ),
       );
     });
 
-    test('scalar attribute values keep their JSON spelling', () {
-      final model = NetlistModel.fromJson(
-        _doc({
-          'memories': {
-            'm': {
-              'attributes': {'a': 'x', 'b': 7, 'c': true, 'd': null},
+    test(
+      'attribute values keep their spelling, structured ones as printed',
+      () {
+        final model = NetlistModel.fromJson(
+          _doc({
+            'memories': {
+              'm': {
+                'attributes': {
+                  'a': 'x',
+                  'b': 7,
+                  'c': true,
+                  'd': null,
+                  'e': [1, 'x'],
+                },
+              },
             },
-          },
-        }),
-      );
-      expect(model.modules['top']!.memories['m']!.attributes, {
-        'a': 'x',
-        'b': '7',
-        'c': 'true',
-        'd': '',
-      });
-    });
+          }),
+        );
+        expect(model.modules['top']!.memories['m']!.attributes, {
+          'a': 'x',
+          'b': '7',
+          'c': 'true',
+          'd': '',
+          'e': '[1, x]',
+        });
+      },
+    );
 
     test('copyWith replaces memories', () {
       final module = NetlistModel.fromJson(_doc({})).modules['top']!;

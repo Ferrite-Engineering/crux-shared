@@ -34,8 +34,8 @@ class Cell {
   ///
   /// Throws [FormatException], naming the field, when a field has the wrong
   /// JSON type or `type` is missing. `parameters` and `attributes` of the
-  /// wrong type read as empty; a single parameter or attribute that is a
-  /// list or an object is a [FormatException].
+  /// wrong type read as empty; a single parameter or attribute nested more
+  /// than [maxJsonValueNesting] levels deep is a [FormatException].
   factory Cell.fromJson(String name, Map<String, Object?> json) {
     final type = requireJsonString(json, 'type');
     final hideName = readHideName(json);
