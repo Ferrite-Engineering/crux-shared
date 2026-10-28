@@ -70,6 +70,7 @@ void main() {
       expect(file.path, isNull);
       expect(file.exists(), isFalse);
       expect(await file.read(), isNull);
+      expect(await file.delete(), isFalse, reason: 'nothing can be there');
       await expectLater(file.write('x'), throwsStateError);
     });
   });

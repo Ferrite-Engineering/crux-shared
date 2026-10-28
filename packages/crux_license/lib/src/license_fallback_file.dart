@@ -173,10 +173,13 @@ class LicenseFallbackFile {
 
   /// Removes the file. `true` when there was one.
   ///
+  /// `false` when the path cannot be resolved, since no file can be there.
   /// Throws when a file exists and cannot be removed: a licence the user
   /// asked to forget must not stay behind quietly.
   Future<bool> delete() async {
-    final file = File(_resolvePath());
+    final at = path;
+    if (at == null) return false;
+    final file = File(at);
     if (!file.existsSync()) return false;
     await file.delete();
     return true;

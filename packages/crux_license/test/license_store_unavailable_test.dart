@@ -183,6 +183,23 @@ void main() {
       expect(controller.status.credentialFile, isNull);
     });
 
+    test('with no home directory, a working store still deactivates', () async {
+      final store = _MapStore();
+      final controller = await startedController(
+        store,
+        fallbackFile: LicenseFallbackFile(() => throw StateError('no home')),
+      );
+      // A file that embeds no key is released locally, with no issuer call.
+      await controller.activate(await issuer.mintFile(filePayload()));
+      expect(controller.status.tier, LicenseTier.pro);
+      expect(controller.status.credentialFile, isNull);
+
+      final result = await controller.deactivateThisMachine();
+
+      expect(result, isA<LicenseActionSucceeded>());
+      expect(store.credential, isNull);
+    });
+
     test('a check-in later in the session keeps the tier', () async {
       final controller = await startedController(_KeyringlessStore());
       await applyFrom(controller, {'key': await issuer.mintKey(keyPayload())});
