@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_license/crux_license.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -72,9 +73,24 @@ void main() {
         find.bySemanticsLabel('Dismiss'),
         findsOneWidget,
         reason:
-            'The dismiss control must keep its Semantics wrapper — a Tooltip '
+            'The dismiss control must keep its semantic name; a Tooltip '
             'cannot work on this surface.',
       );
+      handle.dispose();
+    });
+
+    testWidgets('each control is one named Tab stop', (tester) async {
+      // A name on a parent Semantics node is not enough: the focused node is
+      // the button's own, and it is the one a screen reader announces on Tab.
+      // With the label on a wrapper this walk reported the dismiss stop as a
+      // nameless "button".
+      final handle = tester.ensureSemantics();
+      await _pump(tester);
+
+      final walk = await walkFocus(tester);
+      expectCleanFocusWalk(walk);
+      expect(walk.transcript, contains('Download'));
+      expect(walk.transcript, contains('Dismiss'));
       handle.dispose();
     });
 

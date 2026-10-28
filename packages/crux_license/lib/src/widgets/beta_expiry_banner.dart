@@ -128,26 +128,26 @@ class CruxBetaExpiryBanner extends StatelessWidget {
               // (a sibling of the routed content in `MaterialApp.builder`), so
               // the Navigator's Overlay is not an ancestor and a Tooltip would
               // throw "No Overlay widget found" the moment the banner appears.
-              // The accessible name is preserved via Semantics; the close glyph
-              // is conventional and the strip's download action carries a
-              // visible text label.
+              // The accessible name comes from the glyph's semanticLabel, which
+              // merges into the button's own focusable node. A Semantics
+              // wrapper around the IconButton does not: its label lands on a
+              // parent node while focus sits on the button's InkWell, so a
+              // screen reader announced the focused control as "button" with
+              // no name. The close glyph is conventional and the strip's
+              // download action carries a visible text label.
               //
               // This is deliberate, load-bearing, and verified correct in all
               // four products. Do not "fix" it into a tooltip.
-              Semantics(
-                label: strings.dismissLabel,
-                button: true,
-                child: IconButton(
-                  key: dismissButtonKey,
-                  onPressed: onDismiss,
-                  iconSize: sizing.iconSize,
-                  color: scheme.onTertiaryContainer,
-                  constraints: BoxConstraints(
-                    minWidth: sizing.touchTarget,
-                    minHeight: sizing.touchTarget,
-                  ),
-                  icon: const Icon(Icons.close),
+              IconButton(
+                key: dismissButtonKey,
+                onPressed: onDismiss,
+                iconSize: sizing.iconSize,
+                color: scheme.onTertiaryContainer,
+                constraints: BoxConstraints(
+                  minWidth: sizing.touchTarget,
+                  minHeight: sizing.touchTarget,
                 ),
+                icon: Icon(Icons.close, semanticLabel: strings.dismissLabel),
               ),
             ],
           ),
