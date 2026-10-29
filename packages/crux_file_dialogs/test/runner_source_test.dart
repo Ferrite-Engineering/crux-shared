@@ -48,4 +48,19 @@ void main() {
       expect(source, contains('gdk_x_error_handler(display, event)'));
     },
   );
+
+  test('a display on another machine gets the software renderer', () {
+    expect(header, contains('void crux_select_renderer_for_display('));
+    expect(source, contains('x_display_is_remote(gdk_display_get_name('));
+    expect(source, contains('g_setenv("FLUTTER_LINUX_RENDERER", "software"'));
+  });
+
+  test('with no session bus, the accessibility bridge is turned off', () {
+    expect(
+      header,
+      contains('void crux_skip_accessibility_bridge_without_session_bus('),
+    );
+    expect(source, contains('g_bus_get_sync(G_BUS_TYPE_SESSION'));
+    expect(source, contains('g_setenv("NO_AT_BRIDGE", "1"'));
+  });
 }

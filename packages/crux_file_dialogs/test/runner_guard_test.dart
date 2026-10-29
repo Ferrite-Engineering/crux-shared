@@ -30,10 +30,18 @@ const _cc = '''
 
 static void my_application_activate(GApplication* application) {
   if (x) { y(); }
+  crux_select_renderer_for_display("Product");
+  FlView* view = fl_view_new(project);
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
   crux_register_file_dialog_channel(view);
   crux_tolerate_refused_x_bell("Product");
   gtk_widget_grab_focus(GTK_WIDGET(view));
+}
+
+MyApplication* my_application_new() {
+  g_set_prgname(APPLICATION_ID);
+  crux_skip_accessibility_bridge_without_session_bus("Product");
+  return MY_APPLICATION(g_object_new(my_application_get_type(), nullptr));
 }
 ''';
 
@@ -99,5 +107,38 @@ void main() {
     expect(_check(linux: _linuxCmake.replaceFirst('X11', 'XX')), [
       contains('does not find X11'),
     ]);
+  });
+
+  test('a runner that keeps its own renderer probe is reported', () {
+    final findings = _check(
+      cc: _cc.replaceFirst('crux_select_renderer_for_display("Product");', ''),
+    );
+    expect(findings.single, contains('crux_select_renderer_for_display'));
+  });
+
+  test('a renderer choice after the view exists is reported', () {
+    final findings = _check(
+      cc: _cc
+          .replaceFirst('crux_select_renderer_for_display("Product");\n', '')
+          .replaceFirst(
+            'fl_register_plugins(',
+            'crux_select_renderer_for_display("Product");\n  '
+                'fl_register_plugins(',
+          ),
+    );
+    expect(findings.single, contains('before fl_view_new'));
+  });
+
+  test('a runner that leaves the accessibility bridge alone is reported', () {
+    final findings = _check(
+      cc: _cc.replaceFirst(
+        'crux_skip_accessibility_bridge_without_session_bus("Product");',
+        '',
+      ),
+    );
+    expect(
+      findings.single,
+      contains('crux_skip_accessibility_bridge_without_session_bus'),
+    );
   });
 }

@@ -6,11 +6,28 @@
 
 #include <flutter_linux/flutter_linux.h>
 
-// Runner support for file dialogs on a Linux session displayed remotely (ssh
-// X forwarding, VNC, ETX or NX, or a farm job started from another host),
-// where the desktop services a local session provides are missing or belong
-// to another machine. Every product's Linux runner compiles this file, the
+// Runner support for a Linux session displayed remotely (ssh X forwarding,
+// VNC, ETX or NX, or a farm job started from another host), where the desktop
+// services a local session provides are missing or belong to another machine:
+// the renderer choice, the accessibility bridge and the file dialogs. Every product's Linux runner compiles this file, the
 // open core's and the Pro overlay's alike, so they all behave the same.
+
+// Turns off GTK's accessibility bridge when no DBus session bus can be
+// reached. The bridge looks for the accessibility bus through the session
+// bus, and without one it only fails, noisily, on every window. A value the
+// user has set for NO_AT_BRIDGE is left alone. [app_name] starts the line
+// written to standard error when it does. GTK reads the variable while it
+// initializes, so call this before the application runs.
+void crux_skip_accessibility_bridge_without_session_bus(const gchar* app_name);
+
+// Chooses the software renderer when OpenGL would be slow or absent: when the
+// X display is on another machine, so every OpenGL frame crosses the network,
+// or when the display cannot create an OpenGL context at all. A value the
+// user has set for FLUTTER_LINUX_RENDERER, "opengl" included, is left alone.
+// [app_name] starts the line written to standard error when it switches. The
+// engine reads the variable when it is created, inside fl_view_new, so call
+// this before that.
+void crux_select_renderer_for_display(const gchar* app_name);
 
 // The method channel crux_file_dialogs' GtkFilePicker calls. The Dart side
 // names it kCruxFileDialogChannel, and a test holds the two spellings equal.

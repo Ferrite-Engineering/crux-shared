@@ -13,8 +13,11 @@
 /// - link X11, which the bell handler calls (`XSetErrorHandler`), found with
 ///   `pkg_check_modules(X11 ...)` in the top-level file;
 /// - include `crux_file_dialogs.h` and, inside `my_application_activate`,
-///   call `crux_register_file_dialog_channel(view)` and
-///   `crux_tolerate_refused_x_bell(...)` after `fl_register_plugins`.
+///   call `crux_select_renderer_for_display(...)` before `fl_view_new`, and
+///   `crux_register_file_dialog_channel(view)` and
+///   `crux_tolerate_refused_x_bell(...)` after `fl_register_plugins`;
+/// - call `crux_skip_accessibility_bridge_without_session_bus(...)` in
+///   `my_application_new`, before GTK starts.
 ///
 /// Comments are stripped first, so a call that is commented out does not
 /// count.
@@ -63,6 +66,18 @@ List<String> cruxCheckLinuxRunnerFileDialogs({
     );
     return findings;
   }
+  final renderer = activate.indexOf('crux_select_renderer_for_display(');
+  final view = activate.indexOf('fl_view_new(');
+  if (renderer < 0) {
+    findings.add(
+      'my_application_activate does not call '
+      'crux_select_renderer_for_display.',
+    );
+  } else if (view < 0 || view < renderer) {
+    findings.add(
+      'crux_select_renderer_for_display must come before fl_view_new.',
+    );
+  }
   final plugins = activate.indexOf('fl_register_plugins(');
   final channel = activate.indexOf('crux_register_file_dialog_channel(view)');
   final bell = activate.indexOf('crux_tolerate_refused_x_bell(');
@@ -84,6 +99,15 @@ List<String> cruxCheckLinuxRunnerFileDialogs({
   } else if (plugins < 0 || bell < plugins) {
     findings.add(
       'crux_tolerate_refused_x_bell must come after fl_register_plugins.',
+    );
+  }
+
+  final create = _functionBody(cc, 'my_application_new');
+  if (create == null ||
+      !create.contains('crux_skip_accessibility_bridge_without_session_bus(')) {
+    findings.add(
+      'my_application_new does not call '
+      'crux_skip_accessibility_bridge_without_session_bus.',
     );
   }
   return findings;

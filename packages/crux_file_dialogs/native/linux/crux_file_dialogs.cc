@@ -11,6 +11,97 @@
 #include <gdk/gdkx.h>
 #endif
 
+void crux_skip_accessibility_bridge_without_session_bus(const gchar* app_name) {
+  if (g_getenv("NO_AT_BRIDGE") != nullptr) {
+    return;
+  }
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GDBusConnection) bus =
+      g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &error);
+  if (bus != nullptr) {
+    return;
+  }
+  g_printerr(
+      "%s: no DBus session bus is reachable (%s); the accessibility bridge is "
+      "off.\n",
+      app_name, error != nullptr ? error->message : "unknown error");
+  g_setenv("NO_AT_BRIDGE", "1", FALSE);
+}
+
+#ifdef GDK_WINDOWING_X11
+// Whether an X display name such as "farm42:12.0", or "localhost:10.0" from
+// ssh X forwarding, names a host: the X server is then reached over the
+// network. ":0", "unix:0" and socket paths are local.
+static bool x_display_is_remote(const gchar* name) {
+  if (name == nullptr || name[0] == '/') {
+    return false;
+  }
+  const gchar* colon = strrchr(name, ':');
+  if (colon == nullptr || colon == name) {
+    return false;
+  }
+  g_autofree gchar* host = g_strndup(name, colon - name);
+  return g_strcmp0(host, "unix") != 0;
+}
+#endif
+
+// Flutter's GTK embedder presents frames through a GDK OpenGL context, and
+// falls back to its software renderer only when FLUTTER_LINUX_RENDERER is
+// "software".
+//
+// On a display on another machine (an ETX or VNC server reached from a farm
+// job, ssh X forwarding) OpenGL often works, but every frame crosses the
+// network and the app crawls; the software renderer draws on this machine and
+// sends finished images, which is far faster there. On a display that cannot
+// create a context at all (a remote X display without GLX, a virtual machine
+// without 3D acceleration) the embedder logs "Failed to create OpenGL
+// context" and draws nothing, so the window never appears; a throwaway window
+// asks for a context to find out.
+void crux_select_renderer_for_display(const gchar* app_name) {
+  if (g_getenv("FLUTTER_LINUX_RENDERER") != nullptr) {
+    return;
+  }
+
+#ifdef GDK_WINDOWING_X11
+  GdkDisplay* display = gdk_display_get_default();
+  if (display != nullptr && GDK_IS_X11_DISPLAY(display) &&
+      x_display_is_remote(gdk_display_get_name(display))) {
+    g_printerr(
+        "%s: the display %s is on another machine; using the software "
+        "renderer. Set FLUTTER_LINUX_RENDERER=opengl to override.\n",
+        app_name, gdk_display_get_name(display));
+    g_setenv("FLUTTER_LINUX_RENDERER", "software", FALSE);
+    return;
+  }
+#endif
+
+  GdkWindowAttr attributes = {};
+  attributes.window_type = GDK_WINDOW_TOPLEVEL;
+  attributes.wclass = GDK_INPUT_OUTPUT;
+  attributes.width = 1;
+  attributes.height = 1;
+  // Never shown: it exists only to ask the display for a context.
+  GdkWindow* probe = gdk_window_new(nullptr, &attributes, 0);
+  if (probe == nullptr) {
+    return;
+  }
+
+  g_autoptr(GError) error = nullptr;
+  GdkGLContext* context = gdk_window_create_gl_context(probe, &error);
+  gboolean usable =
+      context != nullptr && gdk_gl_context_realize(context, &error);
+  g_clear_object(&context);
+  gdk_window_destroy(probe);
+
+  if (!usable) {
+    g_printerr(
+        "%s: OpenGL is unavailable on this display (%s); falling back to the "
+        "software renderer. Set FLUTTER_LINUX_RENDERER=opengl to override.\n",
+        app_name, error != nullptr ? error->message : "unknown error");
+    g_setenv("FLUTTER_LINUX_RENDERER", "software", FALSE);
+  }
+}
+
 #ifdef GDK_WINDOWING_X11
 // The handler GDK installed, which every other error still goes to.
 static XErrorHandler gdk_x_error_handler = nullptr;
