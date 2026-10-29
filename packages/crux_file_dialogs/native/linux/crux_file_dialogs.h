@@ -9,8 +9,19 @@
 // Runner support for a Linux session displayed remotely (ssh X forwarding,
 // VNC, ETX or NX, or a farm job started from another host), where the desktop
 // services a local session provides are missing or belong to another machine:
-// the renderer choice, the accessibility bridge and the file dialogs. Every product's Linux runner compiles this file, the
-// open core's and the Pro overlay's alike, so they all behave the same.
+// the GTK backend, the renderer choice, the accessibility bridge and the file
+// dialogs. Every product's Linux runner compiles this file, the open core's
+// and the Pro overlay's alike, so they all behave the same.
+
+// Keeps the window on the X display a session forwards. GTK tries Wayland
+// first, and with WAYLAND_DISPLAY unset it connects to the default socket,
+// wayland-0, in XDG_RUNTIME_DIR. Over ssh X forwarding to a machine where the
+// same user is also logged in to a Wayland desktop, that socket exists, and
+// the window opens on that machine's own screen instead of the forwarded one.
+// So when DISPLAY is set and WAYLAND_DISPLAY is not, GTK is limited to X11.
+// A GDK_BACKEND the user has set is left alone. GTK picks its backend while
+// it initializes, so call this before the application runs.
+void crux_prefer_x11_when_only_display_is_set();
 
 // Turns off GTK's accessibility bridge when no DBus session bus can be
 // reached. The bridge looks for the accessibility bus through the session

@@ -16,7 +16,8 @@
 ///   call `crux_select_renderer_for_display(...)` before `fl_view_new`, and
 ///   `crux_register_file_dialog_channel(view)` and
 ///   `crux_tolerate_refused_x_bell(...)` after `fl_register_plugins`;
-/// - call `crux_skip_accessibility_bridge_without_session_bus(...)` in
+/// - call `crux_prefer_x11_when_only_display_is_set()` and then
+///   `crux_skip_accessibility_bridge_without_session_bus(...)` in
 ///   `my_application_new`, before GTK starts.
 ///
 /// Comments are stripped first, so a call that is commented out does not
@@ -102,9 +103,23 @@ List<String> cruxCheckLinuxRunnerFileDialogs({
     );
   }
 
-  final create = _functionBody(cc, 'my_application_new');
-  if (create == null ||
-      !create.contains('crux_skip_accessibility_bridge_without_session_bus(')) {
+  final create = _functionBody(cc, 'my_application_new') ?? '';
+  final x11 = create.indexOf('crux_prefer_x11_when_only_display_is_set(');
+  final bridge = create.indexOf(
+    'crux_skip_accessibility_bridge_without_session_bus(',
+  );
+  if (x11 < 0) {
+    findings.add(
+      'my_application_new does not call '
+      'crux_prefer_x11_when_only_display_is_set.',
+    );
+  } else if (bridge >= 0 && bridge < x11) {
+    findings.add(
+      'crux_prefer_x11_when_only_display_is_set must come before '
+      'crux_skip_accessibility_bridge_without_session_bus.',
+    );
+  }
+  if (bridge < 0) {
     findings.add(
       'my_application_new does not call '
       'crux_skip_accessibility_bridge_without_session_bus.',

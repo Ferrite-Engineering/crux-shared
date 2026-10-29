@@ -11,6 +11,12 @@
   before GTK starts when no DBus session bus is reachable.
 - `cruxCheckLinuxRunnerFileDialogs` now requires both: the renderer choice
   before `fl_view_new`, the bridge check in `my_application_new`.
+- `crux_prefer_x11_when_only_display_is_set`: limits GTK to X11 when
+  `DISPLAY` is set and `WAYLAND_DISPLAY` is not, so over ssh X forwarding to
+  a machine where the same user is also logged in to a Wayland desktop the
+  window opens on the forwarded display, not on that machine's own screen. A
+  `GDK_BACKEND` the user has set is left alone. `cruxCheckLinuxRunnerFileDialogs`
+  requires it in `my_application_new`, before the bridge check.
 
 ## 0.1.0
 

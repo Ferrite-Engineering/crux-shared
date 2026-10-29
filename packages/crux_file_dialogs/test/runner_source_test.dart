@@ -63,4 +63,14 @@ void main() {
     expect(source, contains('g_bus_get_sync(G_BUS_TYPE_SESSION'));
     expect(source, contains('g_setenv("NO_AT_BRIDGE", "1"'));
   });
+
+  test('with only DISPLAY set, GTK is limited to X11', () {
+    expect(
+      header,
+      contains('void crux_prefer_x11_when_only_display_is_set('),
+    );
+    expect(source, contains('g_getenv("GDK_BACKEND") != nullptr'));
+    expect(source, contains('g_getenv("WAYLAND_DISPLAY")'));
+    expect(source, contains('gdk_set_allowed_backends("x11")'));
+  });
 }

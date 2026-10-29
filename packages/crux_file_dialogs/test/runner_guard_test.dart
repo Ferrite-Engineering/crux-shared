@@ -40,6 +40,7 @@ static void my_application_activate(GApplication* application) {
 
 MyApplication* my_application_new() {
   g_set_prgname(APPLICATION_ID);
+  crux_prefer_x11_when_only_display_is_set();
   crux_skip_accessibility_bridge_without_session_bus("Product");
   return MY_APPLICATION(g_object_new(my_application_get_type(), nullptr));
 }
@@ -139,6 +140,38 @@ void main() {
     expect(
       findings.single,
       contains('crux_skip_accessibility_bridge_without_session_bus'),
+    );
+  });
+
+  test(
+    'a runner that lets GTK pick Wayland under X forwarding is reported',
+    () {
+      final findings = _check(
+        cc: _cc.replaceFirst('crux_prefer_x11_when_only_display_is_set();', ''),
+      );
+      expect(
+        findings.single,
+        contains('does not call crux_prefer_x11_when_only_display_is_set'),
+      );
+    },
+  );
+
+  test('an X11 preference after the bridge check is reported', () {
+    final findings = _check(
+      cc: _cc
+          .replaceFirst('crux_prefer_x11_when_only_display_is_set();\n', '')
+          .replaceFirst(
+            'crux_skip_accessibility_bridge_without_session_bus("Product");',
+            'crux_skip_accessibility_bridge_without_session_bus("Product");\n'
+                '  crux_prefer_x11_when_only_display_is_set();',
+          ),
+    );
+    expect(
+      findings.single,
+      contains(
+        'crux_prefer_x11_when_only_display_is_set must come before '
+        'crux_skip_accessibility_bridge_without_session_bus',
+      ),
     );
   });
 }
