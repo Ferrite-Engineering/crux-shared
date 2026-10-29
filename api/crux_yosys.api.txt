@@ -106,10 +106,11 @@ final class YosysRunFailure extends YosysRunResult
   final exitCode: int
   get kind -> YosysFailureKind
 class YosysRunRequest
-  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, List<String> slangOptions, Map<String, String> parameters, String? topModule, String? vhdlStandard, String? vhdlTopUnit, YosysFrontend frontend, required List<YosysSourceFile> sources})
+  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, List<String> slangOptions, Map<String, String> parameters, String? topModule, String? vhdlStandard, String? vhdlTopUnit, YosysFrontend frontend, bool allowUndefinedModules, required List<YosysSourceFile> sources})
   factory YosysRunRequest.fromPaths({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, required List<String> sourceFiles})
   ==(Object other) -> bool
   copyWith({List<String>? includePaths}) -> YosysRunRequest
+  final allowUndefinedModules: bool
   final defines: List<String>
   final extraCommands: List<String>
   final frontend: YosysFrontend

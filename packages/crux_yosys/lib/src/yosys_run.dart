@@ -133,6 +133,7 @@ class YosysRunRequest {
     this.frontend = YosysFrontend.verilog,
     this.slangOptions = const <String>[],
     this.parameters = const <String, String>{},
+    this.allowUndefinedModules = false,
   });
 
   /// Convenience constructor that takes a list of Verilog file paths.
@@ -218,8 +219,18 @@ class YosysRunRequest {
   /// breaks either rule is an invalid request.
   final Map<String, String> parameters;
 
-  /// A copy with [includePaths] replaced; every other field, [frontend]
-  /// included, is carried over.
+  /// Whether elaboration may leave instances of modules that no source
+  /// defines. `false` (the default) runs `hierarchy -check`, which fails with
+  /// ``Module `\X' referenced in module ... is not part of the design``.
+  /// `true` drops `-check`: Yosys keeps each such instance as a cell of the
+  /// undefined type, with the connections its instance makes (a positional
+  /// connection is named `$1`, `$2`, ...), no `port_directions`, and no
+  /// module entry for the type in the `write_json` output. For viewers that
+  /// draw the missing modules as black boxes.
+  final bool allowUndefinedModules;
+
+  /// A copy with [includePaths] replaced; every other field, [frontend] and
+  /// [allowUndefinedModules] included, is carried over.
   YosysRunRequest copyWith({List<String>? includePaths}) => YosysRunRequest(
     sources: sources,
     topModule: topModule,
@@ -231,6 +242,7 @@ class YosysRunRequest {
     frontend: frontend,
     slangOptions: slangOptions,
     parameters: parameters,
+    allowUndefinedModules: allowUndefinedModules,
   );
 
   /// Returns true if any source in [sources] is VHDL.
@@ -258,6 +270,7 @@ class YosysRunRequest {
     if (other.vhdlStandard != vhdlStandard) return false;
     if (other.vhdlTopUnit != vhdlTopUnit) return false;
     if (other.frontend != frontend) return false;
+    if (other.allowUndefinedModules != allowUndefinedModules) return false;
     if (!_listEq(other.sources, sources)) return false;
     if (!_listEq(other.defines, defines)) return false;
     if (!_listEq(other.includePaths, includePaths)) return false;
@@ -276,6 +289,7 @@ class YosysRunRequest {
     vhdlStandard,
     vhdlTopUnit,
     frontend,
+    allowUndefinedModules,
     Object.hashAll(sources),
     Object.hashAll(defines),
     Object.hashAll(includePaths),

@@ -165,4 +165,65 @@ library (cells) {
     },
     skip: skip,
   );
+
+  test(
+    'allowUndefinedModules keeps instances of a module no source defines',
+    () async {
+      final source = File('${tempDir.path}/top.v')
+        ..writeAsStringSync(
+          'module top(input a, output y);\n'
+          '  wire n;\n'
+          "  INV u1 (.A(a), .Y(n), .VDD(1'b1));\n"
+          '  BUF u2 (n, y);\n'
+          'endmodule\n',
+        );
+      final request = YosysRunRequest(
+        sources: <YosysSourceFile>[YosysSourceFile(source.path)],
+        topModule: 'top',
+      );
+      final runner = YosysRunner(tempDirectory: tempDir);
+
+      // By default `hierarchy -check` refuses the design.
+      final checked = await runner.run(request);
+      expect(checked, isA<YosysRunFailure>());
+      expect(
+        checked.stderr + checked.stdout,
+        contains('is not part of the design'),
+      );
+
+      final result = await runner.run(
+        YosysRunRequest(
+          sources: request.sources,
+          topModule: 'top',
+          allowUndefinedModules: true,
+        ),
+      );
+      expect(
+        result,
+        isA<YosysRunSuccess>(),
+        reason: result is YosysRunFailure ? result.stderr : '',
+      );
+      final json =
+          jsonDecode((result as YosysRunSuccess).rawJson)
+              as Map<String, Object?>;
+      final modules = json['modules']! as Map<String, Object?>;
+      expect(modules.keys, <String>['top']);
+      final top = modules['top']! as Map<String, Object?>;
+      final cells = top['cells']! as Map<String, Object?>;
+      final u1 = cells['u1']! as Map<String, Object?>;
+      final u2 = cells['u2']! as Map<String, Object?>;
+      expect(u1['type'], 'INV');
+      expect(u1.containsKey('port_directions'), isFalse);
+      expect(
+        (u1['connections']! as Map<String, Object?>).keys,
+        unorderedEquals(<String>['A', 'Y', 'VDD']),
+      );
+      // Positional connections are numbered.
+      expect(
+        (u2['connections']! as Map<String, Object?>).keys,
+        unorderedEquals(<String>[r'$1', r'$2']),
+      );
+    },
+    skip: skip,
+  );
 }

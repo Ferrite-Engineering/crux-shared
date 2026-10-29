@@ -91,6 +91,15 @@
   a path the caller chose, for a tool that needs the Verilog itself (an
   equivalence check's gold design). Never throws; `VhdlLowerResult` is
   sealed. `run` now lowers through it, so the two cannot drift.
+- **`YosysRunRequest.allowUndefinedModules`** (default `false`). When set, the
+  runner emits `hierarchy` without `-check`, so a design that instantiates a
+  module no source defines elaborates instead of failing with "is not part of
+  the design". Yosys keeps each such instance as a cell of the undefined type,
+  with its connections (positional ones named `$1`, `$2`, ...) and no
+  `port_directions`, and writes no module entry for the type. The flag is part
+  of the request's equality and hash, and it is carried through the VHDL
+  lowering step and `copyWith`. Requests that leave it unset produce the
+  same script as before.
 
 ### Fixed
 

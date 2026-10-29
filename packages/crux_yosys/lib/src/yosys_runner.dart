@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 ///
 /// ```text
 /// read_verilog [-I include] [-D define] file1.v file2.v ...
-/// hierarchy -check [-top top_module]
+/// hierarchy [-check] [-top top_module]
 /// proc
 /// [extra commands]
 /// write_json <temp file>
@@ -826,7 +826,12 @@ class YosysRunner {
         );
     }
 
-    final hierarchy = StringBuffer('hierarchy -check');
+    // `-check` fails the run on an instance of a module no source defines;
+    // a request that allows those leaves it off (see
+    // [YosysRunRequest.allowUndefinedModules]).
+    final hierarchy = StringBuffer(
+      request.allowUndefinedModules ? 'hierarchy' : 'hierarchy -check',
+    );
     final hasTop = request.topModule != null && request.topModule!.isNotEmpty;
     // yosys-slang applies the overrides itself, from its command file.
     final chparams = request.frontend == YosysFrontend.slang
@@ -998,6 +1003,7 @@ class YosysRunner {
       frontend: request.frontend,
       slangOptions: request.slangOptions,
       parameters: request.parameters,
+      allowUndefinedModules: request.allowUndefinedModules,
     );
   }
 
