@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **A session with no secret service is asked once** (crux-shared#62). On
+  Linux, once a call finds that libsecret cannot reach the secret service,
+  `FlutterSecureStorageSecretStore` fails every later call in the process
+  with the same cause, without reaching the plugin. Each call that reached it
+  printed a `libsecret_error` warning, and a licence check makes several, so
+  such sessions printed hundreds. A locked keyring is still asked every time.
+  Tests reset the state with
+  `FlutterSecureStorageSecretStore.debugForgetMissingSecretService`.
+
 ## 0.1.0
 
 Initial release.
