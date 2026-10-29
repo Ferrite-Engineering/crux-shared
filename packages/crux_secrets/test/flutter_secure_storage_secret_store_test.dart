@@ -5,6 +5,7 @@ import 'package:crux_secrets/crux_secrets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The one real [CruxSecretStore] backend, driven through the platform
@@ -41,6 +42,7 @@ void main() {
   tearDown(() {
     messenger.setMockMethodCallHandler(channel, null);
     debugDefaultTargetPlatformOverride = null;
+    FlutterSecureStorageSecretStore.debugForgetMissingSecretService();
   });
 
   final token = CruxSecretKey(product: 'simcrux', name: 'pr_annotation_token');
@@ -238,6 +240,85 @@ void main() {
             .having((e) => e.code, 'code', denied.code)
             .having((e) => e.message, 'message', denied.message),
       );
+    });
+  });
+
+  group('a session with no secret service', () {
+    // What flutter_secure_storage_linux sends when libsecret cannot reach the
+    // secret service over the session bus, as reported from a farm job
+    // displayed on another machine.
+    final unreachable = PlatformException(
+      code: 'Libsecret error',
+      message:
+          'secret_service_get_sync: Could not connect: No such file or '
+          'directory',
+    );
+
+    setUp(() => keychain.failWith = unreachable);
+
+    test('is asked once, then every call fails without asking', () async {
+      await _expectStoreException(() => store.read(token), key: token);
+      expect(keychain.calls, hasLength(1));
+
+      await _expectStoreException(() => store.read(token), key: token);
+      await _expectStoreException(
+        () => store.write(password, 'hunter2-the-secret'),
+        key: password,
+        secret: 'hunter2-the-secret',
+      );
+      await _expectStoreException(() => store.delete(token), key: token);
+      await _expectStoreException(() => store.deleteAll('simcrux'));
+
+      expect(
+        keychain.calls,
+        hasLength(1),
+        reason: 'each call that reaches the plugin prints a warning',
+      );
+    });
+
+    test('later failures keep the first cause, for diagnostics', () async {
+      await _expectStoreException(() => store.read(token), key: token);
+
+      Object? caught;
+      try {
+        await store.read(token);
+      } on CruxSecretStoreException catch (e) {
+        caught = e.cause;
+      }
+
+      expect(
+        caught,
+        isA<PlatformException>().having(
+          (e) => e.message,
+          'message',
+          unreachable.message,
+        ),
+      );
+    });
+
+    test('is shared by every store in the process', () async {
+      await _expectStoreException(() => store.read(token), key: token);
+
+      const another = FlutterSecureStorageSecretStore(
+        storage: FlutterSecureStorage(),
+      );
+      await _expectStoreException(() => another.read(token), key: token);
+
+      expect(keychain.calls, hasLength(1));
+    });
+
+    test('a locked keyring is asked again every time', () async {
+      // A locked keyring can be unlocked while the app runs.
+      keychain.failWith = PlatformException(
+        code: 'KeyringLocked',
+        message: 'KeyringLocked',
+      );
+      await _expectStoreException(() => store.read(token), key: token);
+
+      keychain.failWith = null;
+      keychain.items['crux.simcrux.pr_annotation_token'] = 'ghp_example';
+
+      expect(await store.read(token), 'ghp_example');
     });
   });
 

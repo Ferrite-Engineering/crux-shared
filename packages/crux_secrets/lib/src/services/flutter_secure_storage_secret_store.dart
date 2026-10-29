@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_secrets/src/secret_store.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// The `flutter_secure_storage` configuration every crux product's secret
@@ -34,6 +36,10 @@ const FlutterSecureStorage kCruxDefaultSecureStorage = FlutterSecureStorage(
 /// silently degrades to a file is not a credential store. Hosts that must
 /// keep working there should bind [InMemoryCruxSecretStore] and re-prompt.
 ///
+/// Once a call has found no secret service at all, every later call in the
+/// process fails the same way without reaching the plugin; see
+/// [_missingSecretService].
+///
 /// ### macOS uses the legacy file-based login keychain
 ///
 /// The default binds `MacOsOptions(usesDataProtectionKeychain: false)` rather
@@ -59,55 +65,84 @@ class FlutterSecureStorageSecretStore implements CruxSecretStore {
 
   final FlutterSecureStorage _storage;
 
-  @override
-  Future<String?> read(CruxSecretKey key) async {
+  /// The error from the first call that found no secret service to talk to,
+  /// kept for the life of the process.
+  ///
+  /// On Linux every call asks libsecret to reach the secret service over the
+  /// DBus session bus. A session with none (a farm job displayed on another
+  /// machine, a minimal install) fails each call the same way, and the plugin
+  /// prints a warning for each. The licence controller alone makes several
+  /// calls per check, so such a session filled its terminal with hundreds of
+  /// identical lines. After the first, calls fail at once with the same cause
+  /// and never reach the plugin. A secret service that starts later is found
+  /// at the next launch. A locked keyring is not this: it can be unlocked,
+  /// so it is asked again every time.
+  static Object? _missingSecretService;
+
+  /// Forgets [_missingSecretService], for tests that stage a session with no
+  /// secret service.
+  @visibleForTesting
+  static void debugForgetMissingSecretService() => _missingSecretService = null;
+
+  /// Whether [error] is the plugin reporting that libsecret could not reach
+  /// or open the secret service, which it prefixes with the libsecret call
+  /// that failed.
+  static bool _isMissingSecretService(Object error) =>
+      error is PlatformException &&
+      (error.message ?? '').startsWith('secret_service_get_sync');
+
+  /// Runs [call], translating every failure into a [CruxSecretStoreException]
+  /// with [message] and [key].
+  Future<T> _guard<T>(
+    Future<T> Function() call,
+    String message, {
+    CruxSecretKey? key,
+  }) async {
+    final missing = _missingSecretService;
+    if (missing != null) {
+      throw CruxSecretStoreException(message, key: key, cause: missing);
+    }
     try {
-      return await _storage.read(key: key.storageKey);
+      return await call();
     } on Object catch (e) {
-      throw CruxSecretStoreException(
-        'Could not read a stored credential from the system keychain.',
-        key: key,
-        cause: e,
-      );
+      if (_isMissingSecretService(e)) _missingSecretService = e;
+      throw CruxSecretStoreException(message, key: key, cause: e);
     }
   }
 
   @override
-  Future<void> write(CruxSecretKey key, String? value) async {
+  Future<String?> read(CruxSecretKey key) => _guard(
+    () => _storage.read(key: key.storageKey),
+    'Could not read a stored credential from the system keychain.',
+    key: key,
+  );
+
+  @override
+  Future<void> write(CruxSecretKey key, String? value) {
     // Empty means "cleared", not "an empty secret" — otherwise a user who
     // blanks the field and saves leaves a stored empty string behind that
     // every `!= null` check downstream reads as "still configured".
     if (value == null || value.isEmpty) {
-      return await delete(key);
+      return delete(key);
     }
-    try {
-      await _storage.write(key: key.storageKey, value: value);
-    } on Object catch (e) {
-      throw CruxSecretStoreException(
-        'Could not save a credential to the system keychain.',
-        key: key,
-        cause: e,
-      );
-    }
+    return _guard(
+      () => _storage.write(key: key.storageKey, value: value),
+      'Could not save a credential to the system keychain.',
+      key: key,
+    );
   }
 
   @override
-  Future<void> delete(CruxSecretKey key) async {
-    try {
-      await _storage.delete(key: key.storageKey);
-    } on Object catch (e) {
-      throw CruxSecretStoreException(
-        'Could not remove a credential from the system keychain.',
-        key: key,
-        cause: e,
-      );
-    }
-  }
+  Future<void> delete(CruxSecretKey key) => _guard(
+    () => _storage.delete(key: key.storageKey),
+    'Could not remove a credential from the system keychain.',
+    key: key,
+  );
 
   @override
-  Future<void> deleteAll(String product) async {
+  Future<void> deleteAll(String product) {
     final prefix = CruxSecretKey.prefixFor(product);
-    try {
+    return _guard(() async {
       // Scoped to this product's prefix — never `deleteAll()`, which would
       // wipe every other crux product's credentials out of the shared
       // keychain namespace.
@@ -115,11 +150,6 @@ class FlutterSecureStorageSecretStore implements CruxSecretStore {
       for (final k in all.keys.where((k) => k.startsWith(prefix))) {
         await _storage.delete(key: k);
       }
-    } on Object catch (e) {
-      throw CruxSecretStoreException(
-        'Could not clear stored credentials from the system keychain.',
-        cause: e,
-      );
-    }
+    }, 'Could not clear stored credentials from the system keychain.');
   }
 }
