@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **LibreLane 3.0.17 reads as verified.** `kLibreLane30Verified` is now
+  3.0.15 to 3.0.17. LibreLane 3.0.17 changes none of its own Python source
+  against 3.0.16 and pins the same PDKs; every committed LibreLane case
+  (the designed-path adder on sky130A, gf180mcuD and IHP sg13g2, the four
+  failing-run classes and the PicoRV32 mapping design) was run under it and
+  read to its hand-written expectation, so the 3.0 reader covers it
+  unchanged. Its sky130A run is a fixture beside the 3.0.16 one. Fixes #61.
 - **Readers refuse what is not a regular file.** A run directory is someone
   else's files: a step's `runtime.txt` linked to `/dev/zero` (which reports a
   length of zero and never ends) made `LibreLaneStepReader` read without
@@ -23,7 +30,8 @@
 - **LibreLane run readers, one per verified minor line.**
   `LibreLaneReaders` detects the release from `resolved.json`
   (`meta.librelane_version`, then `meta.openlane_version`) and selects
-  `LibreLane30RunReader`, verified for exactly 3.0.15 and 3.0.16
+  `LibreLane30RunReader`, verified for exactly 3.0.15 and 3.0.16 (3.0.17
+  since)
   (`kLibreLane30Verified`); any other release is read by the nearest older
   line's reader with `FlowRunRef.verified` false and a
   `FlowReaderUnsupported` reason. `LibreLaneStepReader` (status from

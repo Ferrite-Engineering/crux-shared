@@ -44,7 +44,7 @@ void main() {
     expect(a.hashCode, const LibreLaneVersion(3, 0, 16).hashCode);
     expect(a == LibreLaneVersion.tryParse('3.0.16.dev1'), isFalse);
     expect('$a', '3.0.16');
-    expect('$kLibreLane30Verified', '3.0.15 to 3.0.16');
+    expect('$kLibreLane30Verified', '3.0.15 to 3.0.17');
   });
 
   test('looksLikeRun', () {

@@ -117,8 +117,15 @@ configurations, the regenerator and the weekly live re-run. Captured
 
 Eight cases: on 3.0.16 `sky130A_met`, `sky130A_timing`, `sky130A_drc`,
 `sky130A_antenna`, `sky130A_stopped`, `gf180mcuD_met` and `ihp-sg13g2_met`,
-and on 3.0.15 `sky130A_met`. Copied by a script that reads SimCrux's
-fixtures and writes these; per case:
+and on 3.0.15 `sky130A_met`. A ninth, 3.0.17 `sky130A_met`, is copied
+from SimCrux's `3.0.17/sky130A_met` capture (LibreLane 3.0.17 at
+`64ef808`, the same PDK versions, captured 2026-10-29 on Linux x64 by
+SimCrux's weekly live workflow; SimCrux's `PROVENANCE.md` has the run).
+Copied by a script that reads SimCrux's fixtures and writes these; the same
+copy rerun over SimCrux's 3.0.16 `sky130A_met` and `sky130A_timing`
+reproduces the committed files byte for byte, apart from line endings and
+the `differs_by_platform` note SimCrux added to the timing case's
+expectation afterwards. Per case:
 
 - `case.expected.json` and `exit_code.txt`, unchanged. The expectations
   were written by hand from each configuration's intent and from
@@ -134,7 +141,8 @@ fixtures and writes these; per case:
   key on its presence), and `runtime.txt` unchanged.
 - The post-PnR STA step's corner directories with `max.rpt` and `min.rpt`:
   the nominal typical corner's listings unchanged for 3.0.16 `sky130A_met`,
-  `sky130A_timing` and 3.0.15 `sky130A_met`, zero-byte placeholders for
+  `sky130A_timing`, 3.0.15 `sky130A_met` and 3.0.17 `sky130A_met`,
+  zero-byte placeholders for
   every other corner and case (as SimCrux trims them).
 - `06-yosys-synthesis/path_adder.nl.v.json` (the synthesis sidecar),
   unchanged, for `sky130A_timing` only.

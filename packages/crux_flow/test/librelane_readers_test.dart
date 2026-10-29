@@ -15,6 +15,7 @@ const _root = 'test/fixtures/librelane';
 
 /// Every case of the fixture set, by release. A missing directory fails.
 const Map<String, List<String>> _cases = {
+  '3.0.17': ['sky130A_met'],
   '3.0.16': [
     'sky130A_met',
     'sky130A_timing',
@@ -74,14 +75,22 @@ void main() {
       }
     });
 
-    test('the 3.0 reader is verified for exactly 3.0.15 and 3.0.16', () {
+    test('the 3.0 reader is verified for exactly 3.0.15 to 3.0.17', () {
       expect(kLibreLane30Verified.first.raw, '3.0.15');
-      expect(kLibreLane30Verified.last.raw, '3.0.16');
+      expect(kLibreLane30Verified.last.raw, '3.0.17');
       bool verified(String v) =>
           kLibreLane30Verified.contains(LibreLaneVersion.tryParse(v)!);
       expect(verified('3.0.15'), isTrue);
       expect(verified('3.0.16'), isTrue);
-      for (final v in ['3.0.14', '3.0.17', '3.0.16.dev1', '3.1.0', '2.3.9']) {
+      expect(verified('3.0.17'), isTrue);
+      for (final v in [
+        '3.0.14',
+        '3.0.18',
+        '3.0.16.dev1',
+        '3.0.17.dev4',
+        '3.1.0',
+        '2.3.9',
+      ]) {
         expect(verified(v), isFalse, reason: v);
       }
     });
@@ -99,10 +108,11 @@ void main() {
     test('a verified release selects its line, verified', () {
       expect(pick('3.0.15'), ('3.0', true));
       expect(pick('3.0.16'), ('3.0', true));
+      expect(pick('3.0.17'), ('3.0', true));
     });
 
     test('anything else selects the nearest older reader, unverified', () {
-      expect(pick('3.0.17'), ('3.0', false));
+      expect(pick('3.0.18'), ('3.0', false));
       expect(pick('3.1.0'), ('3.0', false));
       expect(pick('4.0.0'), ('3.0', false));
       // Older than every line: the oldest reader.
@@ -195,7 +205,7 @@ void main() {
   });
 
   group('LibreLane30RunReader against its own fixture directories', () {
-    for (final version in ['3.0.15', '3.0.16']) {
+    for (final version in ['3.0.15', '3.0.16', '3.0.17']) {
       test('$version sky130A_met', () async {
         final reading = await const LibreLane30RunReader().read(
           _run(version, 'sky130A_met'),
@@ -281,13 +291,13 @@ void main() {
       final resolved = File(p.join(copy.path, 'resolved.json'));
       final json =
           jsonDecode(resolved.readAsStringSync()) as Map<String, Object?>;
-      (json['meta']! as Map<String, Object?>)['librelane_version'] = '3.0.17';
+      (json['meta']! as Map<String, Object?>)['librelane_version'] = '3.0.18';
       resolved.writeAsStringSync(jsonEncode(json));
       final reading = await LibreLaneReaders.standard().read(copy.path);
       expect(reading.verdict, FlowVerdict.met);
       expect(reading.verified, isFalse);
       expect(reading.unsupported, FlowReaderUnsupported.versionUnknown);
-      expect(reading.version?.raw, '3.0.17');
+      expect(reading.version?.raw, '3.0.18');
     });
 
     test('a run without resolved.json is unverified, layout unknown', () async {

@@ -97,9 +97,9 @@ class LibreLaneCheck {
 }
 
 /// The checks of the LibreLane 3.0 line, from `librelane/steps/checker.py`
-/// at 3.0.15 and 3.0.16 (identical in both): every `MetricChecker` and
-/// `TimingViolations` subclass with its metric, error variable, corner
-/// variable and threshold, plus the two antenna counts
+/// at 3.0.15, 3.0.16 and 3.0.17 (identical in all three): every
+/// `MetricChecker` and `TimingViolations` subclass with its metric, error
+/// variable, corner variable and threshold, plus the two antenna counts
 /// `Misc.ReportManufacturability` reports and no checker fails on.
 ///
 /// Lint warnings (`design__lint_warning__count`, error off by default) are

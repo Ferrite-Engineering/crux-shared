@@ -171,8 +171,9 @@ abstract class LibreLaneRunReader {
   });
 }
 
-/// The reader for the LibreLane 3.0 line, verified against 3.0.15 and
-/// 3.0.16 (sky130A on both, gf180mcuD and IHP sg13g2 on 3.0.16).
+/// The reader for the LibreLane 3.0 line, verified against 3.0.15, 3.0.16
+/// and 3.0.17 (sky130A on all three, gf180mcuD and IHP sg13g2 on 3.0.16 and
+/// 3.0.17).
 ///
 /// What it reads, all of it inside the run root:
 ///
@@ -508,7 +509,7 @@ class LibreLane30RunReader extends LibreLaneRunReader {
 /// The releases [LibreLane30RunReader] was verified against.
 const LibreLaneVersionRange kLibreLane30Verified = LibreLaneVersionRange(
   LibreLaneVersion(3, 0, 15),
-  LibreLaneVersion(3, 0, 16),
+  LibreLaneVersion(3, 0, 17),
 );
 
 /// The LibreLane readers, one per verified minor line, and how a run is

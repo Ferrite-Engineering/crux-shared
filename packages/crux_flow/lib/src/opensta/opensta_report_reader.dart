@@ -58,8 +58,8 @@ class OpenStaReport {
 /// the per-corner `max.rpt` and `min.rpt` LibreLane's post-PnR STA step
 /// writes.
 ///
-/// Three properties of these listings, measured on LibreLane 3.0.15 and
-/// 3.0.16 runs, shape the reader:
+/// Three properties of these listings, measured on LibreLane 3.0.15 to
+/// 3.0.17 runs, shape the reader:
 ///
 /// - **Order.** The listing is sorted by slack only to the six decimals it
 ///   prints, so the reader sorts by the printed slack itself and ranks from
