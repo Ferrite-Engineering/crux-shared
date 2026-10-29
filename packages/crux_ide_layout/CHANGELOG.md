@@ -6,6 +6,18 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **`cruxOpenUrl` and `cruxRevealFile`.** Open a link or reveal a file, and
+  when no browser or file manager could (a Linux host displayed remotely
+  often has neither), show an error toast naming the address or the path
+  with a Copy action, and write the same line to standard error. The words
+  are `CruxExternalOpenStrings` in English, Simplified Chinese, Japanese and
+  Korean. `cruxReportingUrlLauncher` wraps any launcher the same way.
+  `CruxHelpLink` opens through `cruxOpenUrl`.
+- **`CruxToasts.showErrorFor`**: the context-free error toast with its
+  message and action built from the host window's context, so they follow
+  its locale.
+- Depends on `crux_io`.
+
 - **`showCruxDialog` states its closed loop on the root navigator too**
   (crux-shared#58). It relied on `showDialog`'s default; it now passes
   `TraversalEdgeBehavior.closedLoop` itself, as it already did for a tab's

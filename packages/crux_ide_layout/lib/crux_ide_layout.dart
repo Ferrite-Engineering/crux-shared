@@ -31,6 +31,10 @@
 ///   shortcut/click can't stack two copies of an exclusive modal surface.
 /// - `CruxHelpLink` — the muted contextual help icon linking a surface to
 ///   its product-website documentation page.
+/// - `cruxOpenUrl` / `cruxRevealFile`: open a link or reveal a file, and
+///   say so (an error toast naming the address or path, with Copy) when no
+///   browser or file manager could; every product calls these, never
+///   `launchUrl` or `revealInFileManager` directly.
 /// - `CruxFocusRegion` / `CruxFocusRegionScope` — keyboard regions: Tab
 ///   stays inside a region until it is exhausted, and F6 / Shift+F6 jump
 ///   between regions. `CruxIdeLayout` makes each of its four panes a region.
@@ -85,6 +89,7 @@ export 'src/crux_segmented_control.dart';
 export 'src/crux_toast.dart' show CruxToastAction, CruxToasts;
 export 'src/dock_restore_frame.dart';
 export 'src/escape_dismissible.dart';
+export 'src/external_open.dart';
 export 'src/feedback.dart';
 export 'src/focus_regions.dart' hide CruxFocusRegionState;
 export 'src/help_link.dart';

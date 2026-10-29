@@ -5,7 +5,8 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:crux_app_info/crux_app_info.dart';
-import 'package:crux_io/crux_io.dart' show revealInFileManager;
+import 'package:crux_ide_layout/crux_ide_layout.dart'
+    show CruxFileRevealer, cruxOpenUrl, cruxRevealFile;
 import 'package:crux_issue_reporter/src/models/crux_issue_category.dart';
 import 'package:crux_issue_reporter/src/models/crux_issue_reporter_config.dart';
 import 'package:crux_issue_reporter/src/models/crux_issue_session_context.dart';
@@ -14,10 +15,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart' show Level;
-import 'package:url_launcher/url_launcher.dart';
 
 /// Signature for opening a URL; injectable so tests can capture the launch
-/// without a platform channel. Defaults to `url_launcher`'s [launchUrl].
+/// without a platform channel. Defaults to `cruxOpenUrl`, which says so when
+/// no browser opens the page.
 typedef CruxUrlLauncherFn = Future<bool> Function(Uri url);
 
 /// Signature for writing plain text to the clipboard; injectable for tests.
@@ -80,8 +81,9 @@ class CruxIssueReporterService {
     required this.config,
     CruxUrlLauncherFn? urlLauncher,
     CruxClipboardWriter? clipboardWriter,
+    this.fileRevealer,
     this.now,
-  }) : _urlLauncher = urlLauncher ?? launchUrl,
+  }) : _urlLauncher = urlLauncher ?? cruxOpenUrl,
        _clipboardWriter = clipboardWriter ?? _defaultClipboardWriter;
 
   /// The per-product configuration: repository slug, labels, template, product
@@ -89,6 +91,10 @@ class CruxIssueReporterService {
   final CruxIssueReporterConfig config;
 
   final CruxUrlLauncherFn _urlLauncher;
+
+  /// Reveals the saved screenshot; `crux_io`'s `revealInFileManager` when
+  /// null. Injectable so tests spawn no file manager.
+  final CruxFileRevealer? fileRevealer;
   final CruxClipboardWriter _clipboardWriter;
 
   /// Optional clock injection for deterministic screenshot file names.
@@ -346,9 +352,11 @@ class CruxIssueReporterService {
     String? screenshotPath;
     if (screenshotPng != null && !kIsWeb) {
       screenshotPath = await _saveScreenshot(screenshotPng);
-      // Best-effort, like every reveal: a file manager that will not open
-      // never fails the submission.
-      if (screenshotPath != null) await revealInFileManager(screenshotPath);
+      // A file manager that will not open never fails the submission;
+      // cruxRevealFile tells the user where the screenshot is instead.
+      if (screenshotPath != null) {
+        await cruxRevealFile(screenshotPath, reveal: fileRevealer);
+      }
     }
 
     final url = buildIssueUrl(title: title, body: body);

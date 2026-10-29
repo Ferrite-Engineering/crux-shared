@@ -107,10 +107,12 @@ final Provider<http.Client> telemetryHttpClientProvider = Provider<http.Client>(
 ///
 /// **Has no working default**: invoking the unbound launcher throws, because
 /// silently doing nothing when the user taps "Learn more" on a privacy
-/// disclosure is the worse failure. Every product binds this to `url_launcher`:
+/// disclosure is the worse failure. Every product binds this to
+/// `crux_ide_layout`'s `cruxOpenUrl`, which opens the link with `url_launcher`
+/// and says so when no browser could:
 ///
 /// ```dart
-/// telemetryUrlLauncherProvider.overrideWithValue(launchUrl),
+/// telemetryUrlLauncherProvider.overrideWithValue(cruxOpenUrl),
 /// ```
 final Provider<CruxTelemetryUrlLauncher> telemetryUrlLauncherProvider =
     Provider<CruxTelemetryUrlLauncher>(
@@ -121,8 +123,8 @@ final Provider<CruxTelemetryUrlLauncher> telemetryUrlLauncherProvider =
 Future<bool> _unwiredLauncher(Uri uri) {
   throw UnimplementedError(
     'telemetryUrlLauncherProvider has no default binding. Override it with '
-    "url_launcher's launchUrl (or an equivalent) so the consent surfaces can "
-    'open $uri.',
+    "crux_ide_layout's cruxOpenUrl (or an equivalent) so the consent "
+    'surfaces can open $uri.',
   );
 }
 

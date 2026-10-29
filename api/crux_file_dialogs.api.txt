@@ -1,0 +1,18 @@
+# Public API surface of package:crux_file_dialogs/crux_file_dialogs.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class GtkFilePicker extends FilePickerPlatform
+  GtkFilePicker({FilePickerPlatform? fallback, MethodChannel channel})
+  final channel: MethodChannel
+  final fallback: FilePickerPlatform?
+  getDirectoryPath({AndroidSAFOptions? androidSafOptions, String? dialogTitle, String? initialDirectory, bool lockParentWindow}) -> Future<String?>
+  pickFiles({AndroidSAFOptions? androidSafOptions, FileType type, List<String>? allowedExtensions, String? dialogTitle, String? initialDirectory, bool allowMultiple, bool cancelUploadOnWindowBlur, bool lockParentWindow, bool readSequential, bool withData, bool withReadStream, int compressionQuality, void Function(FilePickerStatus)? onFileLoading}) -> Future<FilePickerResult?>
+  saveFile({FileType type, List<String>? allowedExtensions, String? dialogTitle, String? initialDirectory, bool lockParentWindow, required String fileName, required Uint8List bytes, void Function(FilePickerStatus)? onFileLoading}) -> Future<String?>
+get kCruxFileDialogChannel -> String
+useGtkFileDialogsOnLinux() -> void

@@ -76,6 +76,7 @@ Every package has its own README with the full surface and the canonical wiring 
 | [`crux_projects_ui`](packages/crux_projects_ui) | The Flutter chrome over `crux_projects`: the project switcher dialog, the recent-projects panel, and the empty-workspace state. Parameterized by product strings and a tier badge, so SimCrux and LintCrux share one implementation. |
 | [`crux_secrets`](packages/crux_secrets) | A narrow read/write/delete seam over the OS keychain (Keychain on macOS, DPAPI-backed credential storage on Windows, libsecret on Linux), plus an in-memory fake for tests. The place credentials go when `shared_preferences` plain text would be wrong — SimCrux PR-annotation auth tokens and the Enterprise shared-team database password. |
 | [`crux_file_watcher`](packages/crux_file_watcher) | File-system watcher with debounced events. |
+| [`crux_file_dialogs`](packages/crux_file_dialogs) | File dialogs on Linux that work on a remote display: `GtkFilePicker` sends file_picker's calls to the runner's `crux/file_dialog` channel, an in-process GTK file chooser that needs no DBus portal, and `native/linux/` is the runner C++ every product compiles, with the guard each product runs over its runner. |
 
 ## Layout
 

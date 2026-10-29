@@ -182,6 +182,49 @@ void main() {
       ]);
       expect(commands.last.arguments, <String>['/home/me/rtl']);
     });
+
+    // A host displayed remotely often has no session bus for D-Bus and no
+    // desktop for xdg-open to hand the folder to. Reporting that as revealed
+    // left the user waiting for a window that never opened.
+    //
+    // MUTATION: ignoring xdg-open's exit status turns this red.
+    test('answers false when xdg-open fails too', () async {
+      final revealed = await revealInFileManager(
+        file,
+        operatingSystem: 'linux',
+        environment: const <String, String>{'PATH': '/usr/bin'},
+        runCommand: recording(<int>[1, 3]),
+      );
+
+      expect(revealed, isFalse);
+      expect(commands, hasLength(2));
+    });
+  });
+
+  test('answers false when Finder refuses the reveal', () async {
+    // MUTATION: ignoring open's exit status turns this red.
+    final revealed = await revealInFileManager(
+      '/Users/me/rtl/gone.vcd',
+      operatingSystem: 'macos',
+      environment: const <String, String>{'PATH': '/usr/bin:/bin'},
+      exists: (_) => true,
+      runCommand: recording(<int>[1]),
+    );
+
+    expect(revealed, isFalse);
+  });
+
+  test('a spawned Explorer counts whatever it exits with', () async {
+    // Explorer answers 1 after a successful `/select,`.
+    final revealed = await revealInFileManager(
+      r'C:\rtl\wave.vcd',
+      operatingSystem: 'windows',
+      environment: const <String, String>{'PATH': r'C:\Windows'},
+      exists: <String>{r'C:\Windows\explorer.EXE'}.contains,
+      runCommand: recording(<int>[1]),
+    );
+
+    expect(revealed, isTrue);
   });
 
   test('an unsupported platform reveals nothing', () async {

@@ -17,6 +17,10 @@ dependencies:
   # focus-walk harness the dialog and toast tests use.
   crux_a11y:
     path: ../crux_a11y
+  # revealInFileManager, behind cruxRevealFile. A pure-Dart leaf, so the edge
+  # adds no sibling dependency of its own.
+  crux_io:
+    path: ../crux_io
   flutter:
     sdk: flutter
   panes: ^1.3.0

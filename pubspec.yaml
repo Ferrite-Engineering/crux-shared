@@ -28,6 +28,7 @@ workspace:
   - packages/crux_about_dialog
   - packages/crux_ide_layout
   - packages/crux_dock
+  - packages/crux_file_dialogs
   - packages/crux_file_watcher
   - packages/crux_settings
   - packages/crux_settings_ui

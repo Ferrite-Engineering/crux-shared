@@ -86,21 +86,45 @@ abstract final class CruxToasts {
   /// (the phone and tablet path, which has no toast stack), or the host has no
   /// overlay. A debug build also writes a line to standard error.
   static bool showInfo(String message, {CruxToastAction? action, Key? key}) =>
-      _showWithoutContext(message, error: false, action: action, key: key);
+      _showWithoutContext(
+        (_) => message,
+        plain: message,
+        error: false,
+        action: action == null ? null : (_) => action,
+        key: key,
+      );
 
   /// Shows [message] as an error toast without a [BuildContext]. As
   /// [showInfo], with the error behaviour of `showCruxErrorSnack`: it stays
   /// until the user closes it or a newer toast replaces it, and it is
   /// announced assertively.
   static bool showError(String message, {CruxToastAction? action, Key? key}) =>
-      _showWithoutContext(message, error: true, action: action, key: key);
+      _showWithoutContext(
+        (_) => message,
+        plain: message,
+        error: true,
+        action: action == null ? null : (_) => action,
+        key: key,
+      );
+
+  /// As [showError], with the message and the action built from the host's
+  /// context, so their words follow the host window's locale: for feedback
+  /// raised where no context is at hand that still has to be localized (a
+  /// link no browser opened, from a launcher seam).
+  static bool showErrorFor(
+    String Function(BuildContext context) message, {
+    CruxToastAction Function(BuildContext context)? action,
+    Key? key,
+  }) => _showWithoutContext(message, error: true, action: action, key: key);
 
   static bool _showWithoutContext(
-    String message, {
+    String Function(BuildContext context) messageFor, {
     required bool error,
-    required CruxToastAction? action,
+    required CruxToastAction Function(BuildContext context)? action,
     required Key? key,
+    String plain = '',
   }) {
+    var message = plain;
     try {
       final overlay = _mostRecentlyFocusedHost();
       if (overlay == null) {
@@ -108,28 +132,32 @@ abstract final class CruxToasts {
         return false;
       }
       // The overlay's own context sits above its entries, so it carries the
-      // theme and the view the toast and its announcement need.
+      // theme, the locale and the view the toast and its announcement need.
       final context = overlay.context;
+      message = messageFor(context);
       final tokens = CruxDesktopTokens.of(context);
       if (tokens == null) {
         _noHost(message, 'the host theme is not a Crux Desktop theme');
         return false;
       }
+      final toastAction = action?.call(context);
       (_stacks[overlay] ??= _ToastStack(overlay)).show(
         _ToastData(
           message: message,
           error: error,
           tokens: tokens,
           key: key,
-          action: action,
+          action: toastAction,
         ),
         duration: error
             ? null
-            : (action == null
+            : (toastAction == null
                   ? kCruxInfoSnackDuration
                   : kCruxActionSnackDuration),
       );
-      final spoken = action == null ? message : '$message ${action.label}';
+      final spoken = toastAction == null
+          ? message
+          : '$message ${toastAction.label}';
       announceCrux(context, spoken, assertive: error);
       return true;
     } on Object catch (e) {

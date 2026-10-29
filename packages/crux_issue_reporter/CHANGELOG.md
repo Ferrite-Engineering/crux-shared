@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- The issue page opens through `cruxOpenUrl` and the saved screenshot is
+  shown through `cruxRevealFile`, so a host with no browser or file manager
+  is told the address and the path. `CruxIssueReporterService.fileRevealer`
+  is the new seam for tests. No longer depends on `crux_io` or
+  `url_launcher` directly.
+
 - **Export namespace narrowed by 7 symbols.** `cruxIssueTileKey`, `cruxLocaleTag`, `kCruxIssuePreviewBodyKey`, `kCruxIssuePreviewToggleKey`, `kCruxIssueReporterMinTouchTarget`, `kCruxIssueScreenshotCategoryId`, `kCruxIssueTitleFieldKey` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **The category toggles are checkboxes** (`CruxFormRow.checkbox`): the

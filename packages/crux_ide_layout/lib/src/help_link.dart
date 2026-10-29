@@ -1,11 +1,12 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_ide_layout/src/external_open.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// A small, unobtrusive help icon that opens [url] in the system browser —
-/// the suite-standard contextual documentation link.
+/// the suite-standard contextual documentation link. A link no browser opens
+/// is reported by [cruxOpenUrl].
 ///
 /// Renders as a muted `Icons.help_outline` icon button. Hosts place one
 /// beside a setting section header or in a complex dialog's title row,
@@ -43,7 +44,7 @@ class CruxHelpLink extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: onTap ?? () => launchUrl(Uri.parse(url)),
+        onTap: onTap ?? () => cruxOpenUrl(Uri.parse(url)),
         child: Padding(
           padding: const EdgeInsets.all(4),
           child: Icon(Icons.help_outline, size: 16, color: color),

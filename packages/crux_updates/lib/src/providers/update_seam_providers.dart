@@ -132,10 +132,11 @@ void _ignoreServerTime(DateTime _) {}
 ///
 /// **Has no working default**: invoking the unbound launcher throws, because
 /// silently doing nothing when the user taps "Update Now" is the worse failure.
-/// Every product binds this to `url_launcher`:
+/// Every product binds this to `crux_ide_layout`'s `cruxOpenUrl`, which
+/// opens the link with `url_launcher` and says so when no browser could:
 ///
 /// ```dart
-/// updateUrlLauncherProvider.overrideWithValue(launchUrl),
+/// updateUrlLauncherProvider.overrideWithValue(cruxOpenUrl),
 /// ```
 final Provider<CruxUpdateUrlLauncher> updateUrlLauncherProvider =
     Provider<CruxUpdateUrlLauncher>(
@@ -146,7 +147,7 @@ final Provider<CruxUpdateUrlLauncher> updateUrlLauncherProvider =
 Future<bool> _unwiredLauncher(Uri uri) {
   throw UnimplementedError(
     'updateUrlLauncherProvider has no default binding. Override it with '
-    "url_launcher's launchUrl (or an equivalent) so the update banner can "
+    "crux_ide_layout's cruxOpenUrl (or an equivalent) so the update banner can "
     'open $uri.',
   );
 }

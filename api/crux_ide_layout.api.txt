@@ -94,6 +94,18 @@ class CruxDockRestoreFrame extends StatelessWidget
   static const centerKey: Key
   static const leftBarKey: Key
   static const rightBarKey: Key
+class CruxExternalOpenStrings
+  const CruxExternalOpenStrings({required String Function(String) fileNotRevealed, required String Function(String) linkNotOpened, required String copy})
+  factory CruxExternalOpenStrings.forLocale(Locale locale)
+  factory CruxExternalOpenStrings.of(BuildContext context)
+  final copy: String
+  final fileNotRevealed: String Function(String)
+  final linkNotOpened: String Function(String)
+  static final en: CruxExternalOpenStrings
+  static final ja: CruxExternalOpenStrings
+  static final ko: CruxExternalOpenStrings
+  static final zh: CruxExternalOpenStrings
+typedef CruxFileRevealer = Future<bool> Function(String)
 class CruxFocusRegion extends StatefulWidget
   const CruxFocusRegion({Key? key, String? semanticLabel, bool primary, required Widget child})
   createState() -> State<CruxFocusRegion>
@@ -247,7 +259,9 @@ final abstract class CruxToasts
   static hide(BuildContext context) -> void
   static show(BuildContext context, String message, {CruxToastAction? action, Key? key, required Duration infoDuration, required bool error}) -> bool
   static showError(String message, {CruxToastAction? action, Key? key}) -> bool
+  static showErrorFor(String Function(BuildContext) message, {CruxToastAction Function(BuildContext)? action, Key? key}) -> bool
   static showInfo(String message, {CruxToastAction? action, Key? key}) -> bool
+typedef CruxUrlLauncher = Future<bool> Function(Uri)
 class EscapeDismissible extends StatelessWidget
   const EscapeDismissible({Key? key, required Widget child})
   build(BuildContext context) -> Widget
@@ -285,6 +299,9 @@ class PlatformContextMenu extends StatelessWidget
 announceCrux(BuildContext context, String message, {bool assertive}) -> void
 confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirmKey, Key? dialogKey, required String body, required String cancelLabel, required String confirmLabel, required String title}) -> Future<bool>
 cruxFocusIsInPushedRoute([FocusNode? focus]) -> bool
+cruxOpenUrl(Uri uri) -> Future<bool>
+cruxReportingUrlLauncher(Future<bool> Function(Uri) launch) -> Future<bool> Function(Uri)
+cruxRevealFile(String path, {Future<bool> Function(String)? reveal}) -> Future<bool>
 cruxTextInputFocused() -> bool
 hideCruxReloadPrompt(BuildContext context) -> void
 hideCruxSnack(BuildContext context) -> void

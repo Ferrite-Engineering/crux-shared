@@ -76,7 +76,7 @@ class CruxIssueReporterLogBuffer extends ChangeNotifier
   static const defaultCapacity: int
   static final instance: CruxIssueReporterLogBuffer
 class CruxIssueReporterService
-  const CruxIssueReporterService({DateTime Function()? now, Future<bool> Function(Uri)? urlLauncher, Future<void> Function(String)? clipboardWriter, required CruxIssueReporterConfig config})
+  const CruxIssueReporterService({DateTime Function()? now, Future<bool> Function(String)? fileRevealer, Future<bool> Function(Uri)? urlLauncher, Future<void> Function(String)? clipboardWriter, required CruxIssueReporterConfig config})
   buildAppEnvCategory({String? description, required ApplicationBuildInfo info, required String localeTag, required String title, required double devicePixelRatio}) -> CruxIssueCategory
   buildDiagnosticsCategory({String? description, required CruxIssueReporterLogBuffer buffer, required String logEmptyPlaceholder, required String report, required String title}) -> CruxIssueCategory
   buildIssueUrl({String? body, String? platform, required String title}) -> Uri
@@ -85,6 +85,7 @@ class CruxIssueReporterService
   buildSessionCategory({String? description, required CruxIssueSessionContext context, required String title}) -> CruxIssueCategory
   captureScreenshot(RenderRepaintBoundary? boundary) -> Future<Uint8List?>
   final config: CruxIssueReporterConfig
+  final fileRevealer: Future<bool> Function(String)?
   final now: DateTime Function()?
   static const appEnvCategoryId: String
   static const contextLogLineCount: int

@@ -1,0 +1,10 @@
+# Public API surface of package:crux_file_dialogs/crux_file_dialogs_guards.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+cruxCheckLinuxRunnerFileDialogs({required String linuxCmake, required String myApplicationCc, required String runnerCmake}) -> List<String>

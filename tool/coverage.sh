@@ -98,6 +98,7 @@ crux_cxp:85
 crux_cxp_ui:90
 crux_dock:95
 crux_eula:83
+crux_file_dialogs:94
 crux_file_watcher:82
 crux_flow:98
 crux_guards:90

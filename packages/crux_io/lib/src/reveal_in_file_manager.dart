@@ -30,8 +30,15 @@ typedef RevealCommandRunner =
 /// spawned at all, because a bare name would be searched for in that same
 /// directory.
 ///
-/// Failures are swallowed — a reveal is a convenience, never worth an error
-/// surface. Returns whether a reveal command was launched.
+/// Never throws. Returns whether a file manager took the request: false when
+/// no command could be spawned, when `open` or `xdg-open` exits with a
+/// failure (a Linux host displayed remotely often has neither a session bus
+/// nor a desktop for `xdg-open` to hand the folder to), or on a platform with
+/// no file manager. Explorer's exit status means nothing (it answers 1 after
+/// a successful `/select,`), so on Windows a spawned Explorer counts. A
+/// caller tells the user where the file is when this answers false: a reveal
+/// that does nothing and says nothing leaves them looking for a window that
+/// never opens.
 ///
 /// The suite's tab context menus ("Reveal in Finder / Explorer / Files")
 /// call this; it replaced a per-app no-op stub that silently did nothing.
@@ -70,9 +77,9 @@ Future<bool> revealInFileManager(
 
     switch (os) {
       case 'macos':
-        await run(resolve('open'), <String>['-R', filePath]);
-        return true;
+        return await run(resolve('open'), <String>['-R', filePath]) == 0;
       case 'windows':
+        // Explorer's exit status is not a result; see above.
         await run(resolve('explorer'), <String>['/select,$filePath']);
         return true;
       case 'linux':
@@ -87,11 +94,10 @@ Future<bool> revealInFileManager(
         ]);
         if (viaDbus == 0) return true;
         final dir = File(filePath).parent.path;
-        await run(resolve('xdg-open'), <String>[dir]);
-        return true;
+        return await run(resolve('xdg-open'), <String>[dir]) == 0;
     }
   } on Object {
-    // Best-effort: no file manager, sandboxed, or command missing.
+    // No file manager, sandboxed, or command missing: nothing was revealed.
   }
   return false;
 }

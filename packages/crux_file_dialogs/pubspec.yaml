@@ -1,0 +1,29 @@
+name: crux_file_dialogs
+description: >-
+  File dialogs on Linux that work on a remote display, for the EDACrux suite:
+  a file_picker platform that asks the product's own Linux runner for an
+  in-process GTK file chooser instead of the DBus desktop portal, and the
+  runner-side C++ every product compiles.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+resolution: workspace
+
+dependencies:
+  # The platform interface this package implements. PINNED to the version
+  # every product pins (12.0.0 lost the macOS implementation; see any
+  # product's pubspec), so the workspace builds against the interface the
+  # products ship.
+  file_picker: 12.0.0-beta.7
+  flutter:
+    sdk: flutter
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0

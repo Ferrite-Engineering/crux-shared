@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **`revealInFileManager` answers false when the file manager refused.**
+  `open -R` exiting with a failure, or `xdg-open` failing after D-Bus did,
+  used to count as revealed, so a caller could not tell the user anything.
+  Explorer's exit status still counts for nothing, as it answers 1 after a
+  successful `/select,`.
+
 - **Export namespace narrowed by 7 symbols.** `cruxFnv1a64`, `kDefaultWindowsPathExt`, `kNixDefaultProfileBin`, `kProcessOutputExcerptLines`, `parseWindowsPersistentPath`, `posixEngineSearchDirs`, `prependPathDirs` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **Added path containment: `containmentKey`, `isPathWithin` and
