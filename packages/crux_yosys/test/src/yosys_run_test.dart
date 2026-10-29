@@ -96,6 +96,24 @@ void main() {
       expect(a, isNot(equals(d)));
     });
 
+    test('allowUndefinedModules participates in equality', () {
+      const a = YosysRunRequest(
+        sources: <YosysSourceFile>[YosysSourceFile('a.v')],
+      );
+      const b = YosysRunRequest(
+        sources: <YosysSourceFile>[YosysSourceFile('a.v')],
+        allowUndefinedModules: true,
+      );
+      const c = YosysRunRequest(
+        sources: <YosysSourceFile>[YosysSourceFile('a.v')],
+        allowUndefinedModules: true,
+      );
+      expect(a.allowUndefinedModules, isFalse);
+      expect(a, isNot(equals(b)));
+      expect(b, equals(c));
+      expect(b.hashCode, c.hashCode);
+    });
+
     test('defaults are empty lists / null top module / null vhdl knobs', () {
       const request = YosysRunRequest(
         sources: <YosysSourceFile>[YosysSourceFile('a.v')],

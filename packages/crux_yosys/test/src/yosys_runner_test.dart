@@ -266,6 +266,63 @@ void main() {
       },
     );
 
+    test('allowUndefinedModules drops -check from hierarchy', () {
+      const sources = <YosysSourceFile>[YosysSourceFile('/tmp/top.v')];
+      final checked = YosysRunner.buildScript(
+        const YosysRunRequest(sources: sources, topModule: 'top'),
+        jsonOutputPath: '/tmp/out.json',
+      );
+      expect(checked, contains('hierarchy -check -top top;'));
+
+      final open = YosysRunner.buildScript(
+        const YosysRunRequest(
+          sources: sources,
+          topModule: 'top',
+          allowUndefinedModules: true,
+        ),
+        jsonOutputPath: '/tmp/out.json',
+      );
+      expect(open, contains('hierarchy -top top;'));
+      expect(open, isNot(contains('-check')));
+
+      final autoTop = YosysRunner.buildScript(
+        const YosysRunRequest(sources: sources, allowUndefinedModules: true),
+        jsonOutputPath: '/tmp/out.json',
+      );
+      expect(autoTop, contains('hierarchy -auto-top;'));
+      expect(autoTop, isNot(contains('-check')));
+    });
+
+    test(
+      'allowUndefinedModules survives the VHDL lowering step',
+      () async {
+        final fake = _FakeRunner(
+          exitCode: 0,
+          jsonToWrite: '{"modules": {"top": {}}}',
+          ghdlVerilog: 'module sub(); endmodule\n',
+        );
+        final runner = YosysRunner(
+          processRunner: fake,
+          executable: 'yosys',
+          ghdlExecutable: 'ghdl',
+          tempDirectory: tempDir,
+        );
+        await runner.run(
+          const YosysRunRequest(
+            sources: <YosysSourceFile>[
+              YosysSourceFile('/tmp/top.v'),
+              YosysSourceFile.vhdl('/tmp/sub.vhd'),
+            ],
+            topModule: 'top',
+            vhdlTopUnit: 'sub',
+            allowUndefinedModules: true,
+          ),
+        );
+        expect(fake.capturedScript, contains('hierarchy -top top;'));
+        expect(fake.capturedScript, isNot(contains('-check')));
+      },
+    );
+
     test(
       'uses -auto-top (not an explicit -top) when topModule is null',
       () async {

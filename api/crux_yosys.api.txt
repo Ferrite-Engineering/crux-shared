@@ -84,9 +84,10 @@ final class YosysRunFailure extends YosysRunResult
   final exitCode: int
   get kind -> YosysFailureKind
 class YosysRunRequest
-  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, String? vhdlStandard, String? vhdlTopUnit, required List<YosysSourceFile> sources})
+  const YosysRunRequest({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, String? vhdlStandard, String? vhdlTopUnit, bool allowUndefinedModules, required List<YosysSourceFile> sources})
   factory YosysRunRequest.fromPaths({List<String> defines, List<String> extraCommands, List<String> includePaths, String? topModule, required List<String> sourceFiles})
   ==(Object other) -> bool
+  final allowUndefinedModules: bool
   final defines: List<String>
   final extraCommands: List<String>
   final includePaths: List<String>

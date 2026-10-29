@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 ///
 /// ```text
 /// read_verilog [-I include] [-D define] file1.v file2.v ...
-/// hierarchy -check [-top top_module]
+/// hierarchy [-check] [-top top_module]
 /// proc
 /// [extra commands]
 /// write_json <temp file>
@@ -467,7 +467,12 @@ class YosysRunner {
       commands.add(readBuffer.toString());
     }
 
-    final hierarchy = StringBuffer('hierarchy -check');
+    // `-check` fails the run on an instance of a module no source defines;
+    // a request that allows those leaves it off (see
+    // [YosysRunRequest.allowUndefinedModules]).
+    final hierarchy = StringBuffer(
+      request.allowUndefinedModules ? 'hierarchy' : 'hierarchy -check',
+    );
     if (request.topModule != null && request.topModule!.isNotEmpty) {
       hierarchy.write(' -top ${_identifier(request.topModule!)}');
     } else {
@@ -548,6 +553,7 @@ class YosysRunner {
       defines: request.defines,
       includePaths: request.includePaths,
       extraCommands: request.extraCommands,
+      allowUndefinedModules: request.allowUndefinedModules,
     );
   }
 
