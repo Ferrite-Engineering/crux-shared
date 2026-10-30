@@ -135,6 +135,87 @@ void main() {
     });
   });
 
+  group('long-press belongs to touch and pen', () {
+    // Over a remote display the button-up of a plain click can arrive after
+    // the long-press timeout; the click must stay a click.
+    for (final platform in [TargetPlatform.android, TargetPlatform.windows]) {
+      for (final kind in [
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+      ]) {
+        testWidgets('a ${kind.name} held past the timeout opens no menu '
+            'on $platform in a touch layout', (tester) async {
+          var fired = false;
+          await tester.pumpWidget(
+            _host(
+              onContextMenu: (_) => fired = true,
+              platform: platform,
+              isTouchLayout: true,
+            ),
+          );
+
+          final gesture = await tester.startGesture(
+            tester.getCenter(find.byKey(const Key('target'))),
+            kind: kind,
+          );
+          await tester.pump(const Duration(seconds: 2));
+          await gesture.up();
+          await tester.pump();
+
+          expect(fired, isFalse);
+        });
+      }
+    }
+
+    for (final kind in [
+      PointerDeviceKind.touch,
+      PointerDeviceKind.stylus,
+      PointerDeviceKind.invertedStylus,
+    ]) {
+      testWidgets('a ${kind.name} long press opens the menu', (tester) async {
+        Offset? received;
+        await tester.pumpWidget(
+          _host(
+            onContextMenu: (p) => received = p,
+            platform: TargetPlatform.android,
+          ),
+        );
+
+        final target = tester.getCenter(find.byKey(const Key('target')));
+        final gesture = await tester.startGesture(target, kind: kind);
+        await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+        await gesture.up();
+        await tester.pump();
+
+        expect(received, target);
+      });
+    }
+
+    testWidgets('right-click held past the timeout still opens the menu', (
+      tester,
+    ) async {
+      var fired = 0;
+      await tester.pumpWidget(
+        _host(
+          onContextMenu: (_) => fired++,
+          platform: TargetPlatform.android,
+          isTouchLayout: true,
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('target'))),
+        kind: PointerDeviceKind.mouse,
+        buttons: kSecondaryMouseButton,
+      );
+      await tester.pump(const Duration(seconds: 2));
+      await gesture.up();
+      await tester.pump();
+
+      expect(fired, 1);
+    });
+  });
+
   group('shouldEnableLongPressContextMenu', () {
     test('touch-first layouts always enable long-press', () {
       for (final platform in TargetPlatform.values) {

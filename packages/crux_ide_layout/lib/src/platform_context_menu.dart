@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// A transparent wrapper that fires [onContextMenu] on both right-click
@@ -13,8 +14,9 @@ import 'package:flutter/material.dart';
 ///   pointer devices.
 /// - **All other contexts** (touch-first layouts, or any iOS / Android host
 ///   even when the window is desktop-sized — e.g. a large tablet in
-///   landscape): [onContextMenu] fires on long-press start. Right-click
-///   still works if an external mouse is connected.
+///   landscape): [onContextMenu] fires on long-press start of a finger or a
+///   pen. A held mouse or trackpad button is not a long press; right-click
+///   works if an external mouse is connected.
 ///
 /// The callback receives the global [Offset] so callers can position a
 /// popup menu or custom overlay at the correct screen location.
@@ -57,13 +59,26 @@ class PlatformContextMenu extends StatelessWidget {
       platform: platform,
     );
 
+    // Long-press is a touch gesture. A mouse or trackpad press that is held
+    // is a slow click, which over a remote display is common (the button-up
+    // arrives late), so it never opens the menu; right-click is its route.
+    // The filter sits on its own detector so it does not reach the
+    // secondary-button tap.
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onSecondaryTapUp: (d) => onContextMenu(d.globalPosition),
-      onLongPressStart: enableLongPress
-          ? (d) => onContextMenu(d.globalPosition)
-          : null,
-      child: child,
+      child: enableLongPress
+          ? GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              supportedDevices: const {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.stylus,
+                PointerDeviceKind.invertedStylus,
+              },
+              onLongPressStart: (d) => onContextMenu(d.globalPosition),
+              child: child,
+            )
+          : child,
     );
   }
 }

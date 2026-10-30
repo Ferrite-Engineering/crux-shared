@@ -11,8 +11,79 @@ import 'package:crux_workspace/src/widgets/tab_label_disambiguation.dart';
 import 'package:crux_workspace/src/widgets/viewer_tab_bar_strings.dart';
 import 'package:crux_workspace/src/workspace.dart';
 import 'package:crux_workspace/src/workspace_notifier.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Pointers that long-press: a finger or a pen.
+///
+/// A mouse or trackpad press-and-hold is a slow click, not a long press. Over
+/// a remote display (X forwarding, a thin client, VNC) the button-up reaches
+/// the application late, so a click that crosses the long-press timeout would
+/// open the context menu, or start a drag, instead of switching tabs.
+const Set<PointerDeviceKind> _touchKinds = {
+  PointerDeviceKind.touch,
+  PointerDeviceKind.stylus,
+  PointerDeviceKind.invertedStylus,
+};
+
+/// Every pointer that is not [_touchKinds]: the ones that drag by moving.
+final Set<PointerDeviceKind> _movingPointerKinds = {
+  for (final kind in PointerDeviceKind.values)
+    if (!_touchKinds.contains(kind)) kind,
+};
+
+/// A [LongPressDraggable] that only a finger or a pen can start.
+///
+/// A mouse reaches the same handle through [_PointerDraggable].
+class _TouchLongPressDraggable<T extends Object> extends LongPressDraggable<T> {
+  const _TouchLongPressDraggable({
+    required super.child,
+    required super.feedback,
+    super.data,
+    super.childWhenDragging,
+  });
+
+  @override
+  DelayedMultiDragGestureRecognizer createRecognizer(
+    GestureMultiDragStartCallback onStart,
+  ) {
+    return DelayedMultiDragGestureRecognizer(
+        delay: delay,
+        allowedButtonsFilter: allowedButtonsFilter,
+        supportedDevices: _touchKinds,
+      )
+      ..onStart = (position) {
+        final result = onStart(position);
+        if (result != null && hapticFeedbackOnStart) {
+          unawaited(HapticFeedback.selectionClick());
+        }
+        return result;
+      };
+  }
+}
+
+/// A [Draggable] that a mouse or trackpad starts by moving, and only by
+/// moving: a press that stays put is a click however long it is held.
+class _PointerDraggable<T extends Object> extends Draggable<T> {
+  const _PointerDraggable({
+    required super.child,
+    required super.feedback,
+    super.data,
+    super.childWhenDragging,
+  });
+
+  @override
+  MultiDragGestureRecognizer createRecognizer(
+    GestureMultiDragStartCallback onStart,
+  ) {
+    return ImmediateMultiDragGestureRecognizer(
+      allowedButtonsFilter: allowedButtonsFilter,
+      supportedDevices: _movingPointerKinds,
+    )..onStart = onStart;
+  }
+}
 
 /// Identity of the per-tab payload required to drag a tab between panes
 /// without forcing the host product to materialize the whole tab.
@@ -796,11 +867,10 @@ class _TabChip<P> extends StatelessWidget {
   }) {
     final chrome = CruxChromeColors.of(context);
     final labelColor = chrome?.tabBarLabel;
-    return InkWell(
+    final ink = InkWell(
       onTap: () => notifier.setActiveTab(tab.id),
       onSecondaryTapDown: (details) =>
           _showContextMenu(context, details.globalPosition),
-      onLongPress: () => _showContextMenuAtCenter(context),
       child: Container(
         decoration: BoxDecoration(
           color: active
@@ -820,20 +890,31 @@ class _TabChip<P> extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (useDragHandle)
-              LongPressDraggable<_TabDragPayload>(
+              // A finger or pen picks the handle up with a long press; a mouse
+              // drags it by moving. Neither starts from a press that stays
+              // put, so a slow click on the handle still switches tabs.
+              _TouchLongPressDraggable<_TabDragPayload>(
                 data: dragPayload,
                 feedback: Material(
                   color: Colors.transparent,
                   child: _FeedbackChip(label: displayLabel),
                 ),
                 childWhenDragging: const SizedBox(width: 24),
-                child: Tooltip(
-                  message: strings.reorderHandleTooltip,
-                  triggerMode: TooltipTriggerMode.manual,
-                  excludeFromSemantics: true,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Icon(Icons.drag_indicator, size: 16),
+                child: _PointerDraggable<_TabDragPayload>(
+                  data: dragPayload,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: _FeedbackChip(label: displayLabel),
+                  ),
+                  childWhenDragging: const SizedBox(width: 24),
+                  child: Tooltip(
+                    message: strings.reorderHandleTooltip,
+                    triggerMode: TooltipTriggerMode.manual,
+                    excludeFromSemantics: true,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(Icons.drag_indicator, size: 16),
+                    ),
                   ),
                 ),
               ),
@@ -883,6 +964,15 @@ class _TabChip<P> extends StatelessWidget {
           ],
         ),
       ),
+    );
+    // The touch route to the context menu. It sits outside the InkWell so the
+    // filter covers nothing but the long press: a mouse or trackpad never
+    // long-presses, however late its button-up arrives, and keeps right-click
+    // (above) as its route.
+    return GestureDetector(
+      supportedDevices: _touchKinds,
+      onLongPress: () => _showContextMenuAtCenter(context),
+      child: ink,
     );
   }
 

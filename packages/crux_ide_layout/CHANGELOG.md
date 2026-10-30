@@ -6,6 +6,11 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Fix: `PlatformContextMenu` long-press is touch and pen only**
+  (crux-shared#65). A mouse or trackpad button held past the long-press
+  timeout is a slow click, common over a remote display, and no longer opens
+  the menu. Right-click is unchanged.
+
 - **`cruxOpenUrl` and `cruxRevealFile`.** Open a link or reveal a file, and
   when no browser or file manager could (a Linux host displayed remotely
   often has neither), show an error toast naming the address or the path

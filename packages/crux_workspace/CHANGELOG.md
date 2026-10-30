@@ -1,5 +1,13 @@
 ## Unreleased
 
+- **Fix: a slow mouse click on a tab switches tabs** (crux-shared#65). The
+  tab's long-press context menu and the drag handle's long-press drag now
+  start from a finger or a pen only. Over a remote display the mouse
+  button-up can arrive after the long-press timeout; that click used to open
+  the menu or start a drag instead of switching tabs. Right-click is
+  unchanged. A mouse drags a tab by its handle by moving, with no hold first;
+  touch keeps the long press.
+
 - **Export namespace narrowed by 1 symbol.** `openCruxRecentEntry` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **Tab navigators and assistive technology.** `CruxTabNavigatorHost` makes
