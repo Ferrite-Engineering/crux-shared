@@ -146,6 +146,7 @@ class YosysRunner
   static buildGhdlSynthArguments(YosysRunRequest request) -> List<String>
   static buildScript(YosysRunRequest request, {String? slangCommandFile, required String jsonOutputPath}) -> String
   static const launchFailureExitCode: int
+  static const maxInMemoryJsonBytes: int
   static readSourcePaths(YosysRunRequest request) -> List<String>
 final abstract class YosysScriptCommands
   static checkSlangOption(String option) -> void

@@ -362,7 +362,9 @@ enum YosysFailureKind {
 
   /// The tool ran and exited on its own, but its output could not be read:
   /// the `write_json` file could not be read back (removed underneath the
-  /// runner, unreadable, or not UTF-8), or its stdout/stderr did not reach
+  /// runner, unreadable, not UTF-8, or larger than
+  /// `YosysRunner.maxInMemoryJsonBytes`, which only
+  /// `YosysRunner.runKeepingJson` can hand over), or its stdout/stderr did not reach
   /// end-of-file after the exit, so the log may be missing the last
   /// diagnostic it printed. Reported with `YosysRunner.launchFailureExitCode`;
   /// [YosysRunResult.stderr] says which.

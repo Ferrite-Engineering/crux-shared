@@ -128,6 +128,12 @@ class YosysRunner {
   /// wording of `stderr`. The value itself stays `-1` for existing callers.
   static const int launchFailureExitCode = -1;
 
+  /// The largest `write_json` document, in bytes, that [run] and [runScript]
+  /// read back as one string. A larger one is a [YosysRunFailure] of kind
+  /// [YosysFailureKind.outputUnreadable]; [runKeepingJson] has no such limit,
+  /// because it never reads the file.
+  static const int maxInMemoryJsonBytes = 1 << 30;
+
   /// Runs Yosys to elaborate the given [request].
   ///
   /// **Always returns a [YosysRunResult]; never throws.** Callers pattern-
@@ -588,6 +594,20 @@ class YosysRunner {
           jsonPath: jsonFile.path,
           stdout: processResult.stdout,
           stderr: processResult.stderr,
+        );
+      }
+      final jsonBytes = jsonFile.lengthSync();
+      if (jsonBytes > maxInMemoryJsonBytes) {
+        // Reading it would end in a RangeError from the string allocator, past
+        // this method's never-throws contract; say what to do instead.
+        return YosysRunFailure(
+          kind: YosysFailureKind.outputUnreadable,
+          exitCode: launchFailureExitCode,
+          stdout: processResult.stdout,
+          stderr:
+              'The Yosys JSON output is $jsonBytes bytes, more than the '
+              '$maxInMemoryJsonBytes this call can hold as one string. '
+              'Use YosysRunner.runKeepingJson and read the file in chunks.',
         );
       }
       final rawJson = jsonFile.readAsStringSync();

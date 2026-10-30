@@ -10,9 +10,12 @@ import 'package:test/test.dart';
 /// Stands in for Yosys: finds the `write_json "<path>"` target in the `-p`
 /// script and writes [json] there (nothing when null).
 class _FakeRunner implements ProcessRunner {
-  _FakeRunner({this.json, this.exitCode = 0});
+  _FakeRunner({this.json, this.exitCode = 0, this.sparseBytes});
 
   final String? json;
+
+  /// When set, the document is a sparse file this long (no disk is used).
+  final int? sparseBytes;
   final int exitCode;
   String? script;
 
@@ -31,6 +34,12 @@ class _FakeRunner implements ProcessRunner {
     final match = RegExp(r'write_json "([^"]*)"$').firstMatch(script!);
     final target = match!.group(1)!;
     if (json != null) File(target).writeAsStringSync(json!);
+    final sparse = sparseBytes;
+    if (sparse != null) {
+      File(target).openSync(mode: FileMode.write)
+        ..truncateSync(sparse)
+        ..closeSync();
+    }
     return ProcessRunResult(
       exitCode: exitCode,
       stdout: 'out',
@@ -114,6 +123,29 @@ void main() {
         expect(success.jsonPath, isNull);
       }
       expect(_jsonFilesIn(tempDir), isEmpty);
+    });
+
+    test('a document too large for one string is a typed failure from run '
+        'and runScript, and runKeepingJson still hands it over', () async {
+      const tooBig = YosysRunner.maxInMemoryJsonBytes + 1;
+      final runner = YosysRunner(
+        processRunner: _FakeRunner(sparseBytes: tooBig),
+        tempDirectory: tempDir,
+      );
+      for (final result in [
+        await runner.run(request),
+        await runner.runScript(script),
+      ]) {
+        final failure = result as YosysRunFailure;
+        expect(failure.kind, YosysFailureKind.outputUnreadable);
+        expect(failure.stderr, contains('$tooBig bytes'));
+        expect(failure.stderr, contains('runKeepingJson'));
+      }
+      expect(_jsonFilesIn(tempDir), isEmpty);
+
+      final kept = await runner.runKeepingJson(request) as YosysRunSuccess;
+      expect(File(kept.jsonPath!).lengthSync(), tooBig);
+      File(kept.jsonPath!).deleteSync();
     });
 
     test('a failed run leaves no file behind', () async {
