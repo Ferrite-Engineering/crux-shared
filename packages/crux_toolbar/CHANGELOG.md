@@ -1,5 +1,10 @@
 ## Unreleased
 
+- **Fix: a held mouse button no longer opens a split button's menu**
+  (crux-shared#65). Long press opens the sibling menu for a finger or a pen
+  only. A mouse or trackpad press that is held, as over a remote display
+  where the button-up arrives late, fires the faced variant on release.
+  Right-click and the corner triangle still open the menu for the mouse.
 - A split button's face now has an accessible name. It was announced as a bare
   "button" while enabled (and flagged as a nameless stop by the focus-walk
   harness); it now carries the same text its tooltip shows, enabled or

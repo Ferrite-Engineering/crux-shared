@@ -4,15 +4,22 @@
 import 'package:crux_toolbar/src/toolbar_button.dart';
 import 'package:crux_toolbar/src/toolbar_item.dart';
 import 'package:crux_toolbar/src/toolbar_metrics.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 
-/// A Photoshop-style grouped tool button.
+/// A grouped tool button.
 ///
 /// One slot in the strip stands for a family of related actions — the four
 /// LintCrux export formats, WaveCrux's export targets, NetCrux's fan-in /
 /// fan-out / clear-overlay trio. Tapping fires the currently-faced variant;
-/// **long-press, right-click, or tapping the corner triangle** opens the
-/// sibling menu, and the chosen variant becomes the new face.
+/// **right-click, tapping the corner triangle, or a long press with a finger
+/// or a pen** opens the sibling menu, and the chosen variant becomes the new
+/// face.
+///
+/// A mouse or trackpad button that is held down is a slow click, not a long
+/// press: it fires the faced variant on release, however long it was held.
+/// Over a remote display the button-up can arrive well after the long-press
+/// timeout, so a mouse never opens the menu by holding.
 ///
 /// This is what lets a cluster of four menu-only commands earn a single
 /// toolbar slot instead of none.
@@ -157,54 +164,63 @@ class _CruxToolbarSplitButtonState<A extends Object>
         ),
       ],
       builder: (context, controller, _) => GestureDetector(
-        onLongPress: _openMenu,
         onSecondaryTap: _openMenu,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            CruxToolbarButton(
-              key: ValueKey<A>(face.action),
-              icon: face.isSelected && face.selectedIcon != null
-                  ? face.selectedIcon!
-                  : face.icon,
-              tooltip: cruxToolbarTooltip(
-                widget.item.faceTooltip?.call(face.action) ?? face.tooltip,
-                widget.shortcutOf(face.action),
+        // Long press is a touch gesture. The filter sits on its own detector
+        // so it does not reach the secondary-button tap above.
+        child: GestureDetector(
+          supportedDevices: const {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.stylus,
+            PointerDeviceKind.invertedStylus,
+          },
+          onLongPress: _openMenu,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CruxToolbarButton(
+                key: ValueKey<A>(face.action),
+                icon: face.isSelected && face.selectedIcon != null
+                    ? face.selectedIcon!
+                    : face.icon,
+                tooltip: cruxToolbarTooltip(
+                  widget.item.faceTooltip?.call(face.action) ?? face.tooltip,
+                  widget.shortcutOf(face.action),
+                ),
+                onPressed: faceEnabled
+                    ? () => widget.onAction(face.action)
+                    : null,
+                metrics: widget.metrics,
+                isSelected: face.isSelected,
+                tintWhenSelected: face.tintWhenSelected,
+                badgeCount: face.badgeCount,
+                // Frees the long-press for the sibling menu; hover still shows
+                // the tooltip on desktop.
+                tooltipOnHoverOnly: true,
               ),
-              onPressed: faceEnabled
-                  ? () => widget.onAction(face.action)
-                  : null,
-              metrics: widget.metrics,
-              isSelected: face.isSelected,
-              tintWhenSelected: face.tintWhenSelected,
-              badgeCount: face.badgeCount,
-              // Frees the long-press for the sibling menu; hover still shows
-              // the tooltip on desktop.
-              tooltipOnHoverOnly: true,
-            ),
-            // The corner affordance: a small triangle marking "there is more
-            // here", and a tap target of its own so the sibling menu is
-            // reachable without knowing about long-press.
-            PositionedDirectional(
-              end: 1,
-              bottom: 1,
-              child: Semantics(
-                label: widget.item.tooltip,
-                button: true,
-                child: GestureDetector(
-                  onTap: _openMenu,
-                  child: CustomPaint(
-                    size: const Size(6, 6),
-                    painter: _CornerTrianglePainter(
-                      color: faceEnabled
-                          ? scheme.onSurfaceVariant
-                          : scheme.onSurface.withValues(alpha: 0.38),
+              // The corner affordance: a small triangle marking "there is more
+              // here", and a tap target of its own so the sibling menu is
+              // reachable without knowing about long-press.
+              PositionedDirectional(
+                end: 1,
+                bottom: 1,
+                child: Semantics(
+                  label: widget.item.tooltip,
+                  button: true,
+                  child: GestureDetector(
+                    onTap: _openMenu,
+                    child: CustomPaint(
+                      size: const Size(6, 6),
+                      painter: _CornerTrianglePainter(
+                        color: faceEnabled
+                            ? scheme.onSurfaceVariant
+                            : scheme.onSurface.withValues(alpha: 0.38),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -4,7 +4,8 @@
 import 'dart:ui' as ui;
 
 import 'package:crux_toolbar/crux_toolbar.dart';
-import 'package:flutter/gestures.dart' show kSecondaryButton;
+import 'package:flutter/gestures.dart'
+    show PointerDeviceKind, kLongPressTimeout, kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
@@ -96,6 +97,95 @@ void main() {
           reason: '${v.name} must be offered in the sibling menu',
         );
       }
+    });
+
+    // Over a remote display a mouse button-up can arrive after the long-press
+    // timeout; that click must fire the tool, not open the menu.
+    for (final kind in [PointerDeviceKind.mouse, PointerDeviceKind.trackpad]) {
+      testWidgets('a ${kind.name} held past the long-press timeout fires the '
+          'faced variant and opens no menu', (tester) async {
+        final fired = <_Export>[];
+        await tester.pumpWidget(_wrapSplit(onAction: fired.add));
+        await tester.pumpAndSettle();
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey(_Export.sarif))),
+          kind: kind,
+        );
+        await tester.pump(const Duration(seconds: 2));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(find.text('json'), findsNothing);
+        // A trackpad press is delivered as a pan/zoom, never a button, so only
+        // the mouse is required to fire.
+        if (kind == PointerDeviceKind.mouse) {
+          expect(fired, [_Export.sarif]);
+        }
+      });
+    }
+
+    for (final kind in [
+      PointerDeviceKind.touch,
+      PointerDeviceKind.stylus,
+      PointerDeviceKind.invertedStylus,
+    ]) {
+      testWidgets('a ${kind.name} long press opens the sibling menu and fires '
+          'nothing', (tester) async {
+        final fired = <_Export>[];
+        await tester.pumpWidget(_wrapSplit(onAction: fired.add));
+        await tester.pumpAndSettle();
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey(_Export.sarif))),
+          kind: kind,
+        );
+        await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(find.text('json'), findsOneWidget);
+        expect(fired, isEmpty);
+      });
+    }
+
+    testWidgets('a right-click held past the timeout opens the sibling menu', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapSplit());
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey(_Export.sarif))),
+        kind: PointerDeviceKind.mouse,
+        buttons: kSecondaryButton,
+      );
+      await tester.pump(const Duration(seconds: 2));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.text('json'), findsOneWidget);
+    });
+
+    testWidgets('a mouse click on the corner triangle opens the sibling menu', (
+      tester,
+    ) async {
+      final fired = <_Export>[];
+      await tester.pumpWidget(_wrapSplit(onAction: fired.add));
+      await tester.pumpAndSettle();
+
+      final corner =
+          tester.getBottomRight(find.byType(CruxToolbarSplitButton<_Export>)) -
+          const Offset(4, 4);
+      final gesture = await tester.startGesture(
+        corner,
+        kind: PointerDeviceKind.mouse,
+      );
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.text('json'), findsOneWidget);
+      expect(fired, isEmpty);
     });
 
     for (final (how, open) in <(String, Future<void> Function(WidgetTester))>[
