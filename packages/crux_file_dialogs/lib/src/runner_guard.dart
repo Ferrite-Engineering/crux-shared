@@ -16,7 +16,8 @@
 ///   call `crux_select_renderer_for_display(...)` before `fl_view_new`, and
 ///   `crux_register_file_dialog_channel(view)` and
 ///   `crux_tolerate_refused_x_bell(...)` after `fl_register_plugins`;
-/// - call `crux_prefer_x11_when_only_display_is_set()` and then
+/// - call `crux_refuse_to_start_without_display(...)` first, then
+///   `crux_prefer_x11_when_only_display_is_set()` and then
 ///   `crux_skip_accessibility_bridge_without_session_bus(...)` in
 ///   `my_application_new`, before GTK starts.
 ///
@@ -104,7 +105,19 @@ List<String> cruxCheckLinuxRunnerFileDialogs({
   }
 
   final create = _functionBody(cc, 'my_application_new') ?? '';
+  final refuse = create.indexOf('crux_refuse_to_start_without_display(');
   final x11 = create.indexOf('crux_prefer_x11_when_only_display_is_set(');
+  if (refuse < 0) {
+    findings.add(
+      'my_application_new does not call '
+      'crux_refuse_to_start_without_display.',
+    );
+  } else if (x11 >= 0 && x11 < refuse) {
+    findings.add(
+      'crux_refuse_to_start_without_display must come before '
+      'crux_prefer_x11_when_only_display_is_set.',
+    );
+  }
   final bridge = create.indexOf(
     'crux_skip_accessibility_bridge_without_session_bus(',
   );

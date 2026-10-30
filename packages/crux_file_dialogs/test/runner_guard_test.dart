@@ -39,6 +39,7 @@ static void my_application_activate(GApplication* application) {
 }
 
 MyApplication* my_application_new() {
+  crux_refuse_to_start_without_display("Product");
   g_set_prgname(APPLICATION_ID);
   crux_prefer_x11_when_only_display_is_set();
   crux_skip_accessibility_bridge_without_session_bus("Product");
@@ -155,6 +156,52 @@ void main() {
       );
     },
   );
+
+  test('a runner that attaches to the local desktop with no display is '
+      'reported', () {
+    final findings = _check(
+      cc: _cc.replaceFirst(
+        '  crux_refuse_to_start_without_display("Product");\n',
+        '',
+      ),
+    );
+    expect(
+      findings.single,
+      contains('does not call crux_refuse_to_start_without_display'),
+    );
+  });
+
+  test('a commented-out display refusal does not count', () {
+    final findings = _check(
+      cc: _cc.replaceFirst(
+        'crux_refuse_to_start_without_display("Product");',
+        '// crux_refuse_to_start_without_display("Product");',
+      ),
+    );
+    expect(findings.single, contains('does not call'));
+  });
+
+  test('a display refusal after the X11 preference is reported', () {
+    final findings = _check(
+      cc: _cc
+          .replaceFirst(
+            '  crux_refuse_to_start_without_display("Product");\n',
+            '',
+          )
+          .replaceFirst(
+            'crux_prefer_x11_when_only_display_is_set();',
+            'crux_prefer_x11_when_only_display_is_set();\n'
+                '  crux_refuse_to_start_without_display("Product");',
+          ),
+    );
+    expect(
+      findings.single,
+      contains(
+        'crux_refuse_to_start_without_display must come before '
+        'crux_prefer_x11_when_only_display_is_set',
+      ),
+    );
+  });
 
   test('an X11 preference after the bridge check is reported', () {
     final findings = _check(

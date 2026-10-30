@@ -64,11 +64,28 @@ void main() {
     expect(source, contains('g_setenv("NO_AT_BRIDGE", "1"'));
   });
 
-  test('with only DISPLAY set, GTK is limited to X11', () {
+  test('over ssh or on a tty with no display, the process exits', () {
+    expect(header, contains('void crux_refuse_to_start_without_display('));
+    expect(source, contains('env_is_set("SSH_CONNECTION")'));
     expect(
-      header,
-      contains('void crux_prefer_x11_when_only_display_is_set('),
+      source,
+      contains('g_strcmp0(g_getenv("XDG_SESSION_TYPE"), "tty") == 0'),
     );
+    // Either variable, set to anything, keeps the session the user chose.
+    expect(source, contains('env_is_set("DISPLAY") || '));
+    expect(source, contains('env_is_set("WAYLAND_DISPLAY")'));
+    expect(
+      source,
+      contains(
+        'No display: DISPLAY is not set. If you are connecting over ssh, '
+        '"\n      "use ssh -X or ssh -Y.',
+      ),
+    );
+    expect(source, contains('exit(1);'));
+  });
+
+  test('with only DISPLAY set, GTK is limited to X11', () {
+    expect(header, contains('void crux_prefer_x11_when_only_display_is_set('));
     expect(source, contains('g_getenv("GDK_BACKEND") != nullptr'));
     expect(source, contains('g_getenv("WAYLAND_DISPLAY")'));
     expect(source, contains('gdk_set_allowed_backends("x11")'));

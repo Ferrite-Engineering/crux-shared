@@ -3,6 +3,7 @@
 
 #include "crux_file_dialogs.h"
 
+#include <cstdlib>
 #include <cstring>
 
 #ifdef GDK_WINDOWING_X11
@@ -10,6 +11,31 @@
 #include <X11/Xproto.h>
 #include <gdk/gdkx.h>
 #endif
+
+// Whether the environment variable [name] is set to something.
+static bool env_is_set(const gchar* name) {
+  const gchar* value = g_getenv(name);
+  return value != nullptr && value[0] != '\0';
+}
+
+void crux_refuse_to_start_without_display(const gchar* app_name) {
+  if (g_getenv("GDK_BACKEND") != nullptr) {
+    return;
+  }
+  if (env_is_set("DISPLAY") || env_is_set("WAYLAND_DISPLAY")) {
+    return;
+  }
+  const bool over_ssh = env_is_set("SSH_CONNECTION");
+  const bool on_tty = g_strcmp0(g_getenv("XDG_SESSION_TYPE"), "tty") == 0;
+  if (!over_ssh && !on_tty) {
+    return;
+  }
+  g_printerr(
+      "%s: No display: DISPLAY is not set. If you are connecting over ssh, "
+      "use ssh -X or ssh -Y.\n",
+      app_name);
+  exit(1);
+}
 
 void crux_prefer_x11_when_only_display_is_set() {
   if (g_getenv("GDK_BACKEND") != nullptr) {

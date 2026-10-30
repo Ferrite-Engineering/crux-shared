@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `crux_refuse_to_start_without_display`: an app started from an ssh session
+  or a tty session with neither `DISPLAY` nor `WAYLAND_DISPLAY` set now exits
+  with status 1 and a line on standard error ("No display: DISPLAY is not
+  set. If you are connecting over ssh, use ssh -X or ssh -Y."), instead of
+  opening its window on the machine's own Wayland desktop, where the user
+  cannot see it. Setting `WAYLAND_DISPLAY` (or `DISPLAY`) explicitly keeps
+  the local session; a `GDK_BACKEND` the user has set is left alone.
+  `cruxCheckLinuxRunnerFileDialogs` requires the call first in
+  `my_application_new` (crux-shared#64).
 - `crux_select_renderer_for_display`: the renderer probe every runner kept its
   own copy of, now shared, and it also picks the software renderer when the X
   display names another host (a farm job on an ETX or VNC server, ssh X

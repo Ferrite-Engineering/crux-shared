@@ -13,6 +13,18 @@
 // dialogs. Every product's Linux runner compiles this file, the open core's
 // and the Pro overlay's alike, so they all behave the same.
 
+// Ends the process, with a message on standard error and exit status 1, when
+// it was started from an ssh session or a tty session with neither DISPLAY nor
+// WAYLAND_DISPLAY set. GTK would otherwise find the machine's own Wayland
+// socket (wayland-0 in XDG_RUNTIME_DIR) and open the window on a desktop the
+// user cannot see, for example after ssh without -X. A user who wants the
+// local desktop from such a session sets WAYLAND_DISPLAY (or DISPLAY)
+// explicitly. A GDK_BACKEND the user has set is left alone, and a session that
+// is neither ssh nor a tty (a launcher, a service) is not stopped. [app_name]
+// starts the line written to standard error. Call it first, before any other
+// helper here and before GTK starts.
+void crux_refuse_to_start_without_display(const gchar* app_name);
+
 // Keeps the window on the X display a session forwards. GTK tries Wayland
 // first, and with WAYLAND_DISPLAY unset it connects to the default socket,
 // wayland-0, in XDG_RUNTIME_DIR. Over ssh X forwarding to a machine where the
