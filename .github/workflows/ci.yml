@@ -183,7 +183,9 @@ jobs:
       # and skip on this runner, which installs none, beside the existing
       # one, so the ceiling rose from two to seven. The runKeepingJson test
       # that drives a real Yosys over awkward temp-directory names is one more
-      # skip here: eight. crux_flow's LibreLane readers, OpenSTA reader,
+      # skip here: eight. The allowUndefinedModules test that keeps an
+      # instance of a module no source defines drives a real Yosys too: nine.
+      # crux_flow's LibreLane readers, OpenSTA reader,
       # checks, ASIC mapping, compare parity and their fuzz tests added 98:
       # raised by 97. Re-measured: 5483 ran on this runner, plus five
       # crux_flow tests for runs holding named pipes and links to devices,
@@ -191,7 +193,7 @@ jobs:
       - name: Test count did not shrink
         env:
           MIN_TESTS: '5460'
-          MAX_SKIPPED: '8'
+          MAX_SKIPPED: '9'
         run: |
           python3 - <<'PY'
           import glob, json, os, sys
