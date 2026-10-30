@@ -3,20 +3,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #
-# Semver discipline guard for `crux_cxp` only.
+# Semver discipline guard for the CXP packages: `cxp` (published to pub.dev)
+# and `crux_cxp` (the suite's own, which re-exports it).
 #
 #   tool/check-cxp-version.sh <base-ref>
 #   tool/check-cxp-version.sh --since-last-green <owner/repo> <fallback-base>
 #
 # Repo policy (CLAUDE.md § "Versioning contract"): for every other package the
 # submodule SHA is the compatibility contract and `version:` is informational.
-# `crux_cxp` is the exception — it is slated to be published to pub.dev at the
-# open-core flip, at which point its `version:` becomes a real
-# constraint that real solvers resolve against. Discipline has to exist before
-# the first publish, not after.
+# The CXP packages are the exception: `cxp` is meant for pub.dev, where its
+# `version:` becomes a real constraint that real solvers resolve against, and
+# `crux_cxp` re-exports it. Discipline has to exist before the first publish,
+# not after.
 #
-# The guard: if `packages/crux_cxp/lib/**` changed relative to <base-ref>, then
-# `packages/crux_cxp/pubspec.yaml`'s `version:` must have changed too, and the
+# The guard: if `<package>/lib/**` changed relative to <base-ref>, then
+# the package's `pubspec.yaml`'s `version:` must have changed too, and the
 # CHANGELOG must carry a section for the new version.
 #
 # It deliberately does NOT try to classify the change as major/minor/patch —
@@ -43,7 +44,10 @@
 # first push) with no green run to use skips the guard.
 set -uo pipefail
 
-PKG="packages/crux_cxp"
+# `CXP_VERSION_PKG` names another package to check (CI runs the guard once
+# for each); the default is the suite's own.
+PKG="${CXP_VERSION_PKG:-packages/crux_cxp}"
+NAME="${PKG##*/}"
 
 # Indirection so the branching logic can be exercised with a stubbed `git`
 # and `gh`; tool/check-cxp-version-test.sh does both.
@@ -81,11 +85,11 @@ fi
 
 changed_lib="$(git_cmd diff --name-only "$BASE_REF"...HEAD -- "$PKG/lib" 2>/dev/null)"
 if [[ -z "$changed_lib" ]]; then
-  echo "crux_cxp/lib unchanged since $BASE_REF — version guard not applicable."
+  echo "$NAME/lib unchanged since $BASE_REF — version guard not applicable."
   exit 0
 fi
 
-echo "crux_cxp/lib changed since $BASE_REF:"
+echo "$NAME/lib changed since $BASE_REF:"
 echo "$changed_lib" | sed 's/^/    /'
 
 base_version="$(git_cmd show "$BASE_REF:$PKG/pubspec.yaml" 2>/dev/null \
@@ -100,12 +104,12 @@ fi
 if [[ "$base_version" == "$head_version" ]]; then
   cat <<EOF
 
-ERROR: crux_cxp's library sources changed but its version is still
+ERROR: $NAME's library sources changed but its version is still
        $head_version.
 
-crux_cxp is the one package in this workspace with real semver obligations —
-it is published to pub.dev at the open-core flip, where the version string
-stops being decorative and starts being solved against. Bump
+$NAME is one of the packages in this workspace with real semver obligations:
+the CXP packages are what third parties and the apps build against, and the
+version string of the published one is solved against. Bump
 $PKG/pubspec.yaml and add the matching section to
 $PKG/CHANGELOG.md.
 
@@ -124,5 +128,5 @@ if ! grep -q "^## ${head_version}\b" "$PKG/CHANGELOG.md"; then
   exit 1
 fi
 
-echo "OK: crux_cxp $base_version -> $head_version, changelog section present."
+echo "OK: $NAME $base_version -> $head_version, changelog section present."
 exit 0

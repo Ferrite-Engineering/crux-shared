@@ -1,0 +1,5 @@
+# Standalone: this example is its own package and does not take the
+# workspace's lint set.
+analyzer:
+  language:
+    strict-casts: true

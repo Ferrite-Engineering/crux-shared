@@ -3,8 +3,8 @@
 
 import 'dart:io';
 
-import 'package:crux_cxp/src/cxp_network_path.dart';
 import 'package:crux_io/crux_io.dart';
+import 'package:cxp/cxp_listener.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 

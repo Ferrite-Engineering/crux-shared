@@ -11,9 +11,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crux_cxp/src/cxp_manifest_directory.dart';
 import 'package:crux_cxp/src/cxp_path_containment.dart';
 import 'package:crux_io/crux_io.dart';
+import 'package:cxp/cxp.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 

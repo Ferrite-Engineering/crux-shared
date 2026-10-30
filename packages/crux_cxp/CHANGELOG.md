@@ -1,3 +1,34 @@
+## 0.13.0
+
+The protocol layer moved into the new pure-Dart `cxp` package, which this
+package now depends on and re-exports in full. Wire unchanged (`cxpProtocolVersion`
+stays `1.3`). The export namespace of `package:crux_cxp/crux_cxp.dart` is a
+superset of 0.12.0's, so the four products import exactly what they did.
+
+### What moved
+
+Everything that does not need the listening half: element identity, the
+messages, `PeerIdentity`, `LocalCxpClient`, discovery and the manifest writer,
+`CxpPeerConnector`, the authentication helpers, `CxpStreamCoordinate`,
+`cxpDesignIdForPath`. They live in `cxp` so that a third-party program can
+depend on one small package with no `crux_io` and no server. This package
+keeps `CxpServer` / `LocalCxpServer` / `NoopCxpServer`, `CxpPathContainment`
+and `CxpWorkspaceStore`, which depend on `crux_io`.
+
+### Changed
+
+- `CxpServer` now `implements CxpLinkSink` (declared in `cxp`): the three
+  members the connector uses, `attachLinkedPeer`, `detachLinkedPeer` and
+  `injectInbound`. Nothing is added to what an implementation of `CxpServer`
+  must provide.
+- `CxpPeerConnector.server` is typed `CxpLinkSink?` (a `CxpServer` is one).
+  The `clientFactory` constructor argument is no longer marked test-only.
+
+### Added
+
+- Re-exports `CxpProbe` and its types from `cxp`, and
+  `cxpSpecificationRevision`, `LocalCxpClient.sendTracked`.
+
 ## 0.12.0
 
 The vocabulary of CXP 1.3 Working Draft rev. 9 (formal properties and
@@ -910,17 +941,9 @@ API changes, zero wire-format changes.
 
 ### Publishing to pub.dev
 
-`publish_to: 'none'` is still set. `homepage`, `repository`,
-`issue_tracker`, a real changelog and semver discipline are now in place;
-what remains for the open-core flip is:
-
-1. A `LICENSE` file (Apache-2.0) in this package — `pub publish` refuses
-   without one. The repo root already carries it.
-2. A `license:` field in this pubspec.
-3. Replace `resolution: workspace` handling as needed for a standalone
-   publish, and remove `publish_to: 'none'`.
-4. Run `dart pub publish --dry-run` (impossible today: `publish_to: none`
-   blocks it outright) and clear whatever it reports.
+This package is not published. The protocol and the client third parties build
+against are the `cxp` package, which is the one meant for pub.dev; this one
+adds the listening half and is consumed by path.
 
 ## 0.4.1
 

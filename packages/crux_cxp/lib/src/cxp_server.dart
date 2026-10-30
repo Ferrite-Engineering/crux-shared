@@ -5,19 +5,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crux_cxp/src/cxp_auth_token.dart';
 import 'package:crux_cxp/src/cxp_path_containment.dart';
-import 'package:crux_cxp/src/element_id.dart';
-import 'package:crux_cxp/src/line_framing.dart';
-import 'package:crux_cxp/src/messages/cxp_message.dart';
-import 'package:crux_cxp/src/messages/decoder.dart';
-import 'package:crux_cxp/src/messages/error_response.dart';
-import 'package:crux_cxp/src/messages/hello.dart';
-import 'package:crux_cxp/src/messages/open_artifact.dart';
-import 'package:crux_cxp/src/messages/open_source.dart';
-import 'package:crux_cxp/src/messages/subscribe.dart';
-import 'package:crux_cxp/src/name_resolver.dart';
-import 'package:crux_cxp/src/peer_identity.dart';
+import 'package:cxp/cxp.dart';
+import 'package:cxp/cxp_listener.dart';
 import 'package:meta/meta.dart';
 
 /// Event emitted when a peer connects or disconnects from a [CxpServer].
@@ -39,26 +29,6 @@ class PeerPresenceEvent {
   }
 }
 
-/// An inbound message paired with the peer that sent it.
-@immutable
-class InboundCxpMessage {
-  /// Creates a record of an inbound message.
-  const InboundCxpMessage({
-    required this.envelope,
-    required this.message,
-    required this.from,
-  });
-
-  /// The decoded envelope as it was received on the wire.
-  final CxpEnvelope envelope;
-
-  /// The concrete decoded message body.
-  final CxpMessage message;
-
-  /// Identity of the sending peer.
-  final PeerIdentity from;
-}
-
 /// Abstract CXP peer-cross-probe server.
 ///
 /// Concrete implementations include [LocalCxpServer] (TCP/JSON on
@@ -66,7 +36,7 @@ class InboundCxpMessage {
 /// one server per running process; the server publishes its presence via
 /// the manifest (see `cxp_discovery.dart`) and dispatches inbound
 /// messages.
-abstract class CxpServer {
+abstract class CxpServer implements CxpLinkSink {
   /// Start listening on the configured port.
   Future<void> start();
 
@@ -142,6 +112,7 @@ abstract class CxpServer {
   /// [sendTo] can reach the peer even when the peer has no inbound
   /// connection to this server — replies (acks) to messages that arrived
   /// via [injectInbound] return over the same link.
+  @override
   void attachLinkedPeer(
     PeerIdentity peer,
     void Function(CxpMessage message) send,
@@ -149,6 +120,7 @@ abstract class CxpServer {
 
   /// Remove the outbound-link route to [peerId] registered by
   /// [attachLinkedPeer]. No-op when no such link is attached.
+  @override
   void detachLinkedPeer(String peerId);
 
   /// Feed a message received outside this server's own accept loop into
@@ -157,6 +129,7 @@ abstract class CxpServer {
   /// A `CxpPeerConnector` calls this for every frame its outbound
   /// clients receive, so consumers observe one merged stream regardless
   /// of which side dialed.
+  @override
   void injectInbound(InboundCxpMessage message);
 }
 

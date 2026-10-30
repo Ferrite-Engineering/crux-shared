@@ -94,7 +94,8 @@ crux_async:98
 crux_audit:98
 crux_collections:98
 crux_command_palette:92
-crux_cxp:85
+crux_cxp:88
+cxp:75
 crux_cxp_ui:90
 crux_dock:95
 crux_eula:83

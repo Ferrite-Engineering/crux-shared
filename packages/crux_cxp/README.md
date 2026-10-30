@@ -6,6 +6,13 @@ CXP is the peer cross-probe protocol that lets Crux apps (and third-party
 tools) gossip selection events, request highlights, and reconcile element
 identity across products.
 
+**Where the code lives.** The protocol and the client a third-party Dart
+program uses are the pure-Dart `cxp` package (`packages/cxp`), the one meant
+for pub.dev. This package re-exports it in full and adds the listening half
+the apps need: `CxpServer` / `LocalCxpServer`, `CxpPathContainment` and
+`CxpWorkspaceStore`. A product imports `package:crux_cxp/crux_cxp.dart` and
+gets both. The tables below describe the union.
+
 Distinct from WaveCrux's WCP. WCP is an external **driver** protocol: a
 script or another tool connects and commands WaveCrux. CXP is **peer
 gossip** between running Crux apps on the same machine, where no

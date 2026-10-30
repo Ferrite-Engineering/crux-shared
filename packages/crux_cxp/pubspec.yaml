@@ -1,13 +1,15 @@
 name: crux_cxp
-description: Cross-Tool eXchange Protocol (CXP) bindings — cross-probe gossip layer for the EDACrux suite.
-version: 0.12.0
+description: >-
+  Cross-Tool eXchange Protocol (CXP) bindings for the EDACrux suite: the
+  `cxp` client re-exported, plus the listening peer.
+version: 0.13.0
 homepage: https://github.com/Ferrite-Engineering/crux-shared
 repository: https://github.com/Ferrite-Engineering/crux-shared
 issue_tracker: https://github.com/Ferrite-Engineering/crux-shared/issues
-# crux_cxp is slated for pub.dev at the open-core flip, the one package in
-# this repo meant for third parties. It stays `none` until then: `pub publish`
-# needs a LICENSE inside this package. The remaining checklist is in
-# CHANGELOG.md under "Publishing to pub.dev".
+# The protocol and the client third parties build against live in `cxp`,
+# which is the package meant for pub.dev. This one is the suite's own: it adds
+# the listening half (server, receiver-side path rule, shared workspace store)
+# and is consumed by path, never published.
 publish_to: 'none'
 
 environment:
@@ -18,7 +20,8 @@ resolution: workspace
 dependencies:
   crux_io:
     path: ../crux_io
-  crypto: ^3.0.0
+  cxp:
+    path: ../cxp
   meta: ^1.15.0
   path: ^1.9.0
 

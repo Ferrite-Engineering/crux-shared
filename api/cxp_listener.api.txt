@@ -1,0 +1,16 @@
+# Public API surface of package:cxp/cxp_listener.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class CappedLineSplitter extends StreamTransformerBase<String, String>
+  const CappedLineSplitter({int maxLineLength})
+  bind(Stream<String> stream) -> Stream<String>
+  final maxLineLength: int
+cxpNetworkPathRefusal(String path, {Iterable<String>? roots, required bool windows}) -> String?
+get defaultCxpMaxLineLength -> int
+get defaultCxpMaxPendingWriteBytes -> int

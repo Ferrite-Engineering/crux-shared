@@ -263,15 +263,17 @@ jobs:
       #   frame, and must answer "absent" in a browser. The whole package runs
       #   (its dart:io tests carry @TestOn('vm')), so its pure tests also
       #   compile with dart2js on every run.
-      # - crux_cxp: every product resolves the shared manifest directory while
-      #   starting its CXP server; in a browser that must be the documented
-      #   StateError. Only test/web runs — the conformance suite opens sockets.
+      # - cxp and crux_cxp: every product resolves the shared manifest directory
+      #   while starting its CXP server; in a browser that must be the
+      #   documented StateError. Only test/web runs — the conformance suite
+      #   opens sockets.
       # - crux_io: web builds key tabs by location through path identity, which
       #   must treat a browser location as already canonical. Only test/web
       #   runs — the rest of the suite writes real files.
       - name: Pure-Dart packages on the web (Chrome)
         run: |
           (cd packages/crux_policy && dart test -p chrome)
+          (cd packages/cxp && dart test -p chrome test/web)
           (cd packages/crux_cxp && dart test -p chrome test/web)
           (cd packages/crux_io && dart test -p chrome test/web)
 
@@ -295,9 +297,9 @@ jobs:
       - name: Public API goldens up to date
         run: tool/api-snapshot.sh --check
 
-      # crux_cxp is the one package with real semver obligations — it is
-      # published to pub.dev at the open-core flip, where its
-      # version stops being informational and starts being solved against.
+      # cxp and crux_cxp are the packages with real semver obligations — cxp is
+      # published to pub.dev, where its version stops being informational and
+      # starts being solved against, and crux_cxp re-exports it.
       # Every other package is pinned by submodule SHA; see CLAUDE.md
       # § "Versioning contract".
       #
@@ -318,12 +320,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            tool/check-cxp-version.sh "origin/${{ github.base_ref }}"
-          else
-            tool/check-cxp-version.sh --since-last-green \
-              "${{ github.repository }}" "${{ github.event.before }}"
-          fi
+          for pkg in packages/cxp packages/crux_cxp; do
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              CXP_VERSION_PKG=$pkg tool/check-cxp-version.sh \
+                "origin/${{ github.base_ref }}"
+            else
+              CXP_VERSION_PKG=$pkg tool/check-cxp-version.sh --since-last-green \
+                "${{ github.repository }}" "${{ github.event.before }}"
+            fi
+          done
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Supply chain — SBOM, licence gate, advisory sweep.
