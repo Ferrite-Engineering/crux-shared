@@ -1,6 +1,6 @@
 ## 0.13.0
 
-The protocol layer moved into the new pure-Dart `cxp` package, which this
+The protocol layer moved into the new pure-Dart `edacrux_cxp` package, which this
 package now depends on and re-exports in full. Wire unchanged (`cxpProtocolVersion`
 stays `1.3`). The export namespace of `package:crux_cxp/crux_cxp.dart` is a
 superset of 0.12.0's, so the four products import exactly what they did.
@@ -10,14 +10,14 @@ superset of 0.12.0's, so the four products import exactly what they did.
 Everything that does not need the listening half: element identity, the
 messages, `PeerIdentity`, `LocalCxpClient`, discovery and the manifest writer,
 `CxpPeerConnector`, the authentication helpers, `CxpStreamCoordinate`,
-`cxpDesignIdForPath`. They live in `cxp` so that a third-party program can
+`cxpDesignIdForPath`. They live in `edacrux_cxp` so that a third-party program can
 depend on one small package with no `crux_io` and no server. This package
 keeps `CxpServer` / `LocalCxpServer` / `NoopCxpServer`, `CxpPathContainment`
 and `CxpWorkspaceStore`, which depend on `crux_io`.
 
 ### Changed
 
-- `CxpServer` now `implements CxpLinkSink` (declared in `cxp`): the three
+- `CxpServer` now `implements CxpLinkSink` (declared in `edacrux_cxp`): the three
   members the connector uses, `attachLinkedPeer`, `detachLinkedPeer` and
   `injectInbound`. Nothing is added to what an implementation of `CxpServer`
   must provide.
@@ -26,7 +26,7 @@ and `CxpWorkspaceStore`, which depend on `crux_io`.
 
 ### Added
 
-- Re-exports `CxpProbe` and its types from `cxp`, and
+- Re-exports `CxpProbe` and its types from `edacrux_cxp`, and
   `cxpSpecificationRevision`, `LocalCxpClient.sendTracked`.
 
 ## 0.12.0
@@ -942,7 +942,7 @@ API changes, zero wire-format changes.
 ### Publishing to pub.dev
 
 This package is not published. The protocol and the client third parties build
-against are the `cxp` package, which is the one meant for pub.dev; this one
+against are the `edacrux_cxp` package, which is the one meant for pub.dev; this one
 adds the listening half and is consumed by path.
 
 ## 0.4.1

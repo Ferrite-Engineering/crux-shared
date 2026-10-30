@@ -22,7 +22,7 @@ workspace:
   - packages/crux_heatmap
   - packages/crux_netlist
   - packages/crux_flow
-  - packages/cxp
+  - packages/edacrux_cxp
   - packages/crux_cxp
   - packages/crux_cxp_ui
   - packages/crux_app_info

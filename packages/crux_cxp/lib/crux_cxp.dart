@@ -11,14 +11,15 @@
 /// where no participant is in charge.
 ///
 /// The protocol itself (messages, identity, client, discovery, the peer
-/// connector, the one-call `CxpProbe` client) lives in the pure-Dart `cxp`
-/// package, which this library re-exports in full, so a product imports one
-/// library and the apps and third-party tools share one implementation. This
-/// package adds what only a *listening* peer needs: the server, the
-/// receiver-side path rule, and the shared design-to-artifact store.
+/// connector, the one-call `CxpProbe` client) lives in the pure-Dart
+/// `edacrux_cxp` package, which this library re-exports in full, so a product
+/// imports one library and the apps and third-party tools share one
+/// implementation. This package adds what only a *listening* peer needs:
+/// the server, the receiver-side path rule, and the shared design-to-artifact
+/// store.
 ///
 /// This library exports the v1 protocol bindings:
-//////
+///
 /// - `ElementId` / `ElementKind` — cross-tool element identity.
 /// - `NameResolver` / `NoopNameResolver` / `IdentityNameResolver` —
 ///   product-local ↔ canonical name conversion seam.
@@ -70,10 +71,10 @@
 /// a compatibility commitment. The knobs they parameterise are still
 /// reachable — as the `maxLineLength` and `maxPendingWriteBytes`
 /// constructor arguments on both transports. Tests reach the framing
-/// directly via `package:cxp/cxp_listener.dart`.
+/// directly via `package:edacrux_cxp/edacrux_cxp_listener.dart`.
 library;
 
-export 'package:cxp/cxp.dart';
+export 'package:edacrux_cxp/edacrux_cxp.dart';
 export 'src/cxp_path_containment.dart';
 export 'src/cxp_server.dart';
 export 'src/cxp_workspace.dart';

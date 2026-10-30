@@ -95,7 +95,6 @@ crux_audit:98
 crux_collections:98
 crux_command_palette:92
 crux_cxp:88
-cxp:75
 crux_cxp_ui:90
 crux_dock:95
 crux_eula:83
@@ -133,6 +132,7 @@ crux_updates:96
 crux_window_chrome:78
 crux_workspace:87
 crux_yosys:88
+edacrux_cxp:75
 "
 
 only="${1:-}"

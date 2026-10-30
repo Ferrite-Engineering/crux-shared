@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #
-# Semver discipline guard for the CXP packages: `cxp` (published to pub.dev)
+# Semver discipline guard for the CXP packages: `edacrux_cxp` (published to pub.dev)
 # and `crux_cxp` (the suite's own, which re-exports it).
 #
 #   tool/check-cxp-version.sh <base-ref>
@@ -11,7 +11,7 @@
 #
 # Repo policy (CLAUDE.md § "Versioning contract"): for every other package the
 # submodule SHA is the compatibility contract and `version:` is informational.
-# The CXP packages are the exception: `cxp` is meant for pub.dev, where its
+# The CXP packages are the exception: `edacrux_cxp` is meant for pub.dev, where its
 # `version:` becomes a real constraint that real solvers resolve against, and
 # `crux_cxp` re-exports it. Discipline has to exist before the first publish,
 # not after.

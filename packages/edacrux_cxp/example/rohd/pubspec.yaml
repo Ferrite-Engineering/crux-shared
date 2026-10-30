@@ -1,0 +1,11 @@
+name: cxp_rohd_example
+description: A ROHD simulation that cross-probes WaveCrux and NetCrux over CXP.
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  edacrux_cxp:
+    path: ../..
+  rohd: ^0.6.11

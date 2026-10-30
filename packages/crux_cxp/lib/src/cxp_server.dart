@@ -6,8 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crux_cxp/src/cxp_path_containment.dart';
-import 'package:cxp/cxp.dart';
-import 'package:cxp/cxp_listener.dart';
+import 'package:edacrux_cxp/edacrux_cxp.dart';
+import 'package:edacrux_cxp/edacrux_cxp_listener.dart';
 import 'package:meta/meta.dart';
 
 /// Event emitted when a peer connects or disconnects from a [CxpServer].

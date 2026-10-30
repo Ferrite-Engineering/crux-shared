@@ -65,7 +65,7 @@ skipped, as are `.dart_tool/` and `build/`.
   * An extension, or an operator, is used without its name being written, so
     `extension` symbols are always reported as used.
   * A symbol public on purpose for a consumer that does not exist yet — the
-    `cxp` surface a third-party tool will build against — is `unused`
+    `edacrux_cxp` surface a third-party tool will build against — is `unused`
     here and correct anyway.
 
 ## Advisory, not a gate

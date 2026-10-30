@@ -7,7 +7,7 @@ tools) gossip selection events, request highlights, and reconcile element
 identity across products.
 
 **Where the code lives.** The protocol and the client a third-party Dart
-program uses are the pure-Dart `cxp` package (`packages/cxp`), the one meant
+program uses are the pure-Dart `edacrux_cxp` package (`packages/edacrux_cxp`), the one meant
 for pub.dev. This package re-exports it in full and adds the listening half
 the apps need: `CxpServer` / `LocalCxpServer`, `CxpPathContainment` and
 `CxpWorkspaceStore`. A product imports `package:crux_cxp/crux_cxp.dart` and
@@ -351,18 +351,16 @@ The v1.0 protocol bindings, transport and discovery are shipped and in use.
 Each product wires up its own CXP server and handler set on its own
 schedule; this package is the shared half.
 
-This is the one package in `crux-shared` that will be **published to
-pub.dev** at the open-core flip, so that third-party tools can speak CXP
-without vendoring anything. It therefore carries real semver discipline
+This package is not published to pub.dev. The one that is meant for it is
+`edacrux_cxp`, which this package re-exports, so that third-party tools can
+speak CXP without vendoring anything. Both carry real semver discipline
 today — see the versioning policy at the top of
 [`CHANGELOG.md`](CHANGELOG.md), which also explains why the package version
 and the `cxpProtocolVersion` wire version move independently.
 
 ## License
 
-Apache 2.0 at the post-beta open-core flip, matching the rest of the EDA
-Crux suite (each product's open-core repo follows the same
-`<vendor>/<product>` pattern).
+Apache 2.0, matching the rest of the EDACrux suite.
 
 ## Exported on purpose
 

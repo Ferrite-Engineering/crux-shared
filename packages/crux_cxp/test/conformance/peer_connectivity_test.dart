@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crux_cxp/crux_cxp.dart';
-import 'package:cxp/src/cxp_host_stub.dart' as web_host;
+import 'package:edacrux_cxp/src/cxp_host_stub.dart' as web_host;
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
