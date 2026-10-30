@@ -255,10 +255,66 @@ void main() {
         expect(envelope['message_id'], isA<String>());
         expect(envelope['payload'], {
           'element': {'kind': 'signal', 'path': 'top.cpu.alu.result[7:0]'},
-          'metadata': {'time_ps': 41250, 'crux.design_id': '0123456789abcdef'},
+          'metadata': {
+            'crux.time_ps': 41250,
+            'crux.design_id': '0123456789abcdef',
+          },
         });
       },
     );
+
+    // The example in CXP §9.3.2 (rev. 10), key for key.
+    test('showSignal with a time is exactly the §9.3.2 example', () async {
+      final wave = await peer(capabilities: {'cxp.accepts:signal'});
+      final p = await probe();
+      await p.waitForPeer();
+
+      await p.showSignal('top.cpu.alu.result[7:0]', timePs: 41250);
+
+      final envelope = wave.receivedOf('request_highlight').single;
+      expect(envelope['payload'], {
+        'element': {'kind': 'signal', 'path': 'top.cpu.alu.result[7:0]'},
+        'metadata': {'crux.time_ps': 41250},
+      });
+    });
+
+    test('time 0 is a time; no timePs sends no time key', () async {
+      final wave = await peer(capabilities: {'cxp.accepts:signal'});
+      final p = await probe();
+      await p.waitForPeer();
+
+      await p.showSignal('top.clk', timePs: 0);
+      await p.showSignal('top.clk');
+
+      final sent = [
+        for (final e in wave.receivedOf('request_highlight'))
+          (e['payload']! as Map)['metadata'],
+      ];
+      expect(sent, [
+        {'crux.time_ps': 0},
+        null,
+      ]);
+    });
+
+    test('every highlight method takes the same time key', () async {
+      final net = await peer(productName: 'netcrux');
+      final p = await probe();
+      await p.waitForPeer();
+
+      await p.highlightNet('top.n', timePs: 7);
+
+      final payload = net.receivedOf('request_highlight').single['payload']!;
+      expect((payload as Map)['metadata'], {cxpTimePsMetadataKey: 7});
+    });
+
+    test('a negative time is refused before anything is sent', () async {
+      final wave = await peer(capabilities: {'cxp.accepts:signal'});
+      final p = await probe();
+      await p.waitForPeer();
+
+      expect(() => p.showSignal('top.clk', timePs: -1), throwsArgumentError);
+      expect(wave.receivedOf('request_highlight'), isEmpty);
+    });
 
     test('a net, a cell and a scope go out as their own kinds', () async {
       final net = await peer(productName: 'netcrux');
@@ -380,10 +436,10 @@ void main() {
         );
 
         final cell = await p.highlightCell('top.u_add');
-        expect(
-          cell.map((r) => r.peer.productName).toSet(),
-          {'netcrux', 'othertool'},
-        );
+        expect(cell.map((r) => r.peer.productName).toSet(), {
+          'netcrux',
+          'othertool',
+        });
 
         expect(wave.receivedOf('request_highlight'), hasLength(1));
         expect(net.receivedOf('request_highlight'), hasLength(1));
@@ -529,7 +585,7 @@ void main() {
               {'kind': 'signal', 'path': 'top.cpu.alu.result[7:0]'},
             ],
             'display_name': 'alu.result',
-            'metadata': {'time_ps': 41250},
+            'metadata': {'crux.time_ps': 41250},
           })
           ..send('notify_selection', {'elements': <Object?>[]});
 
@@ -541,7 +597,7 @@ void main() {
         expect(seen.first.elements.single.path, 'top.cpu.alu.result[7:0]');
         expect(seen.first.elements.single.kind, ElementKind.signal);
         expect(seen.first.displayName, 'alu.result');
-        expect(seen.first.metadata['time_ps'], 41250);
+        expect(seen.first.metadata[cxpTimePsMetadataKey], 41250);
         expect(seen.first.isRetraction, isFalse);
         expect(seen.last.isRetraction, isTrue);
       },
@@ -588,10 +644,7 @@ void main() {
           ..send('request_highlight', {
             'element': {'kind': 'net', 'path': 'top.n'},
           })
-          ..send('request_open_source', {
-            'file_path': '/src/a.sv',
-            'line': 7,
-          });
+          ..send('request_open_source', {'file_path': '/src/a.sv', 'line': 7});
         await pollUntil(
           () =>
               wave.receivedOf('request_highlight_ack').isNotEmpty &&
@@ -655,10 +708,7 @@ void main() {
       expect(advertising.accepts(ElementKind.net), isTrue);
       expect(advertising.accepts(ElementKind.signal), isFalse);
       // A kind from a later revision is matched by its wire name.
-      expect(
-        advertising.accepts(ElementKind('widget')),
-        isFalse,
-      );
+      expect(advertising.accepts(ElementKind('widget')), isFalse);
       // Advertising nothing under cxp.accepts: means "send whatever".
       expect(silent.accepts(ElementKind.signal), isTrue);
       expect(
@@ -670,8 +720,8 @@ void main() {
 
   test('the probe announces the revision it implements', () {
     expect(cxpProtocolVersion, '1.3');
-    expect(cxpSpecificationRevision, 9);
-    expect(cxpTimePsMetadataKey, 'time_ps');
+    expect(cxpSpecificationRevision, 10);
+    expect(cxpTimePsMetadataKey, 'crux.time_ps');
     // The wire form of a hello is JSON the spec shows; round-trip a decode.
     final line = jsonEncode({
       'cxp_version': cxpProtocolVersion,

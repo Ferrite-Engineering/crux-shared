@@ -28,6 +28,11 @@ and `CxpWorkspaceStore`, which depend on `crux_io`.
 
 - Re-exports `CxpProbe` and its types from `edacrux_cxp`, and
   `cxpSpecificationRevision`, `LocalCxpClient.sendTracked`.
+- Specification revision 10 (`cxpSpecificationRevision` is `10`): the
+  `crux.time_ps` metadata key, a point in simulation time in picoseconds on a
+  signal highlight. `cxpTimePsMetadataKey` now holds the registered name; it
+  held the unregistered `time_ps` while only `edacrux_cxp` named it, and no
+  app read it.
 
 ## 0.12.0
 

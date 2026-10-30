@@ -5,7 +5,7 @@
 /// same-machine protocol the EDACrux desktop apps (WaveCrux, NetCrux,
 /// LintCrux and SimCrux) use to share a user's focus.
 ///
-/// This package implements CXP 1.3, specification revision 9
+/// This package implements CXP 1.3, specification revision 10
 /// (`cxpProtocolVersion`, `cxpSpecificationRevision`); the specification is
 /// published at <https://edacrux.app/cxp>.
 ///

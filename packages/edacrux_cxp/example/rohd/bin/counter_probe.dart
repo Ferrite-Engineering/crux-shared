@@ -15,11 +15,7 @@ class Counter extends Module {
     final overflow = addOutput('overflow');
 
     Sequential(clk, [
-      If(
-        reset,
-        then: [count < 0],
-        orElse: [count < count + 1],
-      ),
+      If(reset, then: [count < 0], orElse: [count < count + 1]),
     ]);
     Combinational([overflow < count.eq(Const(15, width: 4))]);
   }
@@ -66,12 +62,7 @@ Future<void> main(List<String> args) async {
           product: 'wavecrux',
         ),
       )
-      ..add(
-        probe.highlightNet(
-          '${counter.name}.overflow',
-          product: 'netcrux',
-        ),
-      );
+      ..add(probe.highlightNet('${counter.name}.overflow', product: 'netcrux'));
   });
 
   // Give the probe a moment to connect to the running apps before the

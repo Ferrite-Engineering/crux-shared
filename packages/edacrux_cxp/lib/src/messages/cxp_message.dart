@@ -53,11 +53,12 @@ const String cxpProtocolVersion = '1.3';
 ///
 /// The specification is a Working Draft with numbered revisions; a revision
 /// that only registers vocabulary (element kinds, stream ids, metadata
-/// keys) does not change [cxpProtocolVersion]. This is revision 9 of CXP
-/// 1.3 (<https://edacrux.app/cxp>): formal properties, timing paths and
-/// netlist cells as element kinds, and the optional `active_document`
-/// field of a peer identity.
-const int cxpSpecificationRevision = 9;
+/// keys) does not change [cxpProtocolVersion]. This is revision 10 of CXP
+/// 1.3 (<https://edacrux.app/cxp>): rev. 9's formal properties, timing paths
+/// and netlist cells as element kinds and the optional `active_document`
+/// field of a peer identity, and rev. 10's `crux.time_ps` metadata key
+/// (`cxpTimePsMetadataKey`).
+const int cxpSpecificationRevision = 10;
 
 /// True when [version]'s major component matches this implementation's
 /// major version - the acceptance test of the version policy documented
@@ -299,13 +300,8 @@ class CxpEnvelope {
           _mapEquals(other.payload, payload));
 
   @override
-  int get hashCode => Object.hash(
-    cxpVersion,
-    messageId,
-    from,
-    kind,
-    _mapHash(payload),
-  );
+  int get hashCode =>
+      Object.hash(cxpVersion, messageId, from, kind, _mapHash(payload));
 
   @override
   String toString() =>

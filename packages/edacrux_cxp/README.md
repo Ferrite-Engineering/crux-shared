@@ -1,6 +1,6 @@
 # edacrux_cxp
 
-A pure-Dart client for **CXP 1.3 (specification revision 9)**, the
+A pure-Dart client for **CXP 1.3 (specification revision 10)**, the
 Cross-Tool eXchange Protocol. From any Dart program, with no Flutter, you can
 cross-probe the EDACrux desktop apps: show a signal at a time in WaveCrux,
 highlight a net or a cell or open a scope in NetCrux, open a source location,
@@ -80,9 +80,15 @@ connected peer that accepts the element kind, by the specification's
 sent whatever you send). `product:` narrows it to one app; `to:` names a peer
 and sends regardless.
 
-**Time.** `timePs` rides in the request's `metadata` as `time_ps`. CXP does
-not yet register a key for simulation time, so no app acts on it yet; apps
-ignore metadata keys they do not know, so sending it is safe.
+**Time.** `timePs` is a point in simulation time, as a non-negative integer
+number of picoseconds from the start of the simulation, and rides in the
+request's `metadata` as `crux.time_ps` (`cxpTimePsMetadataKey`), a key CXP
+registers from specification revision 10. A waveform viewer puts its cursor at
+that time and scrolls it into view: WaveCrux converts it to the timescale of
+the dump it has open, and clamps a time outside the dump to the nearest end. An
+app with no time axis, or one that predates the key, still shows the signal and
+ignores the time; apps ignore metadata keys they do not know, so sending it is
+safe. A negative `timePs` throws an `ArgumentError` before anything is sent.
 
 **Receiving.** A probe subscribes to every selection by default and reports
 them as `CxpSelectionReceived`. A peer can also send the probe a request; pass
@@ -112,7 +118,7 @@ The pieces `CxpProbe` is built from are exported as well: `ElementId` and
 | | |
 |---|---|
 | CXP protocol version on the wire | 1.3 (`cxpProtocolVersion`) |
-| Specification revision implemented | 9 (`cxpSpecificationRevision`) |
+| Specification revision implemented | 10 (`cxpSpecificationRevision`) |
 
 The package version follows semver over the Dart API and is independent of the
 wire version. See the [changelog](CHANGELOG.md).

@@ -21,15 +21,16 @@ import 'package:edacrux_cxp/src/peer_identity.dart';
 import 'package:edacrux_cxp/src/probe/cxp_probe_types.dart';
 import 'package:edacrux_cxp/src/stream_coordinate.dart';
 
-/// The `metadata` key [CxpProbe] puts a simulation or waveform time under
-/// when a send method is given `timePs`: picoseconds, as an integer.
+/// The `metadata` key [CxpProbe] puts a simulation time under when a send
+/// method is given `timePs`: a non-negative integer number of picoseconds
+/// from the start of the simulation.
 ///
-/// This is **not** a key CXP registers (§9.3.1 lists the registered ones),
-/// and no app acts on it yet; the specification's own `notify_selection`
-/// example uses the same name. A receiver must ignore a metadata key it does
-/// not understand, so sending it is safe, and an app that adopts it later
-/// starts honouring it without a change here.
-const String cxpTimePsMetadataKey = 'time_ps';
+/// CXP registers it, as `crux.time_ps`, from specification revision 10
+/// (§9.3.2). On a `request_highlight` of a signal it asks the receiver to put
+/// its time cursor at that time and scroll it into view; a receiver that
+/// cannot honour it still honours the highlight, and one that predates the
+/// key ignores it as §9.3 requires.
+const String cxpTimePsMetadataKey = 'crux.time_ps';
 
 /// The default subscription of a [CxpProbe]: every `notify_selection`.
 const List<CxpSubscription> cxpProbeDefaultSubscriptions = <CxpSubscription>[
@@ -237,8 +238,10 @@ class CxpProbe {
   /// (§9.10.1) that lets a peer find the design when it has not got it open.
   /// [metadata] is extra free-form context, sent as given.
   ///
-  /// [timePs] travels under [cxpTimePsMetadataKey], which no app honours
-  /// yet; see there.
+  /// [timePs] travels under [cxpTimePsMetadataKey]: the receiver puts its
+  /// cursor at that time and scrolls it into view. It must not be negative
+  /// (an [ArgumentError] otherwise); see the key for what a receiver does
+  /// with it.
   Future<List<CxpProbeReply>> showSignal(
     String path, {
     int? timePs,
@@ -432,6 +435,14 @@ class CxpProbe {
     int? timePs,
     String? designId,
   }) {
+    if (timePs != null && timePs < 0) {
+      throw ArgumentError.value(
+        timePs,
+        'timePs',
+        'must not be negative: CXP counts picoseconds from the start of the '
+            'simulation',
+      );
+    }
     final merged = <String, Object?>{...metadata};
     if (timePs != null) merged[cxpTimePsMetadataKey] = timePs;
     if (designId != null) merged[cxpDesignIdMetadataKey] = designId;

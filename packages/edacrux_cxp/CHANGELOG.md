@@ -16,7 +16,14 @@ this release implements.
 
 ## 0.1.0
 
-First release. Implements CXP 1.3, specification revision 9.
+First release. Implements CXP 1.3, specification revision 10.
+
+- `showSignal(path, timePs:)` and the other highlight methods send the time
+  under the registered `crux.time_ps` metadata key (`cxpTimePsMetadataKey`),
+  which revision 10 of the specification registers: a non-negative integer
+  number of picoseconds from the start of the simulation, which a waveform
+  viewer answers by putting its cursor there and scrolling it into view. A
+  negative `timePs` throws an `ArgumentError` before anything is sent.
 
 - `CxpProbe`: a dial-only client. Finds the running apps through the manifest
   directory, connects with the 1.3 mutual authentication, and sends typed
