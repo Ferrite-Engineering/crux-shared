@@ -11,6 +11,7 @@ The domain-neutral core of a user-customizable keyboard-shortcut system, generic
 - **`KeyBindingResolver`** — pure helpers: `resolve(defaults, diffs)` overlays a persisted diff map onto the product defaults; `diff(actions, current, defaults)` computes the diff to persist/export; `activatorsEqual(...)`. These keep a product's binding notifier trivial.
 - **`findShortcutConflicts<A>` / `activatorSignature`** — live conflict detection for an editor UI, with a caller-supplied `intentionalShadows` allow-list so by-design keyboard shadows aren't flagged.
 - **`formatShortcutLabel`** — platform-aware human-readable chord labels (`⌘⇧P` on macOS, `Ctrl+Shift+P` elsewhere).
+- **`installLinuxKeyEventRepair()`** — call once after `WidgetsFlutterBinding.ensureInitialized()`. On an X display whose keycodes are not evdev's (XQuartz, the Mac X server behind `ssh -Y`), Flutter's Linux embedder reports Backspace, Tab, Enter and Escape as printable keys (Backspace arrives as the comma key, Escape as the slash key), so text fields ignore Backspace and nothing sees Escape. The repair sits in front of the framework's key data handler and gives a key press whose character is one of those keys' control characters, and whose logical key is printable, the control key's logical key; its repeats and release follow. It does nothing off Linux, and changes nothing on an evdev display.
 
 ## What's deliberately not here (yet)
 

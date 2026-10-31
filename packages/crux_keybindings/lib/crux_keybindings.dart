@@ -19,6 +19,10 @@
 /// - `findShortcutConflicts` / `activatorSignature` — live conflict detection
 ///   with a caller-supplied intentional-shadow allow-list.
 /// - `formatShortcutLabel` — platform-aware human-readable chord labels.
+/// - `installLinuxKeyEventRepair` — gives Backspace, Tab, Enter, Escape and
+///   Delete their own logical keys back on an X display whose keycodes are not
+///   evdev's (XQuartz over `ssh -Y`), where Flutter reports them as printable
+///   keys.
 ///
 /// Each product supplies its own action enum, `defaultBindings()`, `Intent`
 /// subclass, and localized labels. See the package README for the canonical
@@ -35,6 +39,7 @@ export 'src/key_binding.dart' hide isModifierKey;
 export 'src/key_binding_resolver.dart';
 export 'src/key_bindings_store.dart';
 export 'src/keymap_codec.dart' hide defaultKeymapSchema;
+export 'src/linux_key_event_repair.dart' show installLinuxKeyEventRepair;
 export 'src/shortcut_conflicts.dart' hide activatorSignature;
 export 'src/shortcut_label.dart' hide formatShortcutSpokenLabel;
 export 'src/widgets/key_binding_editor_metrics.dart';

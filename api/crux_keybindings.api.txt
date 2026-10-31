@@ -130,5 +130,6 @@ class ShortcutConflictResolution<A>
   get conflictChordCount -> int
 findShortcutConflicts<A>(Map<A, ShortcutActivator> bindings, {Set<Set<A>> intentionalShadows}) -> Map<A, List<A>>
 formatShortcutLabel(ShortcutActivator? activator, {String emptyLabel}) -> String
+installLinuxKeyEventRepair() -> void
 get kKeymapVersion -> int
 resolveShortcutConflicts<A>(Map<A, ShortcutActivator> bindings, Map<A, ShortcutActivator> defaults, {Iterable<A>? order, Set<Set<A>> intentionalShadows}) -> ShortcutConflictResolution<A>

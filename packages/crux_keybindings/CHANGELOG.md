@@ -6,6 +6,12 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **`installLinuxKeyEventRepair()`.** On an X display whose keycodes are not
+  evdev's (XQuartz over `ssh -Y`), Backspace, Tab, Enter, Escape and Delete
+  reach the framework with a printable logical key and do nothing in text
+  fields or shortcuts. Installed once at startup, the repair restores each
+  key's logical key from its character. Linux only; no change on evdev.
+
 - **Export namespace narrowed by 3 symbols.** `activatorSignature`, `defaultKeymapSchema`, `formatShortcutSpokenLabel` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - Reset All confirms through `confirmCruxDestructiveAction`: Cancel holds
