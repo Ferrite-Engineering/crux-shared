@@ -4,6 +4,7 @@
 import 'package:crux_ide_layout/crux_ide_layout.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host({
@@ -213,6 +214,166 @@ void main() {
       await tester.pump();
 
       expect(fired, 1);
+    });
+  });
+
+  group('semantics of the content', () {
+    // A value row with a control beside it, the shape of a value cell with a
+    // lock: the value copies on tap, the lock says why something is withheld.
+    // The wrapper must not fold the lock into the row's node, on a touch
+    // layout or a pointer one.
+    Widget row({required VoidCallback? onLock, required VoidCallback onValue}) {
+      return SizedBox(
+        width: 240,
+        height: 24,
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onValue,
+                child: const Text('a'),
+              ),
+            ),
+            Semantics(
+              button: true,
+              label: 'Locked: needs Pro.',
+              onTap: onLock,
+              excludeSemantics: true,
+              child: InkWell(
+                onTap: onLock ?? () {},
+                child: const Icon(Icons.lock_outline),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Future<void> pump(
+      WidgetTester tester, {
+      required TargetPlatform platform,
+      required bool isTouchLayout,
+      required Widget child,
+      void Function(Offset)? onContextMenu,
+    }) {
+      return tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: platform),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: PlatformContextMenu(
+                onContextMenu: onContextMenu ?? (_) {},
+                isTouchLayout: isTouchLayout,
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    const layouts = <(TargetPlatform, bool)>[
+      (TargetPlatform.android, false),
+      (TargetPlatform.iOS, false),
+      (TargetPlatform.windows, true),
+      (TargetPlatform.macOS, false),
+      (TargetPlatform.linux, false),
+    ];
+
+    for (final (platform, touch) in layouts) {
+      final name = '${platform.name}${touch ? ', touch layout' : ''}';
+
+      testWidgets('a control with its own tap stays its own node: $name', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        var locks = 0;
+        var values = 0;
+        await pump(
+          tester,
+          platform: platform,
+          isTouchLayout: touch,
+          child: row(onLock: () => locks++, onValue: () => values++),
+        );
+
+        final lock = find.semantics.byLabel('Locked: needs Pro.');
+        expect(lock, findsOne);
+        expect(
+          lock.evaluate().single,
+          isSemantics(
+            label: 'Locked: needs Pro.',
+            isButton: true,
+            hasTapAction: true,
+          ),
+        );
+        expect(find.semantics.byLabel('a'), findsOne);
+
+        tester.semantics.tap(lock);
+        expect((locks, values), (1, 0));
+        tester.semantics.tap(find.semantics.byLabel('a'));
+        expect((locks, values), (1, 1));
+        handle.dispose();
+      });
+
+      testWidgets('a control without a tap action keeps its own label: $name', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        await pump(
+          tester,
+          platform: platform,
+          isTouchLayout: touch,
+          child: row(onLock: null, onValue: () {}),
+        );
+
+        // Exact matches: neither label is folded into the other's node.
+        expect(find.semantics.byLabel('Locked: needs Pro.'), findsOne);
+        expect(find.semantics.byLabel('a'), findsOne);
+        expect(
+          find.semantics.byLabel(RegExp('a\nLocked|Locked.*\na')),
+          findsNothing,
+        );
+        handle.dispose();
+      });
+    }
+
+    testWidgets('a screen reader long press opens the menu at the centre on '
+        'a touch layout', (tester) async {
+      final handle = tester.ensureSemantics();
+      Offset? received;
+      await pump(
+        tester,
+        platform: TargetPlatform.android,
+        isTouchLayout: true,
+        onContextMenu: (p) => received = p,
+        child: const SizedBox(width: 200, height: 100, child: Text('row')),
+      );
+
+      tester.semantics.longPress(
+        find.semantics.byAction(SemanticsAction.longPress),
+      );
+      expect(received, const Offset(100, 50));
+      handle.dispose();
+    });
+
+    testWidgets('a pointer-first desktop layout offers no long press', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pump(
+        tester,
+        platform: TargetPlatform.macOS,
+        isTouchLayout: false,
+        child: const SizedBox(width: 200, height: 100, child: Text('row')),
+      );
+
+      expect(
+        find.semantics.byAction(SemanticsAction.longPress),
+        findsNothing,
+      );
+      handle.dispose();
     });
   });
 

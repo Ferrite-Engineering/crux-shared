@@ -62,26 +62,49 @@ class PlatformContextMenu extends StatelessWidget {
     // Long-press is a touch gesture. A mouse or trackpad press that is held
     // is a slow click, which over a remote display is common (the button-up
     // arrives late), so it never opens the menu; right-click is its route.
-    // The filter sits on its own detector so it does not reach the
-    // secondary-button tap.
-    return GestureDetector(
+    // The device filter is on the long-press recognizer alone, so it does not
+    // reach the secondary-button tap.
+    //
+    // Both recognizers live on one detector, so the wrapper is one semantics
+    // annotation. A second detector nested inside would be a separate
+    // annotation that the child's semantics merge into: on a touch layout a
+    // row and the controls beside it (a lock, a button without its own tap
+    // action) would become one node with one label, and a screen reader would
+    // no longer reach the control by itself.
+    return RawGestureDetector(
       behavior: HitTestBehavior.translucent,
-      onSecondaryTapUp: (d) => onContextMenu(d.globalPosition),
-      child: enableLongPress
-          ? GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              supportedDevices: const {
-                PointerDeviceKind.touch,
-                PointerDeviceKind.stylus,
-                PointerDeviceKind.invertedStylus,
-              },
-              onLongPressStart: (d) => onContextMenu(d.globalPosition),
-              child: child,
-            )
-          : child,
+      gestures: <Type, GestureRecognizerFactory>{
+        TapGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
+              () => TapGestureRecognizer(debugOwner: this),
+              (recognizer) =>
+                  recognizer.onSecondaryTapUp = (d) =>
+                      onContextMenu(d.globalPosition),
+            ),
+        if (enableLongPress)
+          LongPressGestureRecognizer:
+              GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+                () => LongPressGestureRecognizer(
+                  debugOwner: this,
+                  supportedDevices: _longPressDevices,
+                ),
+                (recognizer) =>
+                    recognizer.onLongPressStart = (d) =>
+                        onContextMenu(d.globalPosition),
+              ),
+      },
+      child: child,
     );
   }
 }
+
+/// The pointers whose long press opens a [PlatformContextMenu]: a finger or
+/// a pen. A mouse or trackpad opens it with a right-click.
+const Set<PointerDeviceKind> _longPressDevices = {
+  PointerDeviceKind.touch,
+  PointerDeviceKind.stylus,
+  PointerDeviceKind.invertedStylus,
+};
 
 /// Returns true when long-press should fire a context menu for a layout
 /// classified as [isTouchLayout] running on the given [platform].

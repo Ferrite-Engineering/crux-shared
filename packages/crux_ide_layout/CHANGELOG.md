@@ -6,6 +6,15 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Fix: `PlatformContextMenu` keeps the content's own semantics nodes on a
+  touch layout** (crux-shared#69). The touch-and-pen filter had put the long
+  press on a second, nested detector, and the content's semantics merged into
+  it: a value and the control beside it (a lock, a button without its own tap
+  action) became one node with one label. Both recognizers are back on one
+  detector, the device filter on the long-press recognizer alone, so the
+  semantics tree is the one from before the filter. A screen reader's long
+  press opens the menu at the centre of the content.
+
 - **Fix: `PlatformContextMenu` long-press is touch and pen only**
   (crux-shared#65). A mouse or trackpad button held past the long-press
   timeout is a slow click, common over a remote display, and no longer opens
