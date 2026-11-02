@@ -11,7 +11,8 @@ import 'package:crux_issue_reporter/src/platform_utils.dart';
 import 'package:crux_issue_reporter/src/providers/crux_issue_reporter_providers.dart';
 import 'package:crux_issue_reporter/src/services/crux_issue_reporter_log_buffer.dart';
 import 'package:crux_issue_reporter/src/services/crux_issue_reporter_service.dart';
-import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
+import 'package:crux_settings_ui/crux_settings_ui.dart'
+    show CruxFormRow, CruxFormSection;
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
@@ -347,16 +348,24 @@ class _CruxIssueReporterDialogState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextField(
-                      key: kCruxIssueTitleFieldKey,
-                      controller: _titleController,
-                      decoration: InputDecoration(
-                        labelText: strings.titleFieldLabel,
-                        hintText: strings.titleFieldHint,
-                        border: const OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                      textInputAction: TextInputAction.done,
+                    // A row, not `labelText`: the label stays visible once the
+                    // user has typed a summary, and still names the field.
+                    CruxFormSection(
+                      children: [
+                        CruxFormRow(
+                          label: strings.titleFieldLabel,
+                          child: TextField(
+                            key: kCruxIssueTitleFieldKey,
+                            controller: _titleController,
+                            decoration: InputDecoration(
+                              hintText: strings.titleFieldHint,
+                              border: const OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            textInputAction: TextInputAction.done,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     _PrivacyCallout(text: strings.privacyNotice),

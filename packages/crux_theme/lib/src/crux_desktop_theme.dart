@@ -296,6 +296,13 @@ ThemeData cruxDesktopTheme(ColorScheme scheme, {required bool highContrast}) {
     // 28 px fields, 13 px text, label-left forms: no floating label. The
     // fill is a neutral control's face, so a field and a pop-up button side
     // by side match (white in light, the highest container in dark).
+    //
+    // `never` also means an `InputDecoration.labelText` is drawn only while
+    // the field is empty, so a field that holds a value would show bare
+    // text. A field's label therefore lives in its own widget beside it
+    // (`CruxFormRow`), and `field_label_guard_test.dart` keeps `labelText`
+    // out of every package's `lib/`. A floating label is not an alternative
+    // at this size: it needs roughly twice the 28 px control height.
     inputDecorationTheme: InputDecorationThemeData(
       isDense: true,
       constraints: BoxConstraints(minHeight: tokens.controlHeight),

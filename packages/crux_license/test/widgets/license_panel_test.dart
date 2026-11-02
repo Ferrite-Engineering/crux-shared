@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDesktopTokens;
 import 'package:crux_license/crux_license.dart';
 import 'package:crux_license/src/widgets/license_settings_category.dart';
 import 'package:flutter/material.dart';
@@ -59,12 +60,18 @@ void main() {
     CruxLicenseStatus status = CruxLicenseStatus.openCore,
     CruxLicenseActions actions = const UnsupportedLicenseActions(),
     Future<String?> Function(BuildContext)? onPickCredentialFile,
+    bool desktop = false,
   }) => ProviderScope(
     overrides: [
       licenseStatusProvider.overrideWithValue(status),
       licenseActionsProvider.overrideWithValue(actions),
     ],
     child: MaterialApp(
+      theme: ThemeData(
+        extensions: desktop
+            ? const <ThemeExtension<dynamic>>[CruxDesktopTokens()]
+            : const <ThemeExtension<dynamic>>[],
+      ),
       home: Scaffold(
         body: SingleChildScrollView(
           child: CruxLicensePanel(
@@ -244,6 +251,55 @@ void main() {
       await tapVisible(tester, find.text(strings.licenseActivateButton));
 
       expect(actions.activatedWith, <String>['key/abc.def']);
+    });
+
+    for (final desktop in const [false, true]) {
+      testWidgets(
+        'the key field keeps its label once a key is pasted '
+        '(desktop=$desktop)',
+        (tester) async {
+          final handle = tester.ensureSemantics();
+          await tester.pumpWidget(host(desktop: desktop));
+
+          expect(find.text(strings.licenseKeyFieldLabel), findsOneWidget);
+
+          await tester.enterText(find.byType(TextField).first, 'key/abc.def');
+          await tester.pumpAndSettle();
+
+          // Visible in its own widget, not as an InputDecoration label that
+          // the desktop theme hides while the field holds text.
+          expect(find.text(strings.licenseKeyFieldLabel), findsOneWidget);
+          expect(
+            tester
+                .widget<TextField>(find.byType(TextField).first)
+                .decoration
+                ?.labelText,
+            isNull,
+          );
+          // And it is the field's accessible name, followed by the helper
+          // text the field has always announced.
+          final data = tester
+              .getSemantics(find.byType(TextField).first)
+              .getSemanticsData();
+          expect(data.label, startsWith(strings.licenseKeyFieldLabel));
+          expect(data.label, contains(strings.licenseKeyFieldHelper));
+          expect(data.flagsCollection.isTextField, isTrue);
+          expect(data.value, 'key/abc.def');
+          handle.dispose();
+        },
+      );
+    }
+
+    testWidgets('the key field shows its error beside the label with '
+        'semantics on', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(host(desktop: true));
+
+      await tapVisible(tester, find.text(strings.licenseActivateButton));
+
+      expect(find.text(strings.licenseErrorMalformed), findsOneWidget);
+      expect(find.text(strings.licenseKeyFieldLabel), findsOneWidget);
+      handle.dispose();
     });
 
     testWidgets('a successful activation clears the field', (tester) async {

@@ -345,6 +345,23 @@ class _PreviewRow extends StatelessWidget {
   }
 }
 
+/// The width of the label column the hex field and the RGB read-out share, so
+/// their values line up.
+const double _kLabelColumnWidth = 56;
+
+/// The hex field with its label always visible, in the same label-left layout
+/// as [_RgbReadout].
+///
+/// An `InputDecoration.labelText` would vanish as soon as the field holds a
+/// value under the Crux Desktop theme (which never floats labels), and the
+/// field always holds one here. This does not use `CruxFormRow`, though it is
+/// the same idiom: `crux_settings_ui` would pull the policy and signing
+/// packages into every package that takes the theme, for one row.
+///
+/// The visible label is hidden from assistive technology and the field is
+/// named by a [Semantics] label with the same text. Merging the label and the
+/// field with [MergeSemantics] instead trips a framework assertion as soon as
+/// the field has a prefix, which this one does.
 class _HexInput extends StatelessWidget {
   const _HexInput({
     required this.controller,
@@ -358,15 +375,35 @@ class _HexInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixText: '#',
-        errorText: errorText,
-        isDense: true,
-      ),
-      inputFormatters: _hexInputFormatters,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        SizedBox(
+          width: _kLabelColumnWidth,
+          child: ExcludeSemantics(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Semantics(
+            label: label,
+            child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                prefixText: '#',
+                errorText: errorText,
+                isDense: true,
+              ),
+              inputFormatters: _hexInputFormatters,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -396,7 +433,7 @@ class _RgbReadout extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         SizedBox(
-          width: 56,
+          width: _kLabelColumnWidth,
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelMedium,

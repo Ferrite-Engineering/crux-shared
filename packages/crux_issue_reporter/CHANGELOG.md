@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **The summary field keeps its label while it holds text**
+  (crux-shared#74). The label was an `InputDecoration.labelText`, which the
+  Crux Desktop theme draws only while the field is empty. It is now a
+  `CruxFormRow`, beside the field on desktop and above it on a phone, still
+  the field's accessible name. The hint for the empty field is unchanged.
+
 - The issue page opens through `cruxOpenUrl` and the saved screenshot is
   shown through `cruxRevealFile`, so a host with no browser or file manager
   is told the address and the path. `CruxIssueReporterService.fileRevealer`

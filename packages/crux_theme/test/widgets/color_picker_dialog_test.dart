@@ -5,6 +5,7 @@ import 'package:crux_theme/crux_theme.dart';
 // `ColorPickerDialog`, `colorFromHex` and `hexFromColor` are no longer
 // exported from the barrel (no consumer referenced them). Testing
 // an internal helper through its own library is the intended pattern.
+import 'package:crux_theme/src/crux_desktop_theme.dart' show cruxDesktopTheme;
 import 'package:crux_theme/src/widgets/color_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +43,57 @@ void main() {
       expect(find.text(strings.colorPickerSaturationLabel), findsOneWidget);
       expect(find.text(strings.colorPickerValueLabel), findsOneWidget);
     });
+
+    for (final desktop in const [false, true]) {
+      testWidgets('the hex field keeps its label while it holds a value '
+          '(desktop theme=$desktop)', (tester) async {
+        final handle = tester.ensureSemantics();
+        const strings = ThemeAppearanceStringsEn();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: desktop
+                ? cruxDesktopTheme(
+                    ColorScheme.fromSeed(seedColor: Colors.teal),
+                    highContrast: false,
+                  )
+                : null,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Center(
+                  child: ElevatedButton(
+                    onPressed: () => showColorPickerDialog(
+                      context: context,
+                      initialColor: const Color(0xFFAABBCC),
+                    ),
+                    child: const Text('open'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+
+        // The field is pre-filled from the initial colour, and the theme
+        // never floats a label, so the label has to be a widget of its own.
+        final field = find.byType(TextField);
+        expect(field, findsOneWidget);
+        expect(tester.widget<TextField>(field).controller?.text, 'AABBCCFF');
+        expect(tester.widget<TextField>(field).decoration?.labelText, isNull);
+        expect(find.text(strings.colorPickerHexLabel), findsOneWidget);
+
+        await tester.enterText(field, '112233');
+        await tester.pumpAndSettle();
+        expect(find.text(strings.colorPickerHexLabel), findsOneWidget);
+
+        // The label is the field's accessible name.
+        final data = tester.getSemantics(field).getSemanticsData();
+        expect(data.label, contains(strings.colorPickerHexLabel));
+        expect(data.flagsCollection.isTextField, isTrue);
+        handle.dispose();
+      });
+    }
 
     testWidgets('palette sections stage a tapped swatch and mark it '
         'selected', (tester) async {

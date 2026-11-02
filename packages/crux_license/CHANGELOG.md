@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **The licence key field keeps its label once a key is pasted**
+  (crux-shared#74). The label was an `InputDecoration.labelText`, which the
+  Crux Desktop theme draws only while the field is empty. It is now a
+  `CruxFormRow`, beside the field on desktop and above it on a phone, still
+  the field's accessible name. The helper and error text are unchanged.
+
 - **The beta-expiry and licence-expiry strips are their own semantics
   containers** (crux-shared#58). The message is announced as the strip's name
   when focus enters it, instead of merging into the node above the

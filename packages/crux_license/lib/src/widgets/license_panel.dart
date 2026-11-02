@@ -293,33 +293,36 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
     final theme = Theme.of(context);
     return CruxSettingsSectionCard(
       children: [
-        TextField(
-          controller: _controller,
-          minLines: 3,
-          maxLines: 6,
-          enabled: !status.busy,
-          autocorrect: false,
-          enableSuggestions: false,
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-          decoration: InputDecoration(
-            labelText: _s.licenseKeyFieldLabel,
-            // Without this the label is centred against the whole multi-line
-            // box, which lands it right on top of the pasted key. A licence
-            // key is 700 characters of base64 and needs every bit of
-            // legibility it can get.
-            alignLabelWithHint: true,
-            contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
-            helperText: status.hasCredential
-                ? _s.licenseKeyFieldHelperActive
-                : _s.licenseKeyFieldHelper,
-            helperMaxLines: 3,
-            errorText: _error,
-            errorMaxLines: 4,
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (_) {
-            if (_error != null) setState(() => _error = null);
-          },
+        // A row, not `labelText`: once a key is pasted the label must stay
+        // visible, and it is still the field's accessible name.
+        CruxFormSection(
+          children: [
+            CruxFormRow(
+              label: _s.licenseKeyFieldLabel,
+              child: TextField(
+                controller: _controller,
+                minLines: 3,
+                maxLines: 6,
+                enabled: !status.busy,
+                autocorrect: false,
+                enableSuggestions: false,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+                  helperText: status.hasCredential
+                      ? _s.licenseKeyFieldHelperActive
+                      : _s.licenseKeyFieldHelper,
+                  helperMaxLines: 3,
+                  errorText: _error,
+                  errorMaxLines: 4,
+                  border: const OutlineInputBorder(),
+                ),
+                onChanged: (_) {
+                  if (_error != null) setState(() => _error = null);
+                },
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Wrap(

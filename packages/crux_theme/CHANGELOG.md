@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **The colour picker's hex field keeps its label while it holds a value**
+  (crux-shared#74). The label was an `InputDecoration.labelText`, which the
+  Crux Desktop theme draws only while the field is empty, and the field is
+  never empty here. The label now sits to the left of the field, in the
+  column the RGB read-out uses, and is still the field's accessible name.
+
 - **Export namespace narrowed by 7 symbols.** `CruxColorSwatch`, `PresetPreview`, `TokenEditor`, `cruxDesktopTheme`, `cruxUsesDesktopLayer`, `legacyPresetIdAliases`, `migratePresetId` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **`PresetPreview`: the built-in Crux Dark and Crux Light presets show

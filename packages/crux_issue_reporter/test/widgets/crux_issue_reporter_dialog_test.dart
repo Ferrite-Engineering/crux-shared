@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:crux_app_info/crux_app_info.dart';
+import 'package:crux_ide_layout/crux_ide_layout.dart' show CruxDesktopTokens;
 import 'package:crux_issue_reporter/crux_issue_reporter.dart';
 import 'package:crux_issue_reporter/src/widgets/crux_issue_reporter_dialog.dart';
 import 'package:crux_settings_ui/crux_settings_ui.dart' show CruxFormRow;
@@ -101,9 +102,15 @@ Widget _host({
   List<Override> overrides = const [],
   TextDirection textDirection = TextDirection.ltr,
   double textScale = 1,
+  bool desktop = false,
 }) => ProviderScope(
   overrides: overrides.isEmpty ? _baseOverrides() : overrides,
   child: MaterialApp(
+    theme: ThemeData(
+      extensions: desktop
+          ? const <ThemeExtension<dynamic>>[CruxDesktopTokens()]
+          : const <ThemeExtension<dynamic>>[],
+    ),
     builder: (context, child) => Directionality(
       textDirection: textDirection,
       child: MediaQuery.withClampedTextScaling(
@@ -209,6 +216,53 @@ void main() {
       findsNothing,
     );
   });
+
+  for (final desktop in const [false, true]) {
+    testWidgets(
+      'the summary label stays visible once the field holds a value '
+      '(desktop=$desktop)',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        tester.view.physicalSize = const Size(900, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(_host(desktop: desktop));
+        await tester.pumpAndSettle();
+        const strings = CruxIssueReporterStringsEn();
+
+        // Empty: the label and the hint are both there.
+        expect(find.text(strings.titleFieldLabel), findsOneWidget);
+        expect(find.text(strings.titleFieldHint), findsOneWidget);
+
+        await tester.enterText(
+          find.byKey(kCruxIssueTitleFieldKey),
+          'crash on open',
+        );
+        await tester.pumpAndSettle();
+
+        // Holding a value: the label is still on screen, in its own widget
+        // (not an InputDecoration label that the desktop theme hides).
+        expect(find.text(strings.titleFieldLabel), findsOneWidget);
+        expect(
+          tester
+              .widget<TextField>(find.byKey(kCruxIssueTitleFieldKey))
+              .decoration
+              ?.labelText,
+          isNull,
+        );
+        // The label is the field's accessible name.
+        final data = tester
+            .getSemantics(find.byKey(kCruxIssueTitleFieldKey))
+            .getSemanticsData();
+        expect(data.label, strings.titleFieldLabel);
+        expect(data.value, 'crash on open');
+        expect(data.flagsCollection.isTextField, isTrue);
+        handle.dispose();
+      },
+    );
+  }
 
   testWidgets('Session and Diagnostic Log tiles toggle on tap', (tester) async {
     await tester.pumpWidget(_host());
