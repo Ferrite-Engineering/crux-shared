@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **A web edition starts again: `SharedInstallFingerprint()` no longer asks the
+  platform when it is built** (wavecrux#93). The Linux allowance added with
+  the credential-store fallback read `Platform.operatingSystem` in the
+  constructor, and in a browser that throws `UnsupportedError`. Every Pro
+  overlay builds this while constructing its licence service, so the web
+  build's first provider read failed before the first frame. The platform is
+  now consulted only when a legacy source throws, and a browser reads as not
+  Linux.
+
 - **The licence key field keeps its label once a key is pasted**
   (crux-shared#74). The label was an `InputDecoration.labelText`, which the
   Crux Desktop theme draws only while the field is empty. It is now a

@@ -290,6 +290,14 @@ jobs:
           test/src/telemetry_time_zone_web_test.dart
           test/src/services/telemetry_unclean_shutdown_detector_web_test.dart
 
+      # And for the licence package: every Pro overlay builds the shared
+      # install fingerprint source while constructing its licence service,
+      # before the first frame, and a constructor that asks `Platform` for the
+      # operating system throws there.
+      - name: crux_license on the web (Chrome)
+        working-directory: packages/crux_license
+        run: flutter test --platform chrome test/web
+
       # The committed api/*.api.txt goldens are the reviewable record of the
       # public surface eight repos consume. A diff here is not necessarily a
       # failure — it is a change that has to be looked at deliberately. See

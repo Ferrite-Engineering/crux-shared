@@ -309,7 +309,7 @@ class SharedInstallFingerprint implements InstallFingerprintSource {
     InstallFingerprintFile? file,
     Map<String, String>? environment,
     String? operatingSystem,
-  }) : _operatingSystem = operatingSystem ?? Platform.operatingSystem,
+  }) : _operatingSystem = operatingSystem,
        _file =
            file ??
            InstallFingerprintFile.shared(
@@ -319,8 +319,24 @@ class SharedInstallFingerprint implements InstallFingerprintSource {
 
   final InstallFingerprintFile _file;
 
-  /// The platform judged by the Linux allowance above.
-  final String _operatingSystem;
+  /// The platform judged by the Linux allowance above, or `null` for the host.
+  ///
+  /// Read only when a legacy source throws, never at construction: on the web
+  /// `Platform.operatingSystem` throws, and the Pro overlays build this while
+  /// their license service is being built, before the first frame.
+  final String? _operatingSystem;
+
+  bool get _isLinux {
+    final injected = _operatingSystem;
+    if (injected != null) return injected == 'linux';
+    try {
+      return Platform.operatingSystem == 'linux';
+    } on Object {
+      // A browser has no operating system to ask (`UnsupportedError`), and
+      // no libsecret either.
+      return false;
+    }
+  }
 
   @override
   Future<String?> readOrCreate({
@@ -335,7 +351,7 @@ class SharedInstallFingerprint implements InstallFingerprintSource {
       } on Object {
         // See the class documentation: on Linux, a credential store that
         // throws is one that is not running.
-        if (_operatingSystem != 'linux') rethrow;
+        if (!_isLinux) rethrow;
         continue;
       }
       if (candidate == null) continue;
