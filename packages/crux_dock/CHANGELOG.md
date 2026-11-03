@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- `CruxInspector` pins one action bar to its bottom edge, outside the
+  scrolling list and under a divider, like a dialog's button row. A
+  `CruxInspectorSection.footer` (a `CruxInspectorApplyBar` or a section's own
+  button row) is drawn there instead of at the end of its section, so a tall
+  section no longer hides its commit buttons. Sections keep declaring their
+  footer and may sit inside any widget; no call site changes. When several
+  sections on a selection have Apply bars, the one bar applies (or reverts)
+  every enabled one; other footers stack in section order. A fade over the
+  list's bottom edge shows while rows continue below it. Sections are kept
+  alive while scrolled away so their buttons stay live. `CruxInspectorSection`
+  is now a `StatefulWidget`.
 - `CruxDock` can split: with `onSplitChanged` set, the action cluster's
   split button keeps the active tab open in a second pane on the right
   (`splitId`) and activates the next tab on the left, with a draggable

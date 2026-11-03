@@ -109,9 +109,9 @@ class CruxInspectorListSection extends StatelessWidget
   final itemCount: int
   final title: String
   final trailing: Widget?
-class CruxInspectorSection extends StatelessWidget
+class CruxInspectorSection extends StatefulWidget
   const CruxInspectorSection({Key? key, Widget? footer, Widget? trailing, required List<Widget> children, required String title, void Function()? onSubmit})
-  build(BuildContext context) -> Widget
+  createState() -> State<CruxInspectorSection>
   final children: List<Widget>
   final footer: Widget?
   final onSubmit: void Function()?

@@ -100,6 +100,15 @@ class CruxInspectorController extends ChangeNotifier {
 ///   [CruxInspectorSection]s holding `CruxFormRow`s and
 ///   [CruxInspectorValueRow]s, or a [CruxInspectorListSection] for a long run
 ///   of rows, which the inspector builds lazily.
+/// - **Action bar.** The `footer` of a [CruxInspectorSection] (a
+///   [CruxInspectorApplyBar], or the section's own button row) is not drawn
+///   with its rows: the inspector pins it to its bottom edge, under a divider
+///   and outside the scrolling list, so a tall section never hides its
+///   buttons. Sections keep declaring their footer; they may sit inside any
+///   widget of the host's. When several sections on a selection have Apply
+///   bars the one bar applies (or reverts) every enabled one, with the first
+///   bar's labels; other footers stack in section order. A fade over the
+///   list's bottom edge shows while rows continue below it.
 /// - **Identity.** The body is keyed by [identity] (the selection itself when
 ///   null), so a section's controllers and drafts are rebuilt when another
 ///   object is selected and never carry one object's text into another's.
@@ -216,6 +225,12 @@ class _CruxInspectorState<T extends Object> extends State<CruxInspector<T>> {
     skipTraversal: true,
   );
 
+  // The footers of the sections on show, which the pinned bar renders.
+  final _FooterHost _footers = _FooterHost();
+
+  // Whether the list continues below the visible part; drives the fade.
+  final ValueNotifier<bool> _moreBelow = ValueNotifier<bool>(false);
+
   // Holds the draft state when the host passes no controller.
   CruxInspectorController? _own;
 
@@ -272,6 +287,8 @@ class _CruxInspectorState<T extends Object> extends State<CruxInspector<T>> {
   void dispose() {
     widget.controller?.removeListener(_onOpen);
     _own?.dispose();
+    _footers.dispose();
+    _moreBelow.dispose();
     _root.dispose();
     _body.dispose();
     _actions.dispose();
@@ -399,6 +416,31 @@ class _CruxInspectorState<T extends Object> extends State<CruxInspector<T>> {
     );
   }
 
+  void _onMoreBelow(bool more) {
+    if (_moreBelow.value == more) return;
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle) {
+      _moreBelow.value = more;
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _moreBelow.value = more;
+    });
+  }
+
+  bool _onScrollNotification(Notification notification) {
+    final metrics = switch (notification) {
+      ScrollNotification(:final depth) when depth != 0 => null,
+      ScrollMetricsNotification(:final depth) when depth != 0 => null,
+      ScrollNotification(:final metrics) => metrics,
+      ScrollMetricsNotification(:final metrics) => metrics,
+      _ => null,
+    };
+    if (metrics != null && metrics.axis == Axis.vertical) {
+      _onMoreBelow(metrics.extentAfter > 0.5);
+    }
+    return false;
+  }
+
   Widget _empty() => Semantics(
     container: true,
     child: Focus(
@@ -479,31 +521,49 @@ class _CruxInspectorState<T extends Object> extends State<CruxInspector<T>> {
             ),
           ),
         Expanded(
-          child: Focus(
-            focusNode: _body,
-            includeSemantics: false,
-            child: SelectionArea(
-              focusNode: _selectable,
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-                itemCount: count,
-                itemBuilder: (context, index) {
-                  var i = index;
-                  for (final segment in segments) {
-                    if (i < segment.count) return segment.build(context, i);
-                    i -= segment.count;
-                  }
-                  return const SizedBox.shrink();
-                },
+          child: Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: Focus(
+                  focusNode: _body,
+                  includeSemantics: false,
+                  child: SelectionArea(
+                    focusNode: _selectable,
+                    child: NotificationListener<Notification>(
+                      onNotification: _onScrollNotification,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                        itemCount: count,
+                        itemBuilder: (context, index) {
+                          var i = index;
+                          for (final segment in segments) {
+                            if (i < segment.count) {
+                              return segment.build(context, i);
+                            }
+                            i -= segment.count;
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _ScrollFade(visible: _moreBelow),
+              ),
+            ],
           ),
         ),
+        _PinnedActionBar(host: _footers),
       ],
     );
   }
 
-  static List<_Segment> _segments(List<Widget> sections) {
+  List<_Segment> _segments(List<Widget> sections) {
     final out = <_Segment>[];
     for (var s = 0; s < sections.length; s++) {
       if (s > 0) {
@@ -523,7 +583,16 @@ class _CruxInspectorState<T extends Object> extends State<CruxInspector<T>> {
           )
           ..add(_Segment(section.itemCount, section.itemBuilder));
       } else {
-        out.add(_Segment(1, (_, _) => section));
+        // Kept alive, so a section scrolled away keeps its footer in the
+        // pinned bar and the callbacks behind it current.
+        out.add(
+          _Segment(
+            1,
+            (_, _) => _KeepAlive(
+              child: _FooterSlot(host: _footers, index: s, child: section),
+            ),
+          ),
+        );
       }
     }
     return out;
@@ -535,6 +604,204 @@ class _Segment {
 
   final int count;
   final Widget Function(BuildContext context, int index) build;
+}
+
+/// Hands a section the pinned bar's host and its own place in the section
+/// order. Never notifies: a section re-registers its footer on every build.
+class _FooterSlot extends InheritedWidget {
+  const _FooterSlot({
+    required this.host,
+    required this.index,
+    required super.child,
+  });
+
+  final _FooterHost host;
+  final int index;
+
+  @override
+  bool updateShouldNotify(_FooterSlot oldWidget) =>
+      index != oldWidget.index || !identical(host, oldWidget.host);
+}
+
+/// Keeps a section mounted while it is scrolled out of the viewport, so the
+/// footer it registered stays live in the pinned bar.
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
+class _PinnedFooter {
+  const _PinnedFooter(this.index, this.seq, this.footer);
+
+  final int index;
+  final int seq;
+  final Widget footer;
+}
+
+/// The footers the sections on show have registered, in section order.
+///
+/// A section registers while it builds, so the bar learns of a change one
+/// frame later: the bar rebuilds after the frame, never during it, and a
+/// rebuild of the bar does not rebuild the sections.
+class _FooterHost extends ChangeNotifier {
+  final Map<Object, _PinnedFooter> _pinned = <Object, _PinnedFooter>{};
+  int _seq = 0;
+  bool _scheduled = false;
+  bool _disposed = false;
+
+  void put(Object owner, int index, Widget footer) {
+    _pinned[owner] = _PinnedFooter(
+      index,
+      _pinned[owner]?.seq ?? _seq++,
+      footer,
+    );
+    _notifyAfterFrame();
+  }
+
+  void remove(Object owner) {
+    if (_pinned.remove(owner) != null) _notifyAfterFrame();
+  }
+
+  List<Widget> get footers {
+    final entries = _pinned.values.toList(growable: false)
+      ..sort((a, b) {
+        final byIndex = a.index.compareTo(b.index);
+        return byIndex != 0 ? byIndex : a.seq.compareTo(b.seq);
+      });
+    return <Widget>[for (final e in entries) e.footer];
+  }
+
+  void _notifyAfterFrame() {
+    if (_scheduled || _disposed) return;
+    _scheduled = true;
+    WidgetsBinding.instance
+      ..addPostFrameCallback((_) {
+        _scheduled = false;
+        if (!_disposed) notifyListeners();
+      })
+      ..ensureVisualUpdate();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+}
+
+/// The inspector's bottom bar: the sections' footers, under a divider, outside
+/// the scrolling list. Empty (no divider either) while no section has a footer.
+class _PinnedActionBar extends StatelessWidget {
+  const _PinnedActionBar({required this.host});
+
+  final _FooterHost host;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: host,
+    builder: (context, _) {
+      final footers = host.footers;
+      if (footers.isEmpty) return const SizedBox.shrink();
+      return Column(
+        key: const ValueKey<String>('cruxInspectorActionBar'),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: _merged(footers),
+          ),
+        ],
+      );
+    },
+  );
+
+  /// One footer as it is; several Apply bars as one that applies and reverts
+  /// them all; any other mix stacked in section order.
+  static Widget _merged(List<Widget> footers) {
+    if (footers.length == 1) return footers.single;
+    if (footers.every((f) => f is CruxInspectorApplyBar)) {
+      final bars = footers.cast<CruxInspectorApplyBar>();
+      VoidCallback? all(VoidCallback? Function(CruxInspectorApplyBar) pick) {
+        final calls = <VoidCallback>[];
+        for (final bar in bars) {
+          final call = pick(bar);
+          if (call != null && !calls.contains(call)) calls.add(call);
+        }
+        if (calls.isEmpty) return null;
+        return () {
+          for (final call in calls) {
+            call();
+          }
+        };
+      }
+
+      return CruxInspectorApplyBar(
+        applyLabel: bars.first.applyLabel,
+        revertLabel: bars.first.revertLabel,
+        onApply: all((b) => b.onApply),
+        onRevert: all((b) => b.onRevert),
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (var i = 0; i < footers.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(height: 8),
+          footers[i],
+        ],
+      ],
+    );
+  }
+}
+
+/// A gradient to the surface colour along the scroll view's bottom edge, shown
+/// while the list continues below it.
+class _ScrollFade extends StatelessWidget {
+  const _ScrollFade({required this.visible});
+
+  final ValueNotifier<bool> visible;
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+    return ValueListenableBuilder<bool>(
+      valueListenable: visible,
+      builder: (context, more, _) => more
+          ? IgnorePointer(
+              child: Container(
+                key: const ValueKey<String>('cruxInspectorScrollFade'),
+                height: 24,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[surface.withValues(alpha: 0), surface],
+                  ),
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
+    );
+  }
 }
 
 /// Whether the focused text field is composing with an input method, which
@@ -608,7 +875,7 @@ class _SectionHeading extends StatelessWidget {
 /// A section that applies on Apply puts a [CruxInspectorApplyBar] in
 /// [footer] and passes the same action as [onSubmit], so a plain Enter in a
 /// single-line field applies too.
-class CruxInspectorSection extends StatelessWidget {
+class CruxInspectorSection extends StatefulWidget {
   /// Creates a section.
   const CruxInspectorSection({
     required this.title,
@@ -628,15 +895,28 @@ class CruxInspectorSection extends StatelessWidget {
   /// A widget at the end of the heading, typically a tier badge.
   final Widget? trailing;
 
-  /// A widget under the rows, typically a [CruxInspectorApplyBar].
+  /// The section's commit buttons, typically a [CruxInspectorApplyBar].
+  ///
+  /// Inside a [CruxInspector] the footer is not drawn with the rows: the
+  /// inspector pins it to its bottom edge, outside the scrolling list, so a
+  /// tall section never hides its buttons. A section can be wrapped in any
+  /// widget of the host's; the footer still reaches the bar. Outside an
+  /// inspector the footer is drawn under the rows.
   final Widget? footer;
 
   /// Called on a plain Enter that the focused control does not take for
   /// itself. Null leaves Enter alone.
   final VoidCallback? onSubmit;
 
+  @override
+  State<CruxInspectorSection> createState() => _CruxInspectorSectionState();
+}
+
+class _CruxInspectorSectionState extends State<CruxInspectorSection> {
+  _FooterHost? _host;
+
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
-    final submit = onSubmit;
+    final submit = widget.onSubmit;
     if (submit == null || event is! KeyDownEvent) {
       return KeyEventResult.ignored;
     }
@@ -658,18 +938,37 @@ class CruxInspectorSection extends StatelessWidget {
   }
 
   @override
+  void dispose() {
+    _host?.remove(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final slot = context.dependOnInheritedWidgetOfExactType<_FooterSlot>();
+    final footer = widget.footer;
+    final pinned = slot != null;
+    if (!identical(_host, slot?.host)) _host?.remove(this);
+    _host = slot?.host;
+    if (slot != null && footer != null) {
+      slot.host.put(this, slot.index, footer);
+    } else {
+      slot?.host.remove(this);
+    }
     final body = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _SectionHeading(title: title, trailing: trailing),
+        _SectionHeading(title: widget.title, trailing: widget.trailing),
         CruxFormSection(
           labelWidth: kCruxInspectorLabelWidth,
           spacing: 6,
-          children: children,
+          children: widget.children,
         ),
-        if (footer != null) ...<Widget>[const SizedBox(height: 8), footer!],
+        if (footer != null && !pinned) ...<Widget>[
+          const SizedBox(height: 8),
+          footer,
+        ],
       ],
     );
     // Always present, so a section that gains or loses [onSubmit] as its
@@ -789,6 +1088,9 @@ class CruxInspectorValueRow extends StatelessWidget {
 ///
 /// Pass null callbacks while there is nothing to revert or the draft is not
 /// valid: the buttons render disabled.
+///
+/// As a [CruxInspectorSection.footer] it is pinned to the inspector's bottom
+/// edge; several of them on one selection merge into one bar.
 class CruxInspectorApplyBar extends StatelessWidget {
   /// Creates the bar.
   const CruxInspectorApplyBar({
