@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:crux_ide_layout/crux_ide_layout.dart' show cruxMenuPosition;
 import 'package:crux_theme/crux_theme.dart' show CruxChromeColors;
 import 'package:crux_workspace/src/multi_window.dart';
 import 'package:crux_workspace/src/pane_id.dart';
@@ -977,30 +978,20 @@ class _TabChip<P> extends StatelessWidget {
   }
 
   Future<void> _showContextMenu(BuildContext context, Offset position) async {
-    final overlay =
-        Overlay.of(context).context.findRenderObject()! as RenderBox;
-    final position2 = RelativeRect.fromLTRB(
-      position.dx,
-      position.dy,
-      overlay.size.width - position.dx,
-      overlay.size.height - position.dy,
-    );
-    await _showMenuAt(context, position2);
+    final rect = cruxMenuPosition(context, position);
+    if (rect == null) return;
+    await _showMenuAt(context, rect);
   }
 
   Future<void> _showContextMenuAtCenter(BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null) return;
-    final overlay =
-        Overlay.of(context).context.findRenderObject()! as RenderBox;
-    final origin = box.localToGlobal(box.size.center(Offset.zero));
-    final position = RelativeRect.fromLTRB(
-      origin.dx,
-      origin.dy,
-      overlay.size.width - origin.dx,
-      overlay.size.height - origin.dy,
+    final rect = cruxMenuPosition(
+      context,
+      box.localToGlobal(box.size.center(Offset.zero)),
     );
-    await _showMenuAt(context, position);
+    if (rect == null) return;
+    await _showMenuAt(context, rect);
   }
 
   Future<void> _showMenuAt(
@@ -1015,6 +1006,7 @@ class _TabChip<P> extends StatelessWidget {
         context: context,
         position: position,
         items: fullMenu(context, tab),
+        useRootNavigator: true,
       );
       return;
     }
@@ -1080,6 +1072,7 @@ class _TabChip<P> extends StatelessWidget {
       context: context,
       position: position,
       items: items,
+      useRootNavigator: true,
     );
     if (selected == null) return;
     if (selected is TabContextAction) {

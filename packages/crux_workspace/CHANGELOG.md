@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **Fix: a tab's context menu opens at the pointer inside a tab's navigator**
+  (crux-shared#76). The menu was positioned from a global point but laid out
+  in the nearest navigator's overlay, which sits below the toolbar and tab
+  bar, so it opened below the click by that height. It now opens on the root
+  navigator, positioned with `cruxMenuPosition`.
+
 - **Fix: a slow mouse click on a tab switches tabs** (crux-shared#65). The
   tab's long-press context menu and the drag handle's long-press drag now
   start from a finger or a pen only. Over a remote display the mouse

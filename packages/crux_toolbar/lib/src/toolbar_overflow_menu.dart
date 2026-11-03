@@ -104,7 +104,8 @@ class CruxToolbarOverflowMenu<A extends Object> extends StatelessWidget {
   Future<A?> _openMenu(BuildContext context) {
     final button = context.findRenderObject() as RenderBox?;
     final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
+        Overlay.of(context, rootOverlay: true).context.findRenderObject()
+            as RenderBox?;
     final position = button != null && overlay != null
         ? RelativeRect.fromRect(
             Rect.fromPoints(
@@ -121,6 +122,7 @@ class CruxToolbarOverflowMenu<A extends Object> extends StatelessWidget {
     return showMenu<A>(
       context: context,
       position: position,
+      useRootNavigator: true,
       items: [
         for (final group in _nonEmpty) ...[
           PopupMenuItem<A>(

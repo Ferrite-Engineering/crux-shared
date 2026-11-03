@@ -299,6 +299,7 @@ class PlatformContextMenu extends StatelessWidget
 announceCrux(BuildContext context, String message, {bool assertive}) -> void
 confirmCruxDestructiveAction(BuildContext context, {Key? cancelKey, Key? confirmKey, Key? dialogKey, required String body, required String cancelLabel, required String confirmLabel, required String title}) -> Future<bool>
 cruxFocusIsInPushedRoute([FocusNode? focus]) -> bool
+cruxMenuPosition(BuildContext context, Offset globalPosition, {Offset? globalEnd}) -> RelativeRect?
 cruxOpenUrl(Uri uri) -> Future<bool>
 cruxReportingUrlLauncher(Future<bool> Function(Uri) launch) -> Future<bool> Function(Uri)
 cruxRevealFile(String path, {Future<bool> Function(String)? reveal}) -> Future<bool>

@@ -121,16 +121,35 @@ Future<void> showCruxContextMenu(
   required Offset globalPosition,
   required List<CruxMenuEntry> entries,
 }) async {
+  final position = cruxMenuPosition(context, globalPosition);
+  if (position == null || entries.isEmpty) return;
+  await _openMenu(context, position, entries);
+}
+
+/// The [RelativeRect] that places a `showMenu` menu at [globalPosition], or
+/// the span from [globalPosition] to [globalEnd] when given (an anchor
+/// button's bottom edge, say). Null before the root overlay has laid out.
+///
+/// The rect is measured against the root overlay, so the `showMenu` it goes
+/// to must pass `useRootNavigator: true`: a menu laid out in a nested
+/// navigator's overlay (a tab's) would sit offset by that overlay's origin.
+/// Every menu a product opens by hand takes both.
+RelativeRect? cruxMenuPosition(
+  BuildContext context,
+  Offset globalPosition, {
+  Offset? globalEnd,
+}) {
   final overlay =
       Overlay.of(context, rootOverlay: true).context.findRenderObject()
           as RenderBox?;
-  if (overlay == null || entries.isEmpty) return;
-  final local = overlay.globalToLocal(globalPosition);
-  final position = RelativeRect.fromRect(
-    Rect.fromPoints(local, local),
+  if (overlay == null || !overlay.hasSize) return null;
+  return RelativeRect.fromRect(
+    Rect.fromPoints(
+      overlay.globalToLocal(globalPosition),
+      overlay.globalToLocal(globalEnd ?? globalPosition),
+    ),
     Offset.zero & overlay.size,
   );
-  await _openMenu(context, position, entries);
 }
 
 Future<void> _openMenu(
@@ -194,15 +213,11 @@ Future<void> _openMenu(
         );
     }
   }
-  // Looked up before the menu opens: a submenu opens against the same
-  // overlay, and its state's context is not to be used across the await.
-  final overlayBox =
-      Overlay.of(context, rootOverlay: true).context.findRenderObject()
-          as RenderBox?;
   final chosen = await showMenu<int>(
     context: context,
     position: position,
     items: items,
+    useRootNavigator: true,
   );
   if (chosen == null) return;
   final entry = entries[chosen];
@@ -214,17 +229,10 @@ Future<void> _openMenu(
     return;
   }
   if (!context.mounted) return;
-  final overlay = overlayBox;
   final rect = submenuRects[chosen];
-  final next = overlay != null && rect != null
-      ? RelativeRect.fromRect(
-          Rect.fromPoints(
-            overlay.globalToLocal(rect.topRight),
-            overlay.globalToLocal(rect.topRight),
-          ),
-          Offset.zero & overlay.size,
-        )
-      : position;
+  final next = rect == null
+      ? position
+      : cruxMenuPosition(context, rect.topRight) ?? position;
   await _openMenu(context, next, entry.entries);
 }
 
@@ -373,25 +381,16 @@ class CruxOverflowMenu extends StatelessWidget {
 
   void _open(BuildContext context) {
     final button = context.findRenderObject() as RenderBox?;
-    final overlay =
-        Overlay.of(context, rootOverlay: true).context.findRenderObject()
-            as RenderBox?;
-    final position = button != null && overlay != null
-        ? RelativeRect.fromRect(
-            Rect.fromPoints(
-              button.localToGlobal(
-                button.size.bottomLeft(Offset.zero),
-                ancestor: overlay,
-              ),
-              button.localToGlobal(
-                button.size.bottomRight(Offset.zero),
-                ancestor: overlay,
-              ),
+    final position = button == null
+        ? null
+        : cruxMenuPosition(
+            context,
+            button.localToGlobal(button.size.bottomLeft(Offset.zero)),
+            globalEnd: button.localToGlobal(
+              button.size.bottomRight(Offset.zero),
             ),
-            Offset.zero & overlay.size,
-          )
-        : RelativeRect.fill;
-    unawaited(_openMenu(context, position, entries));
+          );
+    unawaited(_openMenu(context, position ?? RelativeRect.fill, entries));
   }
 
   @override

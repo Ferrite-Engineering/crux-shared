@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **Fix: the overflow popup opens under its button inside a tab's navigator**
+  (crux-shared#76). `CruxToolbarOverflowMenu` measured its position against
+  the root overlay but laid the popup out in the nearest navigator's, so in a
+  per-tab navigator it opened below the button by the height of the chrome
+  above the tab. It now opens on the root navigator.
+
 - **Fix: a held mouse button no longer opens a split button's menu**
   (crux-shared#65). Long press opens the sibling menu for a finger or a pen
   only. A mouse or trackpad press that is held, as over a remote display

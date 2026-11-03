@@ -6,6 +6,17 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Fix: context menus open at the pointer inside a tab's navigator**
+  (crux-shared#76). `showMenu` lays a menu out in the nearest navigator's
+  overlay unless told otherwise, while the position was measured against the
+  root overlay or taken as a global point. In a per-tab navigator the two
+  overlays have different origins, so the menu opened below the click by the
+  height of the toolbar and tab bar. `showCruxContextMenu`, `CruxOverflowMenu`
+  and its submenus now open on the root navigator. New `cruxMenuPosition`
+  returns the `RelativeRect` against the root overlay for a global point (or a
+  span); a menu opened with `showMenu` by hand takes it together with
+  `useRootNavigator: true`.
+
 - **Fix: `PlatformContextMenu` keeps the content's own semantics nodes on a
   touch layout** (crux-shared#69). The touch-and-pen filter had put the long
   press on a second, nested detector, and the content's semantics merged into

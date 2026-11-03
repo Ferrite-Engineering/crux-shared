@@ -61,6 +61,8 @@
 /// - `CruxOverflowMenu` / `CruxContextMenuRegion` / `showCruxContextMenu`
 ///   — the "⋯" button and the same commands on right-click, Shift+F10 and
 ///   the Menu key; `CruxSubmenu` cascades a second menu from one item.
+///   `cruxMenuPosition` places a hand-opened `showMenu` against the root
+///   overlay (pair it with `useRootNavigator: true`).
 /// - `cruxTextInputFocused` — whether a text field holds focus, for a
 ///   window-level shortcut that must leave the keystroke to the field.
 /// - `CruxSegmentedControl` / `CruxSegment` — one choice of a few, one Tab
