@@ -80,8 +80,14 @@ class YosysDiagnosticParser {
   ///
   /// Accepts either `.` or `:` between line and column to handle both
   /// shapes Yosys has emitted across versions.
+  ///
+  /// A Windows drive prefix (`C:\work\top.v`, `C:/work/top.v`) belongs to the
+  /// path: its colon is not the separator before the line number. Without
+  /// that, every diagnostic naming a file on a Windows drive parsed as no
+  /// diagnostic at all.
   static final RegExp _locationPattern = RegExp(
-    r'^([^:\s][^:]*?):(\d+)(?:[.:](\d+))?(?:-\d+[.:]\d+)?:\s*(.*)$',
+    r'^((?:[A-Za-z]:[\\/])?[^:\s][^:]*?):(\d+)(?:[.:](\d+))?'
+    r'(?:-\d+[.:]\d+)?:\s*(.*)$',
   );
 
   /// Bare severity prefix: `ERROR: msg`, `Warning: msg`, `Info: msg`.

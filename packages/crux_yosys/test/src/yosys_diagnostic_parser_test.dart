@@ -43,6 +43,33 @@ void main() {
       expect(colon.single.column, 5);
     });
 
+    test('a Windows drive letter is part of the path, not the separator', () {
+      final backslash = parser.parse(
+        r'C:\Users\me\proj\top.v:3: Warning: could not read this file',
+      );
+      expect(backslash, hasLength(1));
+      expect(backslash.single.severity, YosysDiagnosticSeverity.warning);
+      expect(backslash.single.filePath, r'C:\Users\me\proj\top.v');
+      expect(backslash.single.line, 3);
+      expect(backslash.single.message, 'could not read this file');
+
+      final slash = parser.parse('d:/a/proj/top.v:12:7: ERROR: bad thing');
+      expect(slash.single.severity, YosysDiagnosticSeverity.error);
+      expect(slash.single.filePath, 'd:/a/proj/top.v');
+      expect(slash.single.line, 12);
+      expect(slash.single.column, 7);
+
+      final ranged = parser.parse(r'E:\x y\top.v:3.5-3.10: Info: ranged');
+      expect(ranged.single.filePath, r'E:\x y\top.v');
+      expect(ranged.single.severity, YosysDiagnosticSeverity.info);
+    });
+
+    test('a UNC path parses like any other', () {
+      final result = parser.parse(r'\\host\share\top.v:9: ERROR: bad thing');
+      expect(result.single.filePath, r'\\host\share\top.v');
+      expect(result.single.line, 9);
+    });
+
     test('parses bare ERROR / Warning / Info lines', () {
       const lines = '''
 ERROR: top-level error
