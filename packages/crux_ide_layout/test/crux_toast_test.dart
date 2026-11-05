@@ -33,37 +33,40 @@ void main() {
     // A product's action handlers raise feedback from the Navigator's own
     // element, which sits above the navigator's overlay. On macOS no window
     // chrome supplies an overlay above it, and every such toast was dropped.
-    testWidgets('is shown, in the navigator\'s overlay, and can be hidden', (
-      tester,
-    ) async {
-      final navigator = GlobalKey<NavigatorState>();
-      await tester.pumpWidget(
-        MaterialApp(
-          navigatorKey: navigator,
-          theme: ThemeData(
-            extensions: const <ThemeExtension<dynamic>>[CruxDesktopTokens()],
+    testWidgets(
+      'is shown, in the overlay of the navigator, and can be hidden',
+      (
+        tester,
+      ) async {
+        final navigator = GlobalKey<NavigatorState>();
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: navigator,
+            theme: ThemeData(
+              extensions: const <ThemeExtension<dynamic>>[CruxDesktopTokens()],
+            ),
+            home: const Scaffold(body: SizedBox()),
           ),
-          home: const Scaffold(body: SizedBox()),
-        ),
-      );
-      final context = navigator.currentContext!;
-      expect(Overlay.maybeOf(context, rootOverlay: true), isNull);
+        );
+        final context = navigator.currentContext!;
+        expect(Overlay.maybeOf(context, rootOverlay: true), isNull);
 
-      showCruxInfoSnack(context, 'Ingested 2 runs');
-      await tester.pump();
-      expect(_toast, findsOneWidget);
-      expect(find.text('Ingested 2 runs'), findsOneWidget);
+        showCruxInfoSnack(context, 'Ingested 2 runs');
+        await tester.pump();
+        expect(_toast, findsOneWidget);
+        expect(find.text('Ingested 2 runs'), findsOneWidget);
 
-      CruxToasts.hide(context);
-      await tester.pumpAndSettle();
-      expect(_toast, findsNothing);
+        CruxToasts.hide(context);
+        await tester.pumpAndSettle();
+        expect(_toast, findsNothing);
 
-      showCruxErrorSnack(context, 'No run was ingested');
-      await tester.pump();
-      expect(find.text('No run was ingested'), findsOneWidget);
-      CruxToasts.hide(context);
-      await tester.pumpAndSettle();
-    });
+        showCruxErrorSnack(context, 'No run was ingested');
+        await tester.pump();
+        expect(find.text('No run was ingested'), findsOneWidget);
+        CruxToasts.hide(context);
+        await tester.pumpAndSettle();
+      },
+    );
   });
 
   group('desktop toasts', () {
