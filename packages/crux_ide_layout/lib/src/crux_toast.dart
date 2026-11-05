@@ -41,7 +41,7 @@ abstract final class CruxToasts {
     Key? key,
     CruxToastAction? action,
   }) {
-    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final overlay = _overlayFor(context);
     if (overlay == null) return false;
     _ensureHost(overlay);
     final tokens = CruxDesktopTokens.of(context) ?? const CruxDesktopTokens();
@@ -60,9 +60,31 @@ abstract final class CruxToasts {
 
   /// Removes the toast showing over [context]'s root overlay, if any.
   static void hide(BuildContext context) {
-    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final overlay = _overlayFor(context);
     if (overlay == null) return;
     _stacks[overlay]?.hide();
+  }
+
+  /// The root overlay a toast raised from [context] goes into.
+  ///
+  /// Usually the one above [context]. A context above every overlay has
+  /// none: the `Navigator`'s own element, which a product's action handlers
+  /// hand in for feedback, is its overlay's parent, and on macOS nothing
+  /// above the navigator supplies one (the Windows and Linux window chrome
+  /// does). Then the navigator's own overlay, and failing that the toast
+  /// host focused last, so a toast is never dropped for want of an overlay
+  /// that is on screen.
+  static OverlayState? _overlayFor(BuildContext context) {
+    final above = Overlay.maybeOf(context, rootOverlay: true);
+    if (above != null) return above;
+    if (context is StatefulElement) {
+      final state = context.state;
+      if (state is NavigatorState) {
+        final own = state.overlay;
+        if (own != null && own.mounted) return own;
+      }
+    }
+    return _mostRecentlyFocusedHost();
   }
 
   /// Shows [message] as an informational toast without a [BuildContext], for
