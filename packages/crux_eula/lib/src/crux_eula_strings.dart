@@ -28,7 +28,7 @@ class CruxEulaStrings {
     this.declineButton = 'Decline and quit',
     this.openOnline = 'Read it on edacrux.app',
     this.openSourceNote =
-        'Accepting is not a condition of any open-source licence. The source '
+        'Accepting is not a condition of any open-source license. The source '
         'code released under the Apache License 2.0 stays available on the '
         'same terms from our public repository whether or not you accept '
         'this agreement (section 3).',
