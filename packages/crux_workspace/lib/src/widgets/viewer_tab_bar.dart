@@ -1052,17 +1052,13 @@ class _TabChip<P> extends StatelessWidget {
         enabled: index < allTabsInPane.length - 1,
         child: Text(strings.closeTabsToTheRightMenuItem),
       ),
-      PopupMenuItem<Object>(
-        value: TabContextAction.moveToNewWindow,
-        enabled: kMultiWindowAvailable,
-        child: Tooltip(
-          message: kMultiWindowAvailable
-              ? ''
-              : strings.multiWindowUnavailableTooltip,
-          triggerMode: TooltipTriggerMode.manual,
+      // Omitted while multi-window is unavailable: a menu offers nothing it
+      // cannot do.
+      if (kMultiWindowAvailable)
+        PopupMenuItem<Object>(
+          value: TabContextAction.moveToNewWindow,
           child: Text(strings.moveToNewWindowMenuItem),
         ),
-      ),
       if (contextMenuItems != null) ...[
         const PopupMenuDivider(),
         ...contextMenuItems!.call(tab),
