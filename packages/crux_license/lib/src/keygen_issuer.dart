@@ -90,6 +90,8 @@ class KeygenLicenseIssuer implements LicenseIssuer {
         LicenseCredentialKind.machineFile => _claimsFromMachineFile(
           envelope.payload,
         ),
+        // Keygen never signs the self-issued educational format.
+        LicenseCredentialKind.eduKey => null,
       };
 
   /// The licence key a file embeds, or `null` when [envelope] carries none.
@@ -110,6 +112,7 @@ class KeygenLicenseIssuer implements LicenseIssuer {
         payload['included'],
         'licenses',
       ),
+      LicenseCredentialKind.eduKey => null,
     };
     return _string(_object(license?['attributes'])?['key']);
   }

@@ -1,0 +1,21 @@
+{
+  "note": "TEST-ONLY Ed25519 public key and the edu-v1 credential its private half signed, shared with the commerce backend's tests. The private half is not kept here: verifying needs only the public key. Never trusted by a production build.",
+  "publicKeyBase64": "zCbDUrNbC9frG8iV4lomk86JLxTBhaaiMcCg5Imki0s=",
+  "payload": {
+    "v": 1,
+    "typ": "edu",
+    "kid": "edu-test",
+    "id": "0b6c1f2e-6a43-4c1d-9a51-3f0e2b7d8c90",
+    "email": "student@example.edu",
+    "products": [
+      "wavecrux",
+      "netcrux",
+      "lintcrux",
+      "simcrux"
+    ],
+    "iat": "2026-11-15T00:00:00Z",
+    "exp": "2027-11-16T00:00:00Z",
+    "src": "request"
+  },
+  "credential": "edu/eyJ2IjoxLCJ0eXAiOiJlZHUiLCJraWQiOiJlZHUtdGVzdCIsImlkIjoiMGI2YzFmMmUtNmE0My00YzFkLTlhNTEtM2YwZTJiN2Q4YzkwIiwiZW1haWwiOiJzdHVkZW50QGV4YW1wbGUuZWR1IiwicHJvZHVjdHMiOlsid2F2ZWNydXgiLCJuZXRjcnV4IiwibGludGNydXgiLCJzaW1jcnV4Il0sImlhdCI6IjIwMjYtMTEtMTVUMDA6MDA6MDBaIiwiZXhwIjoiMjAyNy0xMS0xNlQwMDowMDowMFoiLCJzcmMiOiJyZXF1ZXN0In0.zux_4aMHzfodfnEFVbELRh0bh7aTTX-mprfHE1mPZXv7jCa8B85k5NNKi2CF6ggf6q8Wc2ut62joBSrb49WRDQ"
+}

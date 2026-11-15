@@ -12,6 +12,7 @@ import 'package:crux_ide_layout/crux_ide_layout.dart'
         showCruxErrorSnack,
         showCruxInfoSnack;
 import 'package:crux_license/src/crux_product.dart';
+import 'package:crux_license/src/edu_issuer.dart';
 import 'package:crux_license/src/license_actions.dart';
 import 'package:crux_license/src/license_panel_providers.dart';
 import 'package:crux_license/src/license_status.dart';
@@ -126,6 +127,10 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
     // on the rejection itself, and the report line is derived from the same
     // result.
     final policy = ref.watch(cruxPolicyProvider);
+    // A self-issued educational licence is never presented to Keygen: it has
+    // no machine registration to release, no subscription to manage and no
+    // check-in to run, so none of those controls apply to it.
+    final selfIssued = status.grant?.issuerId == kEduLicenseIssuerId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -147,12 +152,20 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
         ] else ...[
           const SizedBox(height: 12),
           _sectionTitle(context, _s.licenseKeySectionTitle),
-          _keyEntry(status, actions),
+          _keyEntry(status, actions, selfIssued: selfIssued),
         ],
-        if (status.hasCredential) ...[
+        // For a self-issued licence the section is only where the licence is
+        // kept, so it is shown only when there is something to say there.
+        if (status.hasCredential &&
+            (!selfIssued || status.credentialFile != null)) ...[
           const SizedBox(height: 12),
           _sectionTitle(context, _s.licenseMachineSectionTitle),
-          _machineSection(status, actions, managed: managed),
+          _machineSection(
+            status,
+            actions,
+            managed: managed,
+            selfIssued: selfIssued,
+          ),
         ],
         if (!managed &&
             actions.supportsEducationalRequest &&
@@ -289,7 +302,11 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
 
   // --- Key entry ---------------------------------------------------------
 
-  Widget _keyEntry(CruxLicenseStatus status, CruxLicenseActions actions) {
+  Widget _keyEntry(
+    CruxLicenseStatus status,
+    CruxLicenseActions actions, {
+    required bool selfIssued,
+  }) {
     final theme = Theme.of(context);
     return CruxSettingsSectionCard(
       children: [
@@ -361,7 +378,9 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
                       : () => _run(actions.openPurchasePage),
                   child: Text(_s.licenseBuyButton),
                 ),
-                if (status.hasCredential && actions.supportsManageLink)
+                if (status.hasCredential &&
+                    actions.supportsManageLink &&
+                    !selfIssued)
                   TextButton(
                     onPressed: status.busy
                         ? null
@@ -423,9 +442,18 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
     CruxLicenseStatus status,
     CruxLicenseActions actions, {
     required bool managed,
+    required bool selfIssued,
   }) {
     final theme = Theme.of(context);
     final machine = status.machineLabel;
+    if (selfIssued) {
+      return CruxSettingsSectionCard(
+        children: [
+          if (status.credentialFile case final file?)
+            _row(context, '', _s.licenseStoredInFile(file)),
+        ],
+      );
+    }
     return CruxSettingsSectionCard(
       children: [
         if (machine != null)

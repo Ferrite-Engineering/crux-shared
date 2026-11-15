@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **Educational licences can be self-issued (`edu-v1`).** A second trusted
+  issuer, `EduLicenseIssuer`, reads `edu/<payload>.<signature>` credentials
+  signed by the suite's own educational key, and the production validator
+  trusts it after Keygen under both published keys (`kEduVerifyKeys`). The
+  grant is the `edu-annual` grant for the products the licence lists. An
+  educational licence is verified offline and is never sent to Keygen: no
+  activation, check-in, machine lookup or release.
+  - `LicenseCredentialKind.eduKey`; the parser also takes the payload and
+    signature in standard base64, padded or wrapped.
+  - `LicenseClaims.notBefore`: a credential read more than
+    `kEvaluationClockTolerance` before it is valid from is refused.
+  - `requestEducationalLicense` sends `accepts: ["edu-v1"]`.
+  - On its check-in, a controller holding a Keygen licence key whose grant is
+    EDU asks the commerce backend (`/edu/exchange`, overridable with
+    `educationalExchangeUrl`) to exchange it, once per process, and replaces
+    the key only with a credential that validates as a current EDU grant for
+    the product. Anything else keeps the key.
+  - The licence panel offers no seat release, subscription link or check-in
+    for a self-issued licence.
+  - An educational licence may be kept in the fallback file.
+
 - **A web edition starts again: `SharedInstallFingerprint()` no longer asks the
   platform when it is built** (wavecrux#93). The Linux allowance added with
   the credential-store fallback read `Platform.operatingSystem` in the

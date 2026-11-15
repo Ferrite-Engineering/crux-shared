@@ -49,7 +49,7 @@ enum CruxLicenseActivation
   static const notActivatedOnThisMachine: CruxLicenseActivation
   static const openCore: CruxLicenseActivation
 class CruxLicenseController implements CruxLicenseActions
-  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseFallbackFile? fallbackFile, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
+  CruxLicenseController({DateTime Function() now, Duration phoneHomeInterval, LicenseClockMark? clockMark, LicenseFallbackFile? fallbackFile, LicenseGracePolicy grace, MachineReleaseMarker releaseMarker, Uri? educationalExchangeUrl, Uri? educationalRequestUrl, Uri? manageUrl, required CruxProduct product, required Future<void> Function(Uri) openUrl, required KeygenLicenseClient client, required LicenseMachineIdentity machine, required LicenseStore store, required LicenseValidator validator, required Uri purchaseUrl})
   activate(String credential) -> Future<CruxLicenseActionResult>
   activateFromPolicy(String credential) -> Future<CruxLicenseActionResult>
   deactivateThisMachine() -> Future<CruxLicenseActionResult>
@@ -126,6 +126,16 @@ enum CruxProduct
   static const simCrux: CruxProduct
   static const waveCrux: CruxProduct
   static fromEntitlementCode(String code) -> CruxProduct?
+class EduLicenseIssuer implements LicenseIssuer
+  const EduLicenseIssuer({Map<String, KeygenPolicy> policies, required List<int> verifyKey, required String keyId})
+  claimsFrom(LicenseEnvelope envelope) -> LicenseClaims?
+  final keyId: String
+  final policies: Map<String, KeygenPolicy>
+  final verifyKey: List<int>
+  get accountId -> String?
+  get id -> String
+  grantFrom(LicenseClaims claims) -> LicenseGrant?
+  static production() -> List<EduLicenseIssuer>
 class FeatureGate
   static isAvailable(LicenseTier required, LicenseTier current) -> bool
   static satisfiesTier(LicenseTier required, LicenseTier current) -> bool
@@ -185,6 +195,7 @@ class KeygenLicenseClient
   attestsValidation(KeygenAttestation attestation) -> bool
   close() -> void
   deactivateMachine({String? machine, String? machineId, required String key}) -> Future<KeygenMachineResult>
+  exchangeEducationalLicense({required String key, required Uri endpoint}) -> Future<String?>
   findMachine({required String fingerprint, required String key}) -> Future<String?>
   requestEducationalLicense({required String email, required Uri endpoint}) -> Future<CruxLicenseActionResult>
   validateKey(String key, {String? fingerprint}) -> Future<KeygenValidation>
@@ -265,7 +276,7 @@ final class LicenseActionSucceeded extends CruxLicenseActionResult
   final underReview: bool
   toString() -> String
 class LicenseClaims
-  const LicenseClaims({DateTime? created, DateTime? expiry, DateTime? issued, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, bool expiryUnreadable, int? maxMachines, required String issuerId})
+  const LicenseClaims({DateTime? created, DateTime? expiry, DateTime? issued, DateTime? notBefore, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, bool expiryUnreadable, int? maxMachines, required String issuerId})
   final accountId: String?
   final created: DateTime?
   final email: String?
@@ -277,6 +288,7 @@ class LicenseClaims
   final issuerId: String
   final licenseId: String?
   final maxMachines: int?
+  final notBefore: DateTime?
   final policyDuration: Duration?
   final policyId: String?
   final productId: String?
@@ -288,6 +300,7 @@ abstract class LicenseClockMark
   read({required String licenseId}) -> Future<DateTime?>
 enum LicenseCredentialKind
   get signingPrefix -> String
+  static const eduKey: LicenseCredentialKind
   static const licenseFile: LicenseCredentialKind
   static const licenseKey: LicenseCredentialKind
   static const machineFile: LicenseCredentialKind
@@ -435,6 +448,10 @@ daysUntilBetaExpiry(DateTime now, {DateTime? expiry}) -> int?
 decodeHexKey(String hex) -> List<int>
 get kBetaExpiry -> DateTime?
 get kBetaPeriod -> bool
+get kEduAnnualPolicyName -> String
+get kEduCredentialFormat -> String
+get kEduLicenseIssuerId -> String
+get kEduVerifyKeys -> Map<String, String>
 get kEvaluationClockTolerance -> Duration
 get kEvaluationEntitlementCode -> String
 get kEvaluationExpiryWarningDays -> int

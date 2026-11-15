@@ -9,12 +9,12 @@ import 'package:crux_license/src/license_grant.dart';
 /// read what it signs.
 ///
 /// **The validator takes a *set* of these, and that is a firm design
-/// constraint**. Today the set has exactly
-/// one member, Keygen. The second slot is reserved and deliberately empty: EDU
-/// is the only tier expected to be large, it is free, and Keygen bills on
-/// active licensed users, so moving EDU to self-issued licences is a live
-/// option. Building the plural form now costs almost nothing; retrofitting it
-/// later is surgery on the one component all four products depend on.
+/// constraint**. It has two kinds of member: Keygen, which issues every paid
+/// tier, and the suite's own educational issuer (`EduLicenseIssuer`). EDU is
+/// the only tier expected to be large, it is free, and Keygen bills on active
+/// licensed users, so educational licences are self-issued. The plural form
+/// is what made that a new issuer rather than surgery on the one component
+/// all four products depend on.
 ///
 /// An issuer answers three questions, in order, and the validator drives them:
 ///

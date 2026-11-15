@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crux_license/src/edu_issuer.dart';
 import 'package:crux_license/src/install_fingerprint.dart'
     show mintInstallFingerprint;
 import 'package:crux_license/src/keygen_issuer.dart';
@@ -600,6 +601,10 @@ class KeygenLicenseClient {
   /// licence creation, the pending-token store, its expiry and the mail itself
   /// all belong to the commerce backend — the app's part is this one call and
   /// the sentence "check your email".
+  ///
+  /// The request says the app reads self-issued educational licences
+  /// (`accepts: ["edu-v1"]`), so the backend signs one rather than creating a
+  /// Keygen licence.
   Future<CruxLicenseActionResult> requestEducationalLicense({
     required Uri endpoint,
     required String email,
@@ -609,7 +614,10 @@ class KeygenLicenseClient {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       })
-      ..body = json.encode(<String, Object?>{'email': email});
+      ..body = json.encode(<String, Object?>{
+        'email': email,
+        'accepts': const <String>[kEduCredentialFormat],
+      });
     try {
       final streamed = await _client.send(request).timeout(_timeout);
       final response = await http.Response.fromStream(streamed);
@@ -642,6 +650,42 @@ class KeygenLicenseClient {
       };
     } on Object {
       return const LicenseActionFailed(CruxLicenseActionFailure.offline);
+    }
+  }
+
+  /// Ask the commerce backend to exchange the Keygen educational licence
+  /// [key] for a self-issued educational licence, and return the credential
+  /// it answers with.
+  ///
+  /// Not a Keygen call, for the reason [requestEducationalLicense] is not. On
+  /// success the backend retires the Keygen licence, so the caller must keep
+  /// what it returns; a repeat call with the same key answers with the same
+  /// credential, so a lost response strands nobody.
+  ///
+  /// `null` for everything but a 200 carrying a credential: refused, unknown,
+  /// rate limited, unavailable and unreachable all mean "keep the key you
+  /// have". Nothing here is verified; the caller validates the answer before
+  /// it replaces anything.
+  Future<String?> exchangeEducationalLicense({
+    required Uri endpoint,
+    required String key,
+  }) async {
+    final request = http.Request('POST', endpoint)
+      ..headers.addAll(const <String, String>{
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      })
+      ..body = json.encode(<String, Object?>{
+        'key': key,
+        'accepts': const <String>[kEduCredentialFormat],
+      });
+    try {
+      final streamed = await _client.send(request).timeout(_timeout);
+      final response = await http.Response.fromStream(streamed);
+      if (response.statusCode != 200) return null;
+      return _string(_object(json.decode(response.body))?['credential']);
+    } on Object {
+      return null;
     }
   }
 
