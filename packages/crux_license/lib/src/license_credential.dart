@@ -32,13 +32,23 @@ enum LicenseCredentialKind {
   /// resolves only on the install whose fingerprint it names, which is what
   /// makes it safe to issue for a machine that will never reach the issuer:
   /// copying it elsewhere yields nothing.
-  machineFile;
+  machineFile,
 
-  /// The prefix Keygen prepends to the encoded payload before signing.
+  /// A self-issued educational licence: `edu/<payload>.<signature>`.
+  ///
+  /// The `edu-v1` format. Signed by the suite's own educational key rather
+  /// than by Keygen, in the same shape as a Keygen licence key: a base64url
+  /// JSON payload and an Ed25519 signature over the `edu/` prefix plus the
+  /// encoded payload. Nothing about it is ever presented to Keygen; it is
+  /// verified offline, and its signed term is the whole of its lifecycle.
+  eduKey;
+
+  /// The prefix the issuer prepends to the encoded payload before signing.
   String get signingPrefix => switch (this) {
     LicenseCredentialKind.licenseKey => 'key/',
     LicenseCredentialKind.licenseFile => 'license/',
     LicenseCredentialKind.machineFile => 'machine/',
+    LicenseCredentialKind.eduKey => 'edu/',
   };
 }
 
@@ -132,6 +142,9 @@ LicenseEnvelopeParse parseLicenseCredential(String raw) {
   if (text.startsWith(LicenseCredentialKind.licenseKey.signingPrefix)) {
     return _parseLicenseKey(text);
   }
+  if (text.startsWith(LicenseCredentialKind.eduKey.signingPrefix)) {
+    return _parseEduKey(text);
+  }
   return const LicenseEnvelopeParse.failed(
     LicenseRejection.malformed,
     'no recognised credential prefix',
@@ -171,6 +184,48 @@ LicenseEnvelopeParse _parseLicenseKey(String text) {
     LicenseEnvelope(
       kind: LicenseCredentialKind.licenseKey,
       signedMessage: utf8.encode(signed),
+      signature: signature,
+      payload: payload,
+    ),
+  );
+}
+
+LicenseEnvelopeParse _parseEduKey(String text) {
+  // `edu/<base64url payload>.<base64url signature>`, split on the last dot.
+  final dot = text.lastIndexOf('.');
+  if (dot < 0) {
+    return const LicenseEnvelopeParse.failed(
+      LicenseRejection.malformed,
+      'educational licence has no signature separator',
+    );
+  }
+  final prefix = LicenseCredentialKind.eduKey.signingPrefix;
+  final signature = _decodeBase64(text.substring(dot + 1));
+  if (signature == null || signature.length != 64) {
+    return const LicenseEnvelopeParse.failed(
+      LicenseRejection.malformed,
+      'signature is not 64 bytes of base64',
+    );
+  }
+  final bytes = _decodeBase64(text.substring(prefix.length, dot));
+  final payload = _decodeJsonObject(bytes);
+  if (bytes == null || payload == null) {
+    return const LicenseEnvelopeParse.failed(
+      LicenseRejection.undecodablePayload,
+      'educational licence payload is not a JSON object',
+    );
+  }
+  // The issuer signs the payload as it emits it: base64url, unpadded. A
+  // paste that went through a mail client may arrive wrapped, padded, or in
+  // the standard alphabet, so the signed form is rebuilt from the decoded
+  // bytes rather than taken from the text. Re-encoding is exact for anything
+  // the issuer emitted, and the signature still decides whether the bytes
+  // are the issuer's.
+  final canonical = base64Url.encode(bytes).replaceAll('=', '');
+  return LicenseEnvelopeParse.ok(
+    LicenseEnvelope(
+      kind: LicenseCredentialKind.eduKey,
+      signedMessage: utf8.encode('$prefix$canonical'),
       signature: signature,
       payload: payload,
     ),

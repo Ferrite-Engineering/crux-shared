@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_license/src/crux_product.dart';
+import 'package:crux_license/src/edu_issuer.dart';
 import 'package:crux_license/src/keygen_issuer.dart';
+import 'package:crux_license/src/license_clock_mark.dart';
 import 'package:crux_license/src/license_credential.dart';
 import 'package:crux_license/src/license_issuer.dart';
 import 'package:crux_license/src/license_validation.dart';
@@ -94,15 +96,16 @@ class NoopLicenseValidator implements LicenseValidator {
 /// trusted issuers, then resolution onto a tier and a product set.
 ///
 /// The plural issuer set is a firm design constraint, not a generalisation for
-/// its own sake. Keygen is issuer one. The second slot is reserved and empty,
-/// and exists so that moving EDU to self-issued licences — a lever kept in
-/// reserve because EDU is free, expected to be large, and metered — stays a
-/// configuration change rather than surgery on the one component all four
-/// products depend on.
+/// its own sake. Keygen is issuer one, for every paid tier. The second is the
+/// suite's own educational issuer ([EduLicenseIssuer]): EDU is free, the
+/// only tier expected to be large, and Keygen meters active licences, so
+/// educational licences are signed by the suite itself and verified here
+/// exactly as Keygen's are.
 ///
 /// Order of operations, and each step's failure is distinguishable:
 ///
-/// 1. **Parse** the credential — licence key or licence file.
+/// 1. **Parse** the credential — licence key, licence file, machine file or
+///    educational licence.
 /// 2. **Verify** the signature against each trusted issuer's public key in
 ///    turn. Nothing verified means [LicenseRejection.untrustedIssuer], which
 ///    covers a tampered payload, a tampered signature and a key minted by
@@ -114,9 +117,10 @@ class NoopLicenseValidator implements LicenseValidator {
 ///    credential carries them, the compiled policy table when it does not.
 /// 5. **Entitle** — does the grant cover [product]?
 /// 6. **Bind** — a credential that names a machine must name this one.
-/// 7. **Date** — expired grants come back as [LicenseExpired] *with* the
-///    grant, because grace is the caller's decision and it needs the grant to
-///    make it.
+/// 7. **Date** — a credential read before the time it is valid from (beyond
+///    `kEvaluationClockTolerance`) is refused; expired grants come back as
+///    [LicenseExpired] *with* the grant, because grace is the caller's
+///    decision and it needs the grant to make it.
 class CruxLicenseValidator implements LicenseValidator {
   /// Create a validator for [product] over an explicit set of [issuers].
   CruxLicenseValidator({
@@ -124,11 +128,15 @@ class CruxLicenseValidator implements LicenseValidator {
     required Iterable<LicenseIssuer> issuers,
   }) : issuers = List<LicenseIssuer>.unmodifiable(issuers);
 
-  /// Create the production validator for [product]: Keygen, and nothing else.
+  /// Create the production validator for [product]: Keygen, then the
+  /// suite's educational issuer under each of its trusted keys.
   factory CruxLicenseValidator.production({required CruxProduct product}) =>
       CruxLicenseValidator(
         product: product,
-        issuers: <LicenseIssuer>[KeygenLicenseIssuer.production()],
+        issuers: <LicenseIssuer>[
+          KeygenLicenseIssuer.production(),
+          ...EduLicenseIssuer.production(),
+        ],
       );
 
   /// The product this build is, and therefore the entitlement it looks for.
@@ -211,7 +219,20 @@ class CruxLicenseValidator implements LicenseValidator {
       );
     }
 
-    return grant.isExpiredAt(now ?? DateTime.now())
+    final at = now ?? DateTime.now();
+    final notBefore = claims.notBefore;
+    if (notBefore != null &&
+        at.isBefore(notBefore.subtract(kEvaluationClockTolerance))) {
+      // Not a date this build can be argued out of: the issuer signed it.
+      // Either the clock here is far behind or the credential is not yet
+      // valid, and in both cases it grants nothing yet.
+      return LicenseRejected(
+        LicenseRejection.undecodablePayload,
+        'credential is not valid until ${notBefore.toIso8601String()}',
+      );
+    }
+
+    return grant.isExpiredAt(at)
         ? LicenseExpired(grant)
         : LicenseAccepted(grant);
   }

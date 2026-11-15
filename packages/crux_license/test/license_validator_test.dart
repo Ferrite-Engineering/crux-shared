@@ -575,10 +575,13 @@ void main() {
       expect(production.accountId, kKeygenAccountId);
       expect(production.verifyKey, hasLength(32));
       expect(production.verifyKey, decodeHexKey(kKeygenVerifyKeyHex));
-      expect(
-        CruxLicenseValidator.production(product: CruxProduct.simCrux).issuers,
-        hasLength(1),
-      );
+      // Keygen first; the educational issuers follow it
+      // (edu_issuer_test.dart covers those).
+      final issuers = CruxLicenseValidator.production(
+        product: CruxProduct.simCrux,
+      ).issuers;
+      expect(issuers.first, isA<KeygenLicenseIssuer>());
+      expect(issuers.whereType<KeygenLicenseIssuer>(), hasLength(1));
     });
 
     test('refuses a fixture key — the test keypair is not Keygen', () async {

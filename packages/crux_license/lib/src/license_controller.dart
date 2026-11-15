@@ -12,6 +12,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crux_license/src/crux_product.dart';
+import 'package:crux_license/src/edu_issuer.dart';
 import 'package:crux_license/src/keygen_client.dart';
 import 'package:crux_license/src/keygen_issuer.dart';
 import 'package:crux_license/src/license_actions.dart';
@@ -21,10 +22,16 @@ import 'package:crux_license/src/license_fallback_file.dart';
 import 'package:crux_license/src/license_grace.dart';
 import 'package:crux_license/src/license_grant.dart';
 import 'package:crux_license/src/license_status.dart';
+import 'package:crux_license/src/license_tier.dart';
 import 'package:crux_license/src/license_validation.dart';
 import 'package:crux_license/src/license_validator.dart';
 import 'package:crux_license/src/machine_release_marker.dart';
 import 'package:meta/meta.dart';
+
+/// Where the app exchanges a Keygen educational licence key for a
+/// self-issued one: the commerce backend that serves the educational request.
+const String _defaultEducationalExchangeUrl =
+    'https://commerce.edacrux.app/edu/exchange';
 
 /// Where a product keeps the credential and the small amount of state that
 /// goes with it.
@@ -152,6 +159,10 @@ class CruxLicenseController implements CruxLicenseActions {
       '1.1.',
     )
     Uri? educationalRequestUrl,
+    // Where a Keygen educational key is exchanged for a self-issued one.
+    // Defaults to the commerce backend's `/edu/exchange`, on the origin of
+    // [educationalRequestUrl] when one is given; a test passes its own.
+    Uri? educationalExchangeUrl,
     LicenseGracePolicy grace = LicenseGracePolicy.standard,
     Duration phoneHomeInterval = const Duration(hours: 24),
     DateTime Function() now = DateTime.now,
@@ -178,6 +189,10 @@ class CruxLicenseController implements CruxLicenseActions {
        _purchaseUrl = purchaseUrl,
        _manageUrl = manageUrl,
        _educationalRequestUrl = educationalRequestUrl,
+       _educationalExchangeUrl =
+           educationalExchangeUrl ??
+           educationalRequestUrl?.resolve('exchange') ??
+           Uri.parse(_defaultEducationalExchangeUrl),
        _grace = grace,
        _phoneHomeInterval = phoneHomeInterval,
        _now = now,
@@ -201,6 +216,7 @@ class CruxLicenseController implements CruxLicenseActions {
   final Uri _purchaseUrl;
   final Uri? _manageUrl;
   final Uri? _educationalRequestUrl;
+  final Uri _educationalExchangeUrl;
   final LicenseGracePolicy _grace;
   final Duration _phoneHomeInterval;
   final DateTime Function() _now;
@@ -442,12 +458,16 @@ class CruxLicenseController implements CruxLicenseActions {
         // The note is for this licence and this fingerprint, so a sibling
         // product holding a different licence, or this one on a machine whose
         // identity has changed, reads it as none of its business.
-        final licenseId = (await _validator.validate(
+        //
+        // A self-issued educational licence holds no seat, so there is no
+        // release for a sibling to honour: removing it here removes it here.
+        final grant = (await _validator.validate(
           credential,
           now: _now(),
           fingerprint: fingerprint,
-        )).grant?.licenseId;
-        if (licenseId != null) {
+        )).grant;
+        final licenseId = grant?.licenseId;
+        if (licenseId != null && grant?.issuerId != kEduLicenseIssuerId) {
           await _markReleased(licenseId: licenseId, fingerprint: fingerprint);
         }
       }
@@ -480,6 +500,13 @@ class CruxLicenseController implements CruxLicenseActions {
     if (await _honourRelease()) return const LicenseActionSucceeded();
     _publish(_status.copyWith(busy: true));
     try {
+      final exchanged = await _exchangeEducationalKey(credential);
+      if (exchanged != null) {
+        // A self-issued licence is never presented to Keygen, so there is
+        // nothing further to ask anyone.
+        await _resolveFromStore(honourRelease: false);
+        return const LicenseActionSucceeded();
+      }
       final reached = await _refreshFromIssuer(credential);
       if (reached) await _registerIfUnregistered(credential);
       if (reached) await _reconcileMachine(credential);
@@ -631,6 +658,88 @@ class CruxLicenseController implements CruxLicenseActions {
       );
     }
   }
+
+  /// Exchange a Keygen educational licence key for a self-issued educational
+  /// licence, once per controller, and return the credential now stored, or
+  /// `null` when nothing changed.
+  ///
+  /// Educational licences are signed by the suite itself; Keygen keeps the
+  /// paid tiers. A key issued before that change is swapped on the first
+  /// check-in that runs it: the commerce backend verifies the key with
+  /// Keygen, signs an educational licence for the same address and term, and
+  /// retires the Keygen licence. Only a bare licence key whose grant is EDU
+  /// is ever sent.
+  ///
+  /// Never leaves the user without a working credential. The answer replaces
+  /// the stored key only when it validates here as a current educational
+  /// grant for this product and the store accepted it; anything else keeps
+  /// the key, and the attempt is not repeated in this process. A response
+  /// lost on the way is safe to ask for again on the next launch, because
+  /// the backend answers a repeat exchange with the credential it already
+  /// signed.
+  Future<String?> _exchangeEducationalKey(String credential) async {
+    if (_exchangeAttempted) return null;
+    if (parseLicenseCredential(credential).envelope?.kind !=
+        LicenseCredentialKind.licenseKey) {
+      return null;
+    }
+    final String fingerprint;
+    try {
+      fingerprint = await _store.readOrCreateFingerprint();
+    } on Object {
+      return null;
+    }
+    final current = (await _validator.validate(
+      credential,
+      now: _now(),
+      fingerprint: fingerprint,
+    )).grant;
+    if (current == null ||
+        current.issuerId == kEduLicenseIssuerId ||
+        current.tier != LicenseTier.edu) {
+      return null;
+    }
+    _exchangeAttempted = true;
+    final answer = await _client.exchangeEducationalLicense(
+      endpoint: _educationalExchangeUrl,
+      key: credential,
+    );
+    if (answer == null) return null;
+    final replacement = answer.trim();
+    final checked = await _validator.validate(
+      replacement,
+      now: _now(),
+      fingerprint: fingerprint,
+    );
+    if (checked is! LicenseAccepted ||
+        checked.grant.issuerId != kEduLicenseIssuerId ||
+        checked.grant.tier != LicenseTier.edu) {
+      return null;
+    }
+    try {
+      await _store.writeCredential(replacement);
+    } on Object {
+      // The key stays stored. The backend keeps the credential it signed and
+      // answers the next launch's exchange with it.
+      return null;
+    }
+    // The Keygen licence, its machines and whatever Keygen last said about
+    // them are gone; none of it speaks for the new credential.
+    _forgetIssuer();
+    _issuerLoaded = true;
+    try {
+      await _store.writeMachineId(null);
+      await _store.writeIssuerSnapshot(null);
+    } on Object {
+      // Best effort: both are keyed to the retired licence and never apply
+      // to the new one.
+    }
+    return replacement;
+  }
+
+  /// Whether this controller has asked for an educational exchange; asked at
+  /// most once per process.
+  bool _exchangeAttempted = false;
 
   /// Ask the issuer for current expiry and seat counts.
   ///
@@ -1039,11 +1148,16 @@ class CruxLicenseController implements CruxLicenseActions {
   /// step with what the validator accepts. Unparseable text is presented as
   /// itself and takes the ordinary path, where the validator rejects it —
   /// which is where a bad paste is supposed to be answered.
+  ///
+  /// A self-issued educational licence is `null`: it is not Keygen's, and
+  /// nothing about it is ever activated, validated, looked up or released
+  /// there.
   static String? _issuerKeyFor(String credential) {
     final envelope = parseLicenseCredential(credential).envelope;
     if (envelope == null || envelope.kind == LicenseCredentialKind.licenseKey) {
       return credential;
     }
+    if (envelope.kind == LicenseCredentialKind.eduKey) return null;
     return KeygenLicenseIssuer.embeddedLicenseKey(envelope);
   }
 

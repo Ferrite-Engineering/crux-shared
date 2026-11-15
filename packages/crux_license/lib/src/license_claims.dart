@@ -18,9 +18,9 @@ const String kEvaluationEntitlementCode = 'EVALUATION';
 /// This is the boundary between "the bytes are authentic" and "here is what
 /// they mean". A `LicenseIssuer` produces a `LicenseClaims` once the signature
 /// checks out; resolving those claims onto a `LicenseGrant` — a tier and a set
-/// of products — is a separate step, because the two issuers the validator is
-/// designed for (Keygen, and a reserved self-issued slot) carry different claim
-/// shapes and only the grant is common vocabulary.
+/// of products — is a separate step, because the two issuers the validator
+/// trusts (Keygen, and the suite's self-issued educational issuer) carry
+/// different claim shapes and only the grant is common vocabulary.
 ///
 /// Every field is nullable on purpose. A Keygen licence-key payload is a small
 /// JSON object with no schema guarantees beyond what the account happens to
@@ -39,6 +39,7 @@ class LicenseClaims {
     this.licenseId,
     this.created,
     this.issued,
+    this.notBefore,
     this.expiry,
     this.expiryUnreadable = false,
     this.email,
@@ -82,6 +83,16 @@ class LicenseClaims {
   /// The earliest time the credential can have been in anyone's hands, which
   /// is what makes it the floor of an evaluation's clock check.
   final DateTime? issued;
+
+  /// The earliest time the credential is valid from, when the issuer signs
+  /// one, or `null` when it does not.
+  ///
+  /// A self-issued educational licence does: it is valid from its issue
+  /// time. The validator refuses a credential read before this by more than
+  /// `kEvaluationClockTolerance`, the same allowance the evaluation clock
+  /// check makes for a machine whose clock runs a little behind the issuer's.
+  /// Keygen credentials carry none.
+  final DateTime? notBefore;
 
   /// When the licence expires. `null` means perpetual, which no current SKU
   /// issues.

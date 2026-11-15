@@ -10,8 +10,9 @@ import 'package:crux_license/src/owner_only_file.dart';
 import 'package:path/path.dart' as p;
 
 /// Whether [credential] may be kept in a [LicenseFallbackFile] when the
-/// operating system's credential store cannot keep it: a licence file or a
-/// machine file, the signed offline forms, and nothing else.
+/// operating system's credential store cannot keep it: a licence file, a
+/// machine file or a self-issued educational licence, the signed offline
+/// forms, and nothing else.
 ///
 /// A licence **key** never may. It is a bearer credential that the issuer
 /// answers for wherever it is presented, and keeping one in a file would be a
@@ -19,11 +20,15 @@ import 'package:path/path.dart' as p;
 /// machine file works only on the machine whose fingerprint it names, and a
 /// licence file carries its own signed term and entitlements; both are
 /// checked offline, and the user chose to download them as files in the
-/// first place.
+/// first place. An educational licence is never presented to any issuer: it
+/// opens no account and holds no seat, and its signed term and products are
+/// everything it grants, so a copy of it in a file is worth exactly what the
+/// licence itself is worth.
 bool licenseCredentialMayUseFallbackFile(String credential) =>
     switch (parseLicenseCredential(credential).envelope?.kind) {
       LicenseCredentialKind.licenseFile ||
-      LicenseCredentialKind.machineFile => true,
+      LicenseCredentialKind.machineFile ||
+      LicenseCredentialKind.eduKey => true,
       LicenseCredentialKind.licenseKey || null => false,
     };
 

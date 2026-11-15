@@ -74,6 +74,7 @@ export 'src/ai_experimental.dart' hide kAiExperimental;
 export 'src/beta_expiry.dart' hide kBetaExpiryWarningDays;
 export 'src/beta_period.dart';
 export 'src/crux_product.dart';
+export 'src/edu_issuer.dart';
 export 'src/feature_gate.dart';
 export 'src/install_fingerprint.dart';
 export 'src/keygen_client.dart';
