@@ -193,18 +193,20 @@ void main() {
       expect(controller.supportsEducationalRequest, isTrue);
       expect((await controller.openEducationalRequestPage()).isOk, isTrue);
       expect(opened, [
-        Uri.parse('https://edacrux.app/edu/request?product=wavecrux'),
+        Uri.parse(
+          'https://edacrux.app/edu/request?product=wavecrux&accepts=edu-v1',
+        ),
       ]);
     });
 
-    test('names each product by its slug', () {
+    test('names each product by its slug and asks for edu-v1', () {
       expect(
         CruxProduct.values.map((p) => cruxEducationalRequestPage(p).toString()),
         [
-          'https://edacrux.app/edu/request?product=wavecrux',
-          'https://edacrux.app/edu/request?product=netcrux',
-          'https://edacrux.app/edu/request?product=lintcrux',
-          'https://edacrux.app/edu/request?product=simcrux',
+          'https://edacrux.app/edu/request?product=wavecrux&accepts=edu-v1',
+          'https://edacrux.app/edu/request?product=netcrux&accepts=edu-v1',
+          'https://edacrux.app/edu/request?product=lintcrux&accepts=edu-v1',
+          'https://edacrux.app/edu/request?product=simcrux&accepts=edu-v1',
         ],
       );
     });

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_license/src/crux_product.dart';
+import 'package:crux_license/src/edu_issuer.dart';
 import 'package:crux_license/src/license_validation.dart';
 import 'package:meta/meta.dart';
 
@@ -14,10 +15,18 @@ const String kCruxEducationalRequestPageUrl = 'https://edacrux.app/edu/request';
 
 /// The educational-licence request page for [product]:
 /// [kCruxEducationalRequestPageUrl] with `?product=<slug>`, so the request
-/// records which app it came from.
-Uri cruxEducationalRequestPage(CruxProduct product) => Uri.parse(
-  kCruxEducationalRequestPageUrl,
-).replace(queryParameters: {'product': product.slug});
+/// records which app it came from, and `&accepts=edu-v1`, so the page asks
+/// for a licence format this build can read. A build without the parameter
+/// keeps receiving the format it understands.
+Uri cruxEducationalRequestPage(CruxProduct product) =>
+    Uri.parse(
+      kCruxEducationalRequestPageUrl,
+    ).replace(
+      queryParameters: {
+        'product': product.slug,
+        'accepts': kEduCredentialFormat,
+      },
+    );
 
 /// Why a licence action did not do what was asked.
 enum CruxLicenseActionFailure {
