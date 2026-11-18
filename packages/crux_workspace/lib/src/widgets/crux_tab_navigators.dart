@@ -199,6 +199,14 @@ class _TabContentRoute extends PageRoute<void> {
   @override
   bool get maintainState => true;
 
+  /// No barrier a pointer can reach. Every route builds one beneath its
+  /// content, and a page route's is not dismissible: tapping it plays the
+  /// platform alert sound. Content that lets the pointer through, as a
+  /// canvas does, put each click on it as well, so every click beeped. The
+  /// tab's page has nothing beneath it to dismiss.
+  @override
+  Widget buildModalBarrier() => const SizedBox.expand();
+
   @override
   Widget buildPage(
     BuildContext context,
