@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:crux_license/crux_license.dart';
 import 'package:crux_license/src/widgets/license_date_format.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -127,6 +128,27 @@ void main() {
       );
       await tester.tap(find.text('EDU'));
       expect(taps, 1);
+    });
+
+    for (final key in [LogicalKeyboardKey.enter, LogicalKeyboardKey.space]) {
+      testWidgets('Tab reaches the chip and ${key.debugName} activates it', (
+        tester,
+      ) async {
+        var taps = 0;
+        await tester.pumpWidget(
+          host(status(LicenseTier.edu), onTap: () => taps++),
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        await tester.sendKeyEvent(key);
+        await tester.pump();
+        expect(taps, 1);
+      });
+    }
+
+    testWidgets('without onTap the chip takes no focus', (tester) async {
+      await tester.pumpWidget(host(status(LicenseTier.edu)));
+      expect(find.byType(FocusableActionDetector), findsNothing);
     });
 
     testWidgets('a long address is ellipsized, not overflowed', (

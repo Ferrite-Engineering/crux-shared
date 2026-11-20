@@ -87,15 +87,9 @@ class CruxEduStatusChip extends ConsumerWidget {
       ],
     );
 
-    if (onTap != null) {
-      chip = MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: chip,
-        ),
-      );
+    final tap = onTap;
+    if (tap != null) {
+      chip = _Activatable(onActivate: tap, child: chip);
     }
 
     return Semantics(
@@ -104,6 +98,53 @@ class CruxEduStatusChip extends ConsumerWidget {
       onTap: onTap,
       child: ExcludeSemantics(
         child: Tooltip(message: tooltip, child: chip),
+      ),
+    );
+  }
+}
+
+/// A click target that a keyboard can reach: in the focus order, activated by
+/// Enter or Space, with a visible focus ring while focus came from the
+/// keyboard.
+class _Activatable extends StatefulWidget {
+  const _Activatable({required this.onActivate, required this.child});
+
+  final VoidCallback onActivate;
+  final Widget child;
+
+  @override
+  State<_Activatable> createState() => _ActivatableState();
+}
+
+class _ActivatableState extends State<_Activatable> {
+  bool _highlight = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ring = Theme.of(context).colorScheme.primary;
+    return FocusableActionDetector(
+      mouseCursor: SystemMouseCursors.click,
+      onShowFocusHighlight: (show) => setState(() => _highlight = show),
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            widget.onActivate();
+            return null;
+          },
+        ),
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onActivate,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: _highlight ? ring : const Color(0x00000000),
+            ),
+          ),
+          child: Padding(padding: const EdgeInsets.all(1), child: widget.child),
+        ),
       ),
     );
   }

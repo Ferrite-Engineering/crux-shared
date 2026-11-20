@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **`CruxEduStatusChip` is reachable from the keyboard.** With an `onTap`, it
+  is in the focus order, Enter or Space activates it, and a focus ring shows
+  while focus came from the keyboard. Without one it takes no focus.
+
 - **An educational licence says so: `CruxEduStatusChip` and
   `cruxEduExportMark`.** The chip goes in the status bar's trailing slot and
   shows the EDU chip, `Non-commercial use` and the holder's address, with the
