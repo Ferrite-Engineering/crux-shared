@@ -385,7 +385,7 @@ class CruxCxpStrings {
     noPeersRunningHelp:
         'Start WaveCrux, NetCrux, LintCrux or SimCrux with CXP on to '
         'cross-probe to it.',
-    selectionCommand: 'Cross-probe Selection…',
+    selectionCommand: 'Cross-Probe Selection…',
     instanceLabel: (product, ordinal) => '$product $ordinal',
     instanceDocumentLabel: (instance, document) => '$instance ($document)',
     outcomeSent: (target) => 'Cross-probed to $target',
