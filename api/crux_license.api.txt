@@ -75,6 +75,24 @@ abstract class CruxEditionLineStrings
   get editionNameEdu -> String
   get editionNameEnterprise -> String
   get editionNamePro -> String
+abstract class CruxEduNoticeStrings
+  const CruxEduNoticeStrings()
+  exportMark(String productName) -> String
+  get statusLabel -> String
+  statusTooltip({String? email, String? validUntil}) -> String
+class CruxEduNoticeStringsEn extends CruxEduNoticeStrings
+  const CruxEduNoticeStringsEn()
+  exportMark(String productName) -> String
+  get statusLabel -> String
+  statusTooltip({String? email, String? validUntil}) -> String
+class CruxEduStatusChip extends ConsumerWidget
+  const CruxEduStatusChip({CruxEduNoticeStrings strings, Key? key, LicenseBadgeStrings badgeStrings, TextStyle? textStyle, double maxTextWidth, void Function()? onTap})
+  build(BuildContext context, WidgetRef ref) -> Widget
+  final badgeStrings: LicenseBadgeStrings
+  final maxTextWidth: double
+  final onTap: void Function()?
+  final strings: CruxEduNoticeStrings
+  final textStyle: TextStyle?
 class CruxGatedSettingsBody extends ConsumerWidget
   const CruxGatedSettingsBody({CruxUpgradeDialogStrings strings, Key? key, LicenseBadgeStrings badgeStrings, required LicenseTier requiredTier, required String featureName, required Widget child})
   build(BuildContext context, WidgetRef ref) -> Widget
@@ -830,7 +848,9 @@ get cruxAuditPeerIdProvider -> Provider<String?>
 get cruxAuditProductIdProvider -> Provider<String>
 get cruxAuditRecorderProvider -> Provider<CruxAuditRecorder>
 get cruxAuditSinkProvider -> Provider<AuditSink>
+cruxEduExportMark(CruxLicenseStatus status, String productName, {CruxEduNoticeStrings strings}) -> String?
 cruxGatedSettingsCategory({CruxUpgradeDialogStrings Function(BuildContext)? strings, LicenseBadgeStrings Function(BuildContext)? badgeStrings, required IconData icon, required LicenseTier requiredTier, required String Function(BuildContext) labelBuilder, required String id, required Widget Function(BuildContext) bodyBuilder}) -> CruxSettingsExtraCategory
+cruxIsEduLicense(CruxLicenseStatus status) -> bool
 cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 cruxLicenseEditionLine(CruxLicenseStatus status, CruxEditionLineStrings strings) -> String?
 cruxLicenseExpiryNoticeFor(CruxLicenseStatus status, {int evaluationWarningDays, int warningDays, required DateTime now}) -> CruxLicenseExpiryNotice?
@@ -866,6 +886,7 @@ get licenseTierOverride -> LicenseTier?
 get licenseTierProvider -> Provider<LicenseTier>
 mintInstallFingerprint([Random? random]) -> String
 get observedServerTimeProvider -> Provider<DateTime?>
+paintCruxEduExportMark(Canvas canvas, Size size, String mark, {Color color, Color plate, double fontSize, double margin}) -> void
 parseBetaExpiryDate(int yyyymmdd) -> DateTime?
 parseLicenseCredential(String raw) -> LicenseEnvelopeParse
 reportPolicyLoad({Map<String, Map<String, bool>> productKeys, String? productId, required CruxAuditRecorder recorder, required PolicyLoadResult result, void Function(String)? onDiagnostic}) -> PolicyLoadReport?

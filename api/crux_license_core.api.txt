@@ -12,6 +12,16 @@ enum BetaExpiryStatus
   static const expired: BetaExpiryStatus
   static const expiringSoon: BetaExpiryStatus
   static const notApplicable: BetaExpiryStatus
+abstract class CruxEduNoticeStrings
+  const CruxEduNoticeStrings()
+  exportMark(String productName) -> String
+  get statusLabel -> String
+  statusTooltip({String? email, String? validUntil}) -> String
+class CruxEduNoticeStringsEn extends CruxEduNoticeStrings
+  const CruxEduNoticeStringsEn()
+  exportMark(String productName) -> String
+  get statusLabel -> String
+  statusTooltip({String? email, String? validUntil}) -> String
 enum CruxLicenseActionFailure
   static const alreadyRequested: CruxLicenseActionFailure
   static const invalidEmail: CruxLicenseActionFailure
@@ -441,6 +451,8 @@ class UnsupportedLicenseActions implements CruxLicenseActions
   requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
 applyLicenseTierOverride(LicenseTier resolved) -> LicenseTier
 betaExpiryStatusFor(DateTime now, {DateTime? expiry, int? warningDays}) -> BetaExpiryStatus
+cruxEduExportMark(CruxLicenseStatus status, String productName, {CruxEduNoticeStrings strings}) -> String?
+cruxIsEduLicense(CruxLicenseStatus status) -> bool
 cruxLicenseDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 cruxLicenseExpiryNoticeFor(CruxLicenseStatus status, {int evaluationWarningDays, int warningDays, required DateTime now}) -> CruxLicenseExpiryNotice?
 cruxSeePricingAction(CruxLicenseActions actions) -> Future<void> Function()?

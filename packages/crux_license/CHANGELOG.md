@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **An educational licence says so: `CruxEduStatusChip` and
+  `cruxEduExportMark`.** The chip goes in the status bar's trailing slot and
+  shows the EDU chip, `Non-commercial use` and the holder's address, with the
+  terms and end date in its tooltip; it renders nothing for any other tier, so
+  it mounts unconditionally. `cruxEduExportMark(status, productName)` returns
+  `Made with <Product> Educational · Non-commercial use only` for an EDU
+  licence and `null` otherwise, for exports a person looks at (images, PDF,
+  SVG, reports), and `paintCruxEduExportMark` draws it in the corner of a
+  canvas export. Strings: `CruxEduNoticeStrings`, English default
+  `CruxEduNoticeStringsEn`.
+
 - **Educational licences can be self-issued (`edu-v1`).** A second trusted
   issuer, `EduLicenseIssuer`, reads `edu/<payload>.<signature>` credentials
   signed by the suite's own educational key, and the production validator
