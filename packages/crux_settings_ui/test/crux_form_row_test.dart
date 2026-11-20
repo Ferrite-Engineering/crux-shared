@@ -192,6 +192,43 @@ void main() {
     expect(control.dx, greaterThan(400));
   });
 
+  for (final desktop in [true, false]) {
+    for (final entry in <String, InputDecoration>{
+      'prefixText': const InputDecoration(prefixText: '#'),
+      'prefix': const InputDecoration(prefix: Text('#')),
+      'prefixIcon': const InputDecoration(prefixIcon: Icon(Icons.tag)),
+      'suffixText': const InputDecoration(suffixText: 'px'),
+      'suffixIcon': const InputDecoration(suffixIcon: Icon(Icons.tag)),
+    }.entries) {
+      testWidgets(
+        'a field with ${entry.key} takes text in a row '
+        '(${desktop ? 'desktop' : 'phone'})',
+        (tester) async {
+          final handle = tester.ensureSemantics();
+          await tester.pumpWidget(
+            _app(
+              CruxFormRow(
+                label: 'Hex',
+                child: SizedBox(
+                  width: 200,
+                  child: TextField(decoration: entry.value),
+                ),
+              ),
+              desktop: desktop,
+            ),
+          );
+          await tester.enterText(find.byType(TextField), 'ff00aa');
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          final node = tester.getSemantics(find.byType(TextField));
+          expect(node.label, 'Hex');
+          expect(node.value, 'ff00aa');
+          handle.dispose();
+        },
+      );
+    }
+  }
+
   testWidgets('focus walk: field, dropdown, switch, checkbox', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(_app(const _Form()));

@@ -6,6 +6,14 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **`CruxFormRow` takes a text field with a prefix or suffix.** A `TextField`
+  with `prefix`, `prefixText`, `suffix` or `suffixText` inside the merged row
+  made the framework assert as soon as text was entered. The row now detects
+  such a field (also inside a `SizedBox`, `ConstrainedBox`, `Padding` or
+  `Align`) and names it directly: the label is excluded and the field carries
+  the label and help as its own semantics. A `TextFormField` hides its
+  decoration, so one with an affix passes `mergeSemantics: false`.
+
 - **Settings can open at a category.** `CruxSettingsMasterDetail` takes
   `initialCategoryId`, and `openCruxSettings` takes `initialCategoryId:`,
   which reaches the body through the new `CruxSettingsInitialCategory`

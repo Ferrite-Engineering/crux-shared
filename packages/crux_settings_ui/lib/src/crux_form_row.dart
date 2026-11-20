@@ -101,7 +101,12 @@ enum _RowKind { control, toggle, checkbox }
 ///   semantics node carrying the label, the control's role and state, and
 ///   the help text as its hint. A control that holds several focusable
 ///   parts (a field with a browse button) passes `mergeSemantics: false` and
-///   names its parts itself.
+///   names its parts itself. A [TextField] with a `prefix`, `prefixText`,
+///   `suffix` or `suffixText` cannot be merged (the framework asserts once
+///   text is entered), so the row detects it, also inside a `SizedBox`,
+///   `ConstrainedBox`, `Padding` or `Align`, and names the field directly
+///   instead. A `TextFormField` hides its decoration: give one with such an
+///   affix `mergeSemantics: false` and a `Semantics(label:)` of its own.
 /// - **Click target.** For [CruxFormRow.toggle] and [CruxFormRow.checkbox]
 ///   the label is clickable and toggles the control.
 ///
@@ -174,6 +179,26 @@ class CruxFormRow extends StatelessWidget {
 
   bool get _enabled => _kind == _RowKind.control || onChanged != null;
 
+  /// Whether [widget], looking through single-child layout wrappers, is a
+  /// [TextField] whose decoration has a prefix or a suffix.
+  static bool _hasAffix(Widget? widget) {
+    final inner = switch (widget) {
+      SizedBox(:final child) => child,
+      ConstrainedBox(:final child) => child,
+      Padding(:final child) => child,
+      Align(:final child) => child,
+      _ => null,
+    };
+    if (inner != null) return _hasAffix(inner);
+    if (widget is! TextField) return false;
+    final decoration = widget.decoration;
+    return decoration != null &&
+        (decoration.prefix != null ||
+            decoration.prefixText != null ||
+            decoration.suffix != null ||
+            decoration.suffixText != null);
+  }
+
   void _toggle() {
     final change = onChanged;
     if (change != null) change(!(value ?? false));
@@ -197,7 +222,12 @@ class CruxFormRow extends StatelessWidget {
     // and names its own group, so the visible label would be a second,
     // identical name around it.
     final segmented = child is CruxSegmentedControl;
-    final labelText = segmented
+    // A text field with a prefix or suffix cannot sit inside the merged row:
+    // the framework asserts once text is entered. The row names the field
+    // itself instead.
+    final namesField =
+        mergeSemantics && _kind == _RowKind.control && _hasAffix(child);
+    final labelText = segmented || namesField
         ? ExcludeSemantics(child: Text(label, style: labelStyle))
         : Text(label, style: labelStyle);
     // The whole label area, not only the glyphs, toggles a switch or a
@@ -222,7 +252,8 @@ class CruxFormRow extends StatelessWidget {
         : ExcludeSemantics(child: Text(help!, style: helpStyle));
 
     final control = switch (_kind) {
-      _RowKind.control => child!,
+      _RowKind.control =>
+        namesField ? Semantics(label: label, hint: help, child: child) : child!,
       _RowKind.toggle =>
         desktop == null
             ? Switch(
@@ -364,7 +395,7 @@ class CruxFormRow extends StatelessWidget {
     // A segmented control is a group of buttons, one per segment, each with
     // its own selected state: merged into the row it would be one node with
     // three taps. It names its group itself (its semanticLabel).
-    if (!mergeSemantics || segmented) return row;
+    if (!mergeSemantics || segmented || namesField) return row;
     return MergeSemantics(
       child: Semantics(hint: help, child: row),
     );
