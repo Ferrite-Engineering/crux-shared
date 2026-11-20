@@ -202,34 +202,18 @@ void main() {
       expect(await tabLabels(container), ['A']);
     });
 
-    testWidgets('Move to New Window is rendered but inert in this build', (
+    testWidgets('Move to New Window is omitted while multi-window is off', (
       tester,
     ) async {
-      final (container, _) = await pumpBarWithTabs(tester, ['A', 'B']);
+      await pumpBarWithTabs(tester, ['A', 'B']);
 
       await openMenuOn(tester, 'A');
-      final entry = find.text(strings.moveToNewWindowMenuItem);
       expect(
-        entry,
-        findsOneWidget,
-        reason: 'the seam stays visible so contributors can see it',
+        find.text(strings.moveToNewWindowMenuItem),
+        kMultiWindowAvailable ? findsOneWidget : findsNothing,
+        reason: 'a menu must not offer an entry that can do nothing',
       );
-      final item = tester.widget<PopupMenuItem<Object>>(
-        find.ancestor(of: entry, matching: find.byType(PopupMenuItem<Object>)),
-      );
-      expect(
-        item.enabled,
-        kMultiWindowAvailable,
-        reason: 'enablement is gated on the compile-time flag, nothing else',
-      );
-
-      await tester.tap(entry);
-      await tester.pumpAndSettle();
-      expect(
-        await tabLabels(container),
-        ['A', 'B'],
-        reason: 'the disabled action must not mutate the workspace',
-      );
+      expect(find.text(strings.closeTabMenuItem), findsOneWidget);
     });
 
     testWidgets('dismissing the menu without a selection changes nothing', (
@@ -267,7 +251,6 @@ void main() {
       expect(find.text(strings.closeTabMenuItem), findsOneWidget);
       expect(find.text(strings.closeOtherTabsMenuItem), findsOneWidget);
       expect(find.text(strings.closeTabsToTheRightMenuItem), findsOneWidget);
-      expect(find.text(strings.moveToNewWindowMenuItem), findsOneWidget);
     });
   });
 
