@@ -17,6 +17,9 @@ import 'package:flutter/material.dart';
 /// browser owns the viewport size.
 Future<void> initWindowChrome({WindowBounds? restore}) async {}
 
+/// No-op: web has no process signals. Returns false (nothing is watched).
+bool routeTerminationSignalsThroughExitRequest() => false;
+
 /// No-op: web has no OS window to measure. Returns null so the caller skips
 /// persisting geometry.
 Future<WindowBounds?> readCurrentWindowBounds() async => null;

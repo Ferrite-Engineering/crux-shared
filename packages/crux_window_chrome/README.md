@@ -25,13 +25,14 @@ frameless window loses.
 |---|---|
 | `useCustomWindowChrome` | The one predicate (`!kIsWeb && (windows \|\| linux)`) the host branches on in `bootstrap()`, the root `MaterialApp.builder`, and its `DesktopMenuBar`. |
 | `windowChromeLeftResizeEdge` | Left resize-edge inset (8 dp on Linux) so a target flush to the window's left edge isn't swallowed by the resize strip. |
-| `initWindowChrome({restore})` | Frameless setup + geometry restore before first show. Call in `bootstrap()` after `ensureInitialized()`, guarded by `useCustomWindowChrome`. |
+| `initWindowChrome({restore})` | Frameless setup + geometry restore before first show, fitted to the work area of the display it lands on. On Linux it also routes the window close and SIGTERM/SIGHUP through the app's exit request. Call in `bootstrap()` after `ensureInitialized()`, guarded by `useCustomWindowChrome`. |
+| `routeTerminationSignalsThroughExitRequest()` | SIGTERM and SIGHUP become the exit request a window close sends; the process then ends, within ten seconds at most. Linux and macOS; `initWindowChrome` installs it on Linux, a macOS host calls it from its own startup. |
 | `buildWindowFrame(child)` | Wraps the app in `VirtualWindowFrame`. |
 | `buildWindowGeometryPersister({child, onChanged})` | Debounced, de-duplicated in-session geometry persist. The host stores the `WindowBounds` (e.g. in its workspace document). |
 | `readCurrentWindowBounds()` | One-shot geometry read (e.g. a quit-time flush). |
 | `buildWindowTitleBar({menuBar, logo})` | The VS Code title bar. The host passes its own icon widget as `logo`. |
 | `MnemonicMenuBar` / `MnemonicMenuEntry` | The left-aligned menu bar with Alt underline + latch. |
-| `WindowBounds` | Persisted window-geometry model (pure Dart). |
+| `WindowBounds` / `DisplayWorkArea` | Persisted window-geometry model and the display work areas `WindowBounds.fittedToDisplays` fits it to (pure Dart). |
 | `requestUserAttention({kind})` | Portable request-attention primitive: dock bounce / taskbar flash / Wayland urgency, **never** a focus-steal. Call from the CXP inbound hook on an actionable message. Gracefully no-ops where unavailable. |
 | `WindowAttentionRequester` / `NoopWindowAttentionRequester` | The swappable attention backend behind the settable `windowAttentionRequester` global — assign `NoopWindowAttentionRequester` to gate the feature behind a user setting. |
 

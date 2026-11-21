@@ -13,6 +13,23 @@
   `ServicesBinding.exitApplication(AppExitType.cancelable)`. If that request
   fails, the window is closed anyway.
 
+- **A restored window is fitted to the display it lands on.** Saved geometry
+  was checked against fixed limits only, so a window saved on another display,
+  at another scale or beside another taskbar could open partly off screen (on
+  Windows at 175%, 2894 px wide on a 2880 px work area). `initWindowChrome`
+  now reads the displays' work areas and applies
+  `WindowBounds.fittedToDisplays`: the window is shrunk to fit and moved fully
+  onto the work area of the display it overlaps most, or centred on the
+  primary display when that display is gone. A maximized window is placed
+  first, so it maximizes on its own display. New: `DisplayWorkArea`.
+
+- **SIGTERM and SIGHUP quit like a window close (Linux and macOS).**
+  `routeTerminationSignalsThroughExitRequest` watches both signals and sends
+  the same cancelable exit request a window close does, so every exit
+  listener runs (the session marker and the cross-probe peer file are
+  removed), then ends the process, within ten seconds at most. A second
+  signal starts nothing new. `initWindowChrome` installs it on Linux.
+
 ## 0.2.0
 
 - Add the portable **request-attention** primitive, for an actionable

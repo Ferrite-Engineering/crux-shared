@@ -11,6 +11,7 @@ import 'dart:io';
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:crux_cxp_ui/crux_cxp_ui.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -262,6 +263,31 @@ void main() {
     expect(after, isNot(same(before)));
     expect(after!.boundPort, port);
     expect(before.isAvailable, isFalse, reason: 'the old server stopped');
+  });
+
+  test('an exit request, as a window close or a termination signal sends '
+      'it, removes the manifest and lets the exit go ahead', () async {
+    final c = product('netcrux');
+    final runtime = await runtimeOf(c);
+    expect(runtime!.isAvailable, isTrue);
+    expect(manifests(), hasLength(1));
+    // What the engine sends Dart when it is asked to quit.
+    final reply = Completer<Object?>();
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage(
+          SystemChannels.platform.name,
+          SystemChannels.platform.codec.encodeMethodCall(
+            const MethodCall('System.requestAppExit'),
+          ),
+          (data) => reply.complete(
+            data == null
+                ? null
+                : SystemChannels.platform.codec.decodeEnvelope(data),
+          ),
+        );
+    expect(await reply.future, {'response': 'exit'});
+    expect(manifests(), isEmpty, reason: 'the port and token left with it');
+    expect(runtime.isAvailable, isFalse);
   });
 
   test(

@@ -7,6 +7,17 @@
 # disappears or changes shape is a breaking change for all four
 # products; a line that appears is new public surface to justify.
 
+class DisplayWorkArea
+  const DisplayWorkArea({bool primary, double scaleFactor, required double height, required double left, required double top, required double width})
+  ==(Object other) -> bool
+  final height: double
+  final left: double
+  final primary: bool
+  final scaleFactor: double
+  final top: double
+  final width: double
+  get hashCode -> int
+  toString() -> String
 class MethodChannelWindowAttentionRequester implements WindowAttentionRequester
   const MethodChannelWindowAttentionRequester()
   requestUserAttention(WindowAttentionKind kind) -> Future<void>
@@ -35,6 +46,7 @@ class WindowBounds
   final maximized: bool
   final top: double?
   final width: double
+  fittedToDisplays(List<DisplayWorkArea> displays, {double minHeight, double minWidth, double windowScale}) -> WindowBounds?
   get hasPosition -> bool
   get hashCode -> int
   sanitizedForRestore({double maxExtent, double minHeight, double minLeft, double minWidth}) -> WindowBounds?
@@ -47,6 +59,7 @@ buildWindowGeometryPersister({required Future<void> Function(WindowBounds) onCha
 initWindowChrome({WindowBounds? restore}) -> Future<void>
 readCurrentWindowBounds() -> Future<WindowBounds?>
 requestUserAttention({WindowAttentionKind kind}) -> Future<void>
+routeTerminationSignalsThroughExitRequest() -> bool
 get useCustomWindowChrome -> bool
 get windowAttentionRequester -> WindowAttentionRequester
 set windowAttentionRequester=(WindowAttentionRequester requester)

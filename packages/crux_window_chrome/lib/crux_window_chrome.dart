@@ -23,7 +23,11 @@
 ///   `logo` widget and the in-window `menuBar`.
 /// - `MnemonicMenuBar` / `MnemonicMenuEntry` — the left-aligned Material menu
 ///   bar with Alt-access-key underline + latch behaviour.
-/// - `WindowBounds` — the persisted window geometry model.
+/// - `routeTerminationSignalsThroughExitRequest` — SIGTERM and SIGHUP become
+///   the same exit request a window close is (Linux and macOS);
+///   `initWindowChrome` installs it on Linux.
+/// - `WindowBounds` / `DisplayWorkArea` — the persisted window geometry
+///   model, and the display work areas a restored window is fitted to.
 /// - `requestUserAttention` / `WindowAttentionRequester` — the portable
 ///   request-attention primitive (dock bounce / taskbar flash / Wayland
 ///   urgency) the CXP inbound hook calls; never steals focus, gracefully

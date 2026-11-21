@@ -4,11 +4,16 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:crux_window_chrome/src/exit_on_termination_signal.dart';
 import 'package:crux_window_chrome/src/exit_on_window_close.dart';
 import 'package:crux_window_chrome/src/widgets/window_title_bar.dart';
 import 'package:crux_window_chrome/src/window_bounds.dart';
 import 'package:flutter/material.dart';
+import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
+
+export 'package:crux_window_chrome/src/exit_on_termination_signal.dart'
+    show routeTerminationSignalsThroughExitRequest;
 
 /// Real (`dart:io`) implementation of the window-chrome facade. Selected by
 /// the conditional export in `window_chrome.dart` on every platform that has
@@ -24,15 +29,24 @@ import 'package:window_manager/window_manager.dart';
 ///
 /// When [restore] is supplied (the persisted geometry from the last session),
 /// the window is sized and positioned to match *before* it is first shown, so
-/// there is no visible jump. The bounds are sanitized first
-/// ([WindowBounds.sanitizedForRestore]) so a stale, off-screen, or degenerate
-/// snapshot falls back to a sane centered default rather than restoring the
-/// window somewhere unreachable. A null [restore] (first launch, or restore
-/// disabled) opens at the default 1280×720, centered.
+/// there is no visible jump. The bounds are first fitted to the connected
+/// displays ([WindowBounds.fittedToDisplays]): the window lands entirely on
+/// the work area of the display it was saved on, shrunk to fit, or centred on
+/// the primary display when that display is gone. If the displays cannot be
+/// read, [WindowBounds.sanitizedForRestore] is the fallback. A null [restore]
+/// (first launch, or restore disabled) opens at the default 1280×720,
+/// centered.
+///
+/// On Linux, a window close and a SIGTERM or SIGHUP both become the app's
+/// exit request ([routeWindowCloseThroughExitRequest],
+/// [routeTerminationSignalsThroughExitRequest]).
 Future<void> initWindowChrome({WindowBounds? restore}) async {
   await windowManager.ensureInitialized();
-  if (Platform.isLinux) await routeWindowCloseThroughExitRequest();
-  final bounds = restore?.sanitizedForRestore();
+  if (Platform.isLinux) {
+    await routeWindowCloseThroughExitRequest();
+    routeTerminationSignalsThroughExitRequest();
+  }
+  final bounds = restore == null ? null : await _fitToDisplays(restore);
   final windowOptions = WindowOptions(
     titleBarStyle: TitleBarStyle.hidden,
     // Keep the same minimum the native runners requested (800x500) so the
@@ -46,9 +60,9 @@ Future<void> initWindowChrome({WindowBounds? restore}) async {
   unawaited(
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       if (bounds != null) {
-        if (bounds.maximized) {
-          await windowManager.maximize();
-        } else if (bounds.hasPosition) {
+        // Placed first even when maximized, so the window maximizes on the
+        // display it was saved on and un-maximizes on screen.
+        if (bounds.hasPosition) {
           await windowManager.setBounds(
             Rect.fromLTWH(
               bounds.left!,
@@ -58,10 +72,48 @@ Future<void> initWindowChrome({WindowBounds? restore}) async {
             ),
           );
         }
+        if (bounds.maximized) await windowManager.maximize();
       }
       await windowManager.show();
       await windowManager.focus();
     }),
+  );
+}
+
+/// [restore] fitted to the connected displays' work areas, in the
+/// coordinates `window_manager` takes.
+///
+/// Windows reports each display's work area in that display's own scale and
+/// takes window coordinates in the scale of the display the window is on, so
+/// both are compared in physical pixels. GTK on Linux reports and takes
+/// everything in one logical desktop space, so every scale there is 1.
+Future<WindowBounds?> _fitToDisplays(WindowBounds restore) async {
+  final List<DisplayWorkArea> areas;
+  try {
+    final perDisplayScale = Platform.isWindows;
+    final primary = await screenRetriever.getPrimaryDisplay();
+    final displays = await screenRetriever.getAllDisplays();
+    areas = [
+      for (final display in displays)
+        if (display.visiblePosition case final origin?)
+          if (display.visibleSize case final size?)
+            DisplayWorkArea(
+              left: origin.dx,
+              top: origin.dy,
+              width: size.width,
+              height: size.height,
+              scaleFactor: perDisplayScale
+                  ? (display.scaleFactor?.toDouble() ?? 1)
+                  : 1,
+              primary: display.id == primary.id,
+            ),
+    ];
+  } on Object {
+    return restore.sanitizedForRestore();
+  }
+  return restore.fittedToDisplays(
+    areas,
+    windowScale: Platform.isWindows ? windowManager.getDevicePixelRatio() : 1,
   );
 }
 

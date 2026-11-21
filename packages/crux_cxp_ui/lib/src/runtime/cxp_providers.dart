@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:crux_cxp_ui/src/cross_probe_event.dart';
@@ -11,6 +12,7 @@ import 'package:crux_cxp_ui/src/runtime/cxp_settings.dart';
 import 'package:crux_settings/crux_settings.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
@@ -250,12 +252,46 @@ cruxCxpRuntimeProvider = FutureProvider<CruxCxpRuntime?>((ref) async {
     onAttention: () => ref.read(cruxCxpAttentionRequesterProvider)?.call(),
     attentionEnabled: () => ref.read(cruxCxpSettingsProvider).requestAttention,
   );
+  // An orderly quit (a window close, a quit from the system, SIGTERM or
+  // SIGHUP) reaches Dart as an exit request, and the root container is not
+  // disposed before the process ends. Stopping here removes the manifest,
+  // which holds the port and the auth token, instead of leaving it for the
+  // next launch to reap.
+  final exitListener = _stopOnExitRequest(runtime);
   // Registered before start(), so a superseded build stops a runtime whose
   // start is still in flight instead of orphaning its socket.
-  ref.onDispose(() => unawaited(runtime.dispose()));
+  ref.onDispose(() {
+    exitListener?.dispose();
+    unawaited(runtime.dispose());
+  });
   await runtime.start();
   return runtime;
 }, name: 'cruxCxpRuntimeProvider');
+
+/// How long an exit request waits for the runtime to stop.
+const Duration _exitStopBudget = Duration(seconds: 2);
+
+/// Stops [runtime] when the app is asked to exit, then lets the exit go
+/// ahead. Never vetoes. Null where no binding exists to listen on.
+///
+/// A quit that another listener cancels leaves cross-probe stopped until the
+/// setting changes or the app restarts; no product cancels a quit today.
+AppLifecycleListener? _stopOnExitRequest(CruxCxpRuntime runtime) {
+  try {
+    return AppLifecycleListener(
+      onExitRequested: () async {
+        try {
+          await runtime.stop().timeout(_exitStopBudget);
+        } on Object {
+          // Best effort: the exit goes ahead, and peers reap the manifest.
+        }
+        return AppExitResponse.exit;
+      },
+    );
+  } on Object {
+    return null;
+  }
+}
 
 /// What Settings shows under the CXP controls.
 typedef CruxCxpServerStatus = ({bool running, int? port, String? problem});

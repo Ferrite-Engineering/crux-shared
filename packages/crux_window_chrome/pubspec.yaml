@@ -18,6 +18,9 @@ dependencies:
   flutter:
     sdk: flutter
   meta: ^1.15.0
+  # The connected displays' work areas, which a restored window is fitted to.
+  # Already resolved through window_manager.
+  screen_retriever: ^0.2.2
   window_manager: ^0.5.0
 
 dev_dependencies:
