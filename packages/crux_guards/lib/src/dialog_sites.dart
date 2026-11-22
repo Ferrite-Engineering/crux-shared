@@ -158,9 +158,9 @@ bool _insideModalGuard(AstNode node) {
 /// `null`.
 bool _passesModalGuardKey(MethodInvocation node) {
   for (final argument in node.argumentList.arguments) {
-    if (argument is NamedExpression &&
-        argument.name.label.name == 'modalGuardKey' &&
-        argument.expression is! NullLiteral) {
+    if (argument is NamedArgument &&
+        argument.name.lexeme == 'modalGuardKey' &&
+        argument.argumentExpression is! NullLiteral) {
       return true;
     }
   }
@@ -169,10 +169,10 @@ bool _passesModalGuardKey(MethodInvocation node) {
 
 bool _passesFalse(MethodInvocation node, String parameter) {
   for (final argument in node.argumentList.arguments) {
-    if (argument is NamedExpression &&
-        argument.name.label.name == parameter &&
-        argument.expression is BooleanLiteral &&
-        !(argument.expression as BooleanLiteral).value) {
+    if (argument case NamedArgument(
+      :final name,
+      argumentExpression: BooleanLiteral(value: false),
+    ) when name.lexeme == parameter) {
       return true;
     }
   }

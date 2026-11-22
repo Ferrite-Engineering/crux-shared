@@ -11,8 +11,9 @@ resolution: workspace
 dependencies:
   # `parseString` only: the scanners read syntax, never resolve a library, so
   # a product's guard test needs no analysis context. Same window as
-  # crux_workspace's dev dependency, held below 13 with the rest of the suite.
-  analyzer: '>=12.1.0 <13.0.0'
+  # crux_workspace's dev dependency: the one `test` accepts alongside the
+  # `test_api` that the pinned Flutter's flutter_test locks.
+  analyzer: '>=13.0.0 <15.0.0'
   meta: ^1.15.0
 
 dev_dependencies:

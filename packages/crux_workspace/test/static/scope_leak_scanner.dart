@@ -846,10 +846,12 @@ class _RouteVisitor extends RecursiveAstVisitor<void> {
   /// `cruxTabNavigatorOf(context)` or `<tabNavigators>.navigatorFor(id)`.
   bool _pushesOnTabNavigator(MethodInvocation node) {
     for (final argument in node.argumentList.arguments) {
-      if (argument is! NamedExpression) continue;
-      if (argument.name.label.name != 'navigator') continue;
+      if (argument is! NamedArgument) continue;
+      if (argument.name.lexeme != 'navigator') continue;
       var found = false;
-      argument.expression.accept(_TabNavigatorCallFinder(() => found = true));
+      argument.argumentExpression.accept(
+        _TabNavigatorCallFinder(() => found = true),
+      );
       return found;
     }
     return false;

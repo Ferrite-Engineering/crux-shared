@@ -31,8 +31,6 @@ import 'package:window_manager/window_manager.dart';
 ///
 /// The parameters are seams for tests; production passes none.
 Future<void> routeWindowCloseThroughExitRequest({
-  // Matches window_manager's own `setPreventClose(bool)` signature.
-  // ignore: avoid_positional_boolean_parameters
   Future<void> Function(bool prevent)? setPreventClose,
   void Function(WindowListener listener)? addListener,
   Future<AppExitResponse> Function()? requestExit,

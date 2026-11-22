@@ -56,19 +56,19 @@ class _LabelVisitor extends RecursiveAstVisitor<void> {
   final List<_Hit> hits = <_Hit>[];
 
   @override
-  void visitNamedExpression(NamedExpression node) {
-    final name = node.name.label.name;
+  void visitNamedArgument(NamedArgument node) {
+    final name = node.name.lexeme;
     if (name == 'labelText' || (name == 'label' && _inInputDecoration(node))) {
       hits.add(_Hit(_lines.getLocation(node.offset).lineNumber, name));
     }
-    super.visitNamedExpression(node);
+    super.visitNamedArgument(node);
   }
 
-  bool _inInputDecoration(NamedExpression node) {
-    final call = node.parent?.parent;
-    final callee = switch (call) {
-      MethodInvocation() => call.methodName.name,
-      InstanceCreationExpression() => call.constructorName.type.name.lexeme,
+  bool _inInputDecoration(NamedArgument node) {
+    final callee = switch (node.parent?.parent) {
+      final MethodInvocation call => call.methodName.name,
+      final InstanceCreationExpression call =>
+        call.constructorName.type.name.lexeme,
       _ => null,
     };
     return callee == 'InputDecoration';

@@ -33,8 +33,8 @@ Notes:
 --------------------------------------------------------------------------
 
 Components and versions:
-  - _fe_analyzer_shared                        99.0.0
-  - analyzer                                   12.1.0
+  - _fe_analyzer_shared                        111.0.0
+  - analyzer                                   14.7.0
   - args                                       2.7.0
   - async                                      2.13.1
   - boolean_selector                           2.1.2
@@ -92,9 +92,9 @@ Components and versions:
   - stream_channel                             2.1.4
   - string_scanner                             1.4.1
   - term_glyph                                 1.2.2
-  - test                                       1.31.1
-  - test_api                                   0.7.12
-  - test_core                                  0.6.18
+  - test                                       1.32.0
+  - test_api                                   0.7.14
+  - test_core                                  0.6.20
   - typed_data                                 1.4.0
   - vm_service                                 15.4.0
   - watcher                                    1.2.1

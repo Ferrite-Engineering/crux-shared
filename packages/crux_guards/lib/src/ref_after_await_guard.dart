@@ -190,14 +190,12 @@ class _ScopeFinder extends RecursiveAstVisitor<void> {
   }
 
   static bool _isWidgetRefParameter(FormalParameter parameter) {
-    final p = parameter is DefaultFormalParameter
-        ? parameter.parameter
-        : parameter;
-    if (p is SimpleFormalParameter) {
-      final type = p.type;
-      return type is NamedType && type.name.lexeme == 'WidgetRef';
-    }
-    return false;
+    // A plain `WidgetRef ref`: not `this.ref`, `super.ref` or a function-typed
+    // parameter whose return type happens to be `WidgetRef`.
+    if (parameter is! RegularFormalParameter) return false;
+    if (parameter.functionTypedSuffix != null) return false;
+    final type = parameter.type;
+    return type is NamedType && type.name.lexeme == 'WidgetRef';
   }
 }
 
