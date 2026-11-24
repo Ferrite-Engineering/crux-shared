@@ -4,6 +4,7 @@
 import 'package:crux_a11y/crux_a11y_testing.dart';
 import 'package:crux_workspace/crux_workspace.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _canvas({
@@ -48,6 +49,54 @@ void main() {
     );
     handle.dispose();
   });
+
+  testWidgets(
+    'the launch focus has no ring until Tab, on desktop',
+    (tester) async {
+      await tester.pumpWidget(_canvas());
+      await tester.pump();
+
+      // Focus is on the first action, as a screen reader needs, but no ring.
+      expect(
+        FocusManager.instance.primaryFocus?.context
+            ?.findAncestorWidgetOfExactType<FilledButton>(),
+        isNotNull,
+      );
+      expect(FocusManager.instance.highlightMode, FocusHighlightMode.touch);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(
+        FocusManager.instance.highlightMode,
+        FocusHighlightMode.traditional,
+      );
+      expect(
+        FocusManager.instance.highlightStrategy,
+        FocusHighlightStrategy.automatic,
+      );
+    },
+    variant: TargetPlatformVariant.desktop(),
+  );
+
+  testWidgets(
+    'a key that is not navigation does not bring the ring',
+    (tester) async {
+      await tester.pumpWidget(_canvas());
+      await tester.pump();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.pump();
+      expect(FocusManager.instance.highlightMode, FocusHighlightMode.touch);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(
+        FocusManager.instance.highlightMode,
+        FocusHighlightMode.traditional,
+      );
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+  );
 
   testWidgets('the title is a heading', (tester) async {
     final handle = tester.ensureSemantics();

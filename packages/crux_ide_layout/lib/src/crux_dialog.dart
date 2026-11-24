@@ -89,7 +89,11 @@ Future<T?> showCruxDialog<T>({
   final focusBefore = FocusManager.instance.primaryFocus;
   Widget build(BuildContext dialogContext) => _CruxDialogFocusReturn(
     focusBefore: focusBefore,
-    child: _CruxDialogRouteScope(child: Builder(builder: builder)),
+    child: _CruxDialogRouteScope(
+      child: blocking && !dismissible
+          ? _CruxScrimKeepsFocus(child: Builder(builder: builder))
+          : Builder(builder: builder),
+    ),
   );
   Future<T?> open() {
     final target = navigator;
@@ -227,6 +231,43 @@ class _CruxDialogFocusReturnState extends State<_CruxDialogFocusReturn> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// Keeps a click on the scrim of a non-dismissible dialog from taking keyboard
+/// focus out of the dialog.
+///
+/// On desktop a text field unfocuses itself when a pointer goes down outside
+/// its tap region (`EditableText`'s default `onTapOutside`), and the route's
+/// barrier is outside every region the dialog has. The click then does what a
+/// non-dismissible scrim should (nothing, plus the platform's cue) and the
+/// field loses focus anyway, so the user has to click back into it.
+///
+/// This lays a translucent region over the whole route, in the group every
+/// text field belongs to, so the scrim counts as part of the field's own
+/// region. It is translucent so the pointer still reaches the barrier below,
+/// which absorbs it and plays the platform cue as before.
+class _CruxScrimKeepsFocus extends StatelessWidget {
+  const _CruxScrimKeepsFocus({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.passthrough,
+      children: <Widget>[
+        const Positioned.fill(
+          child: TapRegion(
+            groupId: EditableText,
+            behavior: HitTestBehavior.translucent,
+            debugLabel: 'CruxDialog scrim',
+            child: SizedBox.expand(),
+          ),
+        ),
+        child,
+      ],
+    );
+  }
 }
 
 /// Lets Escape pop the dialog's route even when its barrier is not

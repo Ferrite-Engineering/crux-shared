@@ -3,7 +3,9 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Centered "nothing is open yet" splash rendered when the workspace has zero
 /// tabs.
@@ -153,6 +155,57 @@ class EmptyCanvasState extends StatefulWidget {
   State<EmptyCanvasState> createState() => _EmptyCanvasStateState();
 }
 
+/// The key handler that lifts the hold set by
+/// [_holdFocusRingUntilKeyboardNavigation], or null when none is installed.
+KeyEventResult Function(KeyEvent)? _ringHandler;
+
+bool get _isDesktopPlatform => switch (defaultTargetPlatform) {
+  TargetPlatform.macOS ||
+  TargetPlatform.windows ||
+  TargetPlatform.linux => true,
+  TargetPlatform.android ||
+  TargetPlatform.iOS ||
+  TargetPlatform.fuchsia => false,
+};
+
+/// Keeps the keyboard focus ring off the control the canvas just focused,
+/// until the user navigates with the keyboard.
+///
+/// On desktop Flutter starts in "traditional" highlight mode, so the control
+/// that took launch focus is drawn with a ring before any key was pressed,
+/// which reads as an error or a stuck selection. The focus stays (a screen
+/// reader needs it); only the ring waits. The first Tab or arrow key hands the
+/// decision back to Flutter's automatic strategy, which has by then seen a key
+/// event and shows the ring.
+void _holdFocusRingUntilKeyboardNavigation() {
+  if (!_isDesktopPlatform) return;
+  final manager = FocusManager.instance;
+  if (manager.highlightStrategy == FocusHighlightStrategy.alwaysTraditional) {
+    return;
+  }
+  manager.highlightStrategy = FocusHighlightStrategy.alwaysTouch;
+  if (_ringHandler != null) return;
+  KeyEventResult handler(KeyEvent event) {
+    if (event is! KeyDownEvent || !_isNavigationKey(event.logicalKey)) {
+      return KeyEventResult.ignored;
+    }
+    FocusManager.instance.removeEarlyKeyEventHandler(handler);
+    _ringHandler = null;
+    FocusManager.instance.highlightStrategy = FocusHighlightStrategy.automatic;
+    return KeyEventResult.ignored;
+  }
+
+  _ringHandler = handler;
+  manager.addEarlyKeyEventHandler(handler);
+}
+
+bool _isNavigationKey(LogicalKeyboardKey key) =>
+    key == LogicalKeyboardKey.tab ||
+    key == LogicalKeyboardKey.arrowUp ||
+    key == LogicalKeyboardKey.arrowDown ||
+    key == LogicalKeyboardKey.arrowLeft ||
+    key == LogicalKeyboardKey.arrowRight;
+
 class _EmptyCanvasStateState extends State<EmptyCanvasState> {
   final FocusNode _bodyNode = FocusNode(
     debugLabel: 'EmptyCanvasState body',
@@ -195,6 +248,7 @@ class _EmptyCanvasStateState extends State<EmptyCanvasState> {
     for (final source in <FocusNode>[_actionsNode, _bodyNode]) {
       for (final node in source.traversalDescendants) {
         if (node.context == null) continue;
+        _holdFocusRingUntilKeyboardNavigation();
         node.requestFocus();
         return;
       }

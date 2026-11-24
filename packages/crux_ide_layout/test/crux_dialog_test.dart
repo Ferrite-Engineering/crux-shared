@@ -80,6 +80,45 @@ void main() {
       expect(result, isNull);
     });
 
+    // On desktop a text field unfocuses itself on a pointer-down outside its
+    // tap region; the scrim of a non-dismissible dialog must not count.
+    testWidgets(
+      'a scrim click keeps focus in the text field',
+      (tester) async {
+        final controller = TextEditingController();
+        addTearDown(controller.dispose);
+        await tester.pumpWidget(
+          _host((context) async {
+            await showCruxDialog<bool>(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => CruxDialog(
+                title: 'Rename Group',
+                content: TextField(controller: controller, autofocus: true),
+              ),
+            );
+          }),
+        );
+        await _open(tester);
+        bool inField() =>
+            FocusManager.instance.primaryFocus?.context
+                ?.findAncestorWidgetOfExactType<EditableText>() !=
+            null;
+        expect(inField(), isTrue);
+
+        await tester.tapAt(const Offset(4, 4));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CruxDialog), findsOneWidget);
+        expect(inField(), isTrue, reason: 'the scrim click took focus away');
+
+        // Typing still lands in the field.
+        await tester.enterText(find.byType(TextField), 'abc');
+        expect(controller.text, 'abc');
+      },
+      variant: TargetPlatformVariant.desktop(),
+    );
+
     testWidgets('a dismissible dialog closes on a scrim click', (tester) async {
       await tester.pumpWidget(
         _host(

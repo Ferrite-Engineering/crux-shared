@@ -168,6 +168,39 @@ void main() {
       expect(find.text('Pro'), findsNothing);
     });
 
+    testWidgets('shows the edition once under a Pro licence in a Pro build', (
+      tester,
+    ) async {
+      await _pumpDialog(
+        tester,
+        overrides: [licenseTierProvider.overrideWithValue(LicenseTier.pro)],
+      );
+      expect(find.text('Pro'), findsNothing);
+      expect(find.text('PRO'), findsOneWidget);
+    });
+
+    testWidgets('shows the edition once under an EDU licence', (tester) async {
+      await _pumpDialog(
+        tester,
+        editionLabel: 'EDU',
+        overrides: [licenseTierProvider.overrideWithValue(LicenseTier.edu)],
+      );
+      expect(find.text('EDU'), findsOneWidget);
+    });
+
+    testWidgets('shows both when the build and the licence differ', (
+      tester,
+    ) async {
+      await _pumpDialog(
+        tester,
+        overrides: [
+          licenseTierProvider.overrideWithValue(LicenseTier.enterprise),
+        ],
+      );
+      expect(find.text('Pro'), findsOneWidget);
+      expect(find.text('ENT'), findsOneWidget);
+    });
+
     testWidgets('shows the beta chip when the beta period is active', (
       tester,
     ) async {

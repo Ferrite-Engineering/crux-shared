@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **Fix: no focus ring on the launch focus** (crux-shared#90). `EmptyCanvasState`
+  still focuses its first action at launch, which a screen reader needs, but on
+  desktop Flutter drew the keyboard ring on it before any key was pressed. The
+  ring now waits for the first Tab or arrow key, the same in every product that
+  mounts the canvas.
+
 - **Fix: a tab's context menu opens at the pointer inside a tab's navigator**
   (crux-shared#76). The menu was positioned from a global point but laid out
   in the nearest navigator's overlay, which sits below the toolbar and tab

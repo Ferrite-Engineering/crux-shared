@@ -6,6 +6,11 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Fix: the edition shows once** (crux-shared#88). When the build's
+  `editionLabel` names the same edition as the licence badge ("Pro" and PRO,
+  "Enterprise" and ENT, EDU), only the badge is drawn. A mismatch, such as an
+  Enterprise key in a Pro build, still shows both.
+
 - The desktop About box opens through `showCruxDialog` in a `CruxDialog`
   frame: the title is the dialog's accessible name and the close button is
   in its title row. New dependency on `crux_ide_layout`.

@@ -311,7 +311,16 @@ class _AboutHeader extends ConsumerWidget {
           alignment: WrapAlignment.center,
           children: [
             if (betaActive) _BetaChip(label: dialog.strings.betaChip),
-            if (dialog.editionLabel.isNotEmpty)
+            // The build's edition and the licence tier in force often say the
+            // same thing ("Pro" and PRO); the badge below then speaks for
+            // both, so the build's chip is left out and the edition shows
+            // once. A mismatch (an Enterprise key in a Pro build) shows both.
+            if (dialog.editionLabel.isNotEmpty &&
+                !_editionRepeatsTier(
+                  dialog.editionLabel,
+                  ref.watch(licenseTierProvider),
+                  dialog.strings.licenseBadgeStrings,
+                ))
               _EditionChip(label: dialog.editionLabel),
             // States the edition in force: EDU, PRO or ENT, and nothing at
             // open core. It reads licenseTierProvider itself, which is why no
@@ -322,6 +331,24 @@ class _AboutHeader extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// Whether [label], the build's edition, names the same edition as the badge
+/// that states [tier]. At open core the badge renders nothing, so the label
+/// is never a repeat there.
+bool _editionRepeatsTier(
+  String label,
+  LicenseTier tier,
+  LicenseBadgeStrings strings,
+) {
+  final names = switch (tier) {
+    LicenseTier.openCore => const <String>[],
+    LicenseTier.edu => [strings.tierBadgeEdu, 'EDU'],
+    LicenseTier.pro => [strings.tierBadgePro, 'Pro'],
+    LicenseTier.enterprise => [strings.tierBadgeEnterprise, 'Enterprise'],
+  };
+  final wanted = label.trim().toLowerCase();
+  return names.any((name) => name.trim().toLowerCase() == wanted);
 }
 
 class _BetaChip extends StatelessWidget {

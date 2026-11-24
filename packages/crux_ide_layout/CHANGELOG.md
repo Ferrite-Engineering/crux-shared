@@ -6,6 +6,14 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **Fix: clicking the scrim of a typed-input dialog keeps focus in its text
+  field** (crux-shared#91). On desktop a text field unfocuses itself when a
+  pointer goes down outside its tap region, and the barrier of a
+  non-dismissible `showCruxDialog` was outside it. The route now carries a
+  translucent tap region in the text-field group, so the scrim click is
+  absorbed by the barrier as before (and the platform cue still plays) and the
+  field keeps focus.
+
 - **Fix: context menus open at the pointer inside a tab's navigator**
   (crux-shared#76). `showMenu` lays a menu out in the nearest navigator's
   overlay unless told otherwise, while the position was measured against the
