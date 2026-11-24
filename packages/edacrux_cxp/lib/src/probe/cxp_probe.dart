@@ -9,6 +9,7 @@ import 'package:edacrux_cxp/src/cxp_discovery.dart';
 import 'package:edacrux_cxp/src/cxp_link_sink.dart';
 import 'package:edacrux_cxp/src/cxp_manifest_directory.dart';
 import 'package:edacrux_cxp/src/cxp_peer_connector.dart';
+import 'package:edacrux_cxp/src/cxp_time.dart';
 import 'package:edacrux_cxp/src/element_id.dart';
 import 'package:edacrux_cxp/src/messages/cxp_message.dart';
 import 'package:edacrux_cxp/src/messages/error_response.dart';
@@ -230,20 +231,26 @@ class CxpProbe {
   }
 
   /// Asks the peers to bring the signal at [path] into view (`signal`, CXP
-  /// §8.2: for example `top.cpu.alu.result[7:0]`), at simulation time
-  /// [timePs] picoseconds when given.
+  /// §8.2: for example `top.cpu.alu.result[7:0]`), at simulation time [time]
+  /// or [timePs] picoseconds when given.
   ///
   /// Goes to every connected peer that accepts `signal`, or only to [to] or
   /// to the peers of [product]. [designId] is the opaque design identifier
   /// (§9.10.1) that lets a peer find the design when it has not got it open.
   /// [metadata] is extra free-form context, sent as given.
   ///
-  /// [timePs] travels under [cxpTimePsMetadataKey]: the receiver puts its
-  /// cursor at that time and scrolls it into view. It must not be negative
-  /// (an [ArgumentError] otherwise); see the key for what a receiver does
-  /// with it.
+  /// [time] travels as the payload's `time` field (§9.3.3, specification
+  /// revision 11): a time with a unit, `fs` to `s`, or a tick count of the
+  /// trace the peer has open. The receiver puts its cursor there and scrolls
+  /// it into view; a peer that predates the field shows the signal and
+  /// ignores the time.
+  ///
+  /// [timePs] travels under [cxpTimePsMetadataKey] (revision 10), which
+  /// peers built before revision 11 read. It must not be negative. Give one
+  /// of the two, not both: an [ArgumentError] otherwise.
   Future<List<CxpProbeReply>> showSignal(
     String path, {
+    CxpTime? time,
     int? timePs,
     String? designId,
     Map<String, Object?> metadata = const <String, Object?>{},
@@ -252,6 +259,7 @@ class CxpProbe {
   }) => highlight(
     ElementKind.signal,
     path,
+    time: time,
     timePs: timePs,
     designId: designId,
     metadata: metadata,
@@ -263,6 +271,7 @@ class CxpProbe {
   /// [showSignal] for the targeting and the other parameters.
   Future<List<CxpProbeReply>> highlightNet(
     String path, {
+    CxpTime? time,
     int? timePs,
     String? designId,
     Map<String, Object?> metadata = const <String, Object?>{},
@@ -271,6 +280,7 @@ class CxpProbe {
   }) => highlight(
     ElementKind.net,
     path,
+    time: time,
     timePs: timePs,
     designId: designId,
     metadata: metadata,
@@ -327,10 +337,12 @@ class CxpProbe {
   /// [CxpProbePeer.accepts]); a peer that does not is skipped, so a kind
   /// nobody accepts returns an empty list, not an error. With [to] the
   /// request is sent to that peer whatever it advertises. [coordinate]
-  /// says where within the element to land (§9.9).
+  /// says where within the element to land (§9.9). [time] and [timePs] are
+  /// as for [showSignal].
   Future<List<CxpProbeReply>> highlight(
     ElementKind kind,
     String path, {
+    CxpTime? time,
     int? timePs,
     String? designId,
     Map<String, Object?> metadata = const <String, Object?>{},
@@ -341,7 +353,13 @@ class CxpProbe {
     final request = RequestHighlight(
       element: ElementId(kind: kind, path: path),
       coordinate: coordinate,
-      metadata: _metadataWith(metadata, timePs: timePs, designId: designId),
+      time: time,
+      metadata: _metadataWith(
+        metadata,
+        time: time,
+        timePs: timePs,
+        designId: designId,
+      ),
     );
     return _ask(
       _targets(to: to, product: product, accepting: kind),
@@ -384,9 +402,14 @@ class CxpProbe {
   ///
   /// An empty [elements] list retracts the selection (§9.1.2); see
   /// [clearSelection].
+  ///
+  /// [time] says at what simulation time this program's user is looking
+  /// (§9.3.3). On a selection it is context: a peer does not move its cursor
+  /// for it. It is not sent with a retraction.
   Future<List<CxpProbePeer>> select(
     List<ElementId> elements, {
     String? displayName,
+    CxpTime? time,
     String? designId,
     Map<String, Object?> metadata = const <String, Object?>{},
     CxpProbePeer? to,
@@ -395,6 +418,7 @@ class CxpProbe {
     final message = NotifySelection(
       elements: List<ElementId>.unmodifiable(elements),
       displayName: displayName,
+      time: elements.isEmpty ? null : time,
       metadata: _metadataWith(metadata, designId: designId),
     );
     final sent = <CxpProbePeer>[];
@@ -432,9 +456,16 @@ class CxpProbe {
 
   Map<String, Object?> _metadataWith(
     Map<String, Object?> metadata, {
+    CxpTime? time,
     int? timePs,
     String? designId,
   }) {
+    if (time != null && timePs != null) {
+      throw ArgumentError(
+        'Give time or timePs, not both: a peer reading one and a peer '
+        'reading the other could land at different times.',
+      );
+    }
     if (timePs != null && timePs < 0) {
       throw ArgumentError.value(
         timePs,
@@ -622,6 +653,7 @@ class _ProbeSink implements CxpLinkSink {
             elements: message.elements,
             displayName: message.displayName,
             coordinate: message.coordinate,
+            time: message.time,
             metadata: message.metadata,
           ),
         );

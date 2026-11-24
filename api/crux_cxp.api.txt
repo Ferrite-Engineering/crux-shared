@@ -180,13 +180,13 @@ class CxpProbe
   get dialFailures -> Stream<CxpDialFailure>
   get events -> Stream<CxpProbeEvent>
   get peers -> List<CxpProbePeer>
-  highlight(ElementKind kind, String path, {CxpProbePeer? to, CxpStreamCoordinate? coordinate, Map<String, Object?> metadata, String? designId, String? product, int? timePs}) -> Future<List<CxpProbeReply>>
+  highlight(ElementKind kind, String path, {CxpProbePeer? to, CxpStreamCoordinate? coordinate, CxpTime? time, Map<String, Object?> metadata, String? designId, String? product, int? timePs}) -> Future<List<CxpProbeReply>>
   highlightCell(String path, {CxpProbePeer? to, Map<String, Object?> metadata, String? designId, String? product}) -> Future<List<CxpProbeReply>>
-  highlightNet(String path, {CxpProbePeer? to, Map<String, Object?> metadata, String? designId, String? product, int? timePs}) -> Future<List<CxpProbeReply>>
+  highlightNet(String path, {CxpProbePeer? to, CxpTime? time, Map<String, Object?> metadata, String? designId, String? product, int? timePs}) -> Future<List<CxpProbeReply>>
   openScope(String path, {CxpProbePeer? to, Map<String, Object?> metadata, String? designId, String? product}) -> Future<List<CxpProbeReply>>
   openSource(String filePath, int line, {CxpProbePeer? to, String? product, int? column}) -> Future<List<CxpProbeReply>>
-  select(List<ElementId> elements, {CxpProbePeer? to, Map<String, Object?> metadata, String? designId, String? displayName, String? product}) -> Future<List<CxpProbePeer>>
-  showSignal(String path, {CxpProbePeer? to, Map<String, Object?> metadata, String? designId, String? product, int? timePs}) -> Future<List<CxpProbeReply>>
+  select(List<ElementId> elements, {CxpProbePeer? to, CxpTime? time, Map<String, Object?> metadata, String? designId, String? displayName, String? product}) -> Future<List<CxpProbePeer>>
+  showSignal(String path, {CxpProbePeer? to, CxpTime? time, Map<String, Object?> metadata, String? designId, String? product, int? timePs}) -> Future<List<CxpProbeReply>>
   static start({CxpProbeRequestHandler? handler, Duration ackTimeout, Duration retryInterval, Duration scanInterval, List<CxpSubscription> subscriptions, Set<String> capabilities, String version, String? activeDocument, String? manifestDirectory, required String name}) -> Future<CxpProbe>
   waitForPeer({Duration timeout, String? product}) -> Future<CxpProbePeer>
 sealed class CxpProbeEvent
@@ -225,12 +225,13 @@ final class CxpRequestReceived extends CxpProbeEvent
   final result: CxpHandlerResult
   toString() -> String
 final class CxpSelectionReceived extends CxpProbeEvent
-  const CxpSelectionReceived({CxpStreamCoordinate? coordinate, Map<String, Object?> metadata, String? displayName, required CxpProbePeer peer, required List<ElementId> elements})
+  const CxpSelectionReceived({CxpStreamCoordinate? coordinate, CxpTime? time, Map<String, Object?> metadata, String? displayName, required CxpProbePeer peer, required List<ElementId> elements})
   final coordinate: CxpStreamCoordinate?
   final displayName: String?
   final elements: List<ElementId>
   final metadata: Map<String, Object?>
   final peer: CxpProbePeer
+  final time: CxpTime?
   get isRetraction -> bool
   toString() -> String
 abstract class CxpServer implements CxpLinkSink
@@ -280,6 +281,21 @@ class CxpSubscription
   matches(CxpMessage message) -> bool
   toJson() -> Map<String, Object?>
   toString() -> String
+final class CxpTime
+  factory CxpTime.parse(String text)
+  factory CxpTime.picoseconds(int picoseconds)
+  factory CxpTime.seconds(BigInt mantissa, int exponent)
+  factory CxpTime.ticks(int count)
+  ==(Object other) -> bool
+  final exponent: int
+  final isTicks: bool
+  final mantissa: BigInt
+  get hashCode -> int
+  static fromJson(Object? json) -> CxpTime?
+  static tryParse(String text) -> CxpTime?
+  toJson() -> String
+  toString() -> String
+  toTicks({required int factor, required int unitExponent}) -> BigInt?
 class CxpWorkspaceStore
   CxpWorkspaceStore({CxpPathContainment? containment, Duration ttl, String? workspaceDirectory})
   final containment: CxpPathContainment?
@@ -452,13 +468,14 @@ class NoopNameResolver implements NameResolver
   toCanonical({required ElementKind kind, required String local}) -> ElementId?
   toLocal(ElementId id) -> String?
 class NotifySelection extends CxpMessage
-  const NotifySelection({CxpStreamCoordinate? coordinate, Map<String, Object?> metadata, String? displayName, required List<ElementId> elements})
+  const NotifySelection({CxpStreamCoordinate? coordinate, CxpTime? time, Map<String, Object?> metadata, String? displayName, required List<ElementId> elements})
   factory NotifySelection.fromJson(Map<String, Object?> json)
   ==(Object other) -> bool
   final coordinate: CxpStreamCoordinate?
   final displayName: String?
   final elements: List<ElementId>
   final metadata: Map<String, Object?>
+  final time: CxpTime?
   get hashCode -> int
   get kind -> String
   get referencedElements -> List<ElementId>
@@ -484,12 +501,13 @@ class PeerPresenceEvent
   final peer: PeerIdentity
   toString() -> String
 class RequestHighlight extends CxpMessage
-  const RequestHighlight({CxpStreamCoordinate? coordinate, Map<String, Object?> metadata, required ElementId element})
+  const RequestHighlight({CxpStreamCoordinate? coordinate, CxpTime? time, Map<String, Object?> metadata, required ElementId element})
   factory RequestHighlight.fromJson(Map<String, Object?> json)
   ==(Object other) -> bool
   final coordinate: CxpStreamCoordinate?
   final element: ElementId
   final metadata: Map<String, Object?>
+  final time: CxpTime?
   get hashCode -> int
   get kind -> String
   get referencedElements -> List<ElementId>
@@ -610,5 +628,6 @@ generateCxpAuthToken() -> String
 isCompatibleCxpVersion(String version) -> bool
 isCxpLoopbackHost(String host) -> bool
 get kCxpActiveDocumentMaxLength -> int
+get kCxpTimeMaxLength -> int
 sharedCxpManifestDirectory({Map<String, String>? environment, String? operatingSystem}) -> String
 sharedCxpWorkspaceDirectory({Map<String, String>? environment, String? operatingSystem}) -> String

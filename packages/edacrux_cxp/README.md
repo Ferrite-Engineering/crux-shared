@@ -1,6 +1,6 @@
 # edacrux_cxp
 
-A pure-Dart client for **CXP 1.3 (specification revision 10)**, the
+A pure-Dart client for **CXP 1.3 (specification revision 11)**, the
 Cross-Tool eXchange Protocol. From any Dart program, with no Flutter, you can
 cross-probe the EDACrux desktop apps: show a signal at a time in WaveCrux,
 highlight a net or a cell or open a scope in NetCrux, open a source location,
@@ -80,15 +80,23 @@ connected peer that accepts the element kind, by the specification's
 sent whatever you send). `product:` narrows it to one app; `to:` names a peer
 and sends regardless.
 
-**Time.** `timePs` is a point in simulation time, as a non-negative integer
-number of picoseconds from the start of the simulation, and rides in the
-request's `metadata` as `crux.time_ps` (`cxpTimePsMetadataKey`), a key CXP
-registers from specification revision 10. A waveform viewer puts its cursor at
-that time and scrolls it into view: WaveCrux converts it to the timescale of
-the dump it has open, and clamps a time outside the dump to the nearest end. An
-app with no time axis, or one that predates the key, still shows the signal and
-ignores the time; apps ignore metadata keys they do not know, so sending it is
-safe. A negative `timePs` throws an `ArgumentError` before anything is sent.
+**Time.** `time:` is a point in simulation time, a `CxpTime`, and travels as
+the request's `time` field, which CXP adds in specification revision 11. It is
+written the way a `wavecrux://` link's `t` is: a value with a unit, `fs`,
+`ps`, `ns`, `us`, `ms` or `s`, with an optional fraction
+(`CxpTime.parse('1.5us')`), or a bare whole number of ticks of the dump the app
+has open (`CxpTime.ticks(42)`). A waveform viewer puts its cursor at that time
+and scrolls it into view, converting it to the timescale of the dump it has
+open and clamping a time outside the dump to the nearest end. An app with no
+time axis, or one that predates the field, still shows the signal and ignores
+the time. `CxpTime.parse` throws a `FormatException` for anything outside that
+grammar, and an app answers such a value with `malformed_payload`: a unit is
+never guessed.
+
+`timePs:` is the older form: a non-negative integer number of picoseconds in
+the request's `metadata` as `crux.time_ps` (`cxpTimePsMetadataKey`, revision
+10), which apps built before revision 11 read. Give one or the other; both is
+an `ArgumentError`, and so is a negative `timePs`.
 
 **Receiving.** A probe subscribes to every selection by default and reports
 them as `CxpSelectionReceived`. A peer can also send the probe a request; pass
@@ -118,7 +126,7 @@ The pieces `CxpProbe` is built from are exported as well: `ElementId` and
 | | |
 |---|---|
 | CXP protocol version on the wire | 1.3 (`cxpProtocolVersion`) |
-| Specification revision implemented | 10 (`cxpSpecificationRevision`) |
+| Specification revision implemented | 11 (`cxpSpecificationRevision`) |
 
 The package version follows semver over the Dart API and is independent of the
 wire version. See the [changelog](CHANGELOG.md).

@@ -1,3 +1,17 @@
+## 0.14.0
+
+Specification revision 11 (`cxpSpecificationRevision` is `11`), through
+`edacrux_cxp` 0.2.0. Wire unchanged (`cxpProtocolVersion` stays `1.3`).
+
+- Re-exports `CxpTime`, the optional `time` field of `request_highlight` and
+  `notify_selection` (§9.3.3): a time with a unit (`fs` to `s`) or a tick
+  count, in the grammar of a `wavecrux://` link's `t`. `RequestHighlight` and
+  `NotifySelection` carry it as `time`.
+- `LocalCxpServer` and `LocalCxpClient` answer a `time` outside the grammar
+  with `malformed_payload`, as they answer any payload that does not decode;
+  a retraction's `time` is ignored unread. A message with no `time`, from a
+  peer built before revision 11, decodes as before.
+
 ## 0.13.0
 
 The protocol layer moved into the new pure-Dart `edacrux_cxp` package, which this

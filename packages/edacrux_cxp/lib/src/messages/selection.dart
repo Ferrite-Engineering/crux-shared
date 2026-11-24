@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:edacrux_cxp/src/cxp_time.dart';
 import 'package:edacrux_cxp/src/element_id.dart';
 import 'package:edacrux_cxp/src/messages/cxp_message.dart';
 import 'package:edacrux_cxp/src/stream_coordinate.dart';
@@ -31,10 +32,16 @@ class NotifySelection extends CxpMessage {
     required this.elements,
     this.displayName,
     this.coordinate,
+    this.time,
     this.metadata = const <String, Object?>{},
   });
 
   /// Decodes a [NotifySelection] from its JSON payload.
+  ///
+  /// Throws a [FormatException] (answered `malformed_payload`) when `time` is
+  /// present and not a time in the grammar of CXP §9.3.3, except on a
+  /// retraction, whose `time` is ignored unread: a retraction is never an
+  /// error (§9.1.2).
   factory NotifySelection.fromJson(Map<String, Object?> json) {
     // `elements` is required to be *present* and to be an array (CXP §9.3,
     // "Required: yes") but MAY be empty - an empty array signals a cleared
@@ -60,6 +67,7 @@ class NotifySelection extends CxpMessage {
       elements: elements,
       displayName: displayName is String ? displayName : null,
       coordinate: CxpStreamCoordinate.tryFromJson(json['coordinate']),
+      time: elements.isEmpty ? null : CxpTime.fromJson(json['time']),
       metadata: metadata,
     );
   }
@@ -79,6 +87,11 @@ class NotifySelection extends CxpMessage {
   /// [CxpStreamCoordinate].
   final CxpStreamCoordinate? coordinate;
 
+  /// Optional point in simulation time at which the sender's user was
+  /// looking (CXP §9.3.3). Context, as on every selection: a receiver SHOULD
+  /// NOT move its cursor on it. Not sent on a retraction, and ignored on one.
+  final CxpTime? time;
+
   /// Product-local metadata blob. Recipients MUST ignore unknown keys.
   final Map<String, Object?> metadata;
 
@@ -93,6 +106,7 @@ class NotifySelection extends CxpMessage {
     'elements': elements.map((e) => e.toJson()).toList(growable: false),
     'display_name': ?displayName,
     'coordinate': ?coordinate?.toJson(),
+    if (elements.isNotEmpty) 'time': ?time?.toJson(),
     if (metadata.isNotEmpty) 'metadata': metadata,
   };
 
@@ -102,16 +116,18 @@ class NotifySelection extends CxpMessage {
       (other is NotifySelection &&
           _listEq(other.elements, elements) &&
           other.displayName == displayName &&
-          other.coordinate == coordinate);
+          other.coordinate == coordinate &&
+          other.time == time);
 
   @override
   int get hashCode =>
-      Object.hash(Object.hashAll(elements), displayName, coordinate);
+      Object.hash(Object.hashAll(elements), displayName, coordinate, time);
 
   @override
   String toString() =>
       'NotifySelection($elements, displayName=$displayName'
-      '${coordinate == null ? '' : ', at=$coordinate'})';
+      '${coordinate == null ? '' : ', at=$coordinate'}'
+      '${time == null ? '' : ', time=${time!.toJson()}'})';
 }
 
 bool _listEq<T>(List<T> a, List<T> b) {

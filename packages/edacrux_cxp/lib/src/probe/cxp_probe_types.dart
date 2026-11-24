@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:edacrux_cxp/src/cxp_time.dart';
 import 'package:edacrux_cxp/src/element_id.dart';
 import 'package:edacrux_cxp/src/messages/highlight.dart';
 import 'package:edacrux_cxp/src/messages/open_source.dart';
@@ -167,6 +168,7 @@ final class CxpSelectionReceived extends CxpProbeEvent {
     required this.elements,
     this.displayName,
     this.coordinate,
+    this.time,
     this.metadata = const <String, Object?>{},
   });
 
@@ -183,6 +185,10 @@ final class CxpSelectionReceived extends CxpProbeEvent {
   /// Where within a decoded stream the selection is, when the sender said
   /// (CXP §9.9).
   final CxpStreamCoordinate? coordinate;
+
+  /// The simulation time the peer's user was looking at, when the sender
+  /// said (CXP §9.3.3). Null from a peer that sends no time.
+  final CxpTime? time;
 
   /// The sender's free-form context. Keys this package does not know are
   /// kept as sent.

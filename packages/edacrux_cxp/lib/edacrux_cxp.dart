@@ -5,7 +5,7 @@
 /// same-machine protocol the EDACrux desktop apps (WaveCrux, NetCrux,
 /// LintCrux and SimCrux) use to share a user's focus.
 ///
-/// This package implements CXP 1.3, specification revision 10
+/// This package implements CXP 1.3, specification revision 11
 /// (`cxpProtocolVersion`, `cxpSpecificationRevision`); the specification is
 /// published at <https://edacrux.app/cxp>.
 ///
@@ -18,7 +18,10 @@
 /// ```dart
 /// final probe = await CxpProbe.start(name: 'my-tool');
 /// await probe.waitForPeer(product: 'wavecrux');
-/// await probe.showSignal('top.cpu.alu.result', timePs: 41250);
+/// await probe.showSignal(
+///   'top.cpu.alu.result',
+///   time: CxpTime.parse('41.25ns'),
+/// );
 /// await probe.close();
 /// ```
 ///
@@ -46,6 +49,8 @@
 ///   `sharedCxpManifestDirectory`: discovery over the per-user manifest
 ///   directory.
 /// - `CxpPeerConnector`: dials every discovered peer, loopback only.
+/// - `CxpTime`: the optional `time` of a signal cross-probe, a time with a
+///   unit (`fs` to `s`) or a tick count.
 /// - `CxpStreamCoordinate`, `cxpDesignIdForPath`, the authentication
 ///   helpers (`cxpAuthProof`, `cxpAuthTokensMatch`, ...) and the
 ///   registered metadata keys.
@@ -62,6 +67,7 @@ export 'src/cxp_discovery.dart';
 export 'src/cxp_link_sink.dart';
 export 'src/cxp_manifest_directory.dart';
 export 'src/cxp_peer_connector.dart';
+export 'src/cxp_time.dart';
 export 'src/element_id.dart';
 export 'src/messages/cxp_message.dart' hide elementIdListFromJson;
 export 'src/messages/decoder.dart';

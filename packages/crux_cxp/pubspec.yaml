@@ -2,7 +2,7 @@ name: crux_cxp
 description: >-
   Cross-Tool eXchange Protocol (CXP) bindings for the EDACrux suite: the
   `edacrux_cxp` client re-exported, plus the listening peer.
-version: 0.13.0
+version: 0.14.0
 homepage: https://github.com/Ferrite-Engineering/crux-shared
 repository: https://github.com/Ferrite-Engineering/crux-shared
 issue_tracker: https://github.com/Ferrite-Engineering/crux-shared/issues

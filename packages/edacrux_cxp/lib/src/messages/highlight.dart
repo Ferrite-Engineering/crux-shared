@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:edacrux_cxp/src/cxp_time.dart';
 import 'package:edacrux_cxp/src/element_id.dart';
 import 'package:edacrux_cxp/src/messages/cxp_message.dart';
 import 'package:edacrux_cxp/src/stream_coordinate.dart';
@@ -19,10 +20,14 @@ class RequestHighlight extends CxpMessage {
   const RequestHighlight({
     required this.element,
     this.coordinate,
+    this.time,
     this.metadata = const <String, Object?>{},
   });
 
   /// Decodes a [RequestHighlight] from its JSON payload.
+  ///
+  /// Throws a [FormatException] (answered `malformed_payload`) when `time` is
+  /// present and not a time in the grammar of CXP §9.3.3.
   factory RequestHighlight.fromJson(Map<String, Object?> json) {
     final raw = json['element'];
     final ElementId element;
@@ -45,6 +50,7 @@ class RequestHighlight extends CxpMessage {
     return RequestHighlight(
       element: element,
       coordinate: CxpStreamCoordinate.tryFromJson(json['coordinate']),
+      time: CxpTime.fromJson(json['time']),
       metadata: metadata,
     );
   }
@@ -60,6 +66,17 @@ class RequestHighlight extends CxpMessage {
   /// MUST still honour the element and SHOULD say so in its ack's `reason`:
   /// landing at the top of the right artifact beats refusing it.
   final CxpStreamCoordinate? coordinate;
+
+  /// Optional point in simulation time (CXP §9.3.3): for a signal-like
+  /// [element] (`signal`, `net`, `port`, `instance`), asks the receiver to
+  /// put its time cursor there and scroll it into view.
+  ///
+  /// A receiver that cannot place it (no time axis, no timescale for a time
+  /// with a unit) still honours the element and SHOULD say so in its ack's
+  /// `reason`. When the message also carries a [coordinate] the coordinate
+  /// wins the cursor; when it also carries the `crux.time_ps` metadata key,
+  /// a receiver that reads this field uses it and ignores the key.
+  final CxpTime? time;
 
   /// Product-local metadata blob. Recipients MUST ignore unknown keys.
   /// Conventionally namespaced; the reserved [cxpDesignIdMetadataKey]
@@ -78,6 +95,7 @@ class RequestHighlight extends CxpMessage {
   Map<String, Object?> toJson() => <String, Object?>{
     'element': element.toJson(),
     'coordinate': ?coordinate?.toJson(),
+    'time': ?time?.toJson(),
     if (metadata.isNotEmpty) 'metadata': metadata,
   };
 
@@ -87,15 +105,17 @@ class RequestHighlight extends CxpMessage {
       (other is RequestHighlight &&
           other.element == element &&
           other.coordinate == coordinate &&
+          other.time == time &&
           _metaEquals(other.metadata, metadata));
 
   @override
-  int get hashCode => Object.hash(element, coordinate, metadata.length);
+  int get hashCode => Object.hash(element, coordinate, time, metadata.length);
 
   @override
   String toString() =>
       'RequestHighlight($element'
       '${coordinate == null ? '' : ', at=$coordinate'}'
+      '${time == null ? '' : ', time=${time!.toJson()}'}'
       '${metadata.isEmpty ? '' : ', meta=$metadata'})';
 }
 

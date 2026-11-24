@@ -316,6 +316,88 @@ void main() {
       expect(wave.receivedOf('request_highlight'), isEmpty);
     });
 
+    // The example in CXP §9.3.3 (rev. 11), key for key. The fake peer was
+    // written from the specification before rev. 11 and knows nothing of
+    // `time`: it honours the highlight all the same, which is the
+    // compatibility the field relies on.
+    test(
+      'showSignal with time: is the §9.3.3 example, and a peer that does not '
+      'know the field still honours the signal',
+      () async {
+        final wave = await peer(capabilities: {'cxp.accepts:signal'});
+        final p = await probe();
+        await p.waitForPeer();
+
+        final replies = await p.showSignal(
+          'top.cpu.alu.result[7:0]',
+          time: CxpTime.parse('41.25ns'),
+        );
+
+        expect(replies.single.outcome, CxpProbeOutcome.honored);
+        final envelope = wave.receivedOf('request_highlight').single;
+        expect(envelope['payload'], {
+          'element': {'kind': 'signal', 'path': 'top.cpu.alu.result[7:0]'},
+          'time': '41250ps',
+        });
+      },
+    );
+
+    test('a tick count goes out as a bare decimal string', () async {
+      final net = await peer(productName: 'netcrux');
+      final p = await probe();
+      await p.waitForPeer();
+
+      await p.highlightNet('top.n', time: CxpTime.ticks(42));
+
+      final payload = net.receivedOf('request_highlight').single['payload']!;
+      expect((payload as Map)['time'], '42');
+      expect(payload.containsKey('metadata'), isFalse);
+    });
+
+    test(
+      'time and timePs together are refused before anything is sent',
+      () async {
+        final wave = await peer(capabilities: {'cxp.accepts:signal'});
+        final p = await probe();
+        await p.waitForPeer();
+
+        expect(
+          () => p.showSignal('top.clk', time: CxpTime.ticks(1), timePs: 1),
+          throwsArgumentError,
+        );
+        expect(wave.receivedOf('request_highlight'), isEmpty);
+      },
+    );
+
+    test('select sends its time, and a retraction never carries one', () async {
+      final wave = await peer();
+      final p = await probe();
+      await p.waitForPeer();
+
+      await p.select(
+        const [ElementId(kind: ElementKind.signal, path: 'top.a')],
+        time: CxpTime.parse('2us'),
+      );
+      await p.select(const <ElementId>[], time: CxpTime.parse('2us'));
+      await pollUntil(
+        () => wave.receivedOf('notify_selection').length == 2,
+        reason: 'both selections arrive',
+      );
+
+      final payloads = [
+        for (final e in wave.receivedOf('notify_selection')) e['payload'],
+      ];
+      expect(payloads, [
+        {
+          'elements': [
+            {'kind': 'signal', 'path': 'top.a'},
+          ],
+          'time': '2us',
+        },
+        {'elements': <Object?>[]},
+      ]);
+    });
+
     test('a net, a cell and a scope go out as their own kinds', () async {
       final net = await peer(productName: 'netcrux');
       final p = await probe();
@@ -598,8 +680,63 @@ void main() {
         expect(seen.first.elements.single.kind, ElementKind.signal);
         expect(seen.first.displayName, 'alu.result');
         expect(seen.first.metadata[cxpTimePsMetadataKey], 41250);
+        // A peer that sends no `time` field: the event has none.
+        expect(seen.first.time, isNull);
         expect(seen.first.isRetraction, isFalse);
         expect(seen.last.isRetraction, isTrue);
+      },
+    );
+
+    test('a selection that carries a time reports it', () async {
+      final wave = await peer();
+      final p = await probe();
+      await p.waitForPeer();
+      final seen = <CxpSelectionReceived>[];
+      p.events
+          .where((e) => e is CxpSelectionReceived)
+          .cast<CxpSelectionReceived>()
+          .listen(seen.add);
+
+      wave.send('notify_selection', {
+        'elements': [
+          {'kind': 'signal', 'path': 'top.a'},
+        ],
+        'time': '1.5us',
+      });
+
+      await pollUntil(() => seen.isNotEmpty, reason: 'the selection arrives');
+      // 1.5 us is 1500 ns (hand derivation: 1.5 × 10^3 ns).
+      expect(seen.single.time, CxpTime.seconds(BigInt.from(1500), -9));
+    });
+
+    test(
+      'a selection whose time is malformed is answered malformed_payload, '
+      'not reported',
+      () async {
+        final wave = await peer();
+        final p = await probe();
+        await p.waitForPeer();
+        final seen = <CxpSelectionReceived>[];
+        p.events
+            .where((e) => e is CxpSelectionReceived)
+            .cast<CxpSelectionReceived>()
+            .listen(seen.add);
+
+        wave.send('notify_selection', {
+          'elements': [
+            {'kind': 'signal', 'path': 'top.a'},
+          ],
+          'time': 41250,
+        });
+
+        await pollUntil(
+          () => wave.receivedOf('error_response').isNotEmpty,
+          reason: 'the client reports the payload',
+        );
+        final error =
+            wave.receivedOf('error_response').single['payload']! as Map;
+        expect(error['code'], 'malformed_payload');
+        expect(seen, isEmpty);
       },
     );
 
@@ -720,7 +857,7 @@ void main() {
 
   test('the probe announces the revision it implements', () {
     expect(cxpProtocolVersion, '1.3');
-    expect(cxpSpecificationRevision, 10);
+    expect(cxpSpecificationRevision, 11);
     expect(cxpTimePsMetadataKey, 'crux.time_ps');
     // The wire form of a hello is JSON the spec shows; round-trip a decode.
     final line = jsonEncode({

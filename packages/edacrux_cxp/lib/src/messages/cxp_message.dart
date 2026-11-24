@@ -53,12 +53,14 @@ const String cxpProtocolVersion = '1.3';
 ///
 /// The specification is a Working Draft with numbered revisions; a revision
 /// that only registers vocabulary (element kinds, stream ids, metadata
-/// keys) does not change [cxpProtocolVersion]. This is revision 10 of CXP
-/// 1.3 (<https://edacrux.app/cxp>): rev. 9's formal properties, timing paths
-/// and netlist cells as element kinds and the optional `active_document`
-/// field of a peer identity, and rev. 10's `crux.time_ps` metadata key
-/// (`cxpTimePsMetadataKey`).
-const int cxpSpecificationRevision = 10;
+/// keys) or adds an optional, ignorable payload field does not change
+/// [cxpProtocolVersion]. This is revision 11 of CXP 1.3
+/// (<https://edacrux.app/cxp>): rev. 9's formal properties, timing paths and
+/// netlist cells as element kinds and the optional `active_document` field
+/// of a peer identity, rev. 10's `crux.time_ps` metadata key
+/// (`cxpTimePsMetadataKey`), and rev. 11's optional `time` field on
+/// `request_highlight` and `notify_selection` (`CxpTime`).
+const int cxpSpecificationRevision = 11;
 
 /// True when [version]'s major component matches this implementation's
 /// major version - the acceptance test of the version policy documented

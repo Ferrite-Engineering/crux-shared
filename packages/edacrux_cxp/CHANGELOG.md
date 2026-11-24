@@ -14,6 +14,34 @@ only registers vocabulary (element kinds, stream ids, metadata keys) changes
 neither version on the wire; `cxpSpecificationRevision` says which revision
 this release implements.
 
+## 0.2.0
+
+Implements CXP 1.3, specification revision 11. Wire version unchanged
+(`cxpProtocolVersion` stays `1.3`): the new field is optional, and a peer
+that does not know it ignores it. Package **minor**, because the public API
+grows.
+
+- `CxpTime`: the optional `time` field revision 11 adds to
+  `request_highlight` and `notify_selection` (§9.3.3). A JSON string in the
+  grammar of a `wavecrux://` link's `t`: a time with a unit, `fs`, `ps`,
+  `ns`, `us` (`µs` and `μs` read as `us`), `ms` or `s`, with an optional
+  fraction (`1500ns`, `1.5us`), or a bare whole number of ticks of the trace
+  the receiver has open (`42`). Kept exact; `toTicks` converts to a trace's
+  timescale with integer arithmetic, rounding half up. `CxpTime.parse`,
+  `tryParse`, `seconds`, `picoseconds` and `ticks` build one; `toJson`
+  writes the largest whole unit (`1.5us` is written `1500ns`).
+- `RequestHighlight.time` and `NotifySelection.time`, decoded and encoded.
+  A `time` that is not a string in the grammar (a JSON number, a negative
+  value, a unit in another case, a fraction of a tick) is a
+  `FormatException`, which a receiver answers `malformed_payload`; a unit is
+  never guessed. JSON `null` reads as absent. On a retraction the field is
+  neither sent nor read.
+- `CxpProbe.showSignal`, `highlightNet`, `highlight` and `select` take
+  `time:`; `CxpSelectionReceived.time` reports a peer's. `timePs:` still
+  sends the revision 10 `crux.time_ps` metadata key; giving both is an
+  `ArgumentError`.
+- `cxpSpecificationRevision` is `11`.
+
 ## 0.1.0
 
 First release. Implements CXP 1.3, specification revision 10.

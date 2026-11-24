@@ -60,6 +60,9 @@
 /// - `CxpStreamCoordinate` — the optional `coordinate` payload field on
 ///   `NotifySelection` and `RequestHighlight` (CXP §9.9), naming one
 ///   element of a *decoded stream* rather than a design object.
+/// - `CxpTime`: the optional `time` payload field on the same two messages
+///   (CXP §9.3.3): a time with a unit (`fs` to `s`) or a tick count, so a
+///   peer can say "this signal at this time".
 ///
 /// ### Deliberately not exported
 ///
