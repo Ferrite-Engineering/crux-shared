@@ -241,11 +241,11 @@ void main() {
       expect((good as McpArguments).argv, <String>['--kind', 'net']);
       expect(
         refused(<String, Object?>{'kind': 'port'}, pick),
-        '`kind` is one of cell, net',
+        '`--kind port` is not cell or net',
       );
       expect(
         refused(<String, Object?>{'kind': 'Cell'}, pick),
-        '`kind` is one of cell, net',
+        '`--kind Cell` is not cell or net',
       );
       expect(
         refused(<String, Object?>{'kind': '--rm'}, pick),

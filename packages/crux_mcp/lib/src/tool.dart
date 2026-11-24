@@ -311,9 +311,14 @@ class McpTool {
         }
         final allowed = f.values;
         if (allowed != null && !allowed.contains(item)) {
-          return McpArgumentError(
-            '`${f.name}` is one of ${allowed.join(', ')}',
-          );
+          // The wording a command gives for a flag value it does not know:
+          // "`--kind x` is not cell, net, port or module".
+          final head = allowed.length == 1
+              ? allowed.single
+              : '${allowed.sublist(0, allowed.length - 1).join(', ')} '
+                    'or ${allowed.last}';
+          final given = f.flag.isEmpty ? item : '${f.flag} $item';
+          return McpArgumentError('`$given` is not $head');
         }
         return item;
       case McpFieldKind.path:
