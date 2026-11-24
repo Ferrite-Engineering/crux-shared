@@ -155,6 +155,14 @@ void main() {
         );
       }
       await drain();
+      // The marker dispatching on the server only proves the answers were
+      // written; the raw client reads them asynchronously, so wait for them.
+      await pollUntil(
+        () =>
+            raw.errorPayloads(CxpErrorCode.malformedPayload).length >=
+            bad.length,
+        reason: 'every malformed time is answered',
+      );
 
       final errors = raw.errorPayloads(CxpErrorCode.malformedPayload);
       expect(
