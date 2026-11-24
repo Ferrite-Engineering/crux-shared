@@ -26,7 +26,17 @@ class LinuxDesktopApp {
     this.mimeTypes = const <String>[],
     this.fileTypes = const <LinuxMimeType>[],
     this.urlSchemes = const <String>[],
+    this.version,
   });
+
+  /// The version of the running build, e.g. `1.2.0`, written to the entry as
+  /// `X-AppImage-Version` so a later, older AppImage can tell it must not
+  /// replace the entry (see `DesktopIntegrator.integrate`).
+  ///
+  /// When `null` the integrator reads it from the AppImage's file name
+  /// (`SimCrux Pro-1.2.0-x86_64.AppImage`); a name that carries none leaves
+  /// the entry unversioned and always rewritten, as before.
+  final String? version;
 
   /// Reverse-DNS application id, e.g. `com.ferriteengineering.simcrux_pro`.
   ///

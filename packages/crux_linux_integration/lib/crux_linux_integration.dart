@@ -28,7 +28,12 @@ import 'package:crux_linux_integration/src/linux_desktop_app.dart';
 
 export 'src/desktop_entry.dart'
     hide
+        appImageVersionFromFileName,
+        appImageVersionKey,
         buildUrlHandlerEntry,
+        isNewerAppImageVersion,
+        parseAppImageVersion,
+        parseDesktopExecProgram,
         quoteDesktopExecArgument,
         urlHandlerDesktopFileName;
 export 'src/desktop_integrator.dart';

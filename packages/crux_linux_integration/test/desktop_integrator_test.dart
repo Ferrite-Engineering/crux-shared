@@ -396,12 +396,18 @@ void main() {
       );
       expect(
         desktopFile().readAsStringSync(),
-        buildDesktopEntry(app, appImagePath: appImage.path),
+        buildDesktopEntry(
+          app,
+          appImagePath: appImage.path,
+          // Read from the AppImage's file name, `...-0.1.0-x86_64.AppImage`.
+          version: '0.1.0',
+        ),
       );
     });
 
     // With no scheme declared the integrator writes exactly what it wrote
-    // before schemes existed: one entry, the same bytes, the same commands.
+    // before schemes existed (one entry, the same commands), plus the
+    // `X-AppImage-Version` line every entry carries since 2.0.
     test('no scheme declared: output is byte-identical', () async {
       final commands = <String>[];
       final integrator = DesktopIntegrator(
@@ -427,6 +433,7 @@ void main() {
                 'StartupWMClass=com.ferriteengineering.simcrux_pro\n'
                 'Terminal=false\n'
                 'Categories=Development;Electronics;\n'
+                'X-AppImage-Version=0.1.0\n'
             .codeUnits,
       );
       final applications = p.join(home, '.local', 'share', 'applications');

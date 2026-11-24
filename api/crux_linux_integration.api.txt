@@ -21,6 +21,7 @@ class DesktopIntegrationResult
   final urlHandlerFilePath: String?
 enum DesktopIntegrationSkipReason
   static const alreadyCurrent: DesktopIntegrationSkipReason
+  static const newerEntryPresent: DesktopIntegrationSkipReason
   static const notAppImage: DesktopIntegrationSkipReason
 enum DesktopIntegrationStatus
   static const failed: DesktopIntegrationStatus
@@ -34,7 +35,7 @@ class DesktopIntegrator
   integrate(LinuxDesktopApp app) -> Future<DesktopIntegrationResult>
   uninstall(LinuxDesktopApp app) -> Future<List<String>>
 class LinuxDesktopApp
-  const LinuxDesktopApp({List<LinuxMimeType> fileTypes, List<String> categories, List<String> mimeTypes, List<String> urlSchemes, required String appId, required String comment, required String execName, required String name})
+  const LinuxDesktopApp({List<LinuxMimeType> fileTypes, List<String> categories, List<String> mimeTypes, List<String> urlSchemes, String? version, required String appId, required String comment, required String execName, required String name})
   final appId: String
   final categories: List<String>
   final comment: String
@@ -43,6 +44,7 @@ class LinuxDesktopApp
   final mimeTypes: List<String>
   final name: String
   final urlSchemes: List<String>
+  final version: String?
   get claimedTypeNames -> List<String>
 class LinuxMimeCoverage
   const LinuxMimeCoverage({required List<String> problems, required Map<String, String> deliberatelyUnmapped})
@@ -74,7 +76,7 @@ class LinuxMimeType
   get globs -> Iterable<String>
   get isDeclared -> bool
   get isNamed -> bool
-buildDesktopEntry(LinuxDesktopApp app, {required String appImagePath}) -> String
+buildDesktopEntry(LinuxDesktopApp app, {String? version, required String appImagePath}) -> String
 buildMimePackage(LinuxDesktopApp app) -> String?
 checkLinuxMimeCoverage(LinuxDesktopApp app, {Map<String, List<String>> registeredExtensionsOf, Set<String> additionalSystemTypes, required Set<String> registeredExtensions}) -> LinuxMimeCoverage
 maybeIntegrateDesktopEntry(LinuxDesktopApp app) -> Future<void>

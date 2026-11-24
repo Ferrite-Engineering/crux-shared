@@ -35,6 +35,11 @@ enum DesktopIntegrationSkipReason {
   /// The marker file already records this exact AppImage path and mtime, so
   /// the host entry is current and was left untouched.
   alreadyCurrent,
+
+  /// The host entry points at another AppImage that still exists and carries a
+  /// newer `X-AppImage-Version`, so the entry was left alone rather than
+  /// downgraded.
+  newerEntryPresent,
 }
 
 /// Outcome of an [DesktopIntegrator.integrate] call.
@@ -206,9 +211,16 @@ class DesktopIntegrator {
       final desktopFile = File(
         p.join(_applicationsDir.path, '${app.appId}.desktop'),
       );
+      final version = app.version ?? appImageVersionFromFileName(appImage);
+      if (_pointsAtNewerAppImage(desktopFile, appImage, version)) {
+        return DesktopIntegrationResult.skipped(
+          DesktopIntegrationSkipReason.newerEntryPresent,
+        );
+      }
       desktopFile.parent.createSync(recursive: true);
-      desktopFile.writeAsStringSync(
-        buildDesktopEntry(app, appImagePath: appImage),
+      _writeAtomically(
+        desktopFile,
+        buildDesktopEntry(app, appImagePath: appImage, version: version),
       );
 
       final urlHandler = _installUrlHandler(app, urlHandlerText);
@@ -295,8 +307,50 @@ class DesktopIntegrator {
       if (file.existsSync()) file.deleteSync();
       return null;
     }
-    file.writeAsStringSync(text);
+    _writeAtomically(file, text);
     return file.path;
+  }
+
+  /// Whether [entry] already points at a different AppImage that still exists
+  /// and is newer than [version]. The entry is named for the application id,
+  /// so it is the same app by construction. Anything unreadable, unversioned
+  /// or equal answers `false`: the entry is then rewritten, as before.
+  bool _pointsAtNewerAppImage(File entry, String appImage, String? version) {
+    if (version == null) return false;
+    try {
+      if (!entry.existsSync()) return false;
+      final text = entry.readAsStringSync();
+      final existingVersion = parseAppImageVersion(text);
+      final existingProgram = parseDesktopExecProgram(text);
+      if (existingVersion == null || existingProgram == null) return false;
+      if (p.equals(existingProgram, appImage)) return false;
+      if (!File(existingProgram).existsSync()) return false;
+      return isNewerAppImageVersion(existingVersion, version);
+    } on FileSystemException {
+      return false;
+    }
+  }
+
+  /// Writes [text] to [file] through a temporary file in the same directory
+  /// and a rename, so a reader (the desktop shell watching the directory)
+  /// never sees a half-written entry. The temporary name does not end in
+  /// `.desktop`, so nothing mistakes it for an entry.
+  void _writeAtomically(File file, String text) {
+    final temp = File(
+      p.join(file.parent.path, '.${p.basename(file.path)}.tmp'),
+    );
+    try {
+      temp
+        ..writeAsStringSync(text, flush: true)
+        ..renameSync(file.path);
+    } on Object {
+      try {
+        if (temp.existsSync()) temp.deleteSync();
+      } on Object {
+        // Best effort; the original error is the one that matters.
+      }
+      rethrow;
+    }
   }
 
   /// A stable fingerprint of the current AppImage: its path plus size and

@@ -77,6 +77,7 @@ class CruxLicenseController implements CruxLicenseActions
   openEducationalRequestPage() -> Future<CruxLicenseActionResult>
   openManagePage() -> Future<CruxLicenseActionResult>
   openPurchasePage() -> Future<CruxLicenseActionResult>
+  readLastAttempt() -> Future<LicenseCheckAttempt?>
   refresh() -> Future<CruxLicenseActionResult>
   requestEducationalLicense(String email) -> Future<CruxLicenseActionResult>
   start() -> Future<void>
@@ -285,6 +286,16 @@ final class LicenseActionSucceeded extends CruxLicenseActionResult
   final payload: String?
   final underReview: bool
   toString() -> String
+class LicenseCheckAttempt
+  const LicenseCheckAttempt(DateTime at, LicenseCheckOutcome outcome)
+  ==(Object other) -> bool
+  final at: DateTime
+  final outcome: LicenseCheckOutcome
+  get hashCode -> int
+enum LicenseCheckOutcome
+  static const attested: LicenseCheckOutcome
+  static const noKey: LicenseCheckOutcome
+  static const notAttested: LicenseCheckOutcome
 class LicenseClaims
   const LicenseClaims({DateTime? created, DateTime? expiry, DateTime? issued, DateTime? notBefore, Duration? policyDuration, Map<String, Object?> raw, Set<String> entitlementCodes, String? accountId, String? email, String? fingerprint, String? licenseId, String? policyId, String? productId, bool expiryUnreadable, int? maxMachines, required String issuerId})
   final accountId: String?

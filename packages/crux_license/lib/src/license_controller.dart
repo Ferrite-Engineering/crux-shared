@@ -33,6 +33,44 @@ import 'package:meta/meta.dart';
 const String _defaultEducationalExchangeUrl =
     'https://commerce.edacrux.app/edu/exchange';
 
+/// How a phone-home attempt ended, recorded beside `lastCheck` so a check that
+/// ran and heard nothing can be told apart from one that never ran.
+enum LicenseCheckOutcome {
+  /// The issuer answered and signed the answer. Also moves `lastCheck`.
+  attested,
+
+  /// Nothing trustworthy was heard: the issuer was unreachable, the answer was
+  /// unsigned, or the signature did not verify. These are one case by design.
+  notAttested,
+
+  /// The credential embeds no licence key, so there was nothing to ask the
+  /// issuer with. Its `lastCheck` stays at activation for good.
+  noKey,
+}
+
+/// The last phone-home attempt and how it ended. Informational only: it never
+/// changes the stored licence state, and a failed attempt never downgrades.
+@immutable
+class LicenseCheckAttempt {
+  /// Create an attempt record.
+  const LicenseCheckAttempt(this.at, this.outcome);
+
+  /// When the attempt was made.
+  final DateTime at;
+
+  /// How it ended.
+  final LicenseCheckOutcome outcome;
+
+  @override
+  bool operator ==(Object other) =>
+      other is LicenseCheckAttempt &&
+      other.at == at &&
+      other.outcome == outcome;
+
+  @override
+  int get hashCode => Object.hash(at, outcome);
+}
+
 /// Where a product keeps the credential and the small amount of state that
 /// goes with it.
 ///
@@ -246,6 +284,17 @@ class CruxLicenseController implements CruxLicenseActions {
     });
     if (_status.hasCredential && await _isCheckDue()) {
       unawaited(refresh());
+    }
+  }
+
+  /// The last phone-home attempt and its outcome, or `null` when none has been
+  /// recorded. Kept in the fallback file when the licence lives there, else for
+  /// this process. Never throws.
+  Future<LicenseCheckAttempt?> readLastAttempt() async {
+    try {
+      return await _store.readLastAttempt();
+    } on Object {
+      return null;
     }
   }
 
@@ -741,6 +790,17 @@ class CruxLicenseController implements CruxLicenseActions {
   /// most once per process.
   bool _exchangeAttempted = false;
 
+  /// Record that a check was tried. Best effort: a store that cannot take the
+  /// note must not turn a skipped check into a failure, and the note never
+  /// touches the stored licence state.
+  Future<void> _recordAttempt(LicenseCheckOutcome outcome) async {
+    try {
+      await _store.writeLastAttempt(LicenseCheckAttempt(_now(), outcome));
+    } on Object {
+      // Informational only.
+    }
+  }
+
   /// Ask the issuer for current expiry and seat counts.
   ///
   /// Returns whether the issuer was reached. **Never downgrades on a failure
@@ -770,15 +830,26 @@ class CruxLicenseController implements CruxLicenseActions {
   /// a file is not a way around the phone-home, only a way through its
   /// absence. A file that embeds no key has nothing to ask with and is left
   /// to its own claims.
+  ///
+  /// Every attempt, skipped or failed or answered, is recorded through
+  /// [_recordAttempt] apart from `lastCheck`.
   Future<bool> _refreshFromIssuer(String credential) async {
     final key = _issuerKeyFor(credential);
-    if (key == null) return false;
+    if (key == null) {
+      await _recordAttempt(LicenseCheckOutcome.noKey);
+      return false;
+    }
     final fingerprint = await _store.readOrCreateFingerprint();
     final validation = await _client.validateKey(key, fingerprint: fingerprint);
     // Unreachable, unsigned and tampered are one case: nothing that can be
-    // trusted was heard, so nothing changes and nothing is recorded.
-    if (!validation.attested) return false;
+    // trusted was heard, so the licence state does not change. The attempt
+    // itself is recorded, apart from `lastCheck`, so it leaves a trace.
+    if (!validation.attested) {
+      await _recordAttempt(LicenseCheckOutcome.notAttested);
+      return false;
+    }
     await _store.writeLastCheck(_now());
+    await _recordAttempt(LicenseCheckOutcome.attested);
     // Bound to the licence the answer was about, so it can never be applied to
     // a different credential stored later in the same session or on disk.
     final checked = await _validator.validate(
@@ -1444,6 +1515,11 @@ class _FallbackStore implements LicenseStore {
   String? _heldMachineId;
   DateTime? _heldLastCheck;
   String? _heldIssuerSnapshot;
+  LicenseCheckAttempt? _heldLastAttempt;
+
+  /// The last attempt for a licence the credential store keeps. The store
+  /// interface has no field for it, so it lives for the process.
+  LicenseCheckAttempt? _processLastAttempt;
 
   /// The fallback file's path when the licence is kept there, else `null`.
   /// Never throws.
@@ -1506,6 +1582,7 @@ class _FallbackStore implements LicenseStore {
       _heldMachineId = null;
       _heldLastCheck = null;
       _heldIssuerSnapshot = null;
+      _heldLastAttempt = null;
     }
     _held = credential;
   }
@@ -1521,6 +1598,8 @@ class _FallbackStore implements LicenseStore {
     _heldMachineId = null;
     _heldLastCheck = null;
     _heldIssuerSnapshot = null;
+    _heldLastAttempt = null;
+    _processLastAttempt = null;
     try {
       await _inner.clear();
     } on Object {
@@ -1563,6 +1642,18 @@ class _FallbackStore implements LicenseStore {
     (document) =>
         document.copyWith(lastCheck: () => at.toUtc().toIso8601String()),
     () => _heldLastCheck = at,
+  );
+
+  Future<LicenseCheckAttempt?> readLastAttempt() => _readField(
+    () async => _processLastAttempt,
+    (document) => document.lastAttempt,
+    () => _heldLastAttempt,
+  );
+
+  Future<void> writeLastAttempt(LicenseCheckAttempt attempt) => _writeField(
+    () async => _processLastAttempt = attempt,
+    (document) => document.copyWith(lastAttempt: () => attempt),
+    () => _heldLastAttempt = attempt,
   );
 
   @override
@@ -1652,6 +1743,7 @@ class _FallbackDocument {
     this.machineId,
     this.lastCheck,
     this.issuerSnapshot,
+    this.lastAttempt,
   });
 
   /// The file's format, so a later build can tell its own file from anything
@@ -1662,6 +1754,7 @@ class _FallbackDocument {
   final String? machineId;
   final String? lastCheck;
   final String? issuerSnapshot;
+  final LicenseCheckAttempt? lastAttempt;
 
   /// The document [raw] encodes, or `null` when it is not one, or holds a
   /// credential that may not be kept in a file: a file edited into something
@@ -1681,11 +1774,18 @@ class _FallbackDocument {
         final String value => value,
         _ => null,
       };
+      final attemptAt = DateTime.tryParse(text('lastAttempt') ?? '');
+      final outcome = LicenseCheckOutcome.values
+          .where((o) => o.name == text('lastAttemptOutcome'))
+          .firstOrNull;
       return _FallbackDocument(
         credential,
         machineId: text('machineId'),
         lastCheck: text('lastCheck'),
         issuerSnapshot: text('issuerSnapshot'),
+        lastAttempt: attemptAt == null || outcome == null
+            ? null
+            : LicenseCheckAttempt(attemptAt, outcome),
       );
     } on FormatException {
       return null;
@@ -1699,12 +1799,15 @@ class _FallbackDocument {
         'machineId': ?machineId,
         'lastCheck': ?lastCheck,
         'issuerSnapshot': ?issuerSnapshot,
+        'lastAttempt': ?lastAttempt?.at.toUtc().toIso8601String(),
+        'lastAttemptOutcome': ?lastAttempt?.outcome.name,
       });
 
   _FallbackDocument copyWith({
     String? Function()? machineId,
     String? Function()? lastCheck,
     String? Function()? issuerSnapshot,
+    LicenseCheckAttempt? Function()? lastAttempt,
   }) => _FallbackDocument(
     credential,
     machineId: machineId == null ? this.machineId : machineId(),
@@ -1712,5 +1815,6 @@ class _FallbackDocument {
     issuerSnapshot: issuerSnapshot == null
         ? this.issuerSnapshot
         : issuerSnapshot(),
+    lastAttempt: lastAttempt == null ? this.lastAttempt : lastAttempt(),
   );
 }
