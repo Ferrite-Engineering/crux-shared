@@ -1,0 +1,168 @@
+{
+  "server": "netcrux",
+  "instructions": "NetCrux reads a hardware design as Yosys elaborates it: Verilog, SystemVerilog or VHDL sources, a Yosys JSON netlist, or a .crux-project. Call info first, search for the full name of a cell, net, port or module, connections for one step of wiring, cone (Pro) for what drives or is driven to a depth, trace_x (Pro) for a structural candidate source of X, never a proven cause. Names are hierarchical, dot-separated, rooted at the top module. Cite each finding with the link in its location, which opens it in NetCrux for a person to check, or with its source line.",
+  "tools": [
+    {
+      "name": "info",
+      "description": "Elaborate a design and return its top module, hierarchy and cell and net counts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "design": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Source files, one Yosys JSON netlist, or one .crux-project."
+          },
+          "top": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "design"
+        ]
+      }
+    },
+    {
+      "name": "search",
+      "description": "Find cells, nets, ports or modules by name in an elaborated design. Each hit carries its source line.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "design": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Source files, one Yosys JSON netlist, or one .crux-project."
+          },
+          "top": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "cell",
+              "net",
+              "port",
+              "module"
+            ]
+          },
+          "glob": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Default 50, at most 500."
+          }
+        },
+        "required": [
+          "design",
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "connections",
+      "description": "One step of connectivity within a module: for a cell, its pins and the net on each; for a net, the pins that drive it and the pins it drives.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "design": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Source files, one Yosys JSON netlist, or one .crux-project."
+          },
+          "top": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Hierarchical cell or net name."
+          }
+        },
+        "required": [
+          "design",
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "cone",
+      "description": "Pro. The cone of influence of a cell or net within its module: the cells that drive it (fanin) or that it drives (fanout), to a depth. Structural; reads no waveform.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "design": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Source files, one Yosys JSON netlist, or one .crux-project."
+          },
+          "top": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "fanin",
+              "fanout"
+            ]
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Default 4; 0 for no limit."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Cells, default 200, at most 2000."
+          }
+        },
+        "required": [
+          "design",
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "trace_x",
+      "description": "Pro. Walk back from a net along one driver route to a structural source of X: an undriven or x-tied input, or a register with no reset and no initial value. Reads no waveform, so it names a candidate, not a proven cause.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "design": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Source files, one Yosys JSON netlist, or one .crux-project."
+          },
+          "top": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Default 32."
+          }
+        },
+        "required": [
+          "design",
+          "name"
+        ]
+      }
+    }
+  ]
+}

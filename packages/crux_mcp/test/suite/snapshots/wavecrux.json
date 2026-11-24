@@ -1,0 +1,167 @@
+{
+  "server": "wavecrux",
+  "instructions": "WaveCrux reads simulation waveforms (VCD, FST, GHW and others) without re-running the simulation. Call info first for the timescale and range, search for full signal paths, transitions for every change between two times, values at one time or at clock edges. advise (Pro) runs rule-based detectors; its findings are heuristics, not verdicts. Times are ticks. Cite each finding with the link in its location, which opens the signal at that time in WaveCrux for a person to check.",
+  "tools": [
+    {
+      "name": "info",
+      "description": "Open a waveform file (VCD, FST, GHW and others) and return its timescale, time range, top scopes and signal count. Every WaveCrux tool gives times in ticks of this timescale.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      }
+    },
+    {
+      "name": "search",
+      "description": "Find signals in a waveform by name. Returns full hierarchical paths, widths and types.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "glob": {
+            "type": "boolean",
+            "description": "Match * and ? as a glob, not a substring."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Default 50, at most 500."
+          }
+        },
+        "required": [
+          "file",
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "values",
+      "description": "Values of signals at one time, or at each rising edge of a clock between two times. Each signal carries a link that opens it in WaveCrux.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Full paths, at most 32."
+          },
+          "at": {
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "A tick, or a time such as 1500ns."
+          },
+          "clock": {
+            "type": "string"
+          },
+          "from": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "to": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Clock edges, default 200, at most 5000."
+          }
+        },
+        "required": [
+          "file",
+          "signals"
+        ]
+      }
+    },
+    {
+      "name": "transitions",
+      "description": "Every value change of signals between two times, exactly as recorded, with each signal's value at the start. Use instead of sampling. A truncated signal gives next_from to continue.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Full paths, at most 32."
+          },
+          "from": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "to": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Changes per signal, default 200, at most 10000."
+          }
+        },
+        "required": [
+          "file",
+          "signals",
+          "from",
+          "to"
+        ]
+      }
+    },
+    {
+      "name": "advise",
+      "description": "Pro. Run the Debug Advisor's rule-based detectors at a time. Given a signal that is X there, also list same-scope signals that went X at or before it. Findings are heuristics with a confidence, not verdicts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "at": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "signal": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Default 50, at most 200."
+          }
+        },
+        "required": [
+          "file",
+          "at"
+        ]
+      }
+    }
+  ]
+}

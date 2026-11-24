@@ -1,0 +1,175 @@
+{
+  "server": "reference",
+  "instructions": "",
+  "tools": [
+    {
+      "name": "check",
+      "description": "Compare simulation coverage with the declared covergroups.",
+      "inputSchema": {
+        "properties": {
+          "coverage": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "fail_on": {
+            "type": "string"
+          },
+          "filelist": {
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "include": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "top": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "top",
+          "coverage"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "prove",
+      "description": "Classify coverage points with a formal engine.",
+      "inputSchema": {
+        "properties": {
+          "artefact": {
+            "type": "string"
+          },
+          "assumptions": {
+            "type": "string"
+          },
+          "budget": {
+            "type": "integer"
+          },
+          "coverage": {
+            "type": "string"
+          },
+          "fail_on": {
+            "type": "string"
+          },
+          "filelist": {
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "include": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "model_root": {
+            "type": "string"
+          },
+          "reset": {
+            "type": "string"
+          },
+          "rtl": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "top": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "top",
+          "rtl"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "generate",
+      "description": "Return directed tests that close open points.",
+      "inputSchema": {
+        "properties": {
+          "artefact": {
+            "type": "string"
+          },
+          "budget": {
+            "type": "integer"
+          },
+          "filelist": {
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "include": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "model_root": {
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "reset": {
+            "type": "string"
+          },
+          "rtl": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "top": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "top",
+          "rtl",
+          "reset"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "verify",
+      "description": "Verify a signed report's signature and digest.",
+      "inputSchema": {
+        "properties": {
+          "report": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "report"
+        ],
+        "type": "object"
+      }
+    }
+  ]
+}
