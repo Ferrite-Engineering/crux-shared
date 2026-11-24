@@ -109,6 +109,7 @@ crux_issue_reporter:87
 crux_keybindings:95
 crux_license:94
 crux_linux_integration:81
+crux_mcp:95
 crux_menu_bar:94
 crux_netlist:96
 crux_policy:94

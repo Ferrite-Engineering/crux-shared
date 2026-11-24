@@ -1,0 +1,14 @@
+{
+  "name": "line-limit",
+  "description": "A request line past 4 MiB (4,194,304 bytes, its newline included) is -32600 with an id of null, and the server reads on from the next line.",
+  "steps": [
+    {
+      "sendOversized": 4194305,
+      "expect": {"jsonrpc": "2.0", "id": null, "error": {"code": -32600, "message": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}",
+      "expect": {"jsonrpc": "2.0", "id": 1, "result": {}}
+    }
+  ]
+}

@@ -24,6 +24,7 @@ workspace:
   - packages/crux_flow
   - packages/edacrux_cxp
   - packages/crux_cxp
+  - packages/crux_mcp
   - packages/crux_cxp_ui
   - packages/crux_app_info
   - packages/crux_about_dialog

@@ -1,0 +1,30 @@
+{
+  "name": "ping-and-notifications",
+  "description": "ping answers an empty object, whatever the id's type; a notification, known or not, and a cancellation of a request never made, are not answered.",
+  "steps": [
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}",
+      "expect": {"jsonrpc": "2.0", "id": 1, "result": {}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":\"two\",\"method\":\"ping\"}",
+      "expect": {"jsonrpc": "2.0", "id": "two", "result": {}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}",
+      "expect": null
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\",\"params\":{\"requestId\":99,\"reason\":\"none\"}}",
+      "expect": null
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/unknown\",\"params\":{}}",
+      "expect": null
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"ping\"}",
+      "expect": {"jsonrpc": "2.0", "id": 3, "result": {}}
+    }
+  ]
+}

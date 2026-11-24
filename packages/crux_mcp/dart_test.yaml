@@ -1,0 +1,4 @@
+tags:
+  # Runs the conformance transcripts against another server binary named by
+  # CRUX_MCP_SERVER_BIN; skipped when it is not set, so CI never runs it.
+  reference-live:

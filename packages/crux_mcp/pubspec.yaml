@@ -1,0 +1,36 @@
+name: crux_mcp
+description: >-
+  The shared core of the suite's Model Context Protocol servers: the stdio
+  transport, the tool registry, the JSON document and its outcomes, locations
+  and links, path confinement, the tier gate, the definition budget and the
+  conformance transcripts.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+# PURE DART, PERMANENTLY. No `flutter:` key here, ever, and no transitive route
+# to one: every product serves its tools from a headless binary built with
+# `dart build cli`, and `no_flutter_dependency_test.dart` walks the whole
+# dependency closure on every run. That is also why there is no dependency on
+# crux_license or crux_telemetry (both Flutter packages): the product hands in
+# the tier answer and the telemetry sink.
+#
+# The protocol subset is written here by hand rather than taken from a Dart MCP
+# package; the package README says why.
+dependencies:
+  crux_cxp:
+    path: ../crux_cxp
+  edacrux_cxp:
+    path: ../edacrux_cxp
+  meta: ^1.15.0
+  path: ^1.9.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^11.0.0
+  # Test-only: the purity guard walks the resolved dependency closure.
+  yaml: ^3.1.0

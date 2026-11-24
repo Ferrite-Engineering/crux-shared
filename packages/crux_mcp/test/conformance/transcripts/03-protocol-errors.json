@@ -1,0 +1,34 @@
+{
+  "name": "protocol-errors",
+  "description": "A line that is not JSON is -32700 and one that is not one object -32600, both with an id of null; a request with no method is -32600 with its id; an unknown method is -32601; a tools/call with no tool name, or an unknown tool, is -32602. The server goes on answering after each.",
+  "steps": [
+    {
+      "send": "{oops",
+      "expect": {"jsonrpc": "2.0", "id": null, "error": {"code": -32700, "message": "$string"}}
+    },
+    {
+      "send": "[1]",
+      "expect": {"jsonrpc": "2.0", "id": null, "error": {"code": -32600, "message": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":3}",
+      "expect": {"jsonrpc": "2.0", "id": 3, "error": {"code": -32600, "message": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"resources/list\"}",
+      "expect": {"jsonrpc": "2.0", "id": 4, "error": {"code": -32601, "message": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"tools/call\",\"params\":{}}",
+      "expect": {"jsonrpc": "2.0", "id": 5, "error": {"code": -32602, "message": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"tools/call\",\"params\":{\"name\":\"no_such_tool\",\"arguments\":{}}}",
+      "expect": {"jsonrpc": "2.0", "id": 6, "error": {"code": -32602, "message": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"ping\"}",
+      "expect": {"jsonrpc": "2.0", "id": 7, "result": {}}
+    }
+  ]
+}

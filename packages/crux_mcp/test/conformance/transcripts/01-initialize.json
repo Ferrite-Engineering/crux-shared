@@ -1,0 +1,26 @@
+{
+  "name": "initialize",
+  "description": "initialize answers with the client's protocol revision when it is one of the three spoken, and with the newest otherwise; capabilities name tools; serverInfo names the program.",
+  "steps": [
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":{\"name\":\"transcript\",\"version\":\"1\"}}}",
+      "expect": {"jsonrpc": "2.0", "id": 1, "result": {"protocolVersion": "2025-06-18", "capabilities": {"tools": {}}, "serverInfo": {"name": "$string", "version": "$string"}, "instructions?": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-03-26\"}}",
+      "expect": {"jsonrpc": "2.0", "id": 2, "result": {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "$string", "version": "$string"}, "instructions?": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\"}}",
+      "expect": {"jsonrpc": "2.0", "id": 3, "result": {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "$string", "version": "$string"}, "instructions?": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"1999-01-01\"}}",
+      "expect": {"jsonrpc": "2.0", "id": 4, "result": {"protocolVersion": "2025-06-18", "capabilities": {"tools": {}}, "serverInfo": {"name": "$string", "version": "$string"}, "instructions?": "$string"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"initialize\"}",
+      "expect": {"jsonrpc": "2.0", "id": 5, "result": {"protocolVersion": "2025-06-18", "capabilities": {"tools": {}}, "serverInfo": {"name": "$string", "version": "$string"}, "instructions?": "$string"}}
+    }
+  ]
+}

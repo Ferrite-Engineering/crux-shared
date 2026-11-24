@@ -1,0 +1,272 @@
+# Public API surface of package:crux_mcp/crux_mcp.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+final class ConfinedPath extends ConfinementResult
+  const ConfinedPath(String path)
+  final path: String
+class Confinement
+  Confinement(String root)
+  Confinement.withRule(String root, String? Function(String, String) rule)
+  confine(String given) -> ConfinementResult
+  confineAll(Iterable<String> paths, {String? base}) -> RefusedPath?
+  final root: String
+  rootProblem() -> String?
+sealed class ConfinementResult
+  const ConfinementResult()
+typedef ConfinementRule = String? Function(String, String)
+sealed class McpArgumentCheck
+  const McpArgumentCheck()
+final class McpArgumentError extends McpArgumentCheck
+  const McpArgumentError(String message)
+  final message: String
+final class McpArguments extends McpArgumentCheck
+  const McpArguments({required List<String> argv, required Map<String, Object?> values})
+  final argv: List<String>
+  final values: Map<String, Object?>
+class McpCall
+  final arguments: McpArguments
+  final tool: McpTool
+  get isCancelled -> bool
+  get whenCancelled -> Future<void>
+  progress(num progress, {String? message, num? total}) -> void
+class McpCommandOutput
+  McpCommandOutput.document(McpDocument document)
+  McpCommandOutput.text(String text)
+  final outcome: McpOutcome?
+  final text: String
+  get isError -> bool
+  toToolResult() -> Map<String, Object?>
+typedef McpCommandRunner = Future<McpCommandOutput> Function(McpCall)
+class McpDesignFingerprint implements McpJsonValue
+  const McpDesignFingerprint({required String scheme, required String value})
+  final scheme: String
+  final value: String
+  toJson() -> Map<String, Object?>
+class McpDiagnostic implements McpJsonValue
+  const McpDiagnostic({McpLocation? location, String? fix, required McpSeverity severity, required String code, required String message})
+  const McpDiagnostic.error(String code, String message, {McpLocation? location, String? fix})
+  const McpDiagnostic.warning(String code, String message, {McpLocation? location, String? fix})
+  final code: String
+  final fix: String?
+  final location: McpLocation?
+  final message: String
+  final severity: McpSeverity
+  static codeIsValid(String code) -> bool
+  toJson() -> Map<String, Object?>
+class McpDocument
+  const McpDocument({List<McpDiagnostic> diagnostics, List<McpEngine> engines, Map<String, Object?>? body, McpDesignFingerprint? design, required McpOutcome outcome, required McpProgram tool, required String? command})
+  factory McpDocument.usage({required McpProgram tool, required String message, required String? command})
+  contractProblems() -> List<String>
+  final body: Map<String, Object?>?
+  final command: String?
+  final design: McpDesignFingerprint?
+  final diagnostics: List<McpDiagnostic>
+  final engines: List<McpEngine>
+  final outcome: McpOutcome
+  final tool: McpProgram
+  render() -> String
+  toJson() -> Map<String, Object?>
+enum McpElementKind
+  static const cell: McpElementKind
+  static const net: McpElementKind
+final class McpElementLocation extends McpLocation
+  factory McpElementLocation({McpSourceLocation? src, bool linked, required McpElementKind kind, required String file, required String module, required String name})
+  final file: String
+  final kind: McpElementKind
+  final link: String?
+  final module: String
+  final name: String
+  final src: McpSourceLocation?
+  toJson() -> Map<String, Object?>
+class McpEngine implements McpJsonValue
+  const McpEngine({String? path, required String name, required String version})
+  final name: String
+  final path: String?
+  final version: String
+  toJson() -> Map<String, Object?>
+class McpExitCodes
+  McpExitCodes({required int completed, required int engineError, required int failedGate, required int inputError, required int licenceError, required int usageError})
+  exitCodeFor(McpOutcome outcome) -> int
+  final completed: int
+  final engineError: int
+  final failedGate: int
+  final inputError: int
+  final licenceError: int
+  final usageError: int
+  static final suite: McpExitCodes
+class McpField
+  const McpField(String name, {String flag, String? description, bool many, int minimum, required McpFieldKind kind})
+  final description: String?
+  final flag: String
+  final kind: McpFieldKind
+  final many: bool
+  final minimum: int
+  final name: String
+  schema() -> Map<String, Object?>
+enum McpFieldKind
+  static const boolean: McpFieldKind
+  static const integer: McpFieldKind
+  static const path: McpFieldKind
+  static const text: McpFieldKind
+  static const time: McpFieldKind
+interface abstract class McpJsonValue
+  toJson() -> Object?
+sealed class McpLocation implements McpJsonValue
+  const McpLocation()
+  factory McpLocation.fromJson(Object? json)
+  ==(Object other) -> bool
+  get file -> String?
+  get hashCode -> int
+  toJson() -> Map<String, Object?>
+  toString() -> String
+class McpLocationException implements Exception
+  const McpLocationException(String message)
+  final message: String
+  toString() -> String
+typedef McpNamedFileCheck = FutureOr<RefusedPath?> Function(McpArguments, Confinement)
+enum McpOutcome
+  const McpOutcome(String wireName)
+  final wireName: String
+  get isAnswer -> bool
+  get isError -> bool
+  static const completed: McpOutcome
+  static const engineError: McpOutcome
+  static const failedGate: McpOutcome
+  static const inputError: McpOutcome
+  static const licenceError: McpOutcome
+  static const usageError: McpOutcome
+  static fromWireName(String name) -> McpOutcome?
+final class McpPlaceLocation extends McpLocation
+  McpPlaceLocation({required McpTime time, required String file})
+  final file: String
+  final time: McpTime
+  toJson() -> Map<String, Object?>
+class McpProgram implements McpJsonValue
+  const McpProgram({required String name, required String version})
+  final name: String
+  final version: String
+  toJson() -> Map<String, Object?>
+class McpServer
+  McpServer({McpTelemetry? telemetry, required Confinement confinement, required Future<McpCommandOutput> Function(McpCall) runner, required List<McpTool> tools, required McpProgram program, required String instructions, void Function(String)? log})
+  definitions() -> List<Map<String, Object?>>
+  final confinement: Confinement
+  final instructions: String
+  final program: McpProgram
+  final runner: Future<McpCommandOutput> Function(McpCall)
+  final telemetry: McpTelemetry?
+  final tools: List<McpTool>
+  handleLine(String line) -> Future<String?>
+  serve(Stream<List<int>> input, StreamSink<List<int>> output) -> Future<void>
+enum McpSeverity
+  static const error: McpSeverity
+  static const note: McpSeverity
+  static const warning: McpSeverity
+final class McpSignalLocation extends McpLocation
+  factory McpSignalLocation({required McpTime time, required String file, required String signal})
+  final file: String
+  final link: String
+  final signal: String
+  final time: McpTime
+  toJson() -> Map<String, Object?>
+final class McpSourceLocation extends McpLocation
+  McpSourceLocation({int? column, required String file, required int line})
+  final column: int?
+  final file: String
+  final line: int
+  toJson() -> Map<String, Object?>
+class McpTelemetry
+  const McpTelemetry({required Map<String, String> environment, required bool Function() consented, required void Function(String, Map<String, Object?>) sink})
+  final consented: bool Function()
+  final environment: Map<String, String>
+  final sink: void Function(String, Map<String, Object?>)
+  get sending -> bool
+  toolCalled({required Duration elapsed, required String outcome, required String tool}) -> void
+typedef McpTelemetrySink = void Function(String, Map<String, Object?>)
+final class McpTestLocation extends McpLocation
+  McpTestLocation({String? file, int? line, required String run, required String test})
+  final file: String?
+  final line: int?
+  final run: String
+  final test: String
+  toJson() -> Map<String, Object?>
+class McpTierGate
+  const McpTierGate({required String environmentVariable})
+  final environmentVariable: String
+  get fix -> String
+  refuse({required McpProgram program, required String command, required String tier, required bool admitted}) -> McpDocument?
+  requireTier(String tier, {required String what, required bool admitted}) -> McpDiagnostic?
+  withhold(String what, {required String tier}) -> McpDiagnostic
+class McpTime implements McpJsonValue
+  McpTime(int at, McpTimeUnit unit)
+  factory McpTime.ticks(int at)
+  ==(Object other) -> bool
+  final at: int
+  final unit: McpTimeUnit
+  get hashCode -> int
+  get linkValue -> String
+  toJson() -> Map<String, Object?>
+  toString() -> String
+enum McpTimeUnit
+  get wireName -> String
+  static const fs: McpTimeUnit
+  static const ms: McpTimeUnit
+  static const ns: McpTimeUnit
+  static const ps: McpTimeUnit
+  static const s: McpTimeUnit
+  static const tick: McpTimeUnit
+  static const us: McpTimeUnit
+  static fromWireName(String name) -> McpTimeUnit?
+class McpTool
+  McpTool({FutureOr<RefusedPath?> Function(McpArguments, Confinement)? checkNamedFiles, List<String> required, String? command, required List<McpField> fields, required String description, required String name})
+  check(Object? arguments, Confinement confinement) -> McpArgumentCheck
+  definition() -> Map<String, Object?>
+  final checkNamedFiles: FutureOr<RefusedPath?> Function(McpArguments, Confinement)?
+  final command: String
+  final description: String
+  final fields: List<McpField>
+  final name: String
+  final required: List<String>
+  get definitionLength -> int
+final class RefusedPath extends ConfinementResult
+  const RefusedPath(String given, String message)
+  final given: String
+  final message: String
+get kJsonRpcInternalError -> int
+get kJsonRpcInvalidParams -> int
+get kJsonRpcInvalidRequest -> int
+get kJsonRpcMethodNotFound -> int
+get kJsonRpcParseError -> int
+get kMcpDocumentSchemaVersion -> int
+get kMcpDurationBuckets -> List<String>
+get kMcpMaxInstructionsLength -> int
+get kMcpMaxLineBytes -> int
+get kMcpMaxLinkFileLength -> int
+get kMcpMaxLinkLength -> int
+get kMcpMaxLinkNameLength -> int
+get kMcpMaxLinkTimeLength -> int
+get kMcpProtocolVersions -> List<String>
+get kMcpServerDefinitionCeiling -> int
+get kMcpTierRequiredCode -> String
+get kMcpToolCallEvent -> String
+get kMcpToolCallOutcomes -> Set<String>
+get kMcpToolDefinitionCeiling -> int
+get kMcpWithheldCode -> String
+get kNetCruxLinkPrefix -> String
+get kWaveCruxLinkPrefix -> String
+mcpDefinitionBudgetProblems(McpServer server, {int perServer, int perTool}) -> List<String>
+mcpDocumentOutcome(String text) -> McpOutcome?
+mcpDurationBucket(Duration elapsed) -> String
+mcpExitCodeProblems(int Function(McpOutcome) exitCodeFor) -> List<String>
+mcpIsAbsoluteText(String path) -> bool
+mcpPercentEncode(String value) -> String
+mcpRenderJson(Object? value) -> String
+mcpRenderJsonLine(Object? value) -> String
+mcpServerDefinitionLength(McpServer server) -> int
+netCruxLink(String file, {required McpElementKind kind, required String name}) -> String
+waveCruxLink(String file, {McpTime? time, String? signal}) -> String

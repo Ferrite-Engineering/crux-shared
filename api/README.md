@@ -14,6 +14,7 @@ the dependency the main barrel drags in. Each gets its own golden:
 |---|---|
 | `crux_license_core.api.txt` | Keeps `dart:ui` out of a **headless** AOT kernel, so `dart build cli` in the products' Pro CLIs compiles. |
 | `crux_sqlite_guards.api.txt`, `crux_sqlite_test_support.api.txt` | Test-only tooling kept out of the runtime barrel every store opens through. |
+| `crux_mcp_testing.api.txt` | The scripted client, conformance transcripts and definition budget check, kept out of the runtime barrel every product's MCP server imports. |
 
 These files are not documentation and are not read at runtime. They exist to
 make one specific event visible: *somebody changed the substrate that eight

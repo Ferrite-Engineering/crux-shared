@@ -1,0 +1,31 @@
+# Public API surface of package:crux_mcp/crux_mcp_testing.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class McpBudgetExceeded implements Exception
+  const McpBudgetExceeded(List<String> problems)
+  final problems: List<String>
+  toString() -> String
+class McpScriptedClient
+  factory McpScriptedClient.inProcess(McpServer server)
+  close() -> Future<int?>
+  final stderrLines: List<String>
+  next({Duration timeout}) -> Future<String?>
+  request(String method, [Object? params]) -> Future<Map<String, Object?>>
+  send(String line) -> void
+  sendBytes(List<int> bytes) -> void
+  static start(String executable, List<String> arguments, {Map<String, String>? environment, String? workingDirectory}) -> Future<McpScriptedClient>
+class McpTranscript
+  factory McpTranscript.parse(String text)
+  final description: String
+  final name: String
+  final steps: List<Map<String, Object?>>
+  run(McpScriptedClient client) -> Future<List<String>>
+  static loadDirectory(String directory) -> List<McpTranscript>
+expectDefinitionBudget(McpServer server, {int perServer, int perTool}) -> void
+mcpMatchPattern(Object? pattern, Object? actual, {Map<String, Object?> bindings, String path, bool ordered}) -> List<String>

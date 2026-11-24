@@ -1,0 +1,27 @@
+{
+  "name": "tools",
+  "description": "tools/list sends each tool's name, description and inputSchema (an object schema with properties and a required list). A bad argument to a tool (an unknown field, arguments that are not one object, a required field left out) is answered with a usage_error document in content[0], the eight members in order, and isError true; nothing is run. Uses the first listed tool that has a required field.",
+  "steps": [
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}",
+      "expect": {"jsonrpc": "2.0", "id": 1, "result": {"tools": {"$each": {"name": "$string", "description": "$string", "inputSchema": {"type": "object", "properties": "$any", "required": "$any"}}}}},
+      "bind": {"tool": {"from": "/result/tools", "where": "/inputSchema/required/0", "take": "/name"}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"{{tool}}\",\"arguments\":{\"zz_not_a_field\":1}}}",
+      "expect": {"jsonrpc": "2.0", "id": 2, "result": {"content": [{"type": "text", "text": {"$json": {"schema_version": 1, "tool": {"name": "$string", "version": "$string"}, "command": "{{tool}}", "outcome": "usage_error", "engines": [], "design": null, "body": null, "diagnostics": [{"severity": "error", "code": "usage", "message": "$string", "fix": null, "location": null}]}}}], "isError": true}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"{{tool}}\",\"arguments\":[1]}}",
+      "expect": {"jsonrpc": "2.0", "id": 3, "result": {"content": [{"type": "text", "text": {"$json": {"schema_version": 1, "tool": {"name": "$string", "version": "$string"}, "command": "{{tool}}", "outcome": "usage_error", "engines": [], "design": null, "body": null, "diagnostics": [{"severity": "error", "code": "usage", "message": "$string", "fix": null, "location": null}]}}}], "isError": true}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/call\",\"params\":{\"name\":\"{{tool}}\",\"arguments\":{}}}",
+      "expect": {"jsonrpc": "2.0", "id": 4, "result": {"content": [{"type": "text", "text": {"$json": {"schema_version": 1, "tool": {"name": "$string", "version": "$string"}, "command": "{{tool}}", "outcome": "usage_error", "engines": [], "design": null, "body": null, "diagnostics": [{"severity": "error", "code": "usage", "message": "$string", "fix": null, "location": null}]}}}], "isError": true}}
+    },
+    {
+      "send": "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"tools/call\",\"params\":{\"name\":\"{{tool}}\"}}",
+      "expect": {"jsonrpc": "2.0", "id": 5, "result": {"content": [{"type": "text", "text": {"$json": {"schema_version": 1, "tool": {"name": "$string", "version": "$string"}, "command": "{{tool}}", "outcome": "usage_error", "engines": [], "design": null, "body": null, "diagnostics": [{"severity": "error", "code": "usage", "message": "$string", "fix": null, "location": null}]}}}], "isError": true}}
+    }
+  ]
+}
