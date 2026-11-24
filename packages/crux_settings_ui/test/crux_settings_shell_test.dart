@@ -184,11 +184,16 @@ void main() {
       );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
+      // The first box inside the Dialog: the shell's own. Taking the first
+      // SizedBox in the whole tree instead finds the scrim layer
+      // showCruxDialog lays over a non-dismissible route, outside the Dialog.
       final size = tester.getSize(
-        find.descendant(
-          of: find.byType(Dialog),
-          matching: find.byType(SizedBox).first,
-        ),
+        find
+            .descendant(
+              of: find.byType(Dialog),
+              matching: find.byType(SizedBox),
+            )
+            .first,
       );
       expect(size.width, lessThanOrEqualTo(600 - 48));
       expect(size.height, lessThanOrEqualTo(500 - 48));
