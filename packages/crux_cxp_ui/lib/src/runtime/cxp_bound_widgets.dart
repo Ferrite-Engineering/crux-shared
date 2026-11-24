@@ -155,6 +155,7 @@ class CruxCxpSettingsSection extends ConsumerWidget {
     final settings = ref.watch(cruxCxpSettingsProvider);
     final notifier = ref.read(cruxCxpSettingsProvider.notifier);
     final status = ref.watch(cruxCxpServerStatusProvider);
+    final takenPort = ref.watch(cruxCxpTakenPortProvider);
     final peerCount = ref.watch(cruxCxpConnectedPeerCountProvider);
     final theme = Theme.of(context);
     final statusText = <String>[
@@ -186,6 +187,12 @@ class CruxCxpSettingsSection extends ConsumerWidget {
           children: [
             Text(strings.statusLabel, style: theme.textTheme.labelMedium),
             Text(statusText, style: theme.textTheme.bodySmall),
+            if (status.running && status.port != null && takenPort != null)
+              Text(
+                strings.statusPortTaken(takenPort, status.port!),
+                key: const ValueKey('cxpSettingsPortTaken'),
+                style: theme.textTheme.bodySmall,
+              ),
             if (status.problem != null)
               Text(
                 status.problem!,

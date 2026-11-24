@@ -176,6 +176,7 @@ class CruxCxpRuntime
   get isAvailable -> bool
   get peerChanges -> Stream<List<PeerIdentity>>
   get peers -> List<PeerIdentity>
+  get takenPort -> int?
   get unavailableReason -> String?
   get unreachableChanges -> Stream<List<CxpDialFailure>>
   get unreachablePeers -> List<CxpDialFailure>
@@ -292,6 +293,7 @@ class CruxCxpStrings
   final serverOffline: String
   final showPanel: String
   final statusLabel: String
+  final statusPortTaken: String Function(int, int)
   final statusRunning: String Function(int)
   final statusStopped: String
   final unreachableSection: String
@@ -323,6 +325,7 @@ get cruxCxpServerStatusProvider -> Provider<({int? port, String? problem, bool r
 get cruxCxpSettingsProvider -> NotifierProvider<CruxCxpSettingsNotifier, CruxCxpSettings>
 get cruxCxpStringsCustomizerProvider -> Provider<CruxCxpStrings Function(CruxCxpStrings)>
 cruxCxpStringsOf(BuildContext context, T Function<T>(ProviderListenable<T>) read) -> CruxCxpStrings
+get cruxCxpTakenPortProvider -> Provider<int?>
 get cruxCxpTransportAvailableProvider -> Provider<bool>
 get cruxCxpUnreachablePeersProvider -> StreamProvider<List<CxpDialFailure>>
 loadCruxCxpLaunchSettings(CruxCxpProductBinding binding) -> Future<CruxCxpSettings>

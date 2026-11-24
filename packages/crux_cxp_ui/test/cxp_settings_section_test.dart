@@ -71,5 +71,53 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Enter a port between 1 and 65535.'), findsOneWidget);
     expect(container.read(cruxCxpSettingsProvider).port, 54322);
+    expect(find.byKey(const ValueKey('cxpSettingsPortTaken')), findsNothing);
+  });
+
+  testWidgets('a window whose configured port another holds says which port '
+      'it listens on instead', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final container = ProviderContainer(
+      overrides: [
+        cruxCxpProductBindingProvider.overrideWithValue(
+          const CruxCxpProductBinding(
+            productName: 'wavecrux',
+            defaultPort: 54322,
+            prefsPrefix: 'settings.',
+          ),
+        ),
+        cruxCxpLaunchSettingsProvider.overrideWithValue(
+          const CruxCxpSettings(enabled: true, port: 54322),
+        ),
+        cruxCxpServerStatusProvider.overrideWithValue((
+          running: true,
+          port: 61234,
+          problem: null,
+        )),
+        cruxCxpTakenPortProvider.overrideWithValue(54322),
+        cruxCxpPeersProvider.overrideWithValue(const []),
+        cruxCxpRuntimeProvider.overrideWith((_) async => null),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(child: CruxCxpSettingsSection()),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Running on port 61234, 0 peers connected'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Port 54322 is in use, so this window listens on port 61234.'),
+      findsOneWidget,
+    );
   });
 }

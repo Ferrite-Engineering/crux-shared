@@ -308,6 +308,15 @@ final Provider<CruxCxpServerStatus> cruxCxpServerStatusProvider =
       );
     }, name: 'cruxCxpServerStatusProvider');
 
+/// The configured port while another process (most often another window of
+/// this product) holds it and this window listens on a port the operating
+/// system assigned; null otherwise. The settings status row says so beside
+/// the port it shows.
+final Provider<int?> cruxCxpTakenPortProvider = Provider<int?>(
+  (ref) => ref.watch(cruxCxpRuntimeProvider).value?.takenPort,
+  name: 'cruxCxpTakenPortProvider',
+);
+
 /// The connected peers, filtered by [cruxCxpPeerFilterProvider]. Empty whenever
 /// the server is off: the cross-probe panel, the toolbar badge and every
 /// cross-probe menu read this one list.

@@ -6,6 +6,7 @@
 // container, as two apps on one machine.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crux_cxp/crux_cxp.dart';
@@ -263,6 +264,59 @@ void main() {
     expect(after, isNot(same(before)));
     expect(after!.boundPort, port);
     expect(before.isAvailable, isFalse, reason: 'the old server stopped');
+  });
+
+  test('a second window of a product, whose port the first holds, listens '
+      'on a port the system assigns and is still a peer', () async {
+    final port = await _freePort();
+    final launch = CruxCxpSettings(enabled: true, port: port);
+    final first = product('wavecrux', launch: launch);
+    final held = await runtimeOf(first);
+    expect(held!.boundPort, port);
+    expect(held.takenPort, isNull);
+    expect(first.read(cruxCxpTakenPortProvider), isNull);
+    // Peer ids carry the process id and the start time in milliseconds; two
+    // windows in one process must not start in the same millisecond.
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+
+    final second = product('wavecrux', launch: launch);
+    final runtime = await runtimeOf(second);
+    expect(runtime!.isAvailable, isTrue, reason: runtime.unavailableReason);
+    expect(runtime.unavailableReason, isNull);
+    final assigned = runtime.boundPort;
+    expect(assigned, isNotNull);
+    expect(assigned, isNot(port));
+    expect(runtime.takenPort, port);
+    expect(second.read(cruxCxpServerStatusProvider), (
+      running: true,
+      port: assigned,
+      problem: null,
+    ));
+    expect(second.read(cruxCxpTakenPortProvider), port);
+
+    // Its manifest names the port it holds (CXP §10.2 `port`), so peers dial
+    // it there.
+    final written = File(
+      '${dir.path}${Platform.pathSeparator}'
+      '${runtime.selfIdentity.peerId}.json',
+    );
+    final manifest =
+        jsonDecode(await written.readAsString()) as Map<String, Object?>;
+    expect(manifest['port'], assigned);
+    expect(manifests(), hasLength(2));
+
+    await _until(
+      () => first
+          .read(cruxCxpPeersProvider)
+          .any((p) => p.peerId == runtime.selfIdentity.peerId),
+      reason: 'the first window to see the second',
+    );
+    await _until(
+      () => second
+          .read(cruxCxpPeersProvider)
+          .any((p) => p.peerId == held.selfIdentity.peerId),
+      reason: 'the second window to see the first',
+    );
   });
 
   test('an exit request, as a window close or a termination signal sends '
@@ -600,6 +654,43 @@ void main() {
     expect(runtime.isAvailable, isFalse);
     expect(runtime.peers, isEmpty);
   });
+
+  test("a test factory's server that cannot bind is not replaced: the bind "
+      'failure is the reason and no manifest is written', () async {
+    var built = 0;
+    final runtime = CruxCxpRuntime(
+      binding: const CruxCxpProductBinding(
+        productName: 'wavecrux',
+        defaultPort: 54322,
+        prefsPrefix: 'settings.',
+      ),
+      productVersion: 'test',
+      manifestDirectory: dir.path,
+      port: 54322,
+      handler: () => const CruxCxpRequestHandler(),
+      serverFactory: (self) {
+        built++;
+        return _UnbindableServer(selfIdentity: self, port: 54322);
+      },
+    );
+    addTearDown(runtime.dispose);
+    await runtime.start();
+    expect(built, 1);
+    expect(runtime.isAvailable, isFalse);
+    expect(runtime.takenPort, isNull);
+    expect(runtime.unavailableReason, contains('bind failed'));
+    expect(runtime.unavailableReason, contains('port 54322'));
+    expect(manifests(), isEmpty);
+  });
+}
+
+/// A server whose every bind fails, naming the port it was asked for.
+class _UnbindableServer extends LocalCxpServer {
+  _UnbindableServer({required super.selfIdentity, super.port});
+
+  @override
+  Future<void> start() async =>
+      throw SocketException('address in use, port $port');
 }
 
 /// A discovery whose stop reports a scan that would not finish.

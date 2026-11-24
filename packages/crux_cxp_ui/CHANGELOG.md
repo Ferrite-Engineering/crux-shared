@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **A second window of a product is a CXP peer.** When the configured port
+  is taken, most often by another window of the same product, `CruxCxpRuntime`
+  binds a port the operating system assigns instead of giving up, and writes
+  its manifest with that port, so peers find and dial it. `takenPort` and
+  `cruxCxpTakenPortProvider` name the configured port while that is so, and
+  the settings status row adds "Port 54322 is in use, so this window listens
+  on port 61234." (`CruxCxpStrings.statusPortTaken`, all four locales). When
+  no port can be bound, `unavailableReason` still names the first bind
+  failure. A runtime given a test's `serverFactory` keeps the server it
+  builds and does not fall back.
+
 - **Export namespace narrowed by 10 symbols.** `DemoCrossProbePanelController`, `crossProbeTargetsFor`, `cruxCxpPeersStreamProvider`, `cruxCxpSettingsServiceProvider`, `kCrossProbeFallbackKinds`, `kCrossProbeSuiteOrder`, `kCrossProbeTargetKinds`, `kCruxCxpAckTimeout`, `kCruxCxpEventLogCapacity`, `kCxpAcceptsCapabilityPrefix` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **CXP 1.3 rev. 9 vocabulary in the send table.** NetCrux's row of

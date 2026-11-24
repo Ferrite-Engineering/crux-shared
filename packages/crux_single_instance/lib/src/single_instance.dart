@@ -89,11 +89,20 @@ final RegExp _appIdPattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9._\-]{0,127}$');
 /// Darwin and the BSDs, 108 on Linux, each including the terminating NUL.
 const int _maxSocketPathBytes = 103;
 
-/// Lock files this process holds. POSIX record locks do not conflict within
-/// one process, and closing any descriptor for a file drops every lock the
-/// process holds on it, so a second claim in the same process must be
-/// answered from here and must never open the file.
-final Set<String> _locksHeldHere = <String>{};
+/// Lock files this process holds, each with the open file that holds its
+/// lock (null while the lock is being taken). POSIX record locks do not
+/// conflict within one process, and closing any descriptor for a file drops
+/// every lock the process holds on it, so a second claim in the same process
+/// must be answered from here and must never open the file.
+///
+/// The open file is kept here, not only on the running instance, so it stays
+/// reachable for as long as the lock is held whatever the application does
+/// with its claim. An ahead-of-time compiler drops a field nothing reads, and
+/// in an application that never calls [SingleInstancePrimary.close] nothing
+/// else reads the running instance's file; once unreachable, the file is
+/// closed by its finalizer and the lock goes with it.
+final Map<String, RandomAccessFile?> _locksHeldHere =
+    <String, RandomAccessFile?>{};
 
 /// One link per desktop session: a launch that carries a link hands it to the
 /// instance already running and exits, instead of opening a second window.
@@ -235,7 +244,8 @@ class SingleInstance {
   Future<RandomAccessFile?> _tryLock(String path) async {
     // Claimed before the first await, so two claims in one process cannot
     // both reach the file: the second would be granted the same lock.
-    if (!_locksHeldHere.add(path)) return null;
+    if (_locksHeldHere.containsKey(path)) return null;
+    _locksHeldHere[path] = null;
     RandomAccessFile? file;
     try {
       file = await File(path).open(mode: FileMode.append);
@@ -247,7 +257,7 @@ class SingleInstance {
       return null;
     }
     setPosixFileMode(path, 0x180); // 0o600
-    return file;
+    return _locksHeldHere[path] = file;
   }
 
   Future<SingleInstanceClaim> _becomePrimary(

@@ -4,6 +4,10 @@
 // The same behaviour across real processes, which is what the lock is for:
 // one process cannot test that another holds a lock, and the operating system
 // releasing it when a process is killed is the stale-instance recovery.
+//
+// The `aot` groups run a helper built with `dart compile exe`, as a shipped
+// application is: the kernel helper runs in the JIT, which keeps every field,
+// so it cannot see a lock lost to the ahead-of-time compiler.
 
 @Timeout(Duration(minutes: 3))
 library;
@@ -18,6 +22,7 @@ import 'package:test/test.dart';
 void main() {
   late Directory tmp;
   late String kernel;
+  late String aotExe;
   late String dart;
 
   setUpAll(() async {
@@ -33,6 +38,20 @@ void main() {
     ]);
     if (compiled.exitCode != 0) {
       fail('could not compile the helper:\n${compiled.stderr}');
+    }
+    aotExe = p.join(
+      tmp.path,
+      Platform.isWindows ? 'aot_instance.exe' : 'aot_instance',
+    );
+    final aot = await Process.run(dart, [
+      'compile',
+      'exe',
+      p.join('test', 'support', 'aot_instance_main.dart'),
+      '-o',
+      aotExe,
+    ]);
+    if (aot.exitCode != 0) {
+      fail('could not compile the ahead-of-time helper:\n${aot.stderr}');
     }
   });
 
@@ -127,6 +146,46 @@ void main() {
         for (final l in launches) {
           expect(await l.exitCode, 0);
         }
+      });
+    });
+
+    group('$transport aot', () {
+      late String dir;
+      var run = 0;
+
+      setUp(() => dir = p.join(tmp.path, 'a${transport[0]}${run++}'));
+
+      Future<_Instance> launch({
+        int expected = 0,
+        int holdMs = 30000,
+        String? link,
+      }) async => _Instance(
+        await Process.start(aotExe, [
+          dir,
+          transport,
+          '$expected',
+          '$holdMs',
+          ?link,
+        ]),
+      );
+
+      test('a running instance that never closes its claim still holds the '
+          'lock once the collector has run', () async {
+        final first = await launch(expected: 2);
+        expect(await first.nextLine(), 'claim primary');
+        expect(await first.nextLine(), 'ready');
+
+        for (final n in [1, 2]) {
+          final next = await launch(link: 'example://open?aot=$n');
+          expect(
+            await next.nextLine(),
+            'claim delivered',
+            reason: 'a second running instance means the lock was lost',
+          );
+          expect(await next.exitCode, 0);
+          expect(await first.nextLine(), 'link example://open?aot=$n');
+        }
+        expect(await first.exitCode, 0);
       });
     });
   }

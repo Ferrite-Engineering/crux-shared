@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **The running instance keeps its lock in an ahead-of-time build that never
+  calls `SingleInstancePrimary.close`.** The open file holding the lock was
+  read only by `close`, so a compiled application that left the claim to the
+  process ending had the field removed as unused; the file became
+  unreachable, its finalizer closed it within moments of startup, the lock
+  went with it, and every later launch became a second running instance
+  instead of handing its link over. The JIT keeps every field, so tests run
+  with `dart test` never saw it. The held file is now also kept in the
+  package's table of locks held in this process until the lock is released.
+  `test/multi_process_test.dart` gains `aot` groups that run a helper built
+  with `dart compile exe` which never closes its claim.
+
 - **Initial package: a second launch hands its link to the running
   instance.** On Windows and Linux the operating system opens a URL by
   starting the application with the URL as its argument, so every link

@@ -33,6 +33,7 @@ class CruxCxpStrings {
     required this.broadcastHelp,
     required this.statusLabel,
     required this.statusRunning,
+    required this.statusPortTaken,
     required this.statusStopped,
     required this.peersConnected,
     required this.showPanel,
@@ -129,6 +130,10 @@ class CruxCxpStrings {
 
   /// The status row while running.
   final String Function(int port) statusRunning;
+
+  /// The status row's second line while the configured port is taken and
+  /// this window listens on a port the operating system assigned.
+  final String Function(int configured, int bound) statusPortTaken;
 
   /// The status row while stopped.
   final String statusStopped;
@@ -260,6 +265,7 @@ class CruxCxpStrings {
     broadcastHelp: broadcastHelp,
     statusLabel: statusLabel,
     statusRunning: statusRunning,
+    statusPortTaken: statusPortTaken,
     statusStopped: statusStopped,
     peersConnected: peersConnected,
     showPanel: showPanel,
@@ -356,6 +362,8 @@ class CruxCxpStrings {
         'off, only explicit sends are shared.',
     statusLabel: 'CXP status',
     statusRunning: (port) => 'Running on port $port',
+    statusPortTaken: (configured, bound) =>
+        'Port $configured is in use, so this window listens on port $bound.',
     statusStopped: 'Stopped',
     peersConnected: (count) =>
         count == 1 ? '1 peer connected' : '$count peers connected',
@@ -412,6 +420,8 @@ class CruxCxpStrings {
     broadcastHelp: '在您选择时，将选择内容通知已连接的对等端。关闭时，仅共享显式发送的内容。',
     statusLabel: 'CXP 状态',
     statusRunning: (port) => '正在端口 $port 上运行',
+    statusPortTaken: (configured, bound) =>
+        '端口 $configured 已被占用，因此此窗口在端口 $bound 上监听。',
     statusStopped: '已停止',
     peersConnected: (count) => '已连接 $count 个对等端',
     showPanel: '显示交叉探测面板',
@@ -466,6 +476,8 @@ class CruxCxpStrings {
     broadcastHelp: '選択するたびに、接続中のピアに選択内容を通知します。オフの場合は、明示的な送信のみが共有されます。',
     statusLabel: 'CXP ステータス',
     statusRunning: (port) => 'ポート $port で実行中',
+    statusPortTaken: (configured, bound) =>
+        'ポート $configured は使用中のため、このウィンドウはポート $bound で待ち受けています。',
     statusStopped: '停止中',
     peersConnected: (count) => '$count 件のピアが接続中',
     showPanel: 'クロスプローブパネルを表示',
@@ -521,6 +533,8 @@ class CruxCxpStrings {
     broadcastHelp: '선택할 때마다 연결된 피어에 선택 항목을 알립니다. 꺼져 있으면 명시적으로 보낸 항목만 공유됩니다.',
     statusLabel: 'CXP 상태',
     statusRunning: (port) => '포트 $port에서 실행 중',
+    statusPortTaken: (configured, bound) =>
+        '포트 $configured이(가) 사용 중이므로 이 창은 포트 $bound에서 수신 대기합니다.',
     statusStopped: '중지됨',
     peersConnected: (count) => '피어 $count개 연결됨',
     showPanel: '교차 프로브 패널 표시',

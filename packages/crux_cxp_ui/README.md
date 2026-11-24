@@ -128,10 +128,14 @@ Then it reads, rather than owns:
 | `cruxCxpUnreachablePeersProvider` | discovered but unreachable peers; cleared by every stop and restart |
 | `cruxCxpEventLogProvider` | the panel's event log |
 | `cruxCxpServerStatusProvider` | running, port, why not |
+| `cruxCxpTakenPortProvider` | the configured port while another process holds it, else null |
 
 The rules, once: a launch with CXP off never starts the server or writes a
 manifest; a valid new port restarts a running server on it at once and is
-kept for the next start otherwise; the runtime acknowledges every request a
+kept for the next start otherwise; when the configured port is taken (a
+second window of the same product), the server listens on a port the
+operating system assigns, the manifest names that port so the window is
+still a peer, and the settings status row says so; the runtime acknowledges every request a
 peer sends with the `CruxCxpHandlerResult` the product's `CruxCxpRequestHandler`
 returns, and asks for attention (`cruxCxpAttentionRequesterProvider`) when one is
 honoured and the setting is on.

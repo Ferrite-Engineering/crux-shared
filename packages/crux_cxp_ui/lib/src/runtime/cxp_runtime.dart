@@ -28,12 +28,17 @@ typedef CruxCxpHighlightDelivery = ({bool delivered, RequestHighlightAck? ack});
 /// dialling connector nothing will close. Neither throws: a bind failure or
 /// an unwritable manifest directory leaves the runtime not available, with
 /// [unavailableReason] saying why.
+///
+/// When [port] is taken (a second window of the same product holds it), the
+/// server binds a port the operating system assigns instead and the manifest
+/// names that port, so the window is still a peer; [takenPort] says so.
 class CruxCxpRuntime {
   /// Creates a runtime for [binding]. Nothing runs until [start].
   ///
   /// `handler` is called at each request, so a product can swap the handler a
   /// provider gives without restarting the server. The factories exist for
-  /// tests.
+  /// tests; a runtime given `serverFactory` does not fall back to an
+  /// assigned port when the server it builds cannot bind.
   CruxCxpRuntime({
     required this.binding,
     required this.productVersion,
@@ -67,7 +72,8 @@ class CruxCxpRuntime {
   /// The suite-shared discovery directory.
   final String manifestDirectory;
 
-  /// The requested listening port.
+  /// The requested listening port. When it is taken, the server listens on
+  /// a port the operating system assigns ([takenPort]).
   final int port;
 
   final CruxCxpRequestHandler Function() _handler;
@@ -99,6 +105,7 @@ class CruxCxpRuntime {
       <StreamSubscription<Object?>>[];
   bool _running = false;
   bool _stopped = false;
+  bool _onAssignedPort = false;
   String? _unavailableReason;
 
   final StreamController<CrossProbeEvent> _events =
@@ -113,6 +120,11 @@ class CruxCxpRuntime {
 
   /// The bound port, or null when not available.
   int? get boundPort => _running ? _server?.boundPort : null;
+
+  /// The requested [port] while it was taken and the server listens on
+  /// [boundPort], a port the operating system assigned, instead; null when
+  /// the server holds [port] itself or is not available.
+  int? get takenPort => isAvailable && _onAssignedPort ? port : null;
 
   /// Why the runtime is not available, or degraded; null when it came up
   /// cleanly or has not started.
@@ -195,20 +207,35 @@ class CruxCxpRuntime {
   Future<void> start() async {
     if (_running || _stopped) return;
     _unavailableReason = null;
-    final server =
-        _serverFactory?.call(selfIdentity) ??
-        LocalCxpServer(
-          selfIdentity: selfIdentity,
-          port: port,
-          nameResolver: binding.nameResolver,
-          containment: binding.containment,
-        );
+    _onAssignedPort = false;
+    var server = _newServer(port);
     _server = server;
     try {
       await server.start();
     } on Object catch (e) {
-      await _abortStart('CXP cross-probe unavailable (bind failed): $e');
-      return;
+      // The port is taken, most often by another window of this product.
+      // The manifest carries the port peers dial (CXP §4.1), so a port the
+      // operating system assigns keeps this window a peer. A server from a
+      // test's factory keeps the port it was built with, so it has no
+      // fallback.
+      if (port == 0 || _stopped || _serverFactory != null) {
+        await _abortStart('CXP cross-probe unavailable (bind failed): $e');
+        return;
+      }
+      try {
+        await server.stop();
+      } on Object {
+        // It never bound; nothing to release.
+      }
+      server = _newServer(0);
+      _server = server;
+      try {
+        await server.start();
+      } on Object {
+        await _abortStart('CXP cross-probe unavailable (bind failed): $e');
+        return;
+      }
+      _onAssignedPort = true;
     }
     if (_stopped) {
       await server.stop();
@@ -264,6 +291,15 @@ class CruxCxpRuntime {
     }
     _publishPeers();
   }
+
+  LocalCxpServer _newServer(int port) =>
+      _serverFactory?.call(selfIdentity) ??
+      LocalCxpServer(
+        selfIdentity: selfIdentity,
+        port: port,
+        nameResolver: binding.nameResolver,
+        containment: binding.containment,
+      );
 
   Future<void> _abortStart(String reason) async {
     _unavailableReason = reason;
