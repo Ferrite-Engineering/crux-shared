@@ -87,6 +87,26 @@ method channel; the host wires two methods in its runner:
 
 Unwired, it answers null and false, so the target asks for attention as before.
 
+### Windows logoff, shutdown and restart
+
+Windows has no SIGTERM: a logoff, shutdown or restart sends each top-level
+window `WM_QUERYENDSESSION`, then `WM_ENDSESSION`, and may end the process as
+soon as `WM_ENDSESSION` returns. Neither the engine nor `window_manager`
+handles them, so each host's `windows/runner/flutter_window.cpp` does, with
+no Dart code of its own:
+
+- `WM_QUERYENDSESSION` goes to `DefWindowProc`, which answers `TRUE` at once.
+- `WM_ENDSESSION` with `wParam` `TRUE` sends the framework, on
+  `flutter/platform`, the cancelable exit request the engine sends when the
+  last window closes (`{"method":"System.requestAppExit","args":{"type":"cancelable"}}`),
+  then pumps messages until the reply arrives or three seconds pass (Windows
+  offers to end an app that holds `WM_ENDSESSION` for five), and returns 0.
+
+Every `AppLifecycleListener.onExitRequested` runs, so the session marker and
+the cross-probe peer file are removed as on a window close.
+`test/windows_session_end_request_test.dart` pins the message and the reply
+the runners rely on. The runner change is identical in every host.
+
 ## How a host wires it
 
 Each product keeps its own `DesktopMenuBar` (coupled to its action catalog):

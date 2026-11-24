@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Windows logoff runs the exit listeners (runner contract).** The README
+  now describes how a host's Windows runner turns `WM_ENDSESSION` into the
+  cancelable `System.requestAppExit` the engine sends on a last-window close,
+  and waits up to three seconds for the answer, so the session marker and
+  the cross-probe peer file are removed at logoff, shutdown and restart. A
+  new test pins the message and reply the runners rely on. No Dart API
+  change.
+
 - **Foreground hand-off for a directed cross-probe.** `WindowForegroundHandoff`
   and its default, `windowForegroundHandoff`, forward over the
   `crux_window_chrome/foreground` channel: `yieldForeground({pid})` in the
