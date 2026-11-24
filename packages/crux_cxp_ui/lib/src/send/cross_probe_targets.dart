@@ -30,6 +30,7 @@ class CrossProbeSelection {
     this.displayName,
     this.metadata = const <String, Object?>{},
     this.coordinate,
+    this.time,
   });
 
   /// The selection in each kind the source can name it in.
@@ -44,6 +45,10 @@ class CrossProbeSelection {
 
   /// A decoded-stream coordinate, when the selection is one.
   final CxpStreamCoordinate? coordinate;
+
+  /// The point in simulation time the selection is at, sent as the
+  /// request's `time` field (CXP §9.3.3) unchanged. Null when it has none.
+  final CxpTime? time;
 
   /// Whether there is anything to send.
   bool get isEmpty => candidates.isEmpty;

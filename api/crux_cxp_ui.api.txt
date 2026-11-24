@@ -97,11 +97,12 @@ class CrossProbePanelStrings
   final title: String
   final unreachableSectionTitle: String
 class CrossProbeSelection
-  const CrossProbeSelection({CxpStreamCoordinate? coordinate, Map<String, Object?> metadata, String? displayName, required List<ElementId> candidates})
+  const CrossProbeSelection({CxpStreamCoordinate? coordinate, CxpTime? time, Map<String, Object?> metadata, String? displayName, required List<ElementId> candidates})
   final candidates: List<ElementId>
   final coordinate: CxpStreamCoordinate?
   final displayName: String?
   final metadata: Map<String, Object?>
+  final time: CxpTime?
   get isEmpty -> bool
 typedef CrossProbeSendBadgeBuilder = Widget? Function(BuildContext, PeerIdentity)
 class CrossProbeSendFailure

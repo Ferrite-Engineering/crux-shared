@@ -22,6 +22,7 @@ class _Handler extends CruxCxpRequestHandler {
 
   final bool hang;
   final List<ElementId> highlighted = <ElementId>[];
+  final List<RequestHighlight> requests = <RequestHighlight>[];
   final List<String> opened = <String>[];
   final List<NotifySelection> selections = <NotifySelection>[];
 
@@ -62,6 +63,7 @@ class _Handler extends CruxCxpRequestHandler {
       );
     }
     highlighted.add(request.element);
+    requests.add(request);
     return CruxCxpHandlerResult.ok;
   }
 }
@@ -403,6 +405,37 @@ void main() {
             .any((e) => e.kind == CrossProbeEventKind.highlightReceived),
       );
     });
+
+    test(
+      'a selection time travels in the request unchanged; none sends none',
+      () async {
+        final dispatcher = wave.read(crossProbeDispatcherProvider);
+        const element = ElementId(kind: ElementKind.net, path: 'top.clk');
+        await dispatcher.send(
+          netPeer,
+          CrossProbeSelection(
+            candidates: const <ElementId>[element],
+            time: CxpTime.parse('41250ps'),
+          ),
+        );
+        await dispatcher.send(
+          netPeer,
+          CrossProbeSelection(
+            candidates: const <ElementId>[element],
+            time: CxpTime.ticks(42),
+          ),
+        );
+        await dispatcher.send(
+          netPeer,
+          const CrossProbeSelection(candidates: <ElementId>[element]),
+        );
+        expect(handler.requests.map((r) => r.time?.toJson()), <String?>[
+          '41250ps',
+          '42',
+          null,
+        ]);
+      },
+    );
 
     test('open-source and open-artifact requests reach the handler and are '
         'acknowledged; a selection broadcast follows its setting', () async {

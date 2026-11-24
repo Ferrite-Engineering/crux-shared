@@ -203,6 +203,7 @@ class CrossProbeDispatcher {
         element: element,
         metadata: selection.metadata,
         coordinate: selection.coordinate,
+        time: selection.time,
       ),
       timeout: timeout,
       summary: selection.displayName ?? element.path,
