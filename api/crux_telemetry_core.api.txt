@@ -1,0 +1,150 @@
+# Public API surface of package:crux_telemetry_core/crux_telemetry_core.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+enum CruxTelemetryProduct
+  const CruxTelemetryProduct(String slug, String displayName)
+  final displayName: String
+  final slug: String
+  static const lintcrux: CruxTelemetryProduct
+  static const netcrux: CruxTelemetryProduct
+  static const simcrux: CruxTelemetryProduct
+  static const wavecrux: CruxTelemetryProduct
+typedef DesktopStoreProcessRunner = ProcessResult Function(String, List<String>)
+class DesktopTelemetryAnswer
+  const DesktopTelemetryAnswer(TelemetryConsentState consent, {DesktopTelemetryStore? store, String? installationId})
+  final consent: TelemetryConsentState
+  final installationId: String?
+  final store: DesktopTelemetryStore?
+  get sendable -> bool
+  static const none: DesktopTelemetryAnswer
+class DesktopTelemetryConsent
+  const DesktopTelemetryConsent(List<DesktopTelemetryStore> stores)
+  final stores: List<DesktopTelemetryStore>
+  read() -> DesktopTelemetryAnswer
+interface abstract class DesktopTelemetryStore
+  read(String key) -> String?
+class HeadlessTelemetry
+  HeadlessTelemetry({Client? client, DateTime Function()? now, DesktopTelemetryConsent? consent, Duration closeBudget, Duration flushDelay, Duration postTimeout, Map<String, String>? environment, String licenseTier, String? operatingSystem, TelemetryPolicy policy, bool betaPeriod, bool dev, required CruxTelemetryProduct product, required String appVersion, required bool pro})
+  close() -> Future<void>
+  consented() -> bool
+  final appVersion: String
+  final betaPeriod: bool
+  final client: Client?
+  final closeBudget: Duration
+  final consent: DesktopTelemetryConsent
+  final dev: bool
+  final environment: Map<String, String>
+  final flushDelay: Duration
+  final licenseTier: String
+  final policy: TelemetryPolicy
+  final postTimeout: Duration
+  final pro: bool
+  final product: CruxTelemetryProduct
+  flush() -> Future<void>
+  get held -> List<TelemetryEvent>
+  record(String name, Map<String, Object?> properties) -> void
+class InMemoryTelemetryStorage extends TelemetryStorage
+  InMemoryTelemetryStorage([Map<String, String>? seed])
+  get values -> Map<String, String>
+  read(String key) -> Future<String?>
+  remove(String key) -> Future<void>
+  write(String key, String value) -> Future<void>
+class JsonFileTelemetryStore implements DesktopTelemetryStore
+  const JsonFileTelemetryStore(List<String> directories, String fileName, {String keyPrefix})
+  final directories: List<String>
+  final fileName: String
+  final keyPrefix: String
+  read(String key) -> String?
+  toString() -> String
+class MacOsDefaultsTelemetryStore implements DesktopTelemetryStore
+  const MacOsDefaultsTelemetryStore(String domain, {ProcessResult Function(String, List<String>) run})
+  final domain: String
+  final run: ProcessResult Function(String, List<String>)
+  read(String key) -> String?
+  toString() -> String
+class NoopTelemetryService implements TelemetryService
+  const NoopTelemetryService()
+  record(TelemetryEvent event) -> void
+class TelemetryBatch
+  const TelemetryBatch({required List<TelemetryBatchEntry> entries, required String body})
+  final body: String
+  final entries: List<TelemetryBatchEntry>
+class TelemetryBatchEntry
+  const TelemetryBatchEntry({required Map<String, Object?> properties, required String name, required int count})
+  final count: int
+  final name: String
+  final properties: Map<String, Object?>
+  get groupKey -> String
+  toJson() -> Map<String, Object?>
+enum TelemetryConsentState
+  static const disabled: TelemetryConsentState
+  static const enabled: TelemetryConsentState
+  static const unset: TelemetryConsentState
+  static tryParse(String? name) -> TelemetryConsentState?
+class TelemetryEnvelope
+  const TelemetryEnvelope({required DateTime sessionStart, required String appVersion, required String formFactor, required String installationId, required String licenseTier, required String locale, required String os, required String product, required String userAgentName})
+  final appVersion: String
+  final formFactor: String
+  final installationId: String
+  final licenseTier: String
+  final locale: String
+  final os: String
+  final product: String
+  final sessionStart: DateTime
+  final userAgentName: String
+  get userAgent -> String
+  toJson() -> Map<String, Object?>
+class TelemetryEvent
+  TelemetryEvent(String name, {DateTime? timestamp, Map<String, Object?>? properties})
+  ==(Object other) -> bool
+  final name: String
+  final properties: Map<String, Object?>
+  final timestamp: DateTime
+  get hashCode -> int
+  toString() -> String
+enum TelemetryPolicy
+  static const absent: TelemetryPolicy
+  static const allow: TelemetryPolicy
+  static const deny: TelemetryPolicy
+abstract class TelemetryService
+  record(TelemetryEvent event) -> void
+abstract class TelemetryStorage
+  const TelemetryStorage()
+  read(String key) -> Future<String?>
+  remove(String key) -> Future<void>
+  write(String key, String value) -> Future<void>
+buildTelemetryBatches(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> List<TelemetryBatch>
+canonicalTelemetryProperties(Map<String, Object?> properties) -> Map<String, Object?>
+coalesceTelemetryEvents(Iterable<TelemetryEvent> events) -> List<TelemetryBatchEntry>
+desktopTelemetryStores(CruxTelemetryProduct product, {Map<String, String>? environment, ProcessResult Function(String, List<String>) run, String? operatingSystem, required bool pro}) -> List<DesktopTelemetryStore>
+encodeTelemetryBatch(TelemetryEnvelope envelope, List<TelemetryBatchEntry> entries) -> String
+headlessTelemetryOsSlug(String operatingSystem) -> String
+get kFlutterPreferencesPrefix -> String
+get kHeadlessTelemetryBetaPeriod -> bool
+get kHeadlessTelemetryCloseBudget -> Duration
+get kHeadlessTelemetryFlushDelay -> Duration
+get kHeadlessTelemetryMaxBuffered -> int
+get kHeadlessTelemetryPostTimeout -> Duration
+get kTelemetryConsentKey -> String
+get kTelemetryDev -> bool
+get kTelemetryDocumentationUri -> String
+get kTelemetryFormFactors -> List<String>
+get kTelemetryInstallationIdKey -> String
+get kTelemetryInstallationIdPattern -> RegExp
+get kTelemetryLicenseTiers -> List<String>
+get kTelemetryMaxBatchBytes -> int
+get kTelemetryMaxBatchEvents -> int
+get kTelemetryOperatingSystems -> List<String>
+get kTelemetryProductionEndpoint -> String
+get kTelemetryStagingEndpoint -> String
+resetTelemetryConsent(TelemetryStorage storage) -> Future<void>
+telemetryEndpointFor({required bool dev}) -> Uri
+telemetryEnumToken<T extends Enum>(T value) -> String
+telemetryGroupKey(String name, Map<String, Object?> properties) -> String
+telemetryIso8601(DateTime time) -> String

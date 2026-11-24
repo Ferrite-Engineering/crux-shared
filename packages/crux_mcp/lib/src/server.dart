@@ -127,8 +127,8 @@ class McpServer {
   ];
 
   /// Reads requests from [input] until it ends and writes each answer to
-  /// [output] as one line. Completes when the input has ended and every
-  /// request read has been answered.
+  /// [output] as one line. Completes when the input has ended, every request
+  /// read has been answered, and the [telemetry]'s `close` has finished.
   Future<void> serve(Stream<List<int>> input, StreamSink<List<int>> output) {
     final done = Completer<void>();
     var queue = Future<void>.value();
@@ -209,7 +209,16 @@ class McpServer {
         _log('mcp: the input failed: $error');
       },
       onDone: () {
-        unawaited(queue.whenComplete(done.complete));
+        unawaited(
+          queue.whenComplete(() async {
+            try {
+              await telemetry?.close?.call();
+            } on Object catch (error) {
+              _log('${program.name} mcp: telemetry: $error');
+            }
+            done.complete();
+          }),
+        );
       },
       cancelOnError: true,
     );

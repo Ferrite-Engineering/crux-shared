@@ -127,6 +127,7 @@ crux_stats_strip:90
 crux_status_bar:98
 crux_table:96
 crux_telemetry:92
+crux_telemetry_core:97
 crux_theme:92
 crux_toolbar:71
 crux_updates:96

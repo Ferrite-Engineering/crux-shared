@@ -17,19 +17,27 @@ resolution: workspace
 # `dart build cli`, and `no_flutter_dependency_test.dart` walks the whole
 # dependency closure on every run. That is also why there is no dependency on
 # crux_license or crux_telemetry (both Flutter packages): the product hands in
-# the tier answer and the telemetry sink.
+# the tier answer, and the telemetry comes from crux_telemetry_core, their
+# Flutter-free half.
 #
 # The protocol subset is written here by hand rather than taken from a Dart MCP
 # package; the package README says why.
 dependencies:
   crux_cxp:
     path: ../crux_cxp
+  # `HeadlessTelemetry`: the desktop app's recorded consent and the sender
+  # behind `McpTelemetry.desktop`.
+  crux_telemetry_core:
+    path: ../crux_telemetry_core
   edacrux_cxp:
     path: ../edacrux_cxp
   meta: ^1.15.0
   path: ^1.9.0
 
 dev_dependencies:
+  # Test-only: `MockClient`, standing in for the Worker in the one-line wiring
+  # test. A runtime dependency already, through crux_telemetry_core.
+  http: ^1.2.0
   test: ^1.25.0
   very_good_analysis: ^11.0.0
   # Test-only: the purity guard walks the resolved dependency closure.

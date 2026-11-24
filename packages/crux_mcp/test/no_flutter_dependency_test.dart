@@ -94,7 +94,13 @@ void main() {
       }
       expect(
         chains.keys,
-        containsAll(<String>['crux_cxp', 'crux_io', 'edacrux_cxp', 'meta']),
+        containsAll(<String>[
+          'crux_cxp',
+          'crux_io',
+          'crux_telemetry_core',
+          'edacrux_cxp',
+          'meta',
+        ]),
         reason: 'the walk must reach real dependencies, not stop at the root',
       );
       expect(

@@ -1,0 +1,31 @@
+name: crux_telemetry_core
+description: >-
+  The Flutter-free half of the suite's telemetry: the event, envelope and
+  batch models, the consent vocabulary, the ingest endpoints, and the reader
+  and sender a headless binary uses to honour the consent a product's desktop
+  app recorded on this machine.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+# PURE DART, PERMANENTLY. No `flutter:` key here, ever, and no transitive route
+# to one: the products' headless binaries (`dart build cli`) and `crux_mcp`
+# link this package, and a Flutter import anywhere in the graph drags `dart:ui`
+# into the AOT kernel and kills that compile. `no_flutter_dependency_test.dart`
+# walks the whole dependency closure on every run. `crux_telemetry` (the
+# Flutter pipeline, the gate and the consent surfaces) depends on this, never
+# the reverse.
+dependencies:
+  http: ^1.2.0
+  meta: ^1.15.0
+  path: ^1.9.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^11.0.0
+  # Test-only: the purity guard walks the resolved dependency closure.
+  yaml: ^3.1.0

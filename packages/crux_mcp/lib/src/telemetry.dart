@@ -1,6 +1,10 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:io' show Platform;
+
+import 'package:crux_telemetry_core/crux_telemetry_core.dart'
+    show HeadlessTelemetry;
 import 'package:meta/meta.dart';
 
 /// The one telemetry event a server records: one per call of a tool it
@@ -55,16 +59,38 @@ typedef McpTelemetrySink =
 /// [consented] on every call (for a headless binary: the desktop app's
 /// recorded consent on this machine), and never when the `CI` environment
 /// variable is set, whatever its value; otherwise not counted.
+///
+/// A product server wires it in one line, from `crux_telemetry_core`:
+///
+/// ```dart
+/// telemetry: McpTelemetry.desktop(HeadlessTelemetry(
+///   product: CruxTelemetryProduct.wavecrux, pro: false, appVersion: version)),
+/// ```
 @immutable
 class McpTelemetry {
   /// A counter that sends through [sink] when [consented] says yes and
   /// [environment] (the process environment, injectable for tests) has no
-  /// `CI` variable.
+  /// `CI` variable. [close], when given, is awaited once when
+  /// `McpServer.serve` ends.
   const McpTelemetry({
     required this.consented,
     required this.sink,
     required this.environment,
+    this.close,
   });
+
+  /// A counter under the consent the product's desktop app recorded on this
+  /// machine, sending through [telemetry] to the suite's Worker under the
+  /// app's installation id. [environment] defaults to the process's.
+  factory McpTelemetry.desktop(
+    HeadlessTelemetry telemetry, {
+    Map<String, String>? environment,
+  }) => McpTelemetry(
+    consented: telemetry.consented,
+    sink: telemetry.record,
+    environment: environment ?? Platform.environment,
+    close: telemetry.close,
+  );
 
   /// Whether the product has recorded consent to send. Asked per call.
   final bool Function() consented;
@@ -74,6 +100,10 @@ class McpTelemetry {
 
   /// The process environment.
   final Map<String, String> environment;
+
+  /// Sends what the sink holds and stops it; awaited once when the server's
+  /// input has ended and every request has been answered. Must never throw.
+  final Future<void> Function()? close;
 
   /// Whether an event would be sent now.
   bool get sending => !environment.containsKey('CI') && consented();

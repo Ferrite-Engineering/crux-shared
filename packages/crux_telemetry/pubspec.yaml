@@ -33,6 +33,12 @@ dependencies:
   # ships here so the four products' telemetry toggles cannot drift apart.
   crux_settings_ui:
     path: ../crux_settings_ui
+  # The Flutter-free half: the event, envelope and batch models, the consent
+  # vocabulary, the endpoints. Moved there so a headless binary can count
+  # under the consent this package's surfaces record; re-exported here
+  # unchanged, at the same paths.
+  crux_telemetry_core:
+    path: ../crux_telemetry_core
   # The UTF-16 buffer the Windows region read fills. See
   # `telemetry_device_region_ffi.dart`.
   ffi: ^2.1.0

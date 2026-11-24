@@ -20,11 +20,17 @@
 ///   containment rule.
 /// - `McpTierGate`: the words a closed licence gate says.
 /// - `McpTelemetry`: the one `mcp.tool_call` event, under the product's
-///   consent.
+///   consent; `McpTelemetry.desktop` takes it from the consent the product's
+///   desktop app recorded, through `crux_telemetry_core`'s
+///   `HeadlessTelemetry`, re-exported here with `CruxTelemetryProduct` and
+///   `TelemetryPolicy` so a server needs no second import.
 ///
 /// Test helpers (the scripted client, the conformance transcripts and the
 /// definition budget check) are in `crux_mcp_testing.dart`.
 library;
+
+export 'package:crux_telemetry_core/crux_telemetry_core.dart'
+    show CruxTelemetryProduct, HeadlessTelemetry, TelemetryPolicy;
 
 export 'src/budget.dart';
 export 'src/confinement.dart';

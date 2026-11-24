@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **The Flutter-free models moved to `crux_telemetry_core`.**
+  `TelemetryEvent`, `TelemetryEnvelope`, `TelemetryConsentState`,
+  `TelemetryPolicy`, `TelemetryService`, `NoopTelemetryService`,
+  `TelemetryStorage`, the storage keys and `kTelemetryInstallationIdPattern`,
+  the batcher, the endpoints, `telemetryEnumToken` and the three closed
+  vocabularies now live there, so a headless binary can count under the
+  consent this package records. This barrel exports exactly what it did, and
+  every `lib/src/` path a product imports directly still resolves, so no
+  consumer changes.
+
 - **Export namespace narrowed by 42 symbols.** `canonicalTelemetryProperties`, `debugCruxExitOverride`, `encodeTelemetryBatch`, `kCruxUncleanShutdownEventEnabled`, `kTelemetryDocumentationUri`, `kTelemetryEventMaxAge`, `kTelemetryFlushInterval`, `kTelemetryFlutterLibraryTokens`, `kTelemetryInitialRetryDelay`, `kTelemetryMaxBatchBytes`, `kTelemetryMaxBatchEvents`, `kTelemetryMaxQueuedEvents`, `kTelemetryMaxRetryDelay`, `kTelemetryOptInCountries`, `kTelemetryOptInTimeZonePrefix`, `kTelemetryOptInTimeZones`, `kTelemetryPostTimeout`, `kTelemetryProductionEndpoint`, `kTelemetryStagingEndpoint`, `kTelemetryUncaughtErrorSessionCap`, `kTelemetryVolatileFlushInterval`, `mintTelemetryInstallationId`, `observeTelemetryLifecycle`, `openTelemetryDocumentation`, `pruneTelemetryEvents`, `resolveTelemetryEnvelope`, `telemetryCountriesInLocaleId`, `telemetryDefaultConsentFor`, `telemetryDefaultConsentProvider`, `telemetryErrorKindOf`, `telemetryErrorLibraryOf`, `telemetryGroupKey`, `telemetryIso8601`, `telemetryOsSlug`, `telemetryPlatformLocalesProvider`, `telemetryPlatformRegionsProvider`, `telemetryPlatformTimeZoneProvider`, `telemetryRequiresOptIn`, `telemetrySessionStartProvider`, `telemetryStoredInstallationIdProvider`, `telemetryTimeZoneRequiresOptIn`, `telemetryUncaughtErrorCounterProvider` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **`telemetryEnabledProvider` is deprecated.** Read `telemetryGateProvider`

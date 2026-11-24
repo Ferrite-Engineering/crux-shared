@@ -20,6 +20,34 @@ class Confinement
 sealed class ConfinementResult
   const ConfinementResult()
 typedef ConfinementRule = String? Function(String, String)
+enum CruxTelemetryProduct
+  const CruxTelemetryProduct(String slug, String displayName)
+  final displayName: String
+  final slug: String
+  static const lintcrux: CruxTelemetryProduct
+  static const netcrux: CruxTelemetryProduct
+  static const simcrux: CruxTelemetryProduct
+  static const wavecrux: CruxTelemetryProduct
+class HeadlessTelemetry
+  HeadlessTelemetry({Client? client, DateTime Function()? now, DesktopTelemetryConsent? consent, Duration closeBudget, Duration flushDelay, Duration postTimeout, Map<String, String>? environment, String licenseTier, String? operatingSystem, TelemetryPolicy policy, bool betaPeriod, bool dev, required CruxTelemetryProduct product, required String appVersion, required bool pro})
+  close() -> Future<void>
+  consented() -> bool
+  final appVersion: String
+  final betaPeriod: bool
+  final client: Client?
+  final closeBudget: Duration
+  final consent: DesktopTelemetryConsent
+  final dev: bool
+  final environment: Map<String, String>
+  final flushDelay: Duration
+  final licenseTier: String
+  final policy: TelemetryPolicy
+  final postTimeout: Duration
+  final pro: bool
+  final product: CruxTelemetryProduct
+  flush() -> Future<void>
+  get held -> List<TelemetryEvent>
+  record(String name, Map<String, Object?> properties) -> void
 sealed class McpArgumentCheck
   const McpArgumentCheck()
 final class McpArgumentError extends McpArgumentCheck
@@ -181,7 +209,9 @@ final class McpSourceLocation extends McpLocation
   final line: int
   toJson() -> Map<String, Object?>
 class McpTelemetry
-  const McpTelemetry({required Map<String, String> environment, required bool Function() consented, required void Function(String, Map<String, Object?>) sink})
+  const McpTelemetry({Future<void> Function()? close, required Map<String, String> environment, required bool Function() consented, required void Function(String, Map<String, Object?>) sink})
+  factory McpTelemetry.desktop(HeadlessTelemetry telemetry, {Map<String, String>? environment})
+  final close: Future<void> Function()?
   final consented: bool Function()
   final environment: Map<String, String>
   final sink: void Function(String, Map<String, Object?>)
@@ -237,6 +267,10 @@ final class RefusedPath extends ConfinementResult
   const RefusedPath(String given, String message)
   final given: String
   final message: String
+enum TelemetryPolicy
+  static const absent: TelemetryPolicy
+  static const allow: TelemetryPolicy
+  static const deny: TelemetryPolicy
 get kJsonRpcInternalError -> int
 get kJsonRpcInvalidParams -> int
 get kJsonRpcInvalidRequest -> int
