@@ -36,7 +36,9 @@ class McpField {
   /// positional argument when [flag] is empty. [many] makes it a list (an
   /// array in the schema, the flag repeated per item). [description], when
   /// given, is sent in the schema and counts against the budget.
-  /// [minimum] bounds an integer field (never below 0).
+  /// [minimum] bounds an integer field (never below 0). [values], on a text
+  /// field, lists the only values it accepts: the schema gains an `enum` and
+  /// the check refuses any other.
   const McpField(
     this.name, {
     required this.kind,
@@ -44,6 +46,7 @@ class McpField {
     this.many = false,
     this.description,
     this.minimum = 0,
+    this.values,
   });
 
   /// The property name.
@@ -64,12 +67,18 @@ class McpField {
   /// The least value of an integer field.
   final int minimum;
 
+  /// The only values a text field accepts, in the order the schema lists
+  /// them, or null for any value.
+  final List<String>? values;
+
   /// The field's JSON Schema, members in a fixed order.
   Map<String, Object?> schema() {
     final scalar = switch (kind) {
-      McpFieldKind.text || McpFieldKind.path => <String, Object?>{
+      McpFieldKind.text => <String, Object?>{
         'type': 'string',
+        if (values != null) 'enum': values,
       },
+      McpFieldKind.path => <String, Object?>{'type': 'string'},
       McpFieldKind.integer => <String, Object?>{'type': 'integer'},
       McpFieldKind.boolean => <String, Object?>{'type': 'boolean'},
       McpFieldKind.time => <String, Object?>{
@@ -134,7 +143,8 @@ typedef McpNamedFileCheck =
 class McpTool {
   /// A tool. Throws an [ArgumentError] when a name is malformed or repeated,
   /// a required name is not a field, a boolean field has no flag, or an
-  /// integer minimum is negative.
+  /// integer minimum is negative, or a field's `values` are not a non-empty
+  /// list of distinct words on a text field.
   McpTool({
     required this.name,
     required this.description,
@@ -157,6 +167,18 @@ class McpTool {
       }
       if (f.minimum < 0) {
         throw ArgumentError.value(f.minimum, 'minimum', 'never negative');
+      }
+      final allowed = f.values;
+      if (allowed != null &&
+          (f.kind != McpFieldKind.text ||
+              allowed.isEmpty ||
+              allowed.toSet().length != allowed.length ||
+              allowed.any((v) => v.isEmpty || v.startsWith('-')))) {
+        throw ArgumentError.value(
+          f.name,
+          'fields',
+          'values need a text field and distinct words that are not flags',
+        );
       }
     }
     for (final r in required) {
@@ -285,6 +307,12 @@ class McpTool {
         if (item.isEmpty || item.startsWith('-')) {
           return McpArgumentError(
             '`$item` is not a valid value for ${f.name}',
+          );
+        }
+        final allowed = f.values;
+        if (allowed != null && !allowed.contains(item)) {
+          return McpArgumentError(
+            '`${f.name}` is one of ${allowed.join(', ')}',
           );
         }
         return item;

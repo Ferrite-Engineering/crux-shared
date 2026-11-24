@@ -217,6 +217,60 @@ void main() {
       );
     });
 
+    test('values: an enum in the schema, and any other value is refused', () {
+      final pick = McpTool(
+        name: 'pick',
+        description: 'd',
+        fields: const [
+          McpField(
+            'kind',
+            kind: McpFieldKind.text,
+            flag: '--kind',
+            values: ['cell', 'net'],
+          ),
+        ],
+      );
+      // Written by hand: type first, then enum, as the contract shows.
+      expect(
+        mcpRenderJsonLine(pick.definition()),
+        '{"name":"pick","description":"d","inputSchema":{"type":"object",'
+        '"properties":{"kind":{"type":"string","enum":["cell","net"]}},'
+        '"required":[]}}',
+      );
+      final good = pick.check(<String, Object?>{'kind': 'net'}, confinement);
+      expect((good as McpArguments).argv, <String>['--kind', 'net']);
+      expect(
+        refused(<String, Object?>{'kind': 'port'}, pick),
+        '`kind` is one of cell, net',
+      );
+      expect(
+        refused(<String, Object?>{'kind': 'Cell'}, pick),
+        '`kind` is one of cell, net',
+      );
+      expect(
+        refused(<String, Object?>{'kind': '--rm'}, pick),
+        '`--rm` is not a valid value for kind',
+      );
+      const bads = <List<McpField>>[
+        [McpField('a', kind: McpFieldKind.text, values: [])],
+        [
+          McpField('a', kind: McpFieldKind.text, values: ['x', 'x']),
+        ],
+        [
+          McpField('a', kind: McpFieldKind.text, values: ['-x']),
+        ],
+        [
+          McpField('a', kind: McpFieldKind.path, values: ['x']),
+        ],
+      ];
+      for (final bad in bads) {
+        expect(
+          () => McpTool(name: 't', description: 'd', fields: bad),
+          throwsArgumentError,
+        );
+      }
+    });
+
     test('an unknown field is reported before a missing one', () {
       expect(
         refused(<String, Object?>{'bogus': 1}),

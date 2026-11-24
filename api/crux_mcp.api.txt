@@ -129,13 +129,14 @@ class McpExitCodes
   final usageError: int
   static final suite: McpExitCodes
 class McpField
-  const McpField(String name, {String flag, String? description, bool many, int minimum, required McpFieldKind kind})
+  const McpField(String name, {List<String>? values, String flag, String? description, bool many, int minimum, required McpFieldKind kind})
   final description: String?
   final flag: String
   final kind: McpFieldKind
   final many: bool
   final minimum: int
   final name: String
+  final values: List<String>?
   schema() -> Map<String, Object?>
 enum McpFieldKind
   static const boolean: McpFieldKind
