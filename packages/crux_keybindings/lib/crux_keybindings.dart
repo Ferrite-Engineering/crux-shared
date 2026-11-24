@@ -22,7 +22,9 @@
 /// - `installLinuxKeyEventRepair` — gives Backspace, Tab, Enter, Escape and
 ///   Delete their own logical keys back on an X display whose keycodes are not
 ///   evdev's (XQuartz over `ssh -Y`), where Flutter reports them as printable
-///   keys.
+///   keys; on a display it recognises as XQuartz it also gives letters,
+///   digits and the rest of the typing block the keys they are (O no longer
+///   arrives as S).
 ///
 /// Each product supplies its own action enum, `defaultBindings()`, `Intent`
 /// subclass, and localized labels. See the package README for the canonical

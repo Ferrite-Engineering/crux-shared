@@ -4,6 +4,7 @@
 import 'dart:ui' as ui;
 
 import 'package:crux_keybindings/src/linux_key_event_repair.dart';
+import 'package:crux_keybindings/src/x_display_facts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -175,15 +176,22 @@ void main() {
 
   group('installLinuxKeyEventRepair', () {
     late ui.KeyDataCallback? original;
+    late Future<XDisplayFacts?> Function() originalReader;
 
     setUp(() {
       original =
           TestWidgetsFlutterBinding.instance.platformDispatcher.onKeyData;
+      // No X server in a test: the display reads as unknown.
+      originalReader = debugReadXDisplayFacts;
+      debugReadXDisplayFacts = () async => null;
+      debugResetXDisplay();
     });
 
     tearDown(() {
       TestWidgetsFlutterBinding.instance.platformDispatcher.onKeyData =
           original;
+      debugReadXDisplayFacts = originalReader;
+      debugResetXDisplay();
     });
 
     // Delivers a press and release the way the Linux embedder does: the key

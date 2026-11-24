@@ -6,6 +6,13 @@ increments that built it. Changes from here on get their own entries.
 
 ## Unreleased
 
+- **XQuartz letters.** Over `ssh -Y` from a Mac, pressing O reported the S
+  key, so Ctrl+O ran a Ctrl+S shortcut (and `]`, 1, 2, V and B reported A,
+  E, R, 8 and 0). `installLinuxKeyEventRepair()` now reads the X server once
+  at startup and, on XQuartz only, gives each key of the typing block the
+  logical key it has on an evdev display. Other displays are unchanged. New
+  dependency on `ffi` (libX11 is opened at run time; nothing is linked).
+
 - **`installLinuxKeyEventRepair()`.** On an X display whose keycodes are not
   evdev's (XQuartz over `ssh -Y`), Backspace, Tab, Enter, Escape and Delete
   reach the framework with a printable logical key and do nothing in text

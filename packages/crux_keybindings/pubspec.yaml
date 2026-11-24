@@ -15,6 +15,9 @@ dependencies:
     path: ../crux_ide_layout
   crux_shortcut_action:
     path: ../crux_shortcut_action
+  # Reads the X server's vendor, extensions and keycode table through libX11
+  # (`x_display_probe_ffi.dart`), to recognise an XQuartz display.
+  ffi: ^2.1.0
   flutter:
     sdk: flutter
   meta: ^1.15.0
