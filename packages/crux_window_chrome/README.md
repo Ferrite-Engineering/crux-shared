@@ -35,6 +35,7 @@ frameless window loses.
 | `WindowBounds` / `DisplayWorkArea` | Persisted window-geometry model and the display work areas `WindowBounds.fittedToDisplays` fits it to (pure Dart). |
 | `requestUserAttention({kind})` | Portable request-attention primitive: dock bounce / taskbar flash / Wayland urgency, **never** a focus-steal. Call from the CXP inbound hook on an actionable message. Gracefully no-ops where unavailable. |
 | `WindowAttentionRequester` / `NoopWindowAttentionRequester` | The swappable attention backend behind the settable `windowAttentionRequester` global — assign `NoopWindowAttentionRequester` to gate the feature behind a user setting. |
+| `windowForegroundHandoff` / `WindowForegroundHandoff` / `NoopWindowForegroundHandoff` | The directed cross-probe's foreground hand-off: the sending app yields the foreground to the target's process, and the target takes it with the token the sender passed. Makes no hand-off where the host has not wired it. |
 
 All of `init*` / `build*` / `read*` are web-safe: they route through a
 conditional-import facade whose web stub is a no-op passthrough, so neither
@@ -57,6 +58,34 @@ host wires the native side in its runner:
 Until a host wires it (or on web / an unsupported platform), the call swallows
 `MissingPluginException` and no-ops, so it is always safe to invoke — including
 from an app's widget tests.
+
+### Foreground hand-off
+
+A cross-probe the user sends to one named app should land them in that app.
+Since macOS 14 an app comes forward only when the active app yields to it, and
+Windows lets a process set the foreground window only when the foreground
+process allowed it, so the sending app (the active one, acting on the user's
+click) hands the foreground over and the target takes it. A broadcast never
+does: the CXP runtime only hands over on a directed request.
+
+`windowForegroundHandoff` forwards over the `crux_window_chrome/foreground`
+method channel; the host wires two methods in its runner:
+
+- `yieldForeground`, argument `{'pid': int}`, answers a `String` token (empty
+  when none is needed) or null when no hand-off was made.
+  - **macOS**: `NSApp.yieldActivation(to: NSRunningApplication(processIdentifier: pid))`
+    on macOS 14 and later; answer `""`.
+  - **Windows**: `AllowSetForegroundWindow(pid)`; answer `""`.
+  - **Linux**: on Wayland, an `xdg-activation` token (GTK's
+    `gdk_app_launch_context_get_startup_notify_id`); on X11, `""`; null where
+    the desktop supports neither.
+- `takeForeground`, argument `{'token': String}`, answers a `bool`.
+  - **macOS**: `NSApp.activate()` and `makeKeyAndOrderFront` on the main window.
+  - **Windows**: restore if minimised, then `SetForegroundWindow`.
+  - **Linux**: set the startup id to the token when it is not empty, then
+    `gtk_window_present`.
+
+Unwired, it answers null and false, so the target asks for attention as before.
 
 ## How a host wires it
 

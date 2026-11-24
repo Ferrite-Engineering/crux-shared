@@ -1,6 +1,6 @@
 # edacrux_cxp
 
-A pure-Dart client for **CXP 1.3 (specification revision 11)**, the
+A pure-Dart client for **CXP 1.3 (specification revision 12)**, the
 Cross-Tool eXchange Protocol. From any Dart program, with no Flutter, you can
 cross-probe the EDACrux desktop apps: show a signal at a time in WaveCrux,
 highlight a net or a cell or open a scope in NetCrux, open a source location,
@@ -126,7 +126,7 @@ The pieces `CxpProbe` is built from are exported as well: `ElementId` and
 | | |
 |---|---|
 | CXP protocol version on the wire | 1.3 (`cxpProtocolVersion`) |
-| Specification revision implemented | 11 (`cxpSpecificationRevision`) |
+| Specification revision implemented | 12 (`cxpSpecificationRevision`) |
 
 The package version follows semver over the Dart API and is independent of the
 wire version. See the [changelog](CHANGELOG.md).

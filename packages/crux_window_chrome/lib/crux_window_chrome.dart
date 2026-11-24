@@ -32,6 +32,11 @@
 ///   request-attention primitive (dock bounce / taskbar flash / Wayland
 ///   urgency) the CXP inbound hook calls; never steals focus, gracefully
 ///   no-ops where unavailable, and swappable behind a user setting.
+/// - `windowForegroundHandoff` / `WindowForegroundHandoff`: the directed
+///   cross-probe's foreground hand-off. The sending app yields the
+///   foreground to the target's process; the target takes it with the token
+///   the sender passed. Degrades to no hand-off where the host has not wired
+///   the native side.
 ///
 /// Each host keeps its own `DesktopMenuBar` (it is coupled to that product's
 /// action catalog): on macOS it renders a native `PlatformMenuBar`; on
@@ -44,3 +49,4 @@ export 'src/window_attention.dart' hide windowAttentionChannel;
 export 'src/window_bounds.dart';
 export 'src/window_chrome.dart' hide buildWindowTitleBar;
 export 'src/window_chrome_platform.dart';
+export 'src/window_foreground.dart' hide windowForegroundChannel;

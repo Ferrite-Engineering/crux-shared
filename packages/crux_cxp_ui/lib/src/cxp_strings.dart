@@ -31,6 +31,8 @@ class CruxCxpStrings {
     required this.attentionHelp,
     required this.broadcastLabel,
     required this.broadcastHelp,
+    required this.bringForwardLabel,
+    required this.bringForwardHelp,
     required this.statusLabel,
     required this.statusRunning,
     required this.statusPortTaken,
@@ -124,6 +126,12 @@ class CruxCxpStrings {
 
   /// The broadcast switch's help.
   final String broadcastHelp;
+
+  /// The bring-the-target-forward switch.
+  final String bringForwardLabel;
+
+  /// The bring-the-target-forward switch's help.
+  final String bringForwardHelp;
 
   /// The status row's label: "CXP status".
   final String statusLabel;
@@ -263,6 +271,8 @@ class CruxCxpStrings {
     attentionHelp: attentionHelp,
     broadcastLabel: broadcastLabel,
     broadcastHelp: broadcastHelp,
+    bringForwardLabel: bringForwardLabel,
+    bringForwardHelp: bringForwardHelp,
     statusLabel: statusLabel,
     statusRunning: statusRunning,
     statusPortTaken: statusPortTaken,
@@ -317,6 +327,8 @@ class CruxCxpStrings {
     attentionHelp: attentionHelp,
     broadcastLabel: broadcastLabel,
     broadcastHelp: broadcastHelp,
+    bringForwardLabel: bringForwardLabel,
+    bringForwardHelp: bringForwardHelp,
   );
 
   /// The panel's strings.
@@ -360,6 +372,11 @@ class CruxCxpStrings {
     broadcastHelp:
         'Announce your selection to connected peers as you select it. When '
         'off, only explicit sends are shared.',
+    bringForwardLabel: 'Bring the target forward on a directed cross-probe',
+    bringForwardHelp:
+        'When you cross-probe to one named app, that app comes to the front. '
+        'Both apps need this on. A broadcast selection never brings an app '
+        'forward.',
     statusLabel: 'CXP status',
     statusRunning: (port) => 'Running on port $port',
     statusPortTaken: (configured, bound) =>
@@ -418,6 +435,10 @@ class CruxCxpStrings {
     attentionHelp: '当对等端发送交叉探测时，弹跳程序坞图标（或闪烁任务栏）。绝不抢占焦点。',
     broadcastLabel: '自动广播选择',
     broadcastHelp: '在您选择时，将选择内容通知已连接的对等端。关闭时，仅共享显式发送的内容。',
+    bringForwardLabel: '定向交叉探测时将目标移到最前面',
+    bringForwardHelp:
+        '当您交叉探测到某个指定的应用时，该应用会移到最前面。两个应用都需要开启此项。'
+        '自动广播的选择绝不会将应用移到最前面。',
     statusLabel: 'CXP 状态',
     statusRunning: (port) => '正在端口 $port 上运行',
     statusPortTaken: (configured, bound) =>
@@ -474,6 +495,10 @@ class CruxCxpStrings {
         'フォーカスは奪いません。',
     broadcastLabel: '選択を自動的にブロードキャスト',
     broadcastHelp: '選択するたびに、接続中のピアに選択内容を通知します。オフの場合は、明示的な送信のみが共有されます。',
+    bringForwardLabel: '指定したアプリへのクロスプローブで対象を最前面に表示',
+    bringForwardHelp:
+        '特定のアプリへクロスプローブすると、そのアプリが最前面に表示されます。両方のアプリでこの設定をオンにする必要があります。'
+        'ブロードキャストされる選択でアプリが前面に出ることはありません。',
     statusLabel: 'CXP ステータス',
     statusRunning: (port) => 'ポート $port で実行中',
     statusPortTaken: (configured, bound) =>
@@ -531,6 +556,10 @@ class CruxCxpStrings {
         '포커스를 빼앗지 않습니다.',
     broadcastLabel: '선택 항목 자동 브로드캐스트',
     broadcastHelp: '선택할 때마다 연결된 피어에 선택 항목을 알립니다. 꺼져 있으면 명시적으로 보낸 항목만 공유됩니다.',
+    bringForwardLabel: '지정한 앱으로 교차 프로브 시 대상을 맨 앞으로 가져오기',
+    bringForwardHelp:
+        '이름을 지정한 앱으로 교차 프로브하면 그 앱이 맨 앞으로 옵니다. 두 앱 모두 이 설정을 켜야 합니다. '
+        '브로드캐스트되는 선택 항목은 앱을 앞으로 가져오지 않습니다.',
     statusLabel: 'CXP 상태',
     statusRunning: (port) => '포트 $port에서 실행 중',
     statusPortTaken: (configured, bound) =>

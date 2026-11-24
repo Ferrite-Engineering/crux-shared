@@ -54,13 +54,14 @@ const String cxpProtocolVersion = '1.3';
 /// The specification is a Working Draft with numbered revisions; a revision
 /// that only registers vocabulary (element kinds, stream ids, metadata
 /// keys) or adds an optional, ignorable payload field does not change
-/// [cxpProtocolVersion]. This is revision 11 of CXP 1.3
+/// [cxpProtocolVersion]. This is revision 12 of CXP 1.3
 /// (<https://edacrux.app/cxp>): rev. 9's formal properties, timing paths and
 /// netlist cells as element kinds and the optional `active_document` field
 /// of a peer identity, rev. 10's `crux.time_ps` metadata key
-/// (`cxpTimePsMetadataKey`), and rev. 11's optional `time` field on
-/// `request_highlight` and `notify_selection` (`CxpTime`).
-const int cxpSpecificationRevision = 11;
+/// (`cxpTimePsMetadataKey`), rev. 11's optional `time` field on
+/// `request_highlight` and `notify_selection` (`CxpTime`), and rev. 12's
+/// `crux.bring_forward` metadata key ([cxpBringForwardMetadataKey]).
+const int cxpSpecificationRevision = 12;
 
 /// True when [version]'s major component matches this implementation's
 /// major version - the acceptance test of the version policy documented
@@ -141,6 +142,22 @@ const String cxpDesignIdMetadataKey = 'crux.design_id';
 /// [cxpMappingValues]. Receivers display it and never upgrade it: a
 /// `statement` mapping is never shown as a `register` one.
 const String cxpMappingMetadataKey = 'crux.mapping';
+
+/// Registered `metadata` key (CXP §9.3.1, rev. 12): on a
+/// [CxpMessageKind.requestHighlight], the sender has handed the foreground
+/// to the receiver for this one request, at the user's click.
+///
+/// The value is a string: an activation token for the receiver's window
+/// system (an `xdg-activation` token on Wayland), or empty when the
+/// sender's platform needs none (on macOS the sender yields activation to
+/// the receiver's process, on Windows it allows the receiver's process to
+/// set the foreground window). A receiver that honours the request MAY bring
+/// its window forward with it, and otherwise asks for attention as it would
+/// without the key. A receiver never brings itself forward for a
+/// `notify_selection`, for a request without the key, or for a request from
+/// a peer that is not on this machine. The value is opaque: never parsed
+/// beyond being handed to the window system, never shown, never logged.
+const String cxpBringForwardMetadataKey = 'crux.bring_forward';
 
 /// The values [cxpMappingMetadataKey] may carry, strongest first:
 /// `register` (an exact register), `statement` (the statement that drives

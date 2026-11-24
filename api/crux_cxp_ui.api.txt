@@ -137,6 +137,10 @@ class CruxCxpEventLog extends Notifier<List<CrossProbeEvent>>
   add(CrossProbeEvent event) -> void
   build() -> List<CrossProbeEvent>
   clear() -> void
+class CruxCxpForegroundHandoff
+  const CruxCxpForegroundHandoff({required Future<String?> Function(int) yieldTo, required Future<bool> Function(String) take})
+  final take: Future<bool> Function(String)
+  final yieldTo: Future<String?> Function(int)
 class CruxCxpHandlerResult
   const CruxCxpHandlerResult({String? reason, required bool honored})
   final honored: bool
@@ -163,7 +167,7 @@ class CruxCxpRequestHandler
   openSource(RequestOpenSource request, PeerIdentity from) -> Future<CruxCxpHandlerResult>
   selection(NotifySelection message, PeerIdentity from) -> void
 class CruxCxpRuntime
-  CruxCxpRuntime({CxpDiscovery Function(String, String)? discoveryFactory, CxpManifestWriter Function(String)? manifestWriterFactory, DateTime Function()? clock, LocalCxpServer Function(PeerIdentity)? _serverFactory, bool Function()? _attentionEnabled, int? processId, required CruxCxpProductBinding binding, required CruxCxpRequestHandler Function() _handler, required String manifestDirectory, required String productVersion, required int port, void Function()? _onAttention})
+  CruxCxpRuntime({CruxCxpForegroundHandoff? Function()? _foregroundHandoff, CxpDiscovery Function(String, String)? discoveryFactory, CxpManifestWriter Function(String)? manifestWriterFactory, DateTime Function()? clock, LocalCxpServer Function(PeerIdentity)? _serverFactory, bool Function()? _attentionEnabled, bool Function()? _bringForwardEnabled, int? processId, required CruxCxpProductBinding binding, required CruxCxpRequestHandler Function() _handler, required String manifestDirectory, required String productVersion, required int port, void Function()? _onAttention})
   broadcast(CxpMessage message, {String? summary}) -> void
   dispose() -> Future<void>
   final binding: CruxCxpProductBinding
@@ -189,9 +193,10 @@ class CruxCxpRuntime
   stop() -> Future<void>
 typedef CruxCxpServerStatus = ({int? port, String? problem, bool running})
 class CruxCxpSettings
-  const CruxCxpSettings({bool broadcastSelection, bool requestAttention, required bool enabled, required int port})
+  const CruxCxpSettings({bool bringTargetForward, bool broadcastSelection, bool requestAttention, required bool enabled, required int port})
   ==(Object other) -> bool
-  copyWith({bool? broadcastSelection, bool? enabled, bool? requestAttention, int? port}) -> CruxCxpSettings
+  copyWith({bool? bringTargetForward, bool? broadcastSelection, bool? enabled, bool? requestAttention, int? port}) -> CruxCxpSettings
+  final bringTargetForward: bool
   final broadcastSelection: bool
   final enabled: bool
   final port: int
@@ -204,6 +209,7 @@ class CruxCxpSettingsCodec implements SettingsCodec<CruxCxpSettings>
   final defaultEnabled: bool
   final defaultPort: int
   final prefix: String
+  get bringTargetForwardKey -> String
   get broadcastSelectionKey -> String
   get defaults -> CruxCxpSettings
   get enabledKey -> String
@@ -212,10 +218,12 @@ class CruxCxpSettingsCodec implements SettingsCodec<CruxCxpSettings>
   load(SharedPreferences prefs) -> Future<CruxCxpSettings>
   save(SharedPreferences prefs, CruxCxpSettings settings) -> Future<void>
 class CruxCxpSettingsControls extends StatefulWidget
-  const CruxCxpSettingsControls({Key? key, Widget? statusTile, required CruxCxpSettingsStrings strings, required bool broadcastSelection, required bool enabled, required bool requestAttention, required int port, required void Function(bool) onBroadcastSelectionChanged, required void Function(bool) onEnabledChanged, required void Function(bool) onRequestAttentionChanged, required void Function(int) onPortSubmitted})
+  const CruxCxpSettingsControls({Key? key, Widget? statusTile, bool bringTargetForward, required CruxCxpSettingsStrings strings, required bool broadcastSelection, required bool enabled, required bool requestAttention, required int port, required void Function(bool) onBroadcastSelectionChanged, required void Function(bool) onEnabledChanged, required void Function(bool) onRequestAttentionChanged, required void Function(int) onPortSubmitted, void Function(bool)? onBringTargetForwardChanged})
   createState() -> State<CruxCxpSettingsControls>
+  final bringTargetForward: bool
   final broadcastSelection: bool
   final enabled: bool
+  final onBringTargetForwardChanged: void Function(bool)?
   final onBroadcastSelectionChanged: void Function(bool)
   final onEnabledChanged: void Function(bool)
   final onPortSubmitted: void Function(int)
@@ -227,6 +235,7 @@ class CruxCxpSettingsControls extends StatefulWidget
 class CruxCxpSettingsNotifier extends Notifier<CruxCxpSettings>
   build() -> CruxCxpSettings
   get loaded -> Future<void>
+  setBringTargetForward({required bool bringTargetForward}) -> Future<void>
   setBroadcastSelection({required bool broadcastSelection}) -> Future<void>
   setEnabled({required bool enabled}) -> Future<void>
   setPort(int port) -> Future<void>
@@ -236,9 +245,11 @@ class CruxCxpSettingsSection extends ConsumerWidget
   build(BuildContext context, WidgetRef ref) -> Widget
   final wrapControls: Widget Function(BuildContext, Widget)?
 class CruxCxpSettingsStrings
-  const CruxCxpSettingsStrings({required String attentionHelp, required String attentionLabel, required String broadcastHelp, required String broadcastLabel, required String enableHelp, required String enableLabel, required String portError, required String portHelp, required String portLabel})
+  const CruxCxpSettingsStrings({String? bringForwardHelp, String? bringForwardLabel, required String attentionHelp, required String attentionLabel, required String broadcastHelp, required String broadcastLabel, required String enableHelp, required String enableLabel, required String portError, required String portHelp, required String portLabel})
   final attentionHelp: String
   final attentionLabel: String
+  final bringForwardHelp: String?
+  final bringForwardLabel: String?
   final broadcastHelp: String
   final broadcastLabel: String
   final enableHelp: String
@@ -252,6 +263,8 @@ class CruxCxpStrings
   copyWith({String? outcomeNothingSelected, String? portHelp, String? product}) -> CruxCxpStrings
   final attentionHelp: String
   final attentionLabel: String
+  final bringForwardHelp: String
+  final bringForwardLabel: String
   final broadcastHelp: String
   final broadcastLabel: String
   final clearEvents: String
@@ -309,10 +322,12 @@ crossProbeMenuEntry(BuildContext context, WidgetRef ref, {IconData icon, require
 get crossProbeSendObserverProvider -> Provider<void Function(({ElementId? element, CrossProbeOutcome outcome, PeerIdentity peer}))?>
 get crossProbeTargetsProvider -> Provider<List<CrossProbeTarget>>
 get cruxCxpAttentionRequesterProvider -> Provider<void Function()?>
+cruxCxpBringForwardToken(CxpMessage message) -> String?
 get cruxCxpConnectedPeerCountProvider -> Provider<int>
 cruxCxpDesktopHost() -> bool
 cruxCxpDisplayName(String productName) -> String
 get cruxCxpEventLogProvider -> NotifierProvider<CruxCxpEventLog, List<CrossProbeEvent>>
+get cruxCxpForegroundHandoffProvider -> Provider<CruxCxpForegroundHandoff?>
 get cruxCxpLaunchSettingsProvider -> Provider<CruxCxpSettings?>
 get cruxCxpManifestDirectoryProvider -> FutureProvider<String>
 get cruxCxpPeerFilterProvider -> Provider<bool Function(PeerIdentity)>
@@ -329,6 +344,8 @@ cruxCxpStringsOf(BuildContext context, T Function<T>(ProviderListenable<T>) read
 get cruxCxpTakenPortProvider -> Provider<int?>
 get cruxCxpTransportAvailableProvider -> Provider<bool>
 get cruxCxpUnreachablePeersProvider -> StreamProvider<List<CxpDialFailure>>
+cruxCxpWithBringForward(RequestHighlight request, String activationToken) -> RequestHighlight
+cruxCxpWithoutBringForward(RequestHighlight request) -> RequestHighlight
 loadCruxCxpLaunchSettings(CruxCxpProductBinding binding) -> Future<CruxCxpSettings>
 reportCrossProbeOutcome(BuildContext context, CrossProbeOutcome outcome, CruxCxpStrings strings) -> void
 runCrossProbeSelection(BuildContext context, WidgetRef ref, {Offset? anchor, required CrossProbeSelection? selection}) -> Future<void>

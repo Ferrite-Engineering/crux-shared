@@ -180,6 +180,15 @@ class CruxCxpSettingsSection extends ConsumerWidget {
           unawaited(notifier.setRequestAttention(requestAttention: value)),
       onBroadcastSelectionChanged: (value) =>
           unawaited(notifier.setBroadcastSelection(broadcastSelection: value)),
+      bringTargetForward: settings.bringTargetForward,
+      // Offered only where the product wired the hand-off: a switch that
+      // could change nothing is not shown.
+      onBringTargetForwardChanged:
+          ref.watch(cruxCxpForegroundHandoffProvider) == null
+          ? null
+          : (value) => unawaited(
+              notifier.setBringTargetForward(bringTargetForward: value),
+            ),
       statusTile: MergeSemantics(
         child: Column(
           key: const ValueKey('cxpSettingsStatus'),

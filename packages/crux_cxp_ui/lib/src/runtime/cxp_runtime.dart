@@ -7,12 +7,79 @@ import 'dart:io' show pid;
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:crux_cxp_ui/src/cross_probe_event.dart';
 import 'package:crux_cxp_ui/src/runtime/cxp_product_binding.dart';
+import 'package:meta/meta.dart';
 
 /// How long a directed send waits for the peer's acknowledgement.
 const Duration kCruxCxpAckTimeout = Duration(seconds: 5);
 
 /// The outcome of a directed `request_highlight`.
 typedef CruxCxpHighlightDelivery = ({bool delivered, RequestHighlightAck? ack});
+
+/// The platform half of a directed cross-probe's foreground hand-off, as a
+/// product wires it (from `crux_window_chrome`'s `windowForegroundHandoff`).
+///
+/// [yieldTo] runs in the sending app, the active one, at the user's click:
+/// it lets the target's process come forward and answers the activation
+/// token to send it (empty when the platform needs none), or null when no
+/// hand-off could be made. [take] runs in the target when the request
+/// arrives: it brings the window forward with that token and answers
+/// whether it did.
+@immutable
+class CruxCxpForegroundHandoff {
+  /// Creates a hand-off from its two platform calls.
+  const CruxCxpForegroundHandoff({required this.yieldTo, required this.take});
+
+  /// The sender's half: let process `processId` come forward.
+  final Future<String?> Function(int processId) yieldTo;
+
+  /// The target's half: bring this window forward with `activationToken`.
+  final Future<bool> Function(String activationToken) take;
+}
+
+/// The activation token a received [message] hands over, or null when it
+/// hands nothing over.
+///
+/// The receiver's half of the directed-versus-broadcast rule: only a
+/// `request_highlight` (directed at one peer by definition, CXP §9.4) that
+/// carries the `crux.bring_forward` key (CXP §9.3.1) as a string hands the
+/// foreground over. A `notify_selection` (the broadcast kind) never does,
+/// whatever its metadata says, and neither does any other kind.
+String? cruxCxpBringForwardToken(CxpMessage message) {
+  if (message is! RequestHighlight) return null;
+  final value = message.metadata[cxpBringForwardMetadataKey];
+  return value is String ? value : null;
+}
+
+/// [request] without the `crux.bring_forward` key; [request] itself when it
+/// has none.
+RequestHighlight cruxCxpWithoutBringForward(RequestHighlight request) {
+  if (!request.metadata.containsKey(cxpBringForwardMetadataKey)) {
+    return request;
+  }
+  return _withMetadata(request, <String, Object?>{
+    for (final entry in request.metadata.entries)
+      if (entry.key != cxpBringForwardMetadataKey) entry.key: entry.value,
+  });
+}
+
+/// [request] carrying [activationToken] under the `crux.bring_forward` key.
+RequestHighlight cruxCxpWithBringForward(
+  RequestHighlight request,
+  String activationToken,
+) => _withMetadata(request, <String, Object?>{
+  ...request.metadata,
+  cxpBringForwardMetadataKey: activationToken,
+});
+
+RequestHighlight _withMetadata(
+  RequestHighlight request,
+  Map<String, Object?> metadata,
+) => RequestHighlight(
+  element: request.element,
+  coordinate: request.coordinate,
+  time: request.time,
+  metadata: Map<String, Object?>.unmodifiable(metadata),
+);
 
 /// One product's running CXP presence: the server, its discovery manifest,
 /// the discovery watcher and the connector that dials every peer.
@@ -39,6 +106,10 @@ class CruxCxpRuntime {
   /// provider gives without restarting the server. The factories exist for
   /// tests; a runtime given `serverFactory` does not fall back to an
   /// assigned port when the server it builds cannot bind.
+  ///
+  /// `foregroundHandoff` and `bringForwardEnabled` are read at each send and
+  /// each arrival, like `handler`; with no hand-off, or the setting off, a
+  /// directed send hands nothing over and an arrival asks for attention.
   CruxCxpRuntime({
     required this.binding,
     required this.productVersion,
@@ -47,6 +118,8 @@ class CruxCxpRuntime {
     required this._handler,
     this._onAttention,
     this._attentionEnabled,
+    this._foregroundHandoff,
+    this._bringForwardEnabled,
     this._serverFactory,
     CxpManifestWriter Function(String directory)? manifestWriterFactory,
     CxpDiscovery Function(String directory, String selfPeerId)?
@@ -79,6 +152,8 @@ class CruxCxpRuntime {
   final CruxCxpRequestHandler Function() _handler;
   final void Function()? _onAttention;
   final bool Function()? _attentionEnabled;
+  final CruxCxpForegroundHandoff? Function()? _foregroundHandoff;
+  final bool Function()? _bringForwardEnabled;
   final LocalCxpServer Function(PeerIdentity self)? _serverFactory;
   final CxpManifestWriter Function(String directory) _manifestWriterFactory;
   final CxpDiscovery Function(String directory, String selfPeerId)
@@ -380,10 +455,18 @@ class CruxCxpRuntime {
 
   /// Announces [message] to every subscribed peer. A no-op when not
   /// running.
+  ///
+  /// A broadcast never hands the foreground over: nothing is yielded, and a
+  /// `crux.bring_forward` key the caller put on a `request_highlight` is
+  /// removed before it leaves.
   void broadcast(CxpMessage message, {String? summary}) {
     final server = _server;
     if (!_running || server == null) return;
-    server.broadcast(message);
+    server.broadcast(
+      message is RequestHighlight
+          ? cruxCxpWithoutBringForward(message)
+          : message,
+    );
     _emit(
       CrossProbeEvent(
         kind: _outboundKind(message),
@@ -398,7 +481,17 @@ class CruxCxpRuntime {
 
   /// Sends [message] to the peer [peerId]; false when that peer is not
   /// connected or the runtime is not running.
-  bool sendTo(String peerId, CxpMessage message, {String? summary}) {
+  ///
+  /// Fire and forget, so it hands no foreground over: a `crux.bring_forward`
+  /// key the caller put on a `request_highlight` is removed. Only
+  /// [requestHighlight] hands the foreground to its target.
+  bool sendTo(String peerId, CxpMessage message, {String? summary}) => _sendTo(
+    peerId,
+    message is RequestHighlight ? cruxCxpWithoutBringForward(message) : message,
+    summary: summary,
+  );
+
+  bool _sendTo(String peerId, CxpMessage message, {String? summary}) {
     final server = _server;
     if (!_running || server == null) return false;
     final delivered = server.sendTo(peerId, message);
@@ -420,12 +513,22 @@ class CruxCxpRuntime {
   /// Sends [request] to [peerId] and waits up to [timeout] for its
   /// acknowledgement. `delivered` is false when the peer was not reachable;
   /// `ack` is null when no acknowledgement came back in time.
+  ///
+  /// The user picked [peerId], so with the bring-the-target-forward setting
+  /// on and a foreground hand-off wired, this app first yields the
+  /// foreground to the peer's process and sends the activation token with
+  /// the request (CXP §9.3.1 `crux.bring_forward`); the target brings its
+  /// window forward when it honours the request. When the hand-off cannot be
+  /// made, the request goes without the key and the target asks for
+  /// attention instead.
   Future<CruxCxpHighlightDelivery> requestHighlight(
     String peerId,
     RequestHighlight request, {
     Duration timeout = kCruxCxpAckTimeout,
     String? summary,
   }) async {
+    if (!_running || _server == null) return (delivered: false, ack: null);
+    final outgoing = await _handOffForeground(peerId, request);
     final server = _server;
     if (!_running || server == null) return (delivered: false, ack: null);
     final completer = Completer<RequestHighlightAck>();
@@ -440,7 +543,7 @@ class CruxCxpRuntime {
         completer.complete(message);
       }
     });
-    if (!sendTo(peerId, request, summary: summary)) {
+    if (!_sendTo(peerId, outgoing, summary: summary)) {
       await sub.cancel();
       return (delivered: false, ack: null);
     }
@@ -453,6 +556,46 @@ class CruxCxpRuntime {
       await sub.cancel();
     }
     return (delivered: true, ack: ack);
+  }
+
+  /// [request] ready to leave for [peerId]: carrying the activation token
+  /// when this app yielded the foreground to the peer's process, without
+  /// any `crux.bring_forward` key otherwise.
+  Future<RequestHighlight> _handOffForeground(
+    String peerId,
+    RequestHighlight request,
+  ) async {
+    final plain = cruxCxpWithoutBringForward(request);
+    if (!_setting(_bringForwardEnabled)) return plain;
+    final handoff = _foregroundHandoff?.call();
+    if (handoff == null) return plain;
+    // Only a connected peer, which is on this machine (CXP §10.5). Its
+    // process comes from the peer id's `<product>-<pid>-<started ms>` form.
+    if (!peers.any((peer) => peer.peerId == peerId)) return plain;
+    final processId = _pidOf(peerId);
+    if (processId == null) return plain;
+    String? token;
+    try {
+      token = await handoff.yieldTo(processId);
+    } on Object {
+      token = null;
+    }
+    return token == null ? plain : cruxCxpWithBringForward(plain, token);
+  }
+
+  static int? _pidOf(String peerId) {
+    final segments = peerId.split('-');
+    if (segments.length < 3) return null;
+    final processId = int.tryParse(segments[segments.length - 2]);
+    return processId == null || processId <= 0 ? null : processId;
+  }
+
+  static bool _setting(bool Function()? read) {
+    try {
+      return read?.call() ?? true;
+    } on Object {
+      return false;
+    }
   }
 
   void _publishPeers() {
@@ -514,7 +657,11 @@ class CruxCxpRuntime {
     final from = inbound.from;
     final replyTo = inbound.envelope.messageId;
     switch (message) {
-      case final RequestHighlight request:
+      case final RequestHighlight received:
+        // The token is the runtime's to use; the product's handler never
+        // sees it.
+        final token = cruxCxpBringForwardToken(received);
+        final request = cruxCxpWithoutBringForward(received);
         final result = await _invoke(() => handler.highlight(request, from));
         _reply(
           from.peerId,
@@ -524,7 +671,7 @@ class CruxCxpRuntime {
             reason: result.reason,
           ),
         );
-        if (result.honored) _attention();
+        if (result.honored) await _arrived(token);
       case final RequestOpenSource request:
         final result = await _invoke(() => handler.openSource(request, from));
         _reply(
@@ -562,6 +709,24 @@ class CruxCxpRuntime {
     final server = _server;
     if (!_running || server == null) return;
     server.sendTo(peerId, message);
+  }
+
+  /// An honoured request from a peer on this machine (the only peers this
+  /// runtime serves): bring the window forward when the sender handed the
+  /// foreground over with [token] and the setting is on, and ask for
+  /// attention when it did not, or the window did not come forward.
+  Future<void> _arrived(String? token) async {
+    if (token != null && _setting(_bringForwardEnabled)) {
+      final handoff = _foregroundHandoff?.call();
+      if (handoff != null) {
+        try {
+          if (await handoff.take(token)) return;
+        } on Object {
+          // The platform refused: fall back to the attention request.
+        }
+      }
+    }
+    _attention();
   }
 
   void _attention() {

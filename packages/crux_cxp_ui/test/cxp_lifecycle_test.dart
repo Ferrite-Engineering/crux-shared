@@ -68,6 +68,30 @@ class _Handler extends CruxCxpRequestHandler {
   }
 }
 
+/// The platform layer of the foreground hand-off, faked: records every
+/// yield and every take, and answers what the test sets.
+class _FakeForeground {
+  /// What a yield answers: a token, empty, or null for "no hand-off".
+  String? token = 'activation-1';
+
+  /// What a take answers.
+  bool raises = true;
+
+  final List<int> yielded = <int>[];
+  final List<String> taken = <String>[];
+
+  CruxCxpForegroundHandoff get handoff => CruxCxpForegroundHandoff(
+    yieldTo: (processId) async {
+      yielded.add(processId);
+      return token;
+    },
+    take: (activationToken) async {
+      taken.add(activationToken);
+      return raises;
+    },
+  );
+}
+
 Future<void> _until(bool Function() done, {String? reason}) async {
   for (var i = 0; i < 200; i++) {
     if (done()) return;
@@ -106,6 +130,7 @@ void main() {
     CruxCxpSettings? launch = const CruxCxpSettings(enabled: true, port: 0),
     CruxCxpRequestHandler handler = const CruxCxpRequestHandler(),
     void Function()? attention,
+    CruxCxpForegroundHandoff? handoff,
     bool transport = true,
     void Function(CrossProbeSendRecord record)? observer,
     bool Function({required bool userEnabled})? policy,
@@ -126,6 +151,7 @@ void main() {
               cruxCxpTransportAvailableProvider.overrideWithValue(transport),
               cruxCxpRequestHandlerProvider.overrideWithValue(handler),
               cruxCxpAttentionRequesterProvider.overrideWithValue(attention),
+              cruxCxpForegroundHandoffProvider.overrideWithValue(handoff),
               crossProbeSendObserverProvider.overrideWithValue(observer),
               if (policy != null)
                 cruxCxpServerPolicyProvider.overrideWithValue(policy),
@@ -583,6 +609,256 @@ void main() {
         );
       },
     );
+  });
+
+  // crux-shared#73: a send to one named peer hands the foreground to it; a
+  // broadcast never does. Both products run in this one process, so the
+  // target's pid is this process's.
+  group('bringing the target forward', () {
+    late ProviderContainer wave;
+    late ProviderContainer net;
+    late _Handler handler;
+    late int attention;
+    late _FakeForeground sender;
+    late _FakeForeground target;
+    late PeerIdentity netPeer;
+
+    setUp(() async {
+      handler = _Handler();
+      attention = 0;
+      sender = _FakeForeground();
+      target = _FakeForeground();
+      wave = product('wavecrux', handoff: sender.handoff);
+      await runtimeOf(wave);
+      net = product(
+        'netcrux',
+        handler: handler,
+        attention: () => attention++,
+        handoff: target.handoff,
+      );
+      await runtimeOf(net);
+      await _until(() => wave.read(cruxCxpPeersProvider).isNotEmpty);
+      await _until(() => net.read(cruxCxpPeersProvider).isNotEmpty);
+      netPeer = wave.read(cruxCxpPeersProvider).single;
+    });
+
+    Future<CrossProbeOutcome> send(ElementKind kind) => wave
+        .read(crossProbeDispatcherProvider)
+        .send(
+          netPeer,
+          CrossProbeSelection(
+            candidates: <ElementId>[ElementId(kind: kind, path: 'top.clk')],
+          ),
+        );
+
+    test('a directed send yields to the target process, and the target '
+        'takes the foreground with the token instead of asking for '
+        'attention', () async {
+      expect((await send(ElementKind.net)).kind, CrossProbeOutcomeKind.sent);
+      expect(sender.yielded, <int>[pid]);
+      await _until(() => target.taken.isNotEmpty);
+      expect(target.taken, <String>['activation-1']);
+      expect(attention, 0);
+      // The token is the runtime's: the product's handler never sees it.
+      expect(
+        handler.requests.single.metadata.containsKey(
+          cxpBringForwardMetadataKey,
+        ),
+        isFalse,
+      );
+      expect(sender.taken, isEmpty, reason: 'the sender never raises itself');
+      expect(target.yielded, isEmpty);
+    });
+
+    test('an empty token is still a hand-off', () async {
+      sender.token = '';
+      await send(ElementKind.net);
+      await _until(() => target.taken.isNotEmpty);
+      expect(target.taken, <String>['']);
+      expect(attention, 0);
+    });
+
+    test('when the platform makes no hand-off, the target asks for '
+        'attention and never raises', () async {
+      sender.token = null;
+      await send(ElementKind.net);
+      expect(sender.yielded, <int>[pid]);
+      expect(attention, 1);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(target.taken, isEmpty);
+    });
+
+    test(
+      'a target whose window did not come forward asks for attention',
+      () async {
+        target.raises = false;
+        await send(ElementKind.net);
+        await _until(() => attention == 1);
+        expect(target.taken, <String>['activation-1']);
+      },
+    );
+
+    test('a refused request raises nothing and asks for nothing', () async {
+      expect(
+        (await send(ElementKind.scope)).kind,
+        CrossProbeOutcomeKind.refused,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(target.taken, isEmpty);
+      expect(attention, 0);
+    });
+
+    test("the sender's setting off hands nothing over", () async {
+      await wave
+          .read(cruxCxpSettingsProvider.notifier)
+          .setBringTargetForward(bringTargetForward: false);
+      await send(ElementKind.net);
+      expect(sender.yielded, isEmpty);
+      expect(attention, 1);
+      expect(target.taken, isEmpty);
+    });
+
+    test(
+      "the target's setting off keeps it behind; it asks for attention",
+      () async {
+        await net
+            .read(cruxCxpSettingsProvider.notifier)
+            .setBringTargetForward(bringTargetForward: false);
+        await send(ElementKind.net);
+        expect(attention, 1);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(target.taken, isEmpty);
+      },
+    );
+
+    test('a broadcast never yields and never raises, even carrying the key '
+        'by hand', () async {
+      (await runtimeOf(wave))!
+        ..broadcast(
+          const NotifySelection(
+            elements: <ElementId>[ElementId(kind: ElementKind.net, path: 'a')],
+            metadata: <String, Object?>{cxpBringForwardMetadataKey: 'forged'},
+          ),
+        )
+        ..broadcast(
+          const RequestHighlight(
+            element: ElementId(kind: ElementKind.net, path: 'b'),
+            metadata: <String, Object?>{cxpBringForwardMetadataKey: 'forged'},
+          ),
+        );
+      await _until(() => handler.selections.isNotEmpty);
+      await _until(() => handler.requests.isNotEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(sender.yielded, isEmpty);
+      expect(target.taken, isEmpty);
+      expect(attention, 1, reason: 'the honoured request asks for attention');
+    });
+
+    test('a fire-and-forget send hands nothing over, even carrying the key '
+        'by hand', () async {
+      final runtime = (await runtimeOf(wave))!;
+      expect(
+        runtime.sendTo(
+          netPeer.peerId,
+          const RequestHighlight(
+            element: ElementId(kind: ElementKind.net, path: 'c'),
+            metadata: <String, Object?>{cxpBringForwardMetadataKey: 'forged'},
+          ),
+        ),
+        isTrue,
+      );
+      await _until(() => attention == 1);
+      expect(sender.yielded, isEmpty);
+      expect(target.taken, isEmpty);
+    });
+
+    test(
+      'a request to a peer that is not connected yields to nobody',
+      () async {
+        final outcome = await wave
+            .read(crossProbeDispatcherProvider)
+            .send(
+              PeerIdentity(
+                peerId: 'netcrux-$pid-1',
+                productName: 'netcrux',
+                productVersion: '1',
+              ),
+              const CrossProbeSelection(
+                candidates: <ElementId>[
+                  ElementId(kind: ElementKind.net, path: 'top.clk'),
+                ],
+              ),
+            );
+        expect(outcome.kind, CrossProbeOutcomeKind.peerGone);
+        expect(sender.yielded, isEmpty);
+      },
+    );
+  });
+
+  group('the bring-forward key, read and written', () {
+    const element = ElementId(kind: ElementKind.net, path: 'top.clk');
+
+    test('only a request_highlight carrying a string hands a token over', () {
+      expect(
+        cruxCxpBringForwardToken(
+          const RequestHighlight(
+            element: element,
+            metadata: <String, Object?>{cxpBringForwardMetadataKey: 'tok'},
+          ),
+        ),
+        'tok',
+      );
+      expect(
+        cruxCxpBringForwardToken(
+          const RequestHighlight(
+            element: element,
+            metadata: <String, Object?>{cxpBringForwardMetadataKey: ''},
+          ),
+        ),
+        '',
+      );
+      expect(
+        cruxCxpBringForwardToken(const RequestHighlight(element: element)),
+        isNull,
+      );
+      expect(
+        cruxCxpBringForwardToken(
+          const RequestHighlight(
+            element: element,
+            metadata: <String, Object?>{cxpBringForwardMetadataKey: true},
+          ),
+        ),
+        isNull,
+        reason: 'a value that is not a string is no hand-off',
+      );
+      expect(
+        cruxCxpBringForwardToken(
+          const NotifySelection(
+            elements: <ElementId>[element],
+            metadata: <String, Object?>{cxpBringForwardMetadataKey: 'tok'},
+          ),
+        ),
+        isNull,
+        reason: 'a selection is the broadcast kind',
+      );
+    });
+
+    test('adding and removing the key keeps everything else', () {
+      final request = RequestHighlight(
+        element: element,
+        time: CxpTime.parse('5ns'),
+        metadata: const <String, Object?>{cxpDesignIdMetadataKey: 'd1'},
+      );
+      final marked = cruxCxpWithBringForward(request, 'tok');
+      expect(marked.metadata, <String, Object?>{
+        cxpDesignIdMetadataKey: 'd1',
+        cxpBringForwardMetadataKey: 'tok',
+      });
+      expect(marked.time?.toJson(), '5ns');
+      expect(marked.element, element);
+      expect(cruxCxpWithoutBringForward(marked), request);
+      expect(identical(cruxCxpWithoutBringForward(request), request), isTrue);
+    });
   });
 
   test('a peer that never acknowledges is reported as no response', () async {

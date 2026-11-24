@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- **A directed cross-probe brings the target forward.** When the user sends
+  to one named peer (`CruxCxpRuntime.requestHighlight`, which the dispatcher
+  and every "Cross-probe to" surface use), the sending app yields the
+  foreground to the peer's process through `cruxCxpForegroundHandoffProvider`
+  and sends the activation token as the `crux.bring_forward` metadata key
+  (CXP §9.3.1, rev. 12). The target strips the key before its handler sees
+  the request and, once it has honoured it, brings its window forward with
+  the token; when it cannot, it asks for attention as before. A broadcast
+  never hands the foreground over: `broadcast` and the fire-and-forget
+  `sendTo` remove the key, and a `notify_selection` never raises a window.
+  `CruxCxpForegroundHandoff` is the two platform calls a product wires (from
+  `crux_window_chrome`'s `windowForegroundHandoff`); null, the default, hands
+  nothing over. New setting `bringTargetForward`, on by default, saved under
+  `<prefix>bringTargetForwardOnCrossProbe`; both apps need it on. Its switch,
+  "Bring the target forward on a directed cross-probe" (all four locales),
+  shows in `CruxCxpSettingsSection` only where the product wired the
+  hand-off. `cruxCxpBringForwardToken`, `cruxCxpWithBringForward` and
+  `cruxCxpWithoutBringForward` read and write the key.
+
 - **A second window of a product is a CXP peer.** When the configured port
   is taken, most often by another window of the same product, `CruxCxpRuntime`
   binds a port the operating system assigns instead of giving up, and writes

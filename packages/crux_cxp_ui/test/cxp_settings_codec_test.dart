@@ -58,6 +58,25 @@ void main() {
     },
   );
 
+  test('bringing the target forward is on by default, saved under its own '
+      'key, and read back', () async {
+    expect(
+      codec.bringTargetForwardKey,
+      'netcrux.bringTargetForwardOnCrossProbe',
+    );
+    expect(codec.defaults.bringTargetForward, isTrue);
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'netcrux.bringTargetForwardOnCrossProbe': false,
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final loaded = await codec.load(prefs);
+    expect(loaded.bringTargetForward, isFalse);
+    expect(loaded.requestAttention, isTrue);
+    expect(loaded, isNot(codec.defaults));
+    await codec.save(prefs, loaded.copyWith(bringTargetForward: true));
+    expect(prefs.getBool('netcrux.bringTargetForwardOnCrossProbe'), isTrue);
+  });
+
   test('save and load round-trip', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final prefs = await SharedPreferences.getInstance();

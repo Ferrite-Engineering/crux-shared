@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **Foreground hand-off for a directed cross-probe.** `WindowForegroundHandoff`
+  and its default, `windowForegroundHandoff`, forward over the
+  `crux_window_chrome/foreground` channel: `yieldForeground({pid})` in the
+  sending app answers an activation token (empty when the platform needs
+  none) or null, and `takeForeground({token})` in the target answers whether
+  the window came forward. Per platform: macOS yields activation to the
+  process (`NSApp.yieldActivation(to:)`, macOS 14 and later) and the target
+  activates; Windows calls `AllowSetForegroundWindow` for the target's
+  process and the target calls `SetForegroundWindow`; Linux passes an
+  `xdg-activation` token on Wayland and presents the window on X11. With no
+  native handler it makes no hand-off and never raises.
+  `NoopWindowForegroundHandoff` turns it off.
+
 - **Export namespace narrowed by 2 symbols.** `buildWindowTitleBar`, `windowAttentionChannel` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
 - **Closing the window on Linux asks the app first.** `window_manager`

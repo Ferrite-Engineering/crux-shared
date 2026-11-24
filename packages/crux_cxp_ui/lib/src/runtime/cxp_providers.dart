@@ -24,8 +24,9 @@ import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 //   cruxCxpLaunchSettingsProvider   the settings it loaded before runApp
 //
 // and, where it has them, cruxCxpRequestHandlerProvider (what it does when a
-// peer asks), cruxCxpProductVersionProvider, cruxCxpAttentionRequesterProvider
-// and cruxCxpPeerFilterProvider. Everything else is shared.
+// peer asks), cruxCxpProductVersionProvider, cruxCxpAttentionRequesterProvider,
+// cruxCxpForegroundHandoffProvider and cruxCxpPeerFilterProvider. Everything
+// else is shared.
 
 /// Who this product is on CXP. Every product overrides it; reading it
 /// without an override is a wiring error.
@@ -61,6 +62,18 @@ final Provider<void Function()?> cruxCxpAttentionRequesterProvider =
     Provider<void Function()?>(
       (_) => null,
       name: 'cruxCxpAttentionRequesterProvider',
+    );
+
+/// The platform's foreground hand-off for a directed cross-probe (a send to
+/// one named peer): the sender yields the foreground to the target's
+/// process, and the target takes it, when the bring-the-target-forward
+/// setting is on in both. Null (the default) hands nothing over, and the
+/// target asks for attention as before. A product wires `crux_window_chrome`'s
+/// `windowForegroundHandoff` here.
+final Provider<CruxCxpForegroundHandoff?> cruxCxpForegroundHandoffProvider =
+    Provider<CruxCxpForegroundHandoff?>(
+      (_) => null,
+      name: 'cruxCxpForegroundHandoffProvider',
     );
 
 /// Which peers are offered anywhere: the panel, the badge and every
@@ -222,6 +235,10 @@ class CruxCxpSettingsNotifier extends Notifier<CruxCxpSettings> {
   /// Turns the automatic selection broadcast on or off.
   Future<void> setBroadcastSelection({required bool broadcastSelection}) =>
       _update(state.copyWith(broadcastSelection: broadcastSelection));
+
+  /// Turns bringing the target forward on a directed cross-probe on or off.
+  Future<void> setBringTargetForward({required bool bringTargetForward}) =>
+      _update(state.copyWith(bringTargetForward: bringTargetForward));
 }
 
 /// The running CXP runtime, or null when CXP is off (by the user's setting
@@ -251,6 +268,9 @@ cruxCxpRuntimeProvider = FutureProvider<CruxCxpRuntime?>((ref) async {
     handler: () => ref.read(cruxCxpRequestHandlerProvider),
     onAttention: () => ref.read(cruxCxpAttentionRequesterProvider)?.call(),
     attentionEnabled: () => ref.read(cruxCxpSettingsProvider).requestAttention,
+    foregroundHandoff: () => ref.read(cruxCxpForegroundHandoffProvider),
+    bringForwardEnabled: () =>
+        ref.read(cruxCxpSettingsProvider).bringTargetForward,
   );
   // An orderly quit (a window close, a quit from the system, SIGTERM or
   // SIGHUP) reaches Dart as an exit request, and the root container is not

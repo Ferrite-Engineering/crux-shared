@@ -603,6 +603,7 @@ cxpAcceptsCapability(ElementKind kind) -> String
 get cxpAcceptsCapabilityPrefix -> String
 cxpAuthProof({required String label, required String nonce, required String token}) -> String
 cxpAuthTokensMatch(String? presented, String expected) -> bool
+get cxpBringForwardMetadataKey -> String
 get cxpDefaultManifestHeartbeat -> Duration
 cxpDesignIdForPath(String fileOrDirPath) -> String
 get cxpDesignIdMetadataKey -> String

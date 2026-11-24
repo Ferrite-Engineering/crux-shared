@@ -140,6 +140,25 @@ peer sends with the `CruxCxpHandlerResult` the product's `CruxCxpRequestHandler`
 returns, and asks for attention (`cruxCxpAttentionRequesterProvider`) when one is
 honoured and the setting is on.
 
+A directed send (`requestHighlight`, one named peer the user picked) brings the
+target forward when the product overrides `cruxCxpForegroundHandoffProvider`
+with `crux_window_chrome`'s hand-off and `bringTargetForward` is on in both
+apps: the sender yields the foreground to the peer's process and sends the
+activation token as the `crux.bring_forward` metadata key (CXP §9.3.1); the
+target, once it has honoured the request, takes the foreground with it instead
+of asking for attention, and asks for attention when the window did not come
+forward. The handler never sees the key. A broadcast, the fire-and-forget
+`sendTo` and a `notify_selection` never hand the foreground over.
+
+```dart
+cruxCxpForegroundHandoffProvider.overrideWithValue(
+  CruxCxpForegroundHandoff(
+    yieldTo: windowForegroundHandoff.yieldForegroundTo,
+    take: windowForegroundHandoff.takeForeground,
+  ),
+),
+```
+
 ## Sending
 
 Every way of sending a cross-probe goes through one dispatcher and reads one

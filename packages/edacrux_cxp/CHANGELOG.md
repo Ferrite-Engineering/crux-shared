@@ -14,6 +14,20 @@ only registers vocabulary (element kinds, stream ids, metadata keys) changes
 neither version on the wire; `cxpSpecificationRevision` says which revision
 this release implements.
 
+## 0.3.0
+
+Implements CXP 1.3, specification revision 12. Wire version unchanged
+(`cxpProtocolVersion` stays `1.3`): the revision registers one optional
+`metadata` key, and a peer that does not know it ignores it. Package
+**minor**, because the public API grows.
+
+- `cxpBringForwardMetadataKey` (`crux.bring_forward`): on a
+  `request_highlight`, the sender has handed the foreground to the receiver
+  for this one request. The value is an activation token for the
+  receiver's window system, or empty when the sender's platform needs none.
+  A receiver that does not know the key asks for attention as before.
+- `cxpSpecificationRevision` is 12.
+
 ## 0.2.0
 
 Implements CXP 1.3, specification revision 11. Wire version unchanged

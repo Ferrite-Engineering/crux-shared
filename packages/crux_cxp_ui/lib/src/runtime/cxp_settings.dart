@@ -5,8 +5,7 @@ import 'package:crux_settings/crux_settings.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The four CXP settings every product exposes under Settings > CXP
-/// Cross-Probe.
+/// The CXP settings every product exposes under Settings > CXP Cross-Probe.
 @immutable
 class CruxCxpSettings {
   /// Creates a settings value.
@@ -15,6 +14,7 @@ class CruxCxpSettings {
     required this.port,
     this.requestAttention = true,
     this.broadcastSelection = true,
+    this.bringTargetForward = true,
   });
 
   /// Whether the CXP server runs. Off means no listening socket and no
@@ -32,6 +32,13 @@ class CruxCxpSettings {
   /// Off, only explicit sends leave.
   final bool broadcastSelection;
 
+  /// Whether a cross-probe sent to one named peer brings that peer's window
+  /// forward: this product hands the foreground to the target when it sends,
+  /// and takes it when a peer hands it over. Off, a directed send leaves the
+  /// target behind and the target asks for attention instead. A broadcast
+  /// never brings anything forward, whatever this says.
+  final bool bringTargetForward;
+
   /// Whether [port] is a usable TCP port.
   static bool isValidPort(int port) => port >= 1 && port <= 65535;
 
@@ -41,11 +48,13 @@ class CruxCxpSettings {
     int? port,
     bool? requestAttention,
     bool? broadcastSelection,
+    bool? bringTargetForward,
   }) => CruxCxpSettings(
     enabled: enabled ?? this.enabled,
     port: port ?? this.port,
     requestAttention: requestAttention ?? this.requestAttention,
     broadcastSelection: broadcastSelection ?? this.broadcastSelection,
+    bringTargetForward: bringTargetForward ?? this.bringTargetForward,
   );
 
   @override
@@ -55,23 +64,31 @@ class CruxCxpSettings {
           other.enabled == enabled &&
           other.port == port &&
           other.requestAttention == requestAttention &&
-          other.broadcastSelection == broadcastSelection);
+          other.broadcastSelection == broadcastSelection &&
+          other.bringTargetForward == bringTargetForward);
 
   @override
-  int get hashCode =>
-      Object.hash(enabled, port, requestAttention, broadcastSelection);
+  int get hashCode => Object.hash(
+    enabled,
+    port,
+    requestAttention,
+    broadcastSelection,
+    bringTargetForward,
+  );
 
   @override
   String toString() =>
       'CruxCxpSettings(enabled: $enabled, port: $port, '
       'requestAttention: $requestAttention, '
-      'broadcastSelection: $broadcastSelection)';
+      'broadcastSelection: $broadcastSelection, '
+      'bringTargetForward: $bringTargetForward)';
 }
 
 /// Reads and writes [CruxCxpSettings] under the keys every product has used
 /// since the first release: `<prefix>cxpServerEnabled`,
 /// `<prefix>cxpServerPort`, `<prefix>requestAttentionOnCrossProbe` and
-/// `<prefix>broadcastSelectionOnCrossProbe`.
+/// `<prefix>broadcastSelectionOnCrossProbe`, plus the newer
+/// `<prefix>bringTargetForwardOnCrossProbe`.
 ///
 /// The prefix is the product's own (`settings.` in WaveCrux and LintCrux,
 /// `netcrux.` and `simcrux.` in the other two), so a choice saved by an
@@ -106,6 +123,9 @@ class CruxCxpSettingsCodec implements SettingsCodec<CruxCxpSettings> {
   /// The broadcast-selection key.
   String get broadcastSelectionKey => '${prefix}broadcastSelectionOnCrossProbe';
 
+  /// The bring-the-target-forward key.
+  String get bringTargetForwardKey => '${prefix}bringTargetForwardOnCrossProbe';
+
   /// The value a product starts with before anything is saved.
   CruxCxpSettings get defaults =>
       CruxCxpSettings(enabled: defaultEnabled, port: defaultPort);
@@ -127,6 +147,7 @@ class CruxCxpSettingsCodec implements SettingsCodec<CruxCxpSettings> {
       port: CruxCxpSettings.isValidPort(port) ? port : defaultPort,
       requestAttention: _read<bool>(prefs, requestAttentionKey, true),
       broadcastSelection: _read<bool>(prefs, broadcastSelectionKey, true),
+      bringTargetForward: _read<bool>(prefs, bringTargetForwardKey, true),
     );
   }
 
@@ -136,5 +157,6 @@ class CruxCxpSettingsCodec implements SettingsCodec<CruxCxpSettings> {
     await prefs.setInt(portKey, settings.port);
     await prefs.setBool(requestAttentionKey, settings.requestAttention);
     await prefs.setBool(broadcastSelectionKey, settings.broadcastSelection);
+    await prefs.setBool(bringTargetForwardKey, settings.bringTargetForward);
   }
 }

@@ -857,8 +857,10 @@ void main() {
 
   test('the probe announces the revision it implements', () {
     expect(cxpProtocolVersion, '1.3');
-    expect(cxpSpecificationRevision, 11);
+    expect(cxpSpecificationRevision, 12);
     expect(cxpTimePsMetadataKey, 'crux.time_ps');
+    // CXP §9.3.1, rev. 12: the key name as the specification registers it.
+    expect(cxpBringForwardMetadataKey, 'crux.bring_forward');
     // The wire form of a hello is JSON the spec shows; round-trip a decode.
     final line = jsonEncode({
       'cxp_version': cxpProtocolVersion,

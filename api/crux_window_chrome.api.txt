@@ -21,6 +21,10 @@ class DisplayWorkArea
 class MethodChannelWindowAttentionRequester implements WindowAttentionRequester
   const MethodChannelWindowAttentionRequester()
   requestUserAttention(WindowAttentionKind kind) -> Future<void>
+class MethodChannelWindowForegroundHandoff implements WindowForegroundHandoff
+  const MethodChannelWindowForegroundHandoff()
+  takeForeground(String activationToken) -> Future<bool>
+  yieldForegroundTo(int processId) -> Future<String?>
 class MnemonicMenuBar extends StatefulWidget
   const MnemonicMenuBar({Key? key, required List<MnemonicMenuEntry> entries})
   createState() -> State<MnemonicMenuBar>
@@ -32,6 +36,10 @@ class MnemonicMenuEntry
 class NoopWindowAttentionRequester implements WindowAttentionRequester
   const NoopWindowAttentionRequester()
   requestUserAttention(WindowAttentionKind kind) -> Future<void>
+class NoopWindowForegroundHandoff implements WindowForegroundHandoff
+  const NoopWindowForegroundHandoff()
+  takeForeground(String activationToken) -> Future<bool>
+  yieldForegroundTo(int processId) -> Future<String?>
 enum WindowAttentionKind
   static const critical: WindowAttentionKind
   static const informational: WindowAttentionKind
@@ -53,6 +61,9 @@ class WindowBounds
   static fromJson(Map<String, Object?> json) -> WindowBounds?
   toJson() -> Map<String, Object?>
   toString() -> String
+interface abstract class WindowForegroundHandoff
+  takeForeground(String activationToken) -> Future<bool>
+  yieldForegroundTo(int processId) -> Future<String?>
 buildWindowChrome({required Widget child, required Widget logo, required Widget menuBar}) -> Widget
 buildWindowFrame(Widget child) -> Widget
 buildWindowGeometryPersister({required Future<void> Function(WindowBounds) onChanged, required Widget child}) -> Widget
@@ -64,3 +75,5 @@ get useCustomWindowChrome -> bool
 get windowAttentionRequester -> WindowAttentionRequester
 set windowAttentionRequester=(WindowAttentionRequester requester)
 get windowChromeLeftResizeEdge -> double
+get windowForegroundHandoff -> WindowForegroundHandoff
+set windowForegroundHandoff=(WindowForegroundHandoff handoff)

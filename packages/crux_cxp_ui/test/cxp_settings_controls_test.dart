@@ -89,6 +89,51 @@ void main() {
       expect(attention, isFalse);
     });
 
+    testWidgets('the bring-forward switch shows only with its words and a '
+        'callback, and reports its flips', (tester) async {
+      await tester.pumpWidget(_host());
+      expect(
+        find.byKey(const ValueKey('cxpSettingsBringForward')),
+        findsNothing,
+      );
+
+      bool? flipped;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CruxCxpSettingsControls(
+              strings: const CruxCxpSettingsStrings(
+                enableLabel: 'Enable CXP server',
+                enableHelp: 'Allow other Crux apps to connect',
+                portLabel: 'Port',
+                portHelp: 'TCP port to listen on',
+                portError: 'Enter a port between 1 and 65535',
+                attentionLabel: 'Request attention',
+                attentionHelp: 'Bounce the dock on cross-probe',
+                broadcastLabel: 'Broadcast selection',
+                broadcastHelp: 'Send selections automatically',
+                bringForwardLabel: 'Bring the target forward',
+                bringForwardHelp: 'A directed cross-probe raises the target',
+              ),
+              enabled: true,
+              port: 9000,
+              requestAttention: true,
+              broadcastSelection: false,
+              onEnabledChanged: (_) {},
+              onPortSubmitted: (_) {},
+              onRequestAttentionChanged: (_) {},
+              onBroadcastSelectionChanged: (_) {},
+              onBringTargetForwardChanged: (value) => flipped = value,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Bring the target forward'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('cxpSettingsBringForward')));
+      await tester.pump();
+      expect(flipped, isFalse);
+    });
+
     testWidgets('the app-specific status tile renders below the controls', (
       tester,
     ) async {

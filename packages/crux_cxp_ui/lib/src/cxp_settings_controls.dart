@@ -21,6 +21,8 @@ class CruxCxpSettingsStrings {
     required this.attentionHelp,
     required this.broadcastLabel,
     required this.broadcastHelp,
+    this.bringForwardLabel,
+    this.bringForwardHelp,
   });
 
   /// "Enable CXP server" switch title.
@@ -49,6 +51,13 @@ class CruxCxpSettingsStrings {
 
   /// Switch subtitle.
   final String broadcastHelp;
+
+  /// "Bring the target forward on a directed cross-probe" switch title.
+  /// Null (a product that has not localized it yet) leaves the switch out.
+  final String? bringForwardLabel;
+
+  /// Switch subtitle.
+  final String? bringForwardHelp;
 }
 
 /// The four CXP Cross-Probe settings controls every Crux app exposes —
@@ -74,6 +83,8 @@ class CruxCxpSettingsControls extends StatefulWidget {
     required this.onPortSubmitted,
     required this.onRequestAttentionChanged,
     required this.onBroadcastSelectionChanged,
+    this.bringTargetForward = true,
+    this.onBringTargetForwardChanged,
     this.statusTile,
     super.key,
   });
@@ -104,6 +115,13 @@ class CruxCxpSettingsControls extends StatefulWidget {
 
   /// Called when the broadcast-selection switch flips.
   final ValueChanged<bool> onBroadcastSelectionChanged;
+
+  /// Whether a directed cross-probe brings the target forward.
+  final bool bringTargetForward;
+
+  /// Called when the bring-the-target-forward switch flips. The switch shows
+  /// only when this and [CruxCxpSettingsStrings.bringForwardLabel] are set.
+  final ValueChanged<bool>? onBringTargetForwardChanged;
 
   /// Optional app-specific status row (server running / peers / last error)
   /// rendered under the controls.
@@ -186,6 +204,15 @@ class _CruxCxpSettingsControlsState extends State<CruxCxpSettingsControls> {
           value: widget.broadcastSelection,
           onChanged: enabled ? widget.onBroadcastSelectionChanged : null,
         ),
+        if (strings.bringForwardLabel case final label?)
+          if (widget.onBringTargetForwardChanged case final onChanged?)
+            CruxFormRow.toggle(
+              key: const ValueKey('cxpSettingsBringForward'),
+              label: label,
+              help: strings.bringForwardHelp,
+              value: widget.bringTargetForward,
+              onChanged: enabled ? onChanged : null,
+            ),
         if (widget.statusTile != null) widget.statusTile!,
       ],
     );
