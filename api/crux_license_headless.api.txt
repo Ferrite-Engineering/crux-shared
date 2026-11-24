@@ -1,0 +1,29 @@
+# Public API surface of package:crux_license/crux_license_headless.dart
+#
+# GENERATED — do not edit by hand.
+# Regenerate with: tool/api-snapshot.sh --write
+#
+# Every line is a symbol a consuming product can reach. A line that
+# disappears or changes shape is a breaking change for all four
+# products; a line that appears is new public surface to justify.
+
+class HeadlessLicenseException implements Exception
+  const HeadlessLicenseException(String message)
+  final message: String
+  toString() -> String
+class HeadlessLicenseResolution
+  const HeadlessLicenseResolution({List<String> notes, bool betaPeriod, required LicenseTier tier})
+  admits(LicenseTier required) -> bool
+  final betaPeriod: bool
+  final notes: List<String>
+  final tier: LicenseTier
+class HeadlessLicenseTierResolver
+  HeadlessLicenseTierResolver({DateTime Function()? clock, Future<String> Function(String)? readFile, Future<String?> Function()? installFingerprint, LicenseGracePolicy grace, LicenseValidator? validator, Map<String, String>? environment, PolicyLoadResult Function()? loadPolicy, String? envVar, bool betaPeriod, required CruxProduct product})
+  final betaPeriod: bool
+  final envVar: String
+  final grace: LicenseGracePolicy
+  final product: CruxProduct
+  resolve({String? licenseFilePath}) -> Future<HeadlessLicenseResolution>
+  static licenseFileEnvVarFor(CruxProduct product) -> String
+  static sharedInstallFingerprint({Map<String, String>? environment, required CruxProduct product}) -> Future<String?> Function()
+  tierAfterExpiry(LicenseGrant grant, DateTime now) -> LicenseTier?
