@@ -6,6 +6,7 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:crux_cxp/crux_cxp.dart';
 import 'package:edacrux_cxp/src/cxp_host_stub.dart' as web_host;
@@ -123,7 +124,14 @@ void main() {
     test(
       'refreshes started_at so a live peer survives past staleThreshold',
       () async {
-        const staleThreshold = Duration(milliseconds: 200);
+        // Staleness is judged on the wall clock, so the window is sized from
+        // how late this machine's timers run right now: a loaded run that
+        // starves a 50 ms heartbeat for a while must not make a live peer
+        // look stale. Idle, this is the 200 ms the test was written for.
+        final lateness = await _worstTimerLateness();
+        final staleThreshold = Duration(
+          milliseconds: max(200, lateness.inMilliseconds * 10),
+        );
         final writer = CxpManifestWriter(
           manifestDirectory: tempDir.path,
           heartbeatInterval: const Duration(milliseconds: 50),
@@ -645,4 +653,19 @@ void main() {
       },
     );
   });
+}
+
+/// The longest any of a run of short timers fired after it was due: how
+/// starved this isolate is by the machine right now.
+Future<Duration> _worstTimerLateness() async {
+  const tick = Duration(milliseconds: 10);
+  final clock = Stopwatch()..start();
+  var worst = Duration.zero;
+  for (var i = 0; i < 20; i++) {
+    final before = clock.elapsed;
+    await Future<void>.delayed(tick);
+    final late = clock.elapsed - before - tick;
+    if (late > worst) worst = late;
+  }
+  return worst;
 }

@@ -102,7 +102,10 @@ void main() {
           DateTime.now().subtract(const Duration(hours: 1)),
         );
 
-      final disk = _SlowDisk(tempDir.path);
+      // The stall is a wall-clock measurement, so this disk is slow enough
+      // that a scheduler pause on a loaded machine stays well below half of
+      // one operation, which is what a synchronous call would cost.
+      final disk = _SlowDisk(tempDir.path, delay: _measuredDiskDelay);
       final discovery = CxpDiscovery(
         manifestDirectory: tempDir.path,
         selfPeerId: 'wavecrux-observer',
@@ -133,11 +136,16 @@ void main() {
       expect(freshGarbage.existsSync(), isTrue);
       expect(orphan.existsSync(), isFalse);
       expect(
+        disk.syncOperations,
+        0,
+        reason: 'the scan made a synchronous file operation',
+      );
+      expect(
         probe.longest,
-        lessThan(_slowDiskDelay ~/ 2),
+        lessThan(disk.delay ~/ 2),
         reason:
             'the event loop was held for ${probe.longest}; a synchronous '
-            'file operation on this disk holds it for $_slowDiskDelay',
+            'file operation on this disk holds it for ${disk.delay}',
       );
       // The stall is measured on the wall clock, so a scheduler pause on a
       // loaded machine (the workspace runs many test processes at once) is
@@ -400,13 +408,23 @@ void main() {
 /// How long every operation on [_SlowDisk] takes.
 const Duration _slowDiskDelay = Duration(milliseconds: 150);
 
+/// The delay of the disk the stall is measured on.
+const Duration _measuredDiskDelay = Duration(milliseconds: 400);
+
 /// The manifest directory on a disk where every operation takes
 /// [_slowDiskDelay]. Paths outside [root] - `/proc`, the temp directory's
 /// parents - are the real filesystem.
 final class _SlowDisk {
-  _SlowDisk(this.root);
+  _SlowDisk(this.root, {this.delay = _slowDiskDelay});
 
   final String root;
+
+  /// How long each operation takes.
+  final Duration delay;
+
+  /// Synchronous operations on files or directories under [root]. A scan
+  /// that never blocks the isolate makes none.
+  int syncOperations = 0;
 
   /// Members the scan called that this fake does not model. Such a call is
   /// answered with an error the scan may well swallow, so a test asserts
@@ -438,9 +456,12 @@ final class _SlowDisk {
     },
   );
 
-  Future<void> _wait() => Future<void>.delayed(_slowDiskDelay);
+  Future<void> _wait() => Future<void>.delayed(delay);
 
-  void _hold() => sleep(_slowDiskDelay);
+  void _hold() {
+    syncOperations++;
+    sleep(delay);
+  }
 
   Object? _unmodelled(String type, Invocation invocation) {
     unmodelled.add('$type ${invocation.memberName}');
