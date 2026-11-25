@@ -34,8 +34,24 @@ typedef CruxFileRevealer = Future<bool> Function(String path);
 ///
 /// Every product calls this, never `launchUrl` directly; a static test in
 /// each product holds that line.
-Future<bool> cruxOpenUrl(Uri uri) =>
-    cruxReportingUrlLauncher(url_launcher.launchUrl)(uri);
+///
+/// [mode] is handed to `launchUrl` unchanged; the default is
+/// `LaunchMode.platformDefault`, what a bare `launchUrl(uri)` uses. A caller
+/// that needs the link in a separate application (a mail client, the system
+/// browser rather than an in-app view) passes `LaunchMode.externalApplication`.
+Future<bool> cruxOpenUrl(
+  Uri uri, {
+  url_launcher.LaunchMode mode = url_launcher.LaunchMode.platformDefault,
+}) => cruxOpenUrlWith(url_launcher.launchUrl, uri, mode: mode);
+
+/// [cruxOpenUrl] over [launch], so a test sees the [mode] that reaches the
+/// launcher.
+@visibleForTesting
+Future<bool> cruxOpenUrlWith(
+  Future<bool> Function(Uri uri, {url_launcher.LaunchMode mode}) launch,
+  Uri uri, {
+  url_launcher.LaunchMode mode = url_launcher.LaunchMode.platformDefault,
+}) => cruxReportingUrlLauncher((u) => launch(u, mode: mode))(uri);
 
 /// Wraps [launch] so a link it does not open is reported as [cruxOpenUrl]
 /// reports it. [cruxOpenUrl] is this over `url_launcher`; tests pass their

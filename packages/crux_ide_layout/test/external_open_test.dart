@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:url_launcher/url_launcher.dart' show LaunchMode;
 
 /// Registers its overlay as a toast host, as the window chrome does.
 class _Host extends StatefulWidget {
@@ -57,6 +58,37 @@ Widget _app({Locale locale = const Locale('en')}) => MaterialApp(
 void main() {
   final address = Uri.parse('https://example.com/docs/page');
   const path = '/home/me/rtl/wave.vcd';
+
+  // MUTATION: dropping `mode:` from the launch call turns the second
+  // expectation red.
+  testWidgets('the launch mode reaches the launcher, default unchanged', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app());
+    final modes = <LaunchMode>[];
+    Future<bool> launch(
+      Uri uri, {
+      LaunchMode mode = LaunchMode.platformDefault,
+    }) async {
+      modes.add(mode);
+      return true;
+    }
+
+    expect(await cruxOpenUrlWith(launch, address), isTrue);
+    expect(
+      await cruxOpenUrlWith(
+        launch,
+        address,
+        mode: LaunchMode.externalApplication,
+      ),
+      isTrue,
+    );
+
+    expect(modes, <LaunchMode>[
+      LaunchMode.platformDefault,
+      LaunchMode.externalApplication,
+    ]);
+  });
 
   testWidgets('a link that opens shows nothing', (tester) async {
     await tester.pumpWidget(_app());
