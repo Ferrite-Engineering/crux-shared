@@ -1,6 +1,7 @@
 // Copyright 2026 Ferrite Engineering LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:crux_menu_bar/src/edit_commands.dart';
 import 'package:crux_menu_bar/src/menu_layout.dart';
 import 'package:crux_menu_bar/src/menu_shortcut.dart';
 import 'package:crux_shortcut_action/crux_shortcut_action.dart';
@@ -67,9 +68,19 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
     required this.logo,
     required this.child,
     this.editionLine,
+    this.editCommands,
     this.enabled = true,
     super.key,
   });
+
+  /// Opt-in standard Edit commands (Cut, Copy, Paste, Select All), rendered on
+  /// **macOS only** as the first group of the Edit menu, always enabled.
+  ///
+  /// Without them nothing in the menu claims Cmd+C, and a key press the
+  /// framework leaves unhandled beeps. Null (the default) renders nothing, as
+  /// does every platform other than macOS. When the layout has no Edit entries
+  /// the Edit menu is created holding just these.
+  final CruxEditCommands? editCommands;
 
   /// A one-line statement of the edition in force and who it is licensed to,
   /// rendered as a **disabled first item** in the macOS application menu, above
@@ -162,6 +173,7 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
         !hoisted.contains(action) && isVisible(action);
 
     final windowMenu = _macWindowMenu();
+    final edit = editCommands;
 
     final menus = <PlatformMenuItem>[
       // The first menu becomes the system application menu; the OS replaces
@@ -200,20 +212,55 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
               layout[category] ?? <List<A>>[],
               visibleInCategory,
             );
-            if (entries.isEmpty) return const <PlatformMenuItem>[];
+            final withEdit = category == ActionCategory.edit ? edit : null;
+            if (entries.isEmpty && withEdit == null) {
+              return const <PlatformMenuItem>[];
+            }
+            final children = _macChildren(entries, item);
             // The standard macOS Window menu sits immediately before Help.
             return <PlatformMenuItem>[
               if (category == ActionCategory.help && windowMenu != null)
                 windowMenu,
               PlatformMenu(
                 label: categoryLabel(category),
-                menus: _macChildren(entries, item),
+                menus: withEdit == null
+                    ? children
+                    : _withEditCommands(withEdit, children),
               ),
             ];
           }(),
     ];
 
     return PlatformMenuBar(menus: menus, child: child);
+  }
+
+  /// Puts the standard Edit commands in a group of their own ahead of
+  /// [children], the product's Edit items as [_macChildren] built them.
+  ///
+  /// [_macChildren] returns bare items for a single run and groups for several,
+  /// so a bare run is wrapped to keep the OS separator between the commands and
+  /// the product's items.
+  static List<PlatformMenuItem> _withEditCommands(
+    CruxEditCommands edit,
+    List<PlatformMenuItem> children,
+  ) {
+    final commands = PlatformMenuItemGroup(
+      members: [
+        for (final command in CruxEditCommand.values)
+          PlatformMenuItem(
+            label: edit.labelOf(command),
+            shortcut: command.activator,
+            // Always enabled: a greyed item is skipped as a key equivalent.
+            onSelected: () => performCruxEditCommand(
+              command,
+              copyFallback: edit.copyFallback,
+            ),
+          ),
+      ],
+    );
+    if (children.isEmpty) return [commands];
+    if (children.first is PlatformMenuItemGroup) return [commands, ...children];
+    return [commands, PlatformMenuItemGroup(members: children)];
   }
 
   /// The standard macOS Window menu, or null when the host provides none of

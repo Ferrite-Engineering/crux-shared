@@ -19,12 +19,13 @@ class CruxAppMenuActions<A extends Object>
   get desktopFolded -> Set<A>
   get macHoisted -> Set<A>
 class CruxDesktopMenuBar<A extends Object> extends StatelessWidget
-  const CruxDesktopMenuBar({Key? key, String? editionLine, bool enabled, required CruxAppMenuActions<A> appActions, required Map<ActionCategory, List<List<A>>> layout, required ShortcutActivator? Function(A) shortcutOf, required String Function(A) labelOf, required String Function(ActionCategory) categoryAcceleratorLabel, required String Function(ActionCategory) categoryLabel, required String windowMenuLabel, required Widget child, required Widget logo, required bool Function(A) isEnabled, required bool Function(A) isVisible, required void Function(A) onAction})
+  const CruxDesktopMenuBar({CruxEditCommands? editCommands, Key? key, String? editionLine, bool enabled, required CruxAppMenuActions<A> appActions, required Map<ActionCategory, List<List<A>>> layout, required ShortcutActivator? Function(A) shortcutOf, required String Function(A) labelOf, required String Function(ActionCategory) categoryAcceleratorLabel, required String Function(ActionCategory) categoryLabel, required String windowMenuLabel, required Widget child, required Widget logo, required bool Function(A) isEnabled, required bool Function(A) isVisible, required void Function(A) onAction})
   build(BuildContext context) -> Widget
   final appActions: CruxAppMenuActions<A>
   final categoryAcceleratorLabel: String Function(ActionCategory)
   final categoryLabel: String Function(ActionCategory)
   final child: Widget
+  final editCommands: CruxEditCommands?
   final editionLine: String?
   final enabled: bool
   final isEnabled: bool Function(A)
@@ -35,9 +36,33 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget
   final onAction: void Function(A)
   final shortcutOf: ShortcutActivator? Function(A)
   final windowMenuLabel: String
+enum CruxEditCommand
+  const CruxEditCommand(LogicalKeyboardKey key)
+  final key: LogicalKeyboardKey
+  get activator -> SingleActivator
+  get intent -> Intent
+  static const copy: CruxEditCommand
+  static const cut: CruxEditCommand
+  static const paste: CruxEditCommand
+  static const selectAll: CruxEditCommand
+class CruxEditCommands
+  const CruxEditCommands({String? Function()? copyFallback, required String copyLabel, required String cutLabel, required String pasteLabel, required String selectAllLabel})
+  final copyFallback: String? Function()?
+  final copyLabel: String
+  final cutLabel: String
+  final pasteLabel: String
+  final selectAllLabel: String
+  labelOf(CruxEditCommand command) -> String
+class CruxEditSelectionRegistry
+  debugReset() -> void
+  forget(Object owner) -> void
+  get text -> String?
+  report(Object owner, String? text) -> void
+  static final instance: CruxEditSelectionRegistry
 sealed class CruxMenuEntry<A extends Object>
   const CruxMenuEntry()
 typedef CruxMenuLayout<A extends Object> = Map<ActionCategory, List<List<A>>>
 final class CruxSeparatorEntry<A extends Object> extends CruxMenuEntry<A>
   const CruxSeparatorEntry()
 cruxMenuLayoutActions<A extends Object>(Map<ActionCategory, List<List<A>>> layout) -> Set<A>
+performCruxEditCommand(CruxEditCommand command, {String? Function()? copyFallback}) -> bool

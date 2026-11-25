@@ -17,8 +17,11 @@
 /// - `cruxMenuLayoutActions` — the flattened action set each product's
 ///   conformance test compares against its menu-visible descriptor set.
 /// - `nativeMenuShortcut` / `displayMenuShortcut` — the accelerator guards.
+/// - `CruxEditCommands` — the opt-in macOS Edit commands (Cut, Copy, Paste,
+///   Select All), with `CruxEditSelectionRegistry` for the Copy fallback.
 library;
 
 export 'src/crux_desktop_menu_bar.dart';
+export 'src/edit_commands.dart';
 export 'src/menu_layout.dart' hide cruxEntriesForGroups;
 export 'src/menu_shortcut.dart' hide displayMenuShortcut, nativeMenuShortcut;
