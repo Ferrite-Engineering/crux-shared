@@ -8,6 +8,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 Widget _app(Widget home) => MaterialApp(home: home);
 
+/// An app whose `Dialog` has no inset of its own, so the shell's 48 dp gutter
+/// is the only clamp that can bind. Under the default inset (40 x 24) the
+/// framework clamps first and a shell that dropped its gutter still passes.
+Widget _appNoDialogInset(Widget home) => MaterialApp(
+  theme: ThemeData(
+    dialogTheme: const DialogThemeData(insetPadding: EdgeInsets.zero),
+  ),
+  home: home,
+);
+
 void main() {
   group('openCruxSettings', () {
     testWidgets('asDialog: true shows the clamped dialog shell with a title '
@@ -165,7 +175,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
       await tester.pumpWidget(
-        _app(
+        _appNoDialogInset(
           Builder(
             builder: (context) => Center(
               child: FilledButton(
@@ -197,6 +207,8 @@ void main() {
       );
       expect(size.width, lessThanOrEqualTo(600 - 48));
       expect(size.height, lessThanOrEqualTo(500 - 48));
+      // With no framework inset the shell's own clamp is the one that binds.
+      expect(size, const Size(600 - 48, 500 - 48));
     });
 
     testWidgets('navigator: pushes Settings on that navigator and clamps the '
@@ -209,7 +221,7 @@ void main() {
       });
       final nested = GlobalKey<NavigatorState>();
       await tester.pumpWidget(
-        _app(
+        _appNoDialogInset(
           Row(
             children: [
               Builder(
@@ -260,6 +272,7 @@ void main() {
       // The nested navigator is 600 wide: the window's 1200 would allow the
       // full 860.
       expect(size.width, lessThanOrEqualTo(600 - 48));
+      expect(size.width, 600 - 48);
 
       await tester.tap(find.byKey(const ValueKey('cruxSettingsClose')));
       await tester.pumpAndSettle();
