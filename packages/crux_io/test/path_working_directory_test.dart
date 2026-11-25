@@ -11,25 +11,26 @@ import 'package:test/test.dart';
 /// directory.
 ///
 /// The working directory belongs to the process, and `dart test` runs the test
-/// files of a package concurrently in one process. A file that changes it
-/// while another does captures the other's directory as "previous" and puts it
-/// back after it is deleted. These tests are therefore the only ones in this
-/// package that change it, and they are in one file, whose tests run one at a
-/// time.
+/// files of a package concurrently in one process. A test that changes it
+/// changes it for every other file: one file captured another's temp dir as
+/// the directory to restore, and a child process another file started while it
+/// was changed found its working directory deleted under it. These tests
+/// therefore never change it. They answer `Directory.current` from the zone
+/// they run in, which is what the functions under test read.
 void main() {
   late Directory temp;
-  late Directory previous;
 
   setUp(() {
     temp = Directory.systemTemp.createTempSync('crux_io_cwd_');
-    previous = Directory.current;
-    Directory.current = temp;
   });
 
   tearDown(() {
-    Directory.current = previous;
     if (temp.existsSync()) temp.deleteSync(recursive: true);
   });
+
+  /// Runs [body] with [temp] as the working directory of this zone only.
+  T inTemp<T>(T Function() body) =>
+      IOOverrides.runZoned(body, getCurrentDirectory: () => temp);
 
   /// The temp dir itself sits under a symlink on macOS (`/var` →
   /// `/private/var`), so tests that need a stable absolute path compare
@@ -41,14 +42,17 @@ void main() {
       'directory', () {
     final root = p.join(temp.path, 'project');
     Directory(p.join(root, 'runs', 'r1')).createSync(recursive: true);
-    expect(isPathWithin('project', p.join(root, 'runs')), isTrue);
+    expect(
+      inTemp(() => isPathWithin('project', p.join(root, 'runs'))),
+      isTrue,
+    );
   });
 
   test('canonicalizePath makes a relative path absolute', () {
     final file = File(p.join(temp.path, 'design.vcd'))..writeAsStringSync('x');
 
-    expect(canonicalizePath('design.vcd'), resolved(file.path));
-    expect(canonicalizePath('./design.vcd'), resolved(file.path));
+    expect(inTemp(() => canonicalizePath('design.vcd')), resolved(file.path));
+    expect(inTemp(() => canonicalizePath('./design.vcd')), resolved(file.path));
   });
 
   test('isSamePath matches across relative, dot-segment and trailing-slash '
@@ -57,7 +61,10 @@ void main() {
     file.parent.createSync(recursive: true);
     file.writeAsStringSync('x');
 
-    expect(isSamePath(file.path, p.join('sub', 'design.vcd')), isTrue);
+    expect(
+      inTemp(() => isSamePath(file.path, p.join('sub', 'design.vcd'))),
+      isTrue,
+    );
     expect(
       isSamePath(file.path, p.join(temp.path, 'sub', '.', 'design.vcd')),
       isTrue,
