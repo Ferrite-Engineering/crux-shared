@@ -18,6 +18,10 @@ class CruxAppMenuActions<A extends Object>
   final settings: A
   get desktopFolded -> Set<A>
   get macHoisted -> Set<A>
+enum CruxCopySource
+  static const fallback: CruxCopySource
+  static const focusedText: CruxCopySource
+  static const selectedText: CruxCopySource
 class CruxDesktopMenuBar<A extends Object> extends StatelessWidget
   const CruxDesktopMenuBar({CruxEditCommands? editCommands, Key? key, String? editionLine, bool enabled, required CruxAppMenuActions<A> appActions, required Map<ActionCategory, List<List<A>>> layout, required ShortcutActivator? Function(A) shortcutOf, required String Function(A) labelOf, required String Function(ActionCategory) categoryAcceleratorLabel, required String Function(ActionCategory) categoryLabel, required String windowMenuLabel, required Widget child, required Widget logo, required bool Function(A) isEnabled, required bool Function(A) isVisible, required void Function(A) onAction})
   build(BuildContext context) -> Widget
@@ -36,6 +40,21 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget
   final onAction: void Function(A)
   final shortcutOf: ShortcutActivator? Function(A)
   final windowMenuLabel: String
+class CruxEditAvailability
+  const CruxEditAvailability({CruxCopySource? copySource, bool canCut, bool canPaste, bool canSelectAll})
+  factory CruxEditAvailability.current({required bool fallbackAvailable})
+  factory CruxEditAvailability.resolve({required CruxEditFocus focus, required bool fallbackAvailable, required bool hasSelectedText})
+  ==(Object other) -> bool
+  final canCut: bool
+  final canPaste: bool
+  final canSelectAll: bool
+  final copySource: CruxCopySource?
+  get hashCode -> int
+  isEnabled(CruxEditCommand command) -> bool
+class CruxEditAvailabilityWatcher extends ChangeNotifier
+  CruxEditAvailabilityWatcher()
+  availability({required bool fallbackAvailable}) -> CruxEditAvailability
+  dispose() -> void
 enum CruxEditCommand
   const CruxEditCommand(LogicalKeyboardKey key)
   final key: LogicalKeyboardKey
@@ -53,7 +72,19 @@ class CruxEditCommands
   final pasteLabel: String
   final selectAllLabel: String
   labelOf(CruxEditCommand command) -> String
-class CruxEditSelectionRegistry
+class CruxEditFocus
+  const CruxEditFocus({bool editable, bool hasTextSelection, bool obscured, bool readOnly, bool selectable})
+  factory CruxEditFocus.current()
+  ==(Object other) -> bool
+  final editable: bool
+  final hasTextSelection: bool
+  final obscured: bool
+  final readOnly: bool
+  final selectable: bool
+  get hashCode -> int
+  static const none: CruxEditFocus
+  static currentController() -> TextEditingController?
+class CruxEditSelectionRegistry extends ChangeNotifier
   debugReset() -> void
   forget(Object owner) -> void
   get text -> String?
@@ -65,4 +96,4 @@ typedef CruxMenuLayout<A extends Object> = Map<ActionCategory, List<List<A>>>
 final class CruxSeparatorEntry<A extends Object> extends CruxMenuEntry<A>
   const CruxSeparatorEntry()
 cruxMenuLayoutActions<A extends Object>(Map<ActionCategory, List<List<A>>> layout) -> Set<A>
-performCruxEditCommand(CruxEditCommand command, {String? Function()? copyFallback}) -> bool
+performCruxEditCommand(CruxEditCommand command, {String? fallbackText}) -> bool

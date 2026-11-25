@@ -74,11 +74,14 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
   });
 
   /// Opt-in standard Edit commands (Cut, Copy, Paste, Select All), rendered on
-  /// **macOS only** as the first group of the Edit menu, always enabled.
+  /// **macOS only** as the first group of the Edit menu, each enabled when it
+  /// would do something.
   ///
   /// Without them nothing in the menu claims Cmd+C, and a key press the
   /// framework leaves unhandled beeps. Null (the default) renders nothing, as
-  /// does every platform other than macOS. When the layout has no Edit entries
+  /// does every platform other than macOS. A host whose
+  /// [CruxEditCommands.copyFallback] changes between null and non-null must
+  /// rebuild this widget when it does. When the layout has no Edit entries
   /// the Edit menu is created holding just these.
   final CruxEditCommands? editCommands;
 
@@ -161,6 +164,21 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
   // ── macOS: native PlatformMenuBar ──────────────────────────────────────────
 
   Widget _buildMacOS(BuildContext context) {
+    final edit = editCommands;
+    if (edit == null) return _macMenuBar(null);
+    // The Edit items enable and grey with focus and selection, and a
+    // PlatformMenuBar reaches the system only when it rebuilds, so a watcher
+    // owned by a State rebuilds it when an item's state would change.
+    return _MacEditMenuHost(
+      builder: (watcher) => _macMenuBar(
+        watcher.availability(
+          fallbackAvailable: edit.copyFallback?.call() != null,
+        ),
+      ),
+    );
+  }
+
+  Widget _macMenuBar(CruxEditAvailability? editAvailability) {
     // A null `onSelected` is how PlatformMenuItem renders greyed out.
     PlatformMenuItem item(A action) => PlatformMenuItem(
       label: labelOf(action),
@@ -212,7 +230,10 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
               layout[category] ?? <List<A>>[],
               visibleInCategory,
             );
-            final withEdit = category == ActionCategory.edit ? edit : null;
+            final withEdit =
+                category == ActionCategory.edit && editAvailability != null
+                ? edit
+                : null;
             if (entries.isEmpty && withEdit == null) {
               return const <PlatformMenuItem>[];
             }
@@ -225,7 +246,11 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
                 label: categoryLabel(category),
                 menus: withEdit == null
                     ? children
-                    : _withEditCommands(withEdit, children),
+                    : _withEditCommands(
+                        withEdit,
+                        editAvailability!,
+                        children,
+                      ),
               ),
             ];
           }(),
@@ -242,6 +267,7 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
   /// the product's items.
   static List<PlatformMenuItem> _withEditCommands(
     CruxEditCommands edit,
+    CruxEditAvailability availability,
     List<PlatformMenuItem> children,
   ) {
     final commands = PlatformMenuItemGroup(
@@ -250,11 +276,14 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
           PlatformMenuItem(
             label: edit.labelOf(command),
             shortcut: command.activator,
-            // Always enabled: a greyed item is skipped as a key equivalent.
-            onSelected: () => performCruxEditCommand(
-              command,
-              copyFallback: edit.copyFallback,
-            ),
+            // Enabled only when the command would do something; a null
+            // `onSelected` renders greyed out.
+            onSelected: availability.isEnabled(command)
+                ? () => performCruxEditCommand(
+                    command,
+                    fallbackText: edit.copyFallback?.call(),
+                  )
+                : null,
           ),
       ],
     );
@@ -380,4 +409,38 @@ class CruxDesktopMenuBar<A extends Object> extends StatelessWidget {
     // to it, then the min/maximize/close caption buttons.
     return buildWindowChrome(menuBar: menuBar, logo: logo, child: child);
   }
+}
+
+/// Owns the [CruxEditAvailabilityWatcher] for the macOS menu and rebuilds
+/// [builder] whenever an Edit item would enable or grey.
+class _MacEditMenuHost extends StatefulWidget {
+  const _MacEditMenuHost({required this.builder});
+
+  final Widget Function(CruxEditAvailabilityWatcher watcher) builder;
+
+  @override
+  State<_MacEditMenuHost> createState() => _MacEditMenuHostState();
+}
+
+class _MacEditMenuHostState extends State<_MacEditMenuHost> {
+  final CruxEditAvailabilityWatcher _watcher = CruxEditAvailabilityWatcher();
+
+  @override
+  void initState() {
+    super.initState();
+    _watcher.addListener(_changed);
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _watcher.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_watcher);
 }

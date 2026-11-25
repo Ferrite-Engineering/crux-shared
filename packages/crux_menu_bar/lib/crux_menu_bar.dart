@@ -18,7 +18,8 @@
 ///   conformance test compares against its menu-visible descriptor set.
 /// - `nativeMenuShortcut` / `displayMenuShortcut` — the accelerator guards.
 /// - `CruxEditCommands` — the opt-in macOS Edit commands (Cut, Copy, Paste,
-///   Select All), with `CruxEditSelectionRegistry` for the Copy fallback.
+///   Select All), enabled by what they would do, with
+///   `CruxEditSelectionRegistry` and a per-app `copyFallback` for Copy.
 library;
 
 export 'src/crux_desktop_menu_bar.dart';

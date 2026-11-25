@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Added `CruxDesktopMenuBar.editCommands`, an opt-in `CruxEditCommands` that leads the macOS Edit menu with always-enabled Cut, Copy, Paste and Select All, so Cmd+C no longer beeps outside a text field. Windows and Linux are unchanged. `CruxEditSelectionRegistry` and an optional `copyFallback` give Copy a selection to reach when nothing in the focus chain answers. Added `CruxEditCommand`, `CruxEditCommands`, `CruxEditSelectionRegistry` and `performCruxEditCommand`.
+- Added `CruxDesktopMenuBar.editCommands`, an opt-in `CruxEditCommands` that leads the macOS Edit menu with Cut, Copy, Paste and Select All, so Cmd+C reaches a selection outside a text field instead of beeping. Each item is enabled when it would do something (`CruxEditAvailability`), and the menu rebuilds as focus and selection change. Windows and Linux are unchanged. `CruxEditSelectionRegistry` and an optional per-app `copyFallback` give Copy a selection to reach when nothing in the focus chain answers. Added `CruxEditCommand`, `CruxEditCommands`, `CruxEditFocus`, `CruxCopySource`, `CruxEditAvailability`, `CruxEditAvailabilityWatcher`, `CruxEditSelectionRegistry` and `performCruxEditCommand`.
 
 - **Export namespace narrowed by 3 symbols.** `cruxEntriesForGroups`, `displayMenuShortcut`, `nativeMenuShortcut` left the barrel. No product build and no other package referenced them, so none was deprecated first; the declarations are unchanged and stay under `lib/src/`.
 
