@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:crux_license/src/license_actions.dart';
+import 'package:crux_license/src/license_controller.dart'
+    show LicenseCheckAttempt;
 import 'package:crux_license/src/license_status.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +28,27 @@ final licenseStatusProvider = Provider<CruxLicenseStatus>(
   (ref) => CruxLicenseStatus.openCore,
   name: 'licenseStatusProvider',
 );
+
+/// The last phone-home attempt and how it ended, for the panel's "last
+/// attempt" line.
+///
+/// Defaults to `null` (nothing recorded, so no line). A Pro overlay overrides
+/// it from its controller and watches the status so the line follows each
+/// check:
+///
+/// ```dart
+/// licenseLastAttemptProvider.overrideWith((ref) {
+///   ref.watch(licenseStatusProvider);
+///   return ref.watch(licenseControllerProvider).readLastAttempt();
+/// }),
+/// ```
+///
+/// Read-only: the attempt is informational and never changes licence state.
+final FutureProvider<LicenseCheckAttempt?> licenseLastAttemptProvider =
+    FutureProvider.autoDispose<LicenseCheckAttempt?>(
+      (ref) => null,
+      name: 'licenseLastAttemptProvider',
+    );
 
 /// The clock the licence surfaces count days from.
 ///

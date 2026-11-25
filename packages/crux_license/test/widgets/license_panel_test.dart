@@ -61,10 +61,12 @@ void main() {
     CruxLicenseActions actions = const UnsupportedLicenseActions(),
     Future<String?> Function(BuildContext)? onPickCredentialFile,
     bool desktop = false,
+    LicenseCheckAttempt? lastAttempt,
   }) => ProviderScope(
     overrides: [
       licenseStatusProvider.overrideWithValue(status),
       licenseActionsProvider.overrideWithValue(actions),
+      licenseLastAttemptProvider.overrideWith((ref) async => lastAttempt),
     ],
     child: MaterialApp(
       theme: ThemeData(
@@ -697,6 +699,80 @@ void main() {
       );
 
       expect(find.text(strings.licenseNeverChecked), findsOneWidget);
+    });
+
+    group('the last attempt', () {
+      final checkedAt = DateTime.utc(2026, 9, 1, 14, 30);
+      final attemptAt = DateTime.utc(2026, 9, 2, 8, 15);
+
+      Future<void> pumpWith(
+        WidgetTester tester,
+        LicenseCheckAttempt? attempt,
+      ) async {
+        await tester.pumpWidget(
+          host(
+            status: CruxLicenseStatus(
+              activation: CruxLicenseActivation.active,
+              grant: LicenseGrant(
+                issuerId: 'keygen',
+                tier: LicenseTier.pro,
+                products: const <CruxProduct>{CruxProduct.waveCrux},
+                expiry: DateTime.utc(2027),
+              ),
+              lastCheckedAt: checkedAt,
+            ),
+            actions: _RecordingActions(),
+            lastAttempt: attempt,
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      String attemptTime() => find
+          .textContaining('Last attempt')
+          .evaluate()
+          .map((e) => (e.widget as Text).data!)
+          .single;
+
+      testWidgets('an unreachable server is said under the last check', (
+        tester,
+      ) async {
+        await pumpWith(
+          tester,
+          LicenseCheckAttempt(attemptAt, LicenseCheckOutcome.notAttested),
+        );
+
+        expect(attemptTime(), startsWith('Last attempt 2026-09-0'));
+        expect(attemptTime(), endsWith('could not be reached'));
+        expect(find.textContaining('Last checked'), findsOneWidget);
+      });
+
+      testWidgets('a licence with no key says there is nothing to check', (
+        tester,
+      ) async {
+        await pumpWith(
+          tester,
+          LicenseCheckAttempt(attemptAt, LicenseCheckOutcome.noKey),
+        );
+
+        expect(attemptTime(), endsWith('has no key to check online'));
+      });
+
+      testWidgets('a successful attempt adds no line', (tester) async {
+        await pumpWith(
+          tester,
+          LicenseCheckAttempt(checkedAt, LicenseCheckOutcome.attested),
+        );
+
+        expect(find.textContaining('Last attempt'), findsNothing);
+        expect(find.textContaining('Last checked'), findsOneWidget);
+      });
+
+      testWidgets('no recorded attempt adds no line', (tester) async {
+        await pumpWith(tester, null);
+
+        expect(find.textContaining('Last attempt'), findsNothing);
+      });
     });
 
     testWidgets('a licence kept in a file says where, in one line', (

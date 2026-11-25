@@ -123,6 +123,19 @@ abstract class CruxLicensePanelStrings {
   /// perfectly good state, since a validated key works offline.
   String get licenseNeverChecked;
 
+  /// Row shown under the last check when the latest attempt, made at [time],
+  /// heard nothing trustworthy from the issuer: it was unreachable, or its
+  /// answer was unsigned. Concrete so an adapter written before it existed
+  /// still compiles; an overlay overrides it to localise.
+  String licenseLastAttemptNotAttested(String time) =>
+      'Last attempt $time: the license server could not be reached';
+
+  /// Row shown under the last check when the latest attempt, made at [time],
+  /// had nothing to ask the issuer with, because the license embeds no key.
+  /// Concrete for the same reason as [licenseLastAttemptNotAttested].
+  String licenseLastAttemptNoKey(String time) =>
+      'Last attempt $time: this license has no key to check online';
+
   // --- Key entry --------------------------------------------------------
 
   /// Label of the credential text field.

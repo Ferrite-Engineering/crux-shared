@@ -320,6 +320,8 @@ abstract class CruxLicensePanelStrings
   get licenseTierEnterprise -> String
   get licenseTierOpenCore -> String
   get licenseTierPro -> String
+  licenseLastAttemptNoKey(String time) -> String
+  licenseLastAttemptNotAttested(String time) -> String
   licenseLastChecked(String time) -> String
   licenseSeatsInUse(int used, int total) -> String
   licenseStateActive(String date) -> String
@@ -891,6 +893,7 @@ get licenseClockProvider -> Provider<DateTime Function()>
 licenseCredentialMayUseFallbackFile(String credential) -> bool
 get licenseExpiryStringsProvider -> Provider<CruxLicenseExpiryStrings Function(BuildContext)>
 licenseFallbackFilePath(String product, {Map<String, String>? environment, String? operatingSystem}) -> String
+get licenseLastAttemptProvider -> FutureProvider<LicenseCheckAttempt?>
 get licenseNoticeMemoryProvider -> Provider<LicenseNoticeMemory>
 get licenseStatusProvider -> Provider<CruxLicenseStatus>
 get licenseTierOverride -> LicenseTier?

@@ -14,6 +14,8 @@ import 'package:crux_ide_layout/crux_ide_layout.dart'
 import 'package:crux_license/src/crux_product.dart';
 import 'package:crux_license/src/edu_issuer.dart';
 import 'package:crux_license/src/license_actions.dart';
+import 'package:crux_license/src/license_controller.dart'
+    show LicenseCheckOutcome;
 import 'package:crux_license/src/license_panel_providers.dart';
 import 'package:crux_license/src/license_status.dart';
 import 'package:crux_license/src/license_tier.dart';
@@ -438,6 +440,20 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
 
   // --- This machine ------------------------------------------------------
 
+  /// The last attempt's line, or `null` when there is none to show: nothing
+  /// recorded, or an attempt that succeeded, which the last-checked row
+  /// already says.
+  String? _lastAttemptLine() {
+    final attempt = ref.watch(licenseLastAttemptProvider).value;
+    if (attempt == null) return null;
+    final time = formatLicenseDateTime(attempt.at);
+    return switch (attempt.outcome) {
+      LicenseCheckOutcome.attested => null,
+      LicenseCheckOutcome.notAttested => _s.licenseLastAttemptNotAttested(time),
+      LicenseCheckOutcome.noKey => _s.licenseLastAttemptNoKey(time),
+    };
+  }
+
   Widget _machineSection(
     CruxLicenseStatus status,
     CruxLicenseActions actions, {
@@ -469,6 +485,7 @@ class _CruxLicensePanelState extends ConsumerState<CruxLicensePanel> {
                   formatLicenseDateTime(status.lastCheckedAt!),
                 ),
         ),
+        if (_lastAttemptLine() case final line?) _row(context, '', line),
         if (status.credentialFile case final file?)
           _row(context, '', _s.licenseStoredInFile(file)),
         const SizedBox(height: 8),
