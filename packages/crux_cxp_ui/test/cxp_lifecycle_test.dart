@@ -26,6 +26,16 @@ class _Handler extends CruxCxpRequestHandler {
   final List<String> opened = <String>[];
   final List<NotifySelection> selections = <NotifySelection>[];
 
+  final Completer<void> _firstSelection = Completer<void>();
+  final Completer<void> _firstRequest = Completer<void>();
+
+  /// Completes when the first selection reaches the handler: an event, not a
+  /// poll, so a loaded machine only delays it.
+  Future<void> get firstSelection => _firstSelection.future;
+
+  /// Completes when the first honoured highlight reaches the handler.
+  Future<void> get firstRequest => _firstRequest.future;
+
   @override
   Future<CruxCxpHandlerResult> openSource(
     RequestOpenSource request,
@@ -44,8 +54,10 @@ class _Handler extends CruxCxpRequestHandler {
   }
 
   @override
-  void selection(NotifySelection message, PeerIdentity from) =>
-      selections.add(message);
+  void selection(NotifySelection message, PeerIdentity from) {
+    selections.add(message);
+    if (!_firstSelection.isCompleted) _firstSelection.complete();
+  }
 
   @override
   Future<CruxCxpHandlerResult> highlight(
@@ -64,6 +76,7 @@ class _Handler extends CruxCxpRequestHandler {
     }
     highlighted.add(request.element);
     requests.add(request);
+    if (!_firstRequest.isCompleted) _firstRequest.complete();
     return CruxCxpHandlerResult.ok;
   }
 }
@@ -746,8 +759,8 @@ void main() {
             metadata: <String, Object?>{cxpBringForwardMetadataKey: 'forged'},
           ),
         );
-      await _until(() => handler.selections.isNotEmpty);
-      await _until(() => handler.requests.isNotEmpty);
+      await handler.firstSelection;
+      await handler.firstRequest;
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(sender.yielded, isEmpty);
       expect(target.taken, isEmpty);
