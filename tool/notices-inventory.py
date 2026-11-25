@@ -12,8 +12,8 @@
 `gen-notices.py` generates the whole of crux-shared's NOTICES, which works
 because that file is nothing but a dependency list. The four products' NOTICES
 are not: they carry the elaboration engines invoked as subprocesses, vendored
-JavaScript under EPL-2.0, the QuickJS binaries inside `flutter_js`, and a
-register of open items that names what has *not* been independently verified.
+native ports under EPL-2.0 (NetCrux's elkrs), and a register of open items
+that names what has *not* been independently verified.
 None of that is derivable from a lock file, and a generator pointed at these
 files would delete it.
 
