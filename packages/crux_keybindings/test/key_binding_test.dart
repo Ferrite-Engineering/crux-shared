@@ -208,6 +208,17 @@ void main() {
     });
   });
 
+  group('toString', () {
+    test('names the key and its modifiers', () {
+      const binding = KeyBinding(
+        key: LogicalKeyboardKey.keyK,
+        modifiers: {KeyModifier.shift},
+      );
+      expect(binding.toString(), startsWith('KeyBinding('));
+      expect(binding.toString(), contains('shift'));
+    });
+  });
+
   group('equality', () {
     test('equal regardless of modifier insertion order', () {
       const a = KeyBinding(

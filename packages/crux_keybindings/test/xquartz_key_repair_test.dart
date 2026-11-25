@@ -580,6 +580,14 @@ void main() {
       keysymAtKeycode61: keysymAt61,
     );
 
+    test('toString names the vendor, extensions and the keysym in hex', () {
+      expect(
+        facts(keysymAt61: 0xff1b).toString(),
+        'XDisplayFacts(vendor: The X.Org Foundation, '
+        'extensions: [XKEYBOARD, RENDER], keysymAtKeycode61: 0xff1b)',
+      );
+    });
+
     test('XQuartz by its extensions or its vendor, with Escape on 61', () {
       expect(
         facts(
