@@ -1546,7 +1546,10 @@ class _FallbackStore implements LicenseStore {
   }
 
   @override
-  Future<void> writeCredential(String credential) async {
+  Future<void> writeCredential(String credential) =>
+      _serialised(() => _writeCredential(credential));
+
+  Future<void> _writeCredential(String credential) async {
     try {
       await _inner.writeCredential(credential);
     } on Object catch (error, stack) {
@@ -1588,7 +1591,9 @@ class _FallbackStore implements LicenseStore {
   }
 
   @override
-  Future<void> clear() async {
+  Future<void> clear() => _serialised(_clear);
+
+  Future<void> _clear() async {
     // The file first: a licence the user asked to forget must not stay
     // behind in it, and a file that cannot be removed fails the clear.
     final hadFile = await _file.delete();
@@ -1703,7 +1708,7 @@ class _FallbackStore implements LicenseStore {
     Future<void> Function() toStore,
     _FallbackDocument Function(_FallbackDocument document) inFile,
     void Function() toHeld,
-  ) async {
+  ) => _serialised(() async {
     final where = await _where();
     if (where.file case final document?) {
       await _file.write(inFile(document).encode());
@@ -1714,6 +1719,19 @@ class _FallbackStore implements LicenseStore {
       return;
     }
     await toStore();
+  });
+
+  /// The end of the queue of operations that change where the licence lives.
+  Future<void> _tail = Future<void>.value();
+
+  /// Run [action] after every operation queued before it has finished. A
+  /// field write reads where the licence is and then writes there; without
+  /// the queue a background check's write could land after the licence moved
+  /// to the store and bring the superseded fallback file back.
+  Future<T> _serialised<T>(Future<T> Function() action) {
+    final result = _tail.then((_) => action());
+    _tail = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
   }
 
   Future<_FallbackDocument?> _readFile() async {
