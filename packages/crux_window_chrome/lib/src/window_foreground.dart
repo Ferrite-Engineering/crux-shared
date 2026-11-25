@@ -28,9 +28,11 @@ import 'package:flutter/services.dart';
 ///   token from the compositor (GTK's `gdk_app_launch_context` startup
 ///   notification id) and answers it; [takeForeground] presents the window
 ///   with that token (`gtk_window_present` after setting the startup id, or
-///   `xdg_activation_v1_activate`). On X11 the token may be empty and
-///   [takeForeground] presents the window (`_NET_ACTIVE_WINDOW`). Where the
-///   desktop supports neither, [yieldForegroundTo] answers null.
+///   `xdg_activation_v1_activate`). On X11 [yieldForegroundTo] answers GTK's
+///   `_TIME<timestamp>` startup id, which carries the sender's last user
+///   time; an empty token is allowed and [takeForeground] then presents the
+///   window without one (`_NET_ACTIVE_WINDOW`). Where the desktop supports
+///   neither, [yieldForegroundTo] answers null.
 ///
 /// A deliberate swappable seam (method channel, no-op and test fakes behind
 /// a settable global), like `WindowAttentionRequester`.

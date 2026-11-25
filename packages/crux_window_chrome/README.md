@@ -77,8 +77,10 @@ method channel; the host wires two methods in its runner:
     on macOS 14 and later; answer `""`.
   - **Windows**: `AllowSetForegroundWindow(pid)`; answer `""`.
   - **Linux**: on Wayland, an `xdg-activation` token (GTK's
-    `gdk_app_launch_context_get_startup_notify_id`); on X11, `""`; null where
-    the desktop supports neither.
+    `gdk_app_launch_context_get_startup_notify_id`); on X11, GTK's
+    `_TIME<timestamp>` startup id, which carries the sender's last user time
+    (an empty token is allowed and presents the window without one); null
+    where the desktop supports neither.
 - `takeForeground`, argument `{'token': String}`, answers a `bool`.
   - **macOS**: `NSApp.activate()` and `makeKeyAndOrderFront` on the main window.
   - **Windows**: restore if minimised, then `SetForegroundWindow`.
