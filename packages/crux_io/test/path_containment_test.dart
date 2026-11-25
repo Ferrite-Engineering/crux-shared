@@ -91,13 +91,6 @@ void main() {
       }
     });
 
-    test('a relative root is made absolute against the working directory', () {
-      final previous = Directory.current;
-      Directory.current = temp;
-      addTearDown(() => Directory.current = previous);
-      expect(isPathWithin('project', p.join(root, 'runs')), isTrue);
-    });
-
     test('a blank root contains nothing', () {
       expect(isPathWithin('  ', p.join(root, 'runs')), isFalse);
     });

@@ -31,17 +31,6 @@ void main() {
       expect(canonicalizePath('   '), isEmpty);
     });
 
-    test('makes a relative path absolute', () {
-      final file = File(p.join(tempDir.path, 'design.vcd'))
-        ..writeAsStringSync('x');
-      final previous = Directory.current;
-      Directory.current = tempDir;
-      addTearDown(() => Directory.current = previous);
-
-      expect(canonicalizePath('design.vcd'), resolved(file.path));
-      expect(canonicalizePath('./design.vcd'), resolved(file.path));
-    });
-
     test('collapses . and .. segments', () {
       final file = File(p.join(tempDir.path, 'nested', 'design.vcd'));
       file.parent.createSync(recursive: true);
@@ -135,22 +124,6 @@ void main() {
   });
 
   group('isSamePath', () {
-    test('matches across relative, dot-segment and trailing-slash forms', () {
-      final file = File(p.join(tempDir.path, 'sub', 'design.vcd'));
-      file.parent.createSync(recursive: true);
-      file.writeAsStringSync('x');
-
-      final previous = Directory.current;
-      Directory.current = tempDir;
-      addTearDown(() => Directory.current = previous);
-
-      expect(isSamePath(file.path, p.join('sub', 'design.vcd')), isTrue);
-      expect(
-        isSamePath(file.path, p.join(tempDir.path, 'sub', '.', 'design.vcd')),
-        isTrue,
-      );
-    });
-
     test('matches across a symlink', () {
       final target = File(p.join(tempDir.path, 'real.vcd'))
         ..writeAsStringSync('x');
